@@ -1,3 +1,4 @@
+console.log('DEBUG: Server script starting...');
 import 'reflect-metadata';
 import './main/container';
 import { createApp } from './app';
@@ -11,7 +12,9 @@ import { scheduler } from './config/scheduler';
 const startServer = async (): Promise<void> => {
   try {
     // Validate configuration
+    console.log('DEBUG: Validating config...');
     validateConfig();
+    console.log('DEBUG: Config validated');
     logger.info('✅ Configuration validated');
 
     logger.info('🚀 Starting AccuDocs Server initialization...');

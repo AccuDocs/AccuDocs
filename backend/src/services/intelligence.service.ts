@@ -6,6 +6,7 @@ import {
   RecurringInvoiceTemplate,
   ClientRiskScore,
   RevenueForecast,
+  Organization,
   PredictiveAlert
 } from '../models';
 import { logger } from '../utils/logger';
@@ -303,7 +304,7 @@ export const intelligenceService = {
 
   async checkPredictiveAlerts(organizationId: string) {
     const clients = await Client.findAll({ where: { organizationId, status: 'active' } });
-    const todayCheck = new Date();
+    const today = new Date();
 
     // Generate alerts array
     for (const client of clients) {

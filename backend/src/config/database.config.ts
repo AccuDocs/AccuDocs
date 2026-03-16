@@ -2,12 +2,11 @@ import { Sequelize, Options } from 'sequelize';
 import { config } from './env.config';
 import { logger } from '../utils/logger';
 
-const dialect = 'postgres';
-
 const sequelizeOptions: Options = {
   host: config.database.host,
   port: config.database.port,
-  dialect: dialect,
+  dialect: config.database.dialect as any,
+  storage: config.database.storage,
   logging: false,
   pool: {
     max: config.database.pool.max,
@@ -42,10 +41,13 @@ export const connectDatabase = async (): Promise<void> => {
     await sequelize.authenticate();
     logger.info(`✅ Database connection established successfully via ${config.database.host}:${config.database.port}`);
 
-    // In development, force modify the schema to match models
-    if (config.nodeEnv === 'development') {
+    // Only synchronize if explicitly enabled or in development (but check env first)
+    const shouldSync = process.env.DB_SYNC_ALTER === 'true';
+    if (shouldSync) {
       await sequelize.sync({ alter: true });
       logger.info('✅ Database synchronized');
+    } else {
+      logger.info('ℹ️ Skipping sequelize sync alter (set DB_SYNC_ALTER=true to enable)');
     }
   } catch (error) {
     logger.error('❌ Unable to connect to the database:', error);

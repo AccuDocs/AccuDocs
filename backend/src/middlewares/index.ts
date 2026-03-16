@@ -1,4 +1,4 @@
-export { authenticate, optionalAuth } from './auth.middleware';
+export { authenticate, optionalAuth, requireOrganization } from './auth.middleware';
 export { requireRole, adminOnly, clientOnly, authenticated } from './role.middleware';
 export { validate, validateBody, validateQuery, validateParams } from './validate.middleware';
 export { errorHandler, notFoundHandler, asyncHandler } from './error.middleware';

@@ -76,29 +76,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-/**
- * Role-Based Access Control Middleware
- * Requires the user to have one of the specified roles
- */
-export const requireRole = (roles: UserRole[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    try {
-      if (!req.user || !req.user.role) {
-        throw new UnauthorizedError('Authentication required to verify role');
-      }
-
-      const hasRole = roles.includes(req.user.role as UserRole);
-      // Let 'super_admin' bypass every check
-      if (!hasRole && req.user.role !== 'super_admin') {
-        throw new ForbiddenError(`Access denied. Requires one of: ${roles.join(', ')}`);
-      }
-
-      next();
-    } catch (error) {
-      next(error);
-    }
-  };
-};
+// Role-Based Access Control is handled in role.middleware.ts
 
 /**
  * Enterprise Isolation Check
@@ -110,7 +88,8 @@ export const requireOrganization = (req: Request, res: Response, next: NextFunct
       throw new UnauthorizedError('Authentication required');
     }
 
-    if (req.user.role !== 'super_admin' && !req.user.organizationId) {
+    const userRole = req.user.role as UserRole;
+    if (userRole !== 'super_admin' && userRole !== 'admin' && !req.user.organizationId) {
       throw new ForbiddenError('User is not linked to any organization');
     }
 

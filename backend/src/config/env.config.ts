@@ -14,6 +14,8 @@ export const config = {
     name: process.env.DB_NAME || 'accudocs',
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
+    dialect: process.env.DB_DIALECT || 'postgres',
+    storage: process.env.DB_STORAGE,
     pool: {
       max: parseInt(process.env.DB_POOL_MAX || '10', 10),
       min: parseInt(process.env.DB_POOL_MIN || '0', 10),
