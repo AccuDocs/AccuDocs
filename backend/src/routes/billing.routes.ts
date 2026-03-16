@@ -3,13 +3,11 @@ import { authenticate, optionalAuth, requireRole, requireOrganization } from '..
 import { Invoice } from '../models/invoice.model';
 import { Client } from '../models/client.model';
 import { Organization } from '../models/organization.model';
-import { IntelligenceService } from '../services/intelligence.service';
-import { whatsappDelivery } from '../services/whatsapp.service';
+import { intelligenceService } from '../services/intelligence.service';
+import { whatsappService } from '../services/whatsapp.service';
 import { Op } from 'sequelize';
 
 const router = Router();
-const intelligenceService = new IntelligenceService();
-
 // GET /api/v1/billing/metrics
 // Get dashboard metrics for invoices
 router.get('/metrics', authenticate, requireRole(['admin', 'finance_manager']), async (req: Request, res: Response, next: NextFunction) => {
@@ -121,7 +119,12 @@ router.post('/invoices/:id/whatsapp', authenticate, requireRole(['admin', 'finan
       return res.status(404).json({ status: 'error', message: 'Invoice not found' });
     }
 
-    const success = await whatsappDelivery.sendInvoice(invoice);
+    const org = await Organization.findByPk(orgId);
+    if (!org) {
+      return res.status(404).json({ status: 'error', message: 'Organization not found' });
+    }
+
+    const success = await whatsappService.sendInvoice(invoice, org);
 
     if (success) {
       res.json({ status: 'success', message: 'WhatsApp message sent successfully' });
