@@ -8,25 +8,30 @@ import { whatsappService } from '../services/whatsapp.service';
 import { Op } from 'sequelize';
 
 const router = Router();
+
 // GET /api/v1/billing/metrics
 // Get dashboard metrics for invoices
 router.get('/metrics', authenticate, requireRole(['admin', 'finance_manager']), async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const userRole = req.user?.role;
     const orgId = req.user?.organizationId;
 
-    if (!orgId) {
+    if (!orgId && userRole !== 'admin' && userRole !== 'super_admin') {
       return res.status(400).json({ status: 'error', message: 'Organization ID is missing' });
     }
 
-    // This is a simplified version of what would be a complex query or aggregation
-    const outstandingInvoices = await Invoice.findAll({
-      where: {
-        organizationId: orgId,
-        status: {
-          [Op.in]: ['ISSUED', 'PARTIALLY_PAID', 'OVERDUE']
-        }
+    const where: any = {
+      status: {
+        [Op.in]: ['ISSUED', 'PARTIALLY_PAID', 'OVERDUE']
       }
-    });
+    };
+    
+    if (orgId) {
+      where.organizationId = orgId;
+    }
+
+    // This is a simplified version of what would be a complex query or aggregation
+    const outstandingInvoices = await Invoice.findAll({ where });
 
     let totalOutstanding = 0;
     let totalOverdue = 0;
@@ -38,19 +43,20 @@ router.get('/metrics', authenticate, requireRole(['admin', 'finance_manager']), 
       }
     });
 
-    const draftInvoices = await Invoice.count({
-      where: {
-        organizationId: orgId,
-        status: 'DRAFT'
-      }
-    });
+    const draftWhere: any = { status: 'DRAFT' };
+    if (orgId) {
+      draftWhere.organizationId = orgId;
+    }
+    
+    const draftInvoices = await Invoice.count({ where: draftWhere });
 
-    const org = await Organization.findByPk(orgId);
     let revenueForecast30Days = 0;
-
-    if (org) {
-      const forecast = await intelligenceService.forecastRevenue(org);
-      revenueForecast30Days = forecast.thirtyDays;
+    if (orgId) {
+      const org = await Organization.findByPk(orgId);
+      if (org) {
+        const forecast = await intelligenceService.forecastRevenue(org);
+        revenueForecast30Days = forecast.thirtyDays;
+      }
     }
 
     res.json({
@@ -71,18 +77,22 @@ router.get('/metrics', authenticate, requireRole(['admin', 'finance_manager']), 
 // List invoices
 router.get('/invoices', authenticate, requireRole(['admin', 'finance_manager', 'invoicing_officer']), async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const userRole = req.user?.role;
     const orgId = req.user?.organizationId;
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
 
-    if (!orgId) {
+    if (!orgId && userRole !== 'admin' && userRole !== 'super_admin') {
       return res.status(400).json({ status: 'error', message: 'Organization ID is missing' });
     }
 
+    const where: any = {};
+    if (orgId) {
+      where.organizationId = orgId;
+    }
+
     const { count, rows } = await Invoice.findAndCountAll({
-      where: {
-        organizationId: orgId
-      },
+      where,
       include: [
         { model: Client, as: 'client', attributes: ['name', 'gstin'] }
       ],
@@ -108,10 +118,16 @@ router.get('/invoices', authenticate, requireRole(['admin', 'finance_manager', '
 router.post('/invoices/:id/whatsapp', authenticate, requireRole(['admin', 'finance_manager', 'invoicing_officer']), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const invoiceId = req.params.id;
+    const userRole = req.user?.role;
     const orgId = req.user?.organizationId;
 
+    const where: any = { id: invoiceId };
+    if (orgId) {
+      where.organizationId = orgId;
+    }
+
     const invoice = await Invoice.findOne({
-      where: { id: invoiceId, organizationId: orgId },
+      where,
       include: [{ model: Client, as: 'client' }]
     });
 
@@ -119,7 +135,10 @@ router.post('/invoices/:id/whatsapp', authenticate, requireRole(['admin', 'finan
       return res.status(404).json({ status: 'error', message: 'Invoice not found' });
     }
 
-    const org = await Organization.findByPk(orgId);
+    // Use organizationId from invoice if user is admin without orgId
+    const effectiveOrgId = orgId || invoice.organizationId;
+    const org = await Organization.findByPk(effectiveOrgId);
+    
     if (!org) {
       return res.status(404).json({ status: 'error', message: 'Organization not found' });
     }
