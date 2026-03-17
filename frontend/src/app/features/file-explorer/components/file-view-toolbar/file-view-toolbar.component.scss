@@ -10,7 +10,7 @@
   height: 32px;
   padding: 0 10px;
   border: none;
-  border-radius: 8px;
+  border-radius: 9px;
   background: transparent;
   color: #64748b;
   font-size: 0.875rem;
@@ -73,7 +73,7 @@
   gap: 4px !important;
   height: 32px !important;
   padding: 0 12px !important;
-  border-radius: 8px !important;
+  border-radius: 9px !important;
   font-weight: 500 !important;
   color: var(--text-secondary) !important;
   transition: all 0.2s ease !important;
@@ -99,7 +99,7 @@
 
 ::ng-deep {
   .mat-mdc-menu-panel.file-explorer-menu {
-    border-radius: 12px !important;
+    border-radius: 9px !important;
     margin-top: 8px !important;
     background-color: white !important;
     border: 1px solid var(--border-color) !important;
@@ -118,7 +118,7 @@
     button.mat-mdc-menu-item {
       margin: 0 8px !important;
       width: calc(100% - 16px) !important;
-      border-radius: 8px !important;
+      border-radius: 9px !important;
       min-height: 40px !important;
 
       &.is-active {

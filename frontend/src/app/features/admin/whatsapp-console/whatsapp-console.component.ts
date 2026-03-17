@@ -32,11 +32,11 @@ import { Subscription } from 'rxjs';
     }
     .wa-chat-body::-webkit-scrollbar-track {
       background: rgba(0,0,0,0.05);
-      border-radius: 4px;
+      border-radius: 9px;
     }
     .wa-chat-body::-webkit-scrollbar-thumb {
       background: rgba(0,0,0,0.25);
-      border-radius: 4px;
+      border-radius: 9px;
       border: 1px solid transparent;
     }
     .wa-chat-body::-webkit-scrollbar-thumb:hover {

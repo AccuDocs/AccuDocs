@@ -36,7 +36,7 @@ import { searchModules, getDefaultPins, findHub } from '../../core/module-regist
           max-height: 500px;
           background: var(--color-surface);
           border: 1px solid var(--color-border);
-          border-radius: 8px;
+          border-radius: 9px;
           display: flex;
           flex-direction: column;
           box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -118,7 +118,7 @@ import { searchModules, getDefaultPins, findHub } from '../../core/module-regist
                     display: flex;
                     align-items: center;
                     gap: 2px;
-                    border-radius: 4px;
+                    border-radius: 9px;
                     transition: all 0.15s;
                     margin-bottom: 4px;
                   "
@@ -162,7 +162,7 @@ import { searchModules, getDefaultPins, findHub } from '../../core/module-regist
                   style="
                     width: 40px;
                     height: 40px;
-                    border-radius: 6px;
+                    border-radius: 9px;
                     background: var(--color-surface);
                     border: 1px solid var(--color-border);
                     display: flex;
@@ -209,7 +209,7 @@ import { searchModules, getDefaultPins, findHub } from '../../core/module-regist
                       text-transform: uppercase;
                       font-weight: 700;
                       padding: 2px 6px;
-                      border-radius: 3px;
+                      border-radius: 9px;
                       letter-spacing: 0.05em;
                     "
                     [style.background]="getStatusColor(module.status)"
@@ -223,7 +223,7 @@ import { searchModules, getDefaultPins, findHub } from '../../core/module-regist
                     style="
                       font-size: 10px;
                       padding: 2px 6px;
-                      border-radius: 3px;
+                      border-radius: 9px;
                       background: var(--color-border);
                       color: var(--color-text-dim);
                     "

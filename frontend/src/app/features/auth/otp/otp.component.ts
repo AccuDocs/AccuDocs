@@ -106,7 +106,7 @@ import { NotificationService } from '@core/services/notification.service';
       width: 100%;
       max-width: 400px;
       padding: 2rem;
-      border-radius: 16px;
+      border-radius: 9px;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     }
 
@@ -159,7 +159,7 @@ import { NotificationService } from '@core/services/notification.service';
     button[type="submit"] {
       height: 48px;
       font-size: 1rem;
-      border-radius: 8px;
+      border-radius: 9px;
       display: flex;
       align-items: center;
       justify-content: center;

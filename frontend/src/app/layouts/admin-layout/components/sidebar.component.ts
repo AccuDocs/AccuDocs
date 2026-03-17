@@ -30,7 +30,7 @@ import { AuthService } from '@core/services/auth.service';
       <!-- Logo -->
       <div class="h-20 flex items-center justify-center" style="padding-top: 0;">
         <div
-          class="w-11 h-11 bg-[#0074c9] rounded-[14px] flex items-center justify-center text-white rotate-[4deg] transition-transform duration-500 hover:rotate-0"
+          class="w-11 h-11 bg-[#0074c9] rounded-[9px] flex items-center justify-center text-white rotate-[4deg] transition-transform duration-500 hover:rotate-0"
           style="box-shadow: 0 8px 24px -4px rgba(0, 116, 201, 0.3);"
         >
           <ng-icon name="heroDocumentTextSolid" size="22" class="-rotate-[4deg]"></ng-icon>
@@ -45,7 +45,7 @@ import { AuthService } from '@core/services/auth.service';
               [routerLink]="link.path"
               routerLinkActive="sidebar-active"
               [routerLinkActiveOptions]="{ exact: link.exact }"
-              class="group relative flex items-center justify-center w-12 h-12 rounded-[14px] text-[#94a3b8] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] hover:bg-[#f1f5f9] dark:hover:bg-[#334155] transition-all duration-200"
+              class="group relative flex items-center justify-center w-12 h-12 rounded-[9px] text-[#94a3b8] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] hover:bg-[#f1f5f9] dark:hover:bg-[#334155] transition-all duration-200"
               [attr.aria-label]="link.label"
             >
               <ng-icon
@@ -80,7 +80,7 @@ import { AuthService } from '@core/services/auth.service';
         <a
           routerLink="/settings"
           routerLinkActive="sidebar-active"
-          class="group relative flex items-center justify-center w-12 h-12 rounded-[14px] text-[#94a3b8] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] hover:bg-[#f1f5f9] dark:hover:bg-[#334155] transition-all duration-200"
+          class="group relative flex items-center justify-center w-12 h-12 rounded-[9px] text-[#94a3b8] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] hover:bg-[#f1f5f9] dark:hover:bg-[#334155] transition-all duration-200"
           aria-label="Settings"
         >
           <ng-icon
@@ -119,7 +119,7 @@ import { AuthService } from '@core/services/auth.service';
       width: 3px;
       height: 24px;
       background-color: #0074c9;
-      border-radius: 0 3px 3px 0;
+      border-radius: 0 9px 9px 0;
     }
     :host-context(.dark) .sidebar-active {
       background-color: rgba(0, 116, 201, 0.15) !important;

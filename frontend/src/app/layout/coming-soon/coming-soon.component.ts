@@ -66,7 +66,7 @@ import { NavigationService } from '../../core/navigation.service';
             text-transform: uppercase;
             font-weight: 700;
             padding: 6px 12px;
-            border-radius: 4px;
+            border-radius: 9px;
             letter-spacing: 0.05em;
             margin-bottom: 32px;
           "
@@ -83,7 +83,7 @@ import { NavigationService } from '../../core/navigation.service';
           style="
             background: var(--color-surface);
             border: 1px solid var(--color-border);
-            border-radius: 8px;
+            border-radius: 9px;
             padding: 24px;
             max-width: 500px;
             margin-bottom: 32px;
@@ -119,7 +119,7 @@ import { NavigationService } from '../../core/navigation.service';
           (click)="togglePin()"
           style="
             padding: 10px 20px;
-            border-radius: 6px;
+            border-radius: 9px;
             border: 1px solid var(--color-border);
             background: transparent;
             color: var(--color-text);
@@ -146,7 +146,7 @@ import { NavigationService } from '../../core/navigation.service';
             style="
               background: var(--color-surface);
               border: 1px solid var(--color-border);
-              border-radius: 8px;
+              border-radius: 9px;
               padding: 24px;
               max-width: 500px;
               width: 100%;
@@ -171,7 +171,7 @@ import { NavigationService } from '../../core/navigation.service';
                     text-align: left;
                     background: transparent;
                     border: 1px solid var(--color-border);
-                    border-radius: 6px;
+                    border-radius: 9px;
                     color: var(--color-text);
                     font-size: 13px;
                     cursor: pointer;

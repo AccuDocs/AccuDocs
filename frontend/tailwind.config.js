@@ -161,12 +161,14 @@ module.exports = {
       // ==========================================
       borderRadius: {
         'none': '0',
-        'xs': '4px',
-        'sm': '6px',
-        'md': '10px',
-        'lg': '16px',
-        'xl': '24px',
-        '2xl': '32px',
+        'DEFAULT': '9px',
+        'xs': '9px',
+        'sm': '9px',
+        'md': '9px',
+        'lg': '9px',
+        'xl': '9px',
+        '2xl': '9px',
+        '3xl': '9px',
         'full': '9999px',
       },
 

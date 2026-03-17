@@ -39,7 +39,7 @@ import { MODULE_REGISTRY } from '../../core/module-registry';
             align-items: center;
             gap: 6px;
             padding: 6px 12px;
-            border-radius: 6px;
+            border-radius: 9px;
             background: transparent;
             border: 1px solid var(--color-border);
             color: var(--color-text);
@@ -74,7 +74,7 @@ import { MODULE_REGISTRY } from '../../core/module-registry';
                 font-size: 10px;
                 font-weight: 700;
                 padding: 1px 4px;
-                border-radius: 8px;
+                border-radius: 9px;
                 margin-left: 4px;
               "
             >
@@ -95,7 +95,7 @@ import { MODULE_REGISTRY } from '../../core/module-registry';
           align-items: center;
           gap: 6px;
           padding: 6px 12px;
-          border-radius: 6px;
+          border-radius: 9px;
           background: var(--color-surface);
           border: 1px solid var(--color-border);
           color: var(--color-text);

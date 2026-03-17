@@ -195,7 +195,7 @@ import { NotificationService } from '@core/services/notification.service';
     }
 
     .input-focus-border {
-      @apply absolute -inset-[2px] bg-gradient-to-r from-primary-400 to-indigo-400 rounded-[14px] opacity-0 blur-[2px] transition-opacity duration-300 pointer-events-none -z-10;
+      @apply absolute -inset-[2px] bg-gradient-to-r from-primary-400 to-indigo-400 rounded-[9px] opacity-0 blur-[2px] transition-opacity duration-300 pointer-events-none -z-10;
     }
 
     .group:focus-within .input-focus-border {

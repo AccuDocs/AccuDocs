@@ -105,7 +105,7 @@ import { ClientService, Client } from '@core/services/client.service';
     :host { display: block; }
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 9px; }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

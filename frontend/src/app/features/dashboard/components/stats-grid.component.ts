@@ -35,7 +35,7 @@ interface StatItem {
           <div class="flex justify-between items-start">
             <p class="text-[13px] font-semibold text-slate-500 dark:text-slate-400">{{ stat.label }}</p>
             <div
-              class="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0"
+              class="w-11 h-11 rounded-[9px] flex items-center justify-center shrink-0"
               [style.background]="stat.iconBg"
             >
               <ng-icon [name]="stat.icon" size="22" [style.color]="stat.iconColor"></ng-icon>

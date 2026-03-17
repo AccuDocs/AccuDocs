@@ -40,7 +40,7 @@ main {
 
   &::-webkit-scrollbar-thumb {
     background: var(--border-color);
-    border-radius: 9999px;
+    border-radius: 9px;
 
     &:hover {
       background: var(--text-muted);

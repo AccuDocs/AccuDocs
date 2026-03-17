@@ -36,7 +36,7 @@
     padding: 6px 12px;
     background: transparent;
     border: 1px solid rgba(59, 130, 246, 0.3);
-    border-radius: 6px;
+    border-radius: 9px;
     color: #64748b;
     font-size: 0.8125rem;
     cursor: pointer;
@@ -104,7 +104,7 @@
   align-items: center;
   justify-content: center;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 9px;
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid transparent;
@@ -136,7 +136,7 @@
         .mdc-checkbox__background {
           width: 18px;
           height: 18px;
-          border-radius: 4px;
+          border-radius: 9px;
           border-width: 2px;
         }
       }
@@ -200,7 +200,7 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    border-radius: 8px;
+    border-radius: 9px;
     transition: background-color 0.2s ease;
 
     mat-icon {
@@ -213,7 +213,7 @@
       position: absolute;
       inset: 0;
       background: rgba(255, 255, 255, 0.2);
-      border-radius: 8px;
+      border-radius: 9px;
       opacity: 0;
       transition: opacity 0.2s ease;
       pointer-events: none;
@@ -237,7 +237,7 @@
     color: #1e293b;
     background: white;
     border: 1px solid #3b82f6;
-    border-radius: 4px;
+    border-radius: 9px;
     padding: 2px 6px;
     margin-top: 4px;
     text-align: center;
@@ -271,7 +271,7 @@
     gap: 16px;
     padding: 12px 20px;
     background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-    border-radius: 16px;
+    border-radius: 9px;
     box-shadow:
       0 20px 25px -5px rgba(0, 0, 0, 0.2),
       0 8px 10px -6px rgba(0, 0, 0, 0.2),
@@ -316,7 +316,7 @@
     padding: 8px 16px;
     background: transparent;
     border: none;
-    border-radius: 10px;
+    border-radius: 9px;
     cursor: pointer;
     transition: all 0.2s ease;
 
@@ -385,7 +385,7 @@
     margin-left: 8px;
     background: rgba(255, 255, 255, 0.1);
     border: none;
-    border-radius: 8px;
+    border-radius: 9px;
     cursor: pointer;
     transition: all 0.2s ease;
 
@@ -421,7 +421,7 @@
 /* Context Menu Styling to match app theme */
 :host ::ng-deep .mat-mdc-menu-panel {
   min-width: 160px !important;
-  border-radius: 12px !important;
+  border-radius: 9px !important;
   border: 1px solid #e2e8f0 !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
 }

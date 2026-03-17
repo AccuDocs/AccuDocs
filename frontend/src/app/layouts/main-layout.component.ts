@@ -89,7 +89,7 @@ import {
 
               <!-- Dropdown Menu -->
               @if (userMenuOpen()) {
-                <div class="absolute bottom-full left-0 w-full mb-3 bg-white border border-slate-200 rounded-[2rem] shadow-2xl shadow-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-4 z-[60]">
+                <div class="absolute bottom-full left-0 w-full mb-3 bg-white border border-slate-200 rounded-[9px] shadow-2xl shadow-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-4 z-[60]">
                   <div class="p-2 space-y-1">
                     <button (click)="themeService.toggleTheme()" class="w-full flex items-center gap-3 px-4 py-4 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-2xl transition-all">
                       <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">

@@ -246,7 +246,7 @@ interface ChecklistItem {
     .checklist-info {
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 16px;
+      border-radius: 9px;
       padding: 28px;
       margin-bottom: 24px;
     }
@@ -275,7 +275,7 @@ interface ChecklistItem {
       color: #94a3b8;
       background: rgba(255,255,255,0.04);
       padding: 6px 12px;
-      border-radius: 8px;
+      border-radius: 9px;
     }
 
     .meta-item.overdue { color: #f87171; background: rgba(248, 113, 113, 0.08); }
@@ -292,14 +292,14 @@ interface ChecklistItem {
       flex: 1;
       height: 8px;
       background: rgba(255,255,255,0.06);
-      border-radius: 4px;
+      border-radius: 9px;
       overflow: hidden;
     }
 
     .progress-bar-fill {
       height: 100%;
       background: linear-gradient(90deg, #6366f1, #818cf8);
-      border-radius: 4px;
+      border-radius: 9px;
       transition: width 0.5s ease;
     }
 
@@ -322,7 +322,7 @@ interface ChecklistItem {
       justify-content: space-between;
       background: rgba(255,255,255,0.03);
       border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 12px;
+      border-radius: 9px;
       padding: 16px 20px;
       transition: all 0.2s ease;
     }
@@ -368,7 +368,7 @@ interface ChecklistItem {
       padding: 8px 18px;
       background: linear-gradient(135deg, #6366f1, #818cf8);
       color: white;
-      border-radius: 8px;
+      border-radius: 9px;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
@@ -395,7 +395,7 @@ interface ChecklistItem {
       font-size: 12px;
       font-weight: 600;
       padding: 4px 12px;
-      border-radius: 99px;
+      border-radius: 9px;
       white-space: nowrap;
     }
 
@@ -410,7 +410,7 @@ interface ChecklistItem {
       left: 50%;
       transform: translateX(-50%);
       padding: 12px 24px;
-      border-radius: 12px;
+      border-radius: 9px;
       font-size: 14px;
       font-weight: 500;
       z-index: 200;

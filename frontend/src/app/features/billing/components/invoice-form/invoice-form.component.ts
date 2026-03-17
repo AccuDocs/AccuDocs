@@ -220,7 +220,7 @@ function isoDateFromValue(value: string | Date | undefined): string {
       }
 
       .sticky-action-bar {
-        @apply sticky bottom-4 z-10 rounded-[28px] border border-slate-200/80 bg-white/95 p-4 shadow-2xl backdrop-blur dark:border-slate-700/60 dark:bg-slate-900/90;
+        @apply sticky bottom-4 z-10 rounded-[9px] border border-slate-200/80 bg-white/95 p-4 shadow-2xl backdrop-blur dark:border-slate-700/60 dark:bg-slate-900/90;
       }
 
       .btn-primary-premium {

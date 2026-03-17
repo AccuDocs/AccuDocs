@@ -110,7 +110,7 @@ import {
         <div class="relative">
           <button
             (click)="userMenuOpen.set(!userMenuOpen())"
-            class="w-12 h-12 rounded-[14px] flex items-center justify-center text-white font-extrabold text-base transition-all duration-200 hover:ring-[3px] hover:ring-[rgba(0,116,201,0.2)]"
+            class="w-12 h-12 rounded-[9px] flex items-center justify-center text-white font-extrabold text-base transition-all duration-200 hover:ring-[3px] hover:ring-[rgba(0,116,201,0.2)]"
             style="background: linear-gradient(135deg, #0074c9 0%, #005fa3 100%);"
             aria-haspopup="true"
             [attr.aria-expanded]="userMenuOpen()"
@@ -121,7 +121,7 @@ import {
           <!-- Dropdown Panel -->
           @if (userMenuOpen()) {
             <div
-              class="absolute top-full right-0 mt-2 w-60 rounded-[20px] border overflow-hidden z-50"
+              class="absolute top-full right-0 mt-2 w-60 rounded-[9px] border overflow-hidden z-50"
               style="background: var(--surface-color); border-color: var(--border-color); box-shadow: 0 20px 40px -8px rgba(0,0,0,0.15);"
               role="menu"
             >
@@ -149,7 +149,7 @@ import {
               <div class="p-2 space-y-1">
                 <!-- Profile -->
                 <button
-                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-[14px] text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-[9px] text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                   role="menuitem"
                 >
                   <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
@@ -161,7 +161,7 @@ import {
                 <!-- Theme toggle -->
                 <button
                   (click)="themeService.toggleTheme()"
-                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-[14px] text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-[9px] text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                   role="menuitem"
                 >
                   <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
@@ -177,7 +177,7 @@ import {
                 <!-- Logout -->
                 <button
                   (click)="authService.logout()"
-                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-[14px] text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-[9px] text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   role="menuitem"
                 >
                   <div class="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">

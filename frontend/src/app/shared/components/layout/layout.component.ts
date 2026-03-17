@@ -160,7 +160,7 @@ interface NavItem {
 
     mat-nav-list a {
       margin: 0.25rem 0.5rem;
-      border-radius: 8px;
+      border-radius: 9px;
     }
 
     mat-nav-list a.active {

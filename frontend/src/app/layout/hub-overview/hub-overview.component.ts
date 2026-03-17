@@ -22,7 +22,7 @@ import {
       style="
         padding: 16px;
         border: 1px solid var(--color-border);
-        border-radius: 8px;
+        border-radius: 9px;
         background: var(--color-surface);
         cursor: {{ _disabled ? 'not-allowed' : 'pointer' }};
         transition: all 0.2s;
@@ -52,7 +52,7 @@ import {
         style="
           width: 100%;
           height: 3px;
-          border-radius: 3px;
+          border-radius: 9px;
           background: {{ hubColor }};
           opacity: {{ _disabled ? '0.3' : '1' }};
         "
@@ -78,7 +78,7 @@ import {
             text-transform: uppercase;
             font-weight: 700;
             padding: 2px 6px;
-            border-radius: 3px;
+            border-radius: 9px;
             letter-spacing: 0.05em;
           "
           [style.background]="getStatusColor(module.status)"
@@ -120,7 +120,7 @@ import {
             font-size: 11px;
             font-weight: 700;
             padding: 4px 8px;
-            border-radius: 4px;
+            border-radius: 9px;
             text-align: center;
           "
         >
@@ -170,7 +170,7 @@ export class ModuleCardComponent {
                 align-items: center;
                 justify-content: center;
                 background: var(--color-surface);
-                border-radius: 12px;
+                border-radius: 9px;
               "
             >
               {{ hub.icon }}

@@ -65,7 +65,7 @@ import {
             cursor: pointer;
             font-size: 16px;
             padding: 4px 8px;
-            border-radius: 4px;
+            border-radius: 9px;
             transition: all 0.2s;
           "
           class="hover:bg-gray-700"
@@ -88,7 +88,7 @@ import {
                 gap: 6px;
               "
             >
-              <span style="width: 6px; height: 6px; border-radius: 3px; background: #3D9E6A;"></span>
+              <span style="width: 6px; height: 6px; border-radius: 9px; background: #3D9E6A;"></span>
               Ready
             </div>
             @for (module of grouped().live; track module.id) {
@@ -129,7 +129,7 @@ import {
                       font-size: 11px;
                       font-weight: 700;
                       padding: 2px 6px;
-                      border-radius: 10px;
+                      border-radius: 9px;
                     "
                   >
                     {{ module.badge }}
@@ -153,7 +153,7 @@ import {
                 margin-top: 8px;
               "
             >
-              <span style="width: 6px; height: 6px; border-radius: 3px; background: #C87C2A;"></span>
+              <span style="width: 6px; height: 6px; border-radius: 9px; background: #C87C2A;"></span>
               Beta
             </div>
             @for (module of grouped().beta; track module.id) {
@@ -195,7 +195,7 @@ import {
                       font-size: 11px;
                       font-weight: 700;
                       padding: 2px 6px;
-                      border-radius: 10px;
+                      border-radius: 9px;
                     "
                   >
                     {{ module.badge }}
@@ -219,7 +219,7 @@ import {
                 margin-top: 8px;
               "
             >
-              <span style="width: 6px; height: 6px; border-radius: 3px; background: #7A8898;"></span>
+              <span style="width: 6px; height: 6px; border-radius: 9px; background: #7A8898;"></span>
               Coming Soon
             </div>
             @for (module of grouped().soon; track module.id) {
