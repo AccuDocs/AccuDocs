@@ -1,0 +1,295 @@
+<div class="p-6 space-y-6">
+  @if (invoiceResource.isLoading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
+
+  @if (invoice(); as currentInvoice) {
+    <mat-card class="billing-screen-only rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div class="flex flex-col gap-4 p-6 xl:flex-row xl:items-start xl:justify-between">
+        <div class="space-y-2">
+          <div class="flex flex-wrap items-center gap-3">
+            <h1 class="font-mono text-xl font-semibold text-gray-900">{{ currentInvoice.invoiceNumber }}</h1>
+            <span class="rounded-full px-2.5 py-1 text-xs font-medium capitalize" [class]="statusClasses(currentInvoice.status)">
+              {{ statusLabel(currentInvoice.status) }}
+            </span>
+          </div>
+          <p class="text-sm text-gray-600">
+            {{ currentInvoice.client?.name || 'Client unavailable' }} · Due:
+            {{ displayDate(currentInvoice.dueDate) }}
+          </p>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          @if (canIssue(currentInvoice)) {
+            <button mat-flat-button type="button" class="!bg-amber-600 !text-white" (click)="issueInvoice()">
+              Issue
+            </button>
+          }
+          @if (canRecordPayment(currentInvoice)) {
+            <button mat-stroked-button type="button" class="!border-gray-300 !text-gray-700" (click)="onTabChange(1)">
+              Record Payment
+            </button>
+          }
+          @if (canSend(currentInvoice)) {
+            <button mat-stroked-button type="button" class="!border-gray-300 !text-gray-700" (click)="sendWhatsApp()">
+              Send WhatsApp
+            </button>
+          }
+          @if (canDownloadPdf(currentInvoice)) {
+            <button mat-stroked-button type="button" class="!border-gray-300 !text-gray-700" (click)="downloadPdf()">
+              PDF
+            </button>
+          }
+          @if (canEdit(currentInvoice)) {
+            <button mat-stroked-button type="button" class="!border-gray-300 !text-gray-700" (click)="editInvoice()">
+              Edit
+            </button>
+          }
+          @if (canCancel(currentInvoice)) {
+            <button mat-stroked-button type="button" class="!border-red-300 !text-red-700" (click)="cancelInvoice()">
+              Cancel
+            </button>
+          }
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <mat-tab-group [selectedIndex]="selectedTabIndex()" (selectedIndexChange)="onTabChange($event)">
+        <mat-tab label="Invoice Preview">
+          <div class="space-y-4 p-6">
+            <div class="billing-screen-only flex justify-end">
+              <button mat-stroked-button type="button" class="!border-gray-300 !text-gray-700" (click)="printInvoice()">
+                Print
+              </button>
+            </div>
+
+            <div class="billing-preview mx-auto max-w-5xl rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+              <div class="space-y-6">
+                <div class="flex items-start justify-between gap-6 border-b border-gray-200 pb-6">
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gray-500">Tax Invoice</p>
+                    <h2 class="mt-2 text-2xl font-semibold text-gray-900">{{ organization().name }}</h2>
+                    <p class="text-sm text-gray-600">Chartered Accountants</p>
+                    <p class="mt-2 text-sm text-gray-600">GSTIN: {{ organization().gstin }}</p>
+                  </div>
+                  <div class="space-y-1 text-right text-sm text-gray-600">
+                    <p class="font-mono text-base font-semibold text-gray-900">{{ currentInvoice.invoiceNumber }}</p>
+                    <p>Date: {{ displayDate(currentInvoice.invoiceDate) }}</p>
+                    <p>Due: {{ displayDate(currentInvoice.dueDate) }}</p>
+                  </div>
+                </div>
+
+                <div class="grid gap-6 md:grid-cols-2">
+                  <div class="rounded-xl border border-gray-200 p-4">
+                    <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Bill To</p>
+                    <p class="mt-2 font-semibold text-gray-900">{{ currentInvoice.client?.name || 'Client' }}</p>
+                    <p class="text-sm text-gray-600">{{ currentInvoice.client?.gstin || currentInvoice.clientGstin || 'No GSTIN' }}</p>
+                    <p class="text-sm text-gray-600">{{ currentInvoice.client?.mobile || 'No mobile on file' }}</p>
+                  </div>
+
+                  <div class="rounded-xl border border-gray-200 p-4">
+                    <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Place of Supply</p>
+                    <p class="mt-2 font-semibold text-gray-900">{{ currentInvoice.placeOfSupply || organization().stateCode }}</p>
+                    <p class="text-sm text-gray-600">GST Type: {{ currentInvoice.gstType }}</p>
+                  </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                  <table class="min-w-full border border-gray-200 text-sm">
+                    <thead class="bg-gray-50">
+                      <tr>
+                        <th class="border border-gray-200 px-3 py-2 text-left">#</th>
+                        <th class="border border-gray-200 px-3 py-2 text-left">Description</th>
+                        <th class="border border-gray-200 px-3 py-2 text-left">SAC</th>
+                        <th class="border border-gray-200 px-3 py-2 text-left">Qty</th>
+                        <th class="border border-gray-200 px-3 py-2 text-left">Rate</th>
+                        <th class="border border-gray-200 px-3 py-2 text-left">Amt</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of currentInvoice.lineItems ?? []; track item.id; let index = $index) {
+                        <tr>
+                          <td class="border border-gray-200 px-3 py-2">{{ index + 1 }}</td>
+                          <td class="border border-gray-200 px-3 py-2">{{ item.description }}</td>
+                          <td class="border border-gray-200 px-3 py-2">{{ item.sacCode }}</td>
+                          <td class="border border-gray-200 px-3 py-2">{{ item.quantity }}</td>
+                          <td class="border border-gray-200 px-3 py-2 font-mono">{{ item.unitRate | inrCurrency }}</td>
+                          <td class="border border-gray-200 px-3 py-2 font-mono">{{ item.amount | inrCurrency }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="ml-auto max-w-sm space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm">
+                  <div class="flex items-center justify-between">
+                    <span>Subtotal</span>
+                    <span class="font-mono">{{ currentInvoice.subtotal | inrCurrency }}</span>
+                  </div>
+                  @if (currentInvoice.gstType === 'CGST_SGST') {
+                    <div class="flex items-center justify-between">
+                      <span>CGST (9%)</span>
+                      <span class="font-mono">{{ currentInvoice.cgstAmount | inrCurrency }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span>SGST (9%)</span>
+                      <span class="font-mono">{{ currentInvoice.sgstAmount | inrCurrency }}</span>
+                    </div>
+                  } @else {
+                    <div class="flex items-center justify-between">
+                      <span>IGST (18%)</span>
+                      <span class="font-mono">{{ currentInvoice.igstAmount | inrCurrency }}</span>
+                    </div>
+                  }
+                  <div class="flex items-center justify-between">
+                    <span>Round Off</span>
+                    <span class="font-mono">{{ currentInvoice.roundOff | inrCurrency }}</span>
+                  </div>
+                  <div class="border-t border-gray-200 pt-3">
+                    <div class="flex items-center justify-between">
+                      <span class="font-medium text-gray-700">TOTAL</span>
+                      <span class="font-mono text-xl font-bold text-gray-900">{{ currentInvoice.totalAmount | inrCurrency }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="rounded-xl border border-gray-200 p-4 text-sm text-gray-700">
+                  <p class="font-medium text-gray-900">Bank: HDFC Bank · IFSC: HDFC0001234</p>
+                  <p class="mt-2">{{ currentInvoice.notes || 'Payment within 30 days.' }}</p>
+                </div>
+
+                <div class="flex justify-end pt-8">
+                  <div class="text-right">
+                    <p class="font-medium text-gray-900">For {{ organization().name }}</p>
+                    <div class="mt-10 border-t border-gray-400 pt-2 text-sm text-gray-600">Authorised Signatory</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <mat-tab label="Payments">
+          <div class="space-y-6 p-6">
+            @if ((currentInvoice.status === 'paid' || currentInvoice.status === 'partially_paid') && payments().length > 0) {
+              <mat-card class="rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <div class="overflow-x-auto">
+                  <table mat-table [dataSource]="payments()" class="min-w-full">
+                    <ng-container matColumnDef="date">
+                      <th mat-header-cell *matHeaderCellDef>Date</th>
+                      <td mat-cell *matCellDef="let payment">{{ displayDate(payment.paymentDate || payment.createdAt) }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="mode">
+                      <th mat-header-cell *matHeaderCellDef>Mode</th>
+                      <td mat-cell *matCellDef="let payment">{{ paymentModeLabel(payment.paymentMode) }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="reference">
+                      <th mat-header-cell *matHeaderCellDef>Reference #</th>
+                      <td mat-cell *matCellDef="let payment">{{ payment.referenceNumber || '—' }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="amount">
+                      <th mat-header-cell *matHeaderCellDef>Amount</th>
+                      <td mat-cell *matCellDef="let payment" class="font-mono">{{ payment.amount | inrCurrency }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="recordedBy">
+                      <th mat-header-cell *matHeaderCellDef>Recorded By</th>
+                      <td mat-cell *matCellDef="let payment">{{ payment.recordedBy }}</td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="paymentColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: paymentColumns"></tr>
+                  </table>
+                </div>
+              </mat-card>
+            }
+
+            @if (canRecordPayment(currentInvoice)) {
+              <mat-card class="rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <form [formGroup]="paymentForm" class="grid gap-4 p-6 md:grid-cols-2">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Amount *</mat-label>
+                    <input matInput type="number" min="0.01" [max]="currentInvoice.balanceDue" formControlName="amount" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Payment Date *</mat-label>
+                    <input matInput [matDatepicker]="paymentDatePicker" formControlName="paymentDate" />
+                    <mat-datepicker-toggle matIconSuffix [for]="paymentDatePicker"></mat-datepicker-toggle>
+                    <mat-datepicker #paymentDatePicker></mat-datepicker>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Mode *</mat-label>
+                    <mat-select formControlName="paymentMode">
+                      @for (mode of paymentModes; track mode.value) {
+                        <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Reference #</mat-label>
+                    <input matInput formControlName="referenceNumber" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="md:col-span-2">
+                    <mat-label>Notes</mat-label>
+                    <textarea matInput rows="3" formControlName="notes"></textarea>
+                  </mat-form-field>
+
+                  <div class="md:col-span-2 flex justify-end">
+                    <button
+                      mat-flat-button
+                      type="button"
+                      class="!bg-amber-600 !text-white"
+                      (click)="recordPayment()"
+                      [disabled]="isSubmittingPayment()"
+                    >
+                      Record Payment
+                    </button>
+                  </div>
+                </form>
+              </mat-card>
+            } @else {
+              <div class="rounded-xl border border-dashed border-gray-300 p-6 text-sm text-gray-500">
+                Payments can be recorded only for issued, partially paid, or overdue invoices.
+              </div>
+            }
+          </div>
+        </mat-tab>
+
+        <mat-tab label="Timeline">
+          <div class="p-6">
+            <div class="space-y-6">
+              @for (event of timelineEvents(); track event.title + event.timestamp) {
+                <div class="flex gap-4">
+                  <div class="mt-1 flex h-3 w-3 shrink-0 rounded-full bg-amber-500"></div>
+                  <div class="space-y-1">
+                    <p class="font-medium text-gray-900">{{ event.title }}</p>
+                    <p class="text-sm text-gray-600">{{ displayDateTime(event.timestamp) }}</p>
+                    @if (event.description) {
+                      <p class="text-sm text-gray-500">{{ event.description }}</p>
+                    }
+                  </div>
+                </div>
+              } @empty {
+                <div class="rounded-xl border border-dashed border-gray-300 p-6 text-sm text-gray-500">
+                  No timeline events are available for this invoice yet.
+                </div>
+              }
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card>
+  } @else if (!invoiceResource.isLoading()) {
+    <mat-card class="rounded-2xl border border-dashed border-gray-300 bg-white shadow-sm">
+      <div class="p-8 text-center text-sm text-gray-500">Invoice not found.</div>
+    </mat-card>
+  }
+</div>

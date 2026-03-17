@@ -1,22 +1,58 @@
 import { Routes } from '@angular/router';
 import { roleGuard } from '../../core/guards/role.guard';
 
-export const BILLING_ROUTES: Routes = [
+export const billingRoutes: Routes = [
   {
     path: '',
-    redirectTo: 'invoices',
-    pathMatch: 'full'
+    loadComponent: () =>
+      import('./components/billing-dashboard/billing-dashboard.component').then(
+        (module) => module.BillingDashboardComponent
+      ),
+    canActivate: [roleGuard],
+    data: { roles: ['admin', 'finance_manager', 'invoicing_officer'] },
   },
   {
     path: 'invoices',
-    loadComponent: () => import('./components/invoice-list/invoice-list.component').then(m => m.InvoiceListComponent),
+    loadComponent: () =>
+      import('./components/invoice-list/invoice-list.component').then((module) => module.InvoiceListComponent),
     canActivate: [roleGuard],
-    data: { roles: ['admin', 'finance_manager', 'invoicing_officer'] }
+    data: { roles: ['admin', 'finance_manager', 'invoicing_officer'] },
+  },
+  {
+    path: 'invoices/new',
+    loadComponent: () =>
+      import('./components/invoice-form/invoice-form.component').then((module) => module.InvoiceFormComponent),
+    canActivate: [roleGuard],
+    data: { roles: ['admin', 'finance_manager', 'invoicing_officer'] },
+  },
+  {
+    path: 'invoices/:id',
+    loadComponent: () =>
+      import('./components/invoice-detail/invoice-detail.component').then(
+        (module) => module.InvoiceDetailComponent
+      ),
+    canActivate: [roleGuard],
+    data: { roles: ['admin', 'finance_manager', 'invoicing_officer'] },
+  },
+  {
+    path: 'invoices/:id/edit',
+    loadComponent: () =>
+      import('./components/invoice-form/invoice-form.component').then((module) => module.InvoiceFormComponent),
+    canActivate: [roleGuard],
+    data: {
+      roles: ['admin', 'finance_manager', 'invoicing_officer'],
+      editMode: true,
+    },
   },
   {
     path: 'recurring',
-    loadComponent: () => import('./components/recurring-list/recurring-list.component').then(m => m.RecurringListComponent),
+    loadComponent: () =>
+      import('./components/recurring-list/recurring-list.component').then(
+        (module) => module.RecurringListComponent
+      ),
     canActivate: [roleGuard],
-    data: { roles: ['admin', 'finance_manager'] }
-  }
+    data: { roles: ['admin', 'finance_manager'] },
+  },
 ];
+
+export const BILLING_ROUTES = billingRoutes;
