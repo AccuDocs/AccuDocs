@@ -14,5 +14,6 @@ router.get('/invoices/:id', BillingController.getInvoiceById);
 router.get('/invoices/:id/pdf', BillingController.generatePdf);
 router.patch('/invoices/:id/status', validate(UpdateInvoiceStatusSchema), BillingController.updateStatus);
 router.get('/metrics', BillingController.getMetrics);
+router.get('/service-templates', BillingController.getServiceTemplates);
 
 export default router;

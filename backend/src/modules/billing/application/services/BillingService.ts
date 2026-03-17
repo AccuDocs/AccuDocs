@@ -1,9 +1,10 @@
 import { injectable, inject } from "tsyringe";
+import { Op } from "sequelize";
 import { IInvoiceRepository } from "../../domain/repositories/IInvoiceRepository";
 import { IClientRepository } from "../../../client/domain/repositories/IClientRepository";
 import { Invoice } from "../../domain/entities/Invoice";
 import { InvoiceLineItem } from "../../domain/entities/InvoiceLineItem";
-import { Organization as OrganizationModel } from "../../../../models";
+import { Organization as OrganizationModel, ServiceTemplate as ServiceTemplateModel } from "../../../../models";
 import { calculateGST } from "../../../../shared/utils/gst.util";
 // Hard-coded or stubbed financialYear string
 import { AppError } from "../../../../utils/errors";
@@ -154,5 +155,33 @@ export class BillingService {
       paidAmount,
       invoiceCount: invoices.total
     };
+  }
+
+  async getServiceTemplates(organizationId: string) {
+    const templates = await ServiceTemplateModel.findAll({
+      where: {
+        isActive: true,
+        [Op.or]: [
+          { organizationId },
+          { organizationId: null },
+          { isSystem: true }
+        ]
+      },
+      order: [
+        ['sortOrder', 'ASC'],
+        ['name', 'ASC']
+      ]
+    });
+
+    return templates.map((template) => ({
+      id: template.id,
+      organizationId: template.organizationId,
+      name: template.name,
+      description: template.description,
+      sacCode: template.sacCode,
+      defaultRate: Number(template.defaultRate),
+      defaultGstRate: Number(template.defaultGstRate),
+      sortOrder: template.sortOrder
+    }));
   }
 }

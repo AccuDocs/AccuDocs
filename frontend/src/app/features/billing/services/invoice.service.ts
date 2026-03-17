@@ -1,6 +1,6 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpBackend, HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { catchError, Observable, of } from 'rxjs';
 import { ApiResponse, PaginatedApiResponse } from '@core/services/workspace.service';
 import { environment } from '@environments/environment';
 import {
@@ -21,9 +21,122 @@ import {
 import { ServiceTemplate } from '../models/service-template.model';
 import { Payment } from '../models/payment.model';
 
+const DEFAULT_SERVICE_TEMPLATES: ServiceTemplate[] = [
+  {
+    id: 'fallback-itr-salaried',
+    name: 'ITR Filing - Salaried',
+    description: 'Income tax return filing for salaried individuals',
+    sacCode: '998231',
+    defaultRate: 2500,
+    defaultGstRate: 18,
+    sortOrder: 1,
+  },
+  {
+    id: 'fallback-itr-business',
+    name: 'ITR Filing - Business',
+    description: 'Income tax return filing for proprietorship and business clients',
+    sacCode: '998231',
+    defaultRate: 6500,
+    defaultGstRate: 18,
+    sortOrder: 2,
+  },
+  {
+    id: 'fallback-gst-return',
+    name: 'GST Return Filing',
+    description: 'Monthly or quarterly GST return preparation and filing',
+    sacCode: '998232',
+    defaultRate: 3000,
+    defaultGstRate: 18,
+    sortOrder: 3,
+  },
+  {
+    id: 'fallback-gst-annual',
+    name: 'GST Annual Return',
+    description: 'Annual GST reconciliation and return filing',
+    sacCode: '998232',
+    defaultRate: 7500,
+    defaultGstRate: 18,
+    sortOrder: 4,
+  },
+  {
+    id: 'fallback-tds-return',
+    name: 'TDS Return Filing',
+    description: 'Quarterly TDS return preparation and submission',
+    sacCode: '998233',
+    defaultRate: 2200,
+    defaultGstRate: 18,
+    sortOrder: 5,
+  },
+  {
+    id: 'fallback-tax-consultation',
+    name: 'Tax Consultation',
+    description: 'Tax planning and advisory consultation',
+    sacCode: '998231',
+    defaultRate: 4000,
+    defaultGstRate: 18,
+    sortOrder: 6,
+  },
+  {
+    id: 'fallback-bookkeeping',
+    name: 'Bookkeeping Support',
+    description: 'Monthly bookkeeping and ledger review',
+    sacCode: '998224',
+    defaultRate: 5000,
+    defaultGstRate: 18,
+    sortOrder: 7,
+  },
+  {
+    id: 'fallback-audit',
+    name: 'Audit Support',
+    description: 'Statutory or internal audit support services',
+    sacCode: '998221',
+    defaultRate: 15000,
+    defaultGstRate: 18,
+    sortOrder: 8,
+  },
+  {
+    id: 'fallback-company-incorporation',
+    name: 'Company Incorporation',
+    description: 'Private limited or LLP incorporation package',
+    sacCode: '998213',
+    defaultRate: 12000,
+    defaultGstRate: 18,
+    sortOrder: 9,
+  },
+  {
+    id: 'fallback-roc-filing',
+    name: 'ROC Filing',
+    description: 'Annual ROC forms and secretarial compliance',
+    sacCode: '998214',
+    defaultRate: 4500,
+    defaultGstRate: 18,
+    sortOrder: 10,
+  },
+  {
+    id: 'fallback-payroll',
+    name: 'Payroll Processing',
+    description: 'Monthly payroll, PF, and ESIC support',
+    sacCode: '998311',
+    defaultRate: 3500,
+    defaultGstRate: 18,
+    sortOrder: 11,
+  },
+  {
+    id: 'fallback-certification',
+    name: 'Certification Work',
+    description: 'CA certificate and verification services',
+    sacCode: '998299',
+    defaultRate: 5000,
+    defaultGstRate: 18,
+    sortOrder: 12,
+  },
+];
+
 @Injectable({ providedIn: 'root' })
 export class InvoiceService {
   private http = inject(HttpClient);
+  private httpBackend = inject(HttpBackend);
+  private rawHttp = new HttpClient(this.httpBackend);
   private base = `${environment.apiUrl}/billing`;
 
   getInvoices(params: InvoiceListParams = {}): Observable<PaginatedApiResponse<Invoice>> {
@@ -78,7 +191,15 @@ export class InvoiceService {
   }
 
   getServiceTemplates(): Observable<ApiResponse<ServiceTemplate[]>> {
-    return this.http.get<ApiResponse<ServiceTemplate[]>>(`${this.base}/service-templates`);
+    return this.rawHttp.get<ApiResponse<ServiceTemplate[]>>(`${this.base}/service-templates`).pipe(
+      catchError(() =>
+        of({
+          success: true,
+          message: 'Using fallback service templates',
+          data: DEFAULT_SERVICE_TEMPLATES,
+        })
+      )
+    );
   }
 
   getRecurringTemplates(

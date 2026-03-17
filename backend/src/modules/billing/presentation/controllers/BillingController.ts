@@ -88,4 +88,10 @@ export class BillingController {
     const metrics = await service.getMetrics(req.user!.organizationId);
     sendSuccess(res, metrics);
   });
+
+  static getServiceTemplates = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(BillingService);
+    const templates = await service.getServiceTemplates(req.user!.organizationId);
+    sendSuccess(res, templates);
+  });
 }
