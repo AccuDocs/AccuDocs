@@ -69,10 +69,11 @@ class MockRedis {
     if (this.expirations.has(key)) {
       clearTimeout(this.expirations.get(key)!);
     }
+    const ms = Math.min(seconds * 1000, 2147483647);
     const timeout = setTimeout(() => {
       this.store.delete(key);
       this.expirations.delete(key);
-    }, seconds * 1000);
+    }, ms);
     this.expirations.set(key, timeout);
   }
 }

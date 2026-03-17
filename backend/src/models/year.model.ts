@@ -1,66 +1,37 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { Model, DataTypes } from 'sequelize';
 import { sequelize } from '../config/database.config';
 
-export interface YearAttributes {
-  id: string;
-  year: string;
-  clientId: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface YearCreationAttributes extends Optional<YearAttributes, 'id' | 'createdAt' | 'updatedAt'> { }
-
-export class Year extends Model<YearAttributes, YearCreationAttributes> implements YearAttributes {
+export class Year extends Model {
   declare public id: string;
-  declare public year: string;
   declare public clientId: string;
-
+  declare public organizationId: string;
+  declare public year: string;
+  declare public label: string | null;
+  declare public isActive: boolean;
+  declare public notes: string | null;
   declare public readonly createdAt: Date;
   declare public readonly updatedAt: Date;
-
-  // Associations
-  public readonly client?: any;
-  public readonly documents?: any[];
+  declare public readonly deletedAt: Date | null;
 }
 
-Year.init(
-  {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-    },
-    year: {
-      type: DataTypes.STRING(4),
-      allowNull: false,
-      validate: {
-        is: /^20[1-9][0-9]$/,
-      },
-    },
-    clientId: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: {
-        model: 'clients',
-        key: 'id',
-      },
-      field: 'client_id',
-    },
-  },
-  {
-    sequelize,
-    tableName: 'years',
-    timestamps: true,
-    paranoid: false,
-    indexes: [
-      { fields: ['client_id'] },
-      { fields: ['year'] },
-      {
-        unique: true,
-        fields: ['client_id', 'year'],
-        name: 'unique_client_year',
-      },
-    ],
-  }
-);
+Year.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  clientId: { type: DataTypes.UUID, allowNull: false, field: 'client_id' },
+  organizationId: { type: DataTypes.UUID, allowNull: false, field: 'organization_id' },
+  year: { type: DataTypes.CHAR(4), allowNull: false },
+  label: { type: DataTypes.STRING(20), allowNull: true },
+  isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true, field: 'is_active' },
+  notes: { type: DataTypes.TEXT, allowNull: true },
+}, {
+  sequelize,
+  modelName: 'Year',
+  tableName: 'years',
+  paranoid: true,
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+  deletedAt: 'deleted_at',
+  indexes: [
+    { unique: true, fields: ['client_id', 'year'] }
+  ]
+});

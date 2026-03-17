@@ -6,7 +6,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import { config } from './config';
 import routes from './routes';
-import { errorHandler, notFoundHandler, apiLimiter, auditLogger } from './middlewares';
+import { errorHandler, apiLimiter, auditLogger } from './middlewares';
 import { logger } from './utils/logger';
 
 
@@ -145,7 +145,8 @@ export const createApp = (): Application => {
   app.use(`/api/${config.apiVersion}`, routes);
 
   // Error handling
-  app.use(notFoundHandler);
+  // Express handles 404 natively if no match, 
+  // but we fallback to our generic handler
   app.use(errorHandler);
 
   return app;

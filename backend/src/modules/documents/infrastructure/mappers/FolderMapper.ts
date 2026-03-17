@@ -1,0 +1,34 @@
+import { Folder } from "../../domain/entities/Folder";
+import { Folder as FolderModel } from "../../../../models";
+
+export class FolderMapper {
+  public static toDomain(raw: any): Folder {
+    const props = {
+      organizationId: raw.organizationId,
+      clientId: raw.clientId,
+      parentId: raw.parentId,
+      name: raw.name,
+      path: raw.path,
+      isSystem: raw.isSystem,
+      metadata: raw.metadata,
+      createdBy: raw.createdBy,
+      createdAt: raw.createdAt,
+      updatedAt: raw.updatedAt
+    };
+    return Folder.create(props, raw.id).getValue();
+  }
+
+  public static toPersistence(folder: Folder): any {
+    return {
+      id: folder.id,
+      organizationId: folder.organizationId,
+      clientId: folder.clientId,
+      parentId: folder.parentId,
+      name: folder.name,
+      path: folder.path,
+      isSystem: folder.isSystem,
+      metadata: folder.metadata,
+      createdBy: folder.createdBy
+    };
+  }
+}

@@ -1,9 +1,9 @@
-
-import { User } from "../entities/User";
+import { User } from '../entities/User';
 
 export interface IUserRepository {
-  findByMobile(mobile: string): Promise<User | null>;
   findById(id: string): Promise<User | null>;
-  save(user: User): Promise<void>;
-  exists(mobile: string): Promise<boolean>;
+  findByMobileAndOrg(mobile: string, organizationId?: string): Promise<User | null>;
+  findByMobile(mobile: string): Promise<User[]>;
+  updateLastLogin(id: string, date: Date): Promise<void>;
+  save(user: User): Promise<User>;
 }

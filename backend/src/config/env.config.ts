@@ -1,89 +1,150 @@
 import dotenv from 'dotenv';
 import path from 'path';
+import { z } from 'zod';
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
+const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  PORT: z.string().transform(Number).default('3000'),
+  API_VERSION: z.string().default('v1'),
+
+  DB_HOST: z.string().default('localhost'),
+  DB_PORT: z.string().transform(Number).default('5432'),
+  DB_NAME: z.string().default('accudocs'),
+  DB_USER: z.string().default('postgres'),
+  DB_PASSWORD: z.string().default('postgres'),
+  DB_DIALECT: z.string().default('postgres'),
+  DB_STORAGE: z.string().optional(),
+  DB_POOL_MAX: z.string().transform(Number).default('10'),
+  DB_POOL_MIN: z.string().transform(Number).default('0'),
+  DB_POOL_ACQUIRE: z.string().transform(Number).default('30000'),
+  DB_POOL_IDLE: z.string().transform(Number).default('10000'),
+  DB_SSL: z.string().transform((val) => val === 'true').default('false'),
+
+  REDIS_HOST: z.string().default('localhost'),
+  REDIS_PORT: z.string().transform(Number).default('6379'),
+  REDIS_PASSWORD: z.string().default(''),
+  REDIS_DB: z.string().transform(Number).default('0'),
+
+  JWT_SECRET: z.string().min(10, 'JWT Secret too short').default('default-secret-change-me'),
+  JWT_EXPIRES_IN: z.string().default('15m'),
+  JWT_REFRESH_SECRET: z.string().min(10, 'JWT Refresh Secret too short').default('default-refresh-secret-change-me'),
+  JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+
+  AWS_REGION: z.string().default('ap-south-1'),
+  AWS_ACCESS_KEY_ID: z.string().default(''),
+  AWS_SECRET_ACCESS_KEY: z.string().default(''),
+  AWS_S3_BUCKET: z.string().default('accudocs-documents'),
+  AWS_S3_SIGNED_URL_EXPIRY: z.string().transform(Number).default('300'),
+
+  WHATSAPP_ENABLED: z.string().transform((val) => val !== 'false').default('true'),
+
+  TELEGRAM_BOT_TOKEN: z.string().default(''),
+  TELEGRAM_WEBHOOK_SECRET: z.string().default('default-secret'),
+
+  OTP_LENGTH: z.string().transform(Number).default('6'),
+  OTP_EXPIRY_MINUTES: z.string().transform(Number).default('5'),
+  OTP_MAX_ATTEMPTS: z.string().transform(Number).default('3'),
+
+  RATE_LIMIT_WINDOW_MS: z.string().transform(Number).default('900000'),
+  RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default('100'),
+
+  AES_ENCRYPTION_KEY: z.string().default('default-32-char-encryption-key!!'),
+
+  LOG_LEVEL: z.string().default('debug'),
+  LOG_DIR: z.string().default('logs'),
+
+  CORS_ORIGIN: z.string().default('http://localhost:4200,https://siddharth971.github.io'),
+});
+
+const parsedEnv = envSchema.safeParse(process.env);
+
+if (!parsedEnv.success) {
+  console.error('❌ Invalid environment variables:', parsedEnv.error.format());
+  process.exit(1);
+}
+
+const env = parsedEnv.data;
+
 export const config = {
-  nodeEnv: process.env.NODE_ENV || 'development',
-  port: parseInt(process.env.PORT || '3000', 10),
-  apiVersion: process.env.API_VERSION || 'v1',
+  nodeEnv: env.NODE_ENV,
+  port: env.PORT,
+  apiVersion: env.API_VERSION,
 
   database: {
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432', 10),
-    name: process.env.DB_NAME || 'accudocs',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-    dialect: process.env.DB_DIALECT || 'postgres',
-    storage: process.env.DB_STORAGE,
+    host: env.DB_HOST,
+    port: env.DB_PORT,
+    name: env.DB_NAME,
+    user: env.DB_USER,
+    password: env.DB_PASSWORD,
+    dialect: env.DB_DIALECT,
+    storage: env.DB_STORAGE,
     pool: {
-      max: parseInt(process.env.DB_POOL_MAX || '10', 10),
-      min: parseInt(process.env.DB_POOL_MIN || '0', 10),
-      acquire: parseInt(process.env.DB_POOL_ACQUIRE || '30000', 10),
-      idle: parseInt(process.env.DB_POOL_IDLE || '10000', 10),
+      max: env.DB_POOL_MAX,
+      min: env.DB_POOL_MIN,
+      acquire: env.DB_POOL_ACQUIRE,
+      idle: env.DB_POOL_IDLE,
     },
-    ssl: process.env.DB_SSL === 'true',
+    ssl: env.DB_SSL,
   },
 
   redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379', 10),
-    password: process.env.REDIS_PASSWORD || '',
-    db: parseInt(process.env.REDIS_DB || '0', 10),
+    host: env.REDIS_HOST,
+    port: env.REDIS_PORT,
+    password: env.REDIS_PASSWORD,
+    db: env.REDIS_DB,
   },
 
   jwt: {
-    secret: process.env.JWT_SECRET || 'default-secret-change-me',
-    expiresIn: process.env.JWT_EXPIRES_IN || '15m',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'default-refresh-secret-change-me',
-    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+    secret: env.JWT_SECRET,
+    expiresIn: env.JWT_EXPIRES_IN,
+    refreshSecret: env.JWT_REFRESH_SECRET,
+    refreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN,
   },
 
   aws: {
-    region: process.env.AWS_REGION || 'us-east-1',
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    s3Bucket: process.env.AWS_S3_BUCKET || 'accudocs-documents',
-    signedUrlExpiry: parseInt(process.env.AWS_S3_SIGNED_URL_EXPIRY || '300', 10),
+    region: env.AWS_REGION,
+    accessKeyId: env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+    s3Bucket: env.AWS_S3_BUCKET,
+    signedUrlExpiry: env.AWS_S3_SIGNED_URL_EXPIRY,
   },
 
-
-
   whatsapp: {
-    enabled: process.env.WHATSAPP_ENABLED !== 'false',
+    enabled: env.WHATSAPP_ENABLED,
   },
 
   telegram: {
-    botToken: process.env.TELEGRAM_BOT_TOKEN || '',
-    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET || 'default-secret',
+    botToken: env.TELEGRAM_BOT_TOKEN,
+    webhookSecret: env.TELEGRAM_WEBHOOK_SECRET,
   },
 
   otp: {
-    length: parseInt(process.env.OTP_LENGTH || '6', 10),
-    expiryMinutes: parseInt(process.env.OTP_EXPIRY_MINUTES || '5', 10),
-    maxAttempts: parseInt(process.env.OTP_MAX_ATTEMPTS || '3', 10),
+    length: env.OTP_LENGTH,
+    expiryMinutes: env.OTP_EXPIRY_MINUTES,
+    maxAttempts: env.OTP_MAX_ATTEMPTS,
   },
 
   rateLimit: {
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
-    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
+    windowMs: env.RATE_LIMIT_WINDOW_MS,
+    maxRequests: env.RATE_LIMIT_MAX_REQUESTS,
   },
 
   encryption: {
-    aesKey: process.env.AES_ENCRYPTION_KEY || 'default-32-char-encryption-key!!',
+    aesKey: env.AES_ENCRYPTION_KEY,
   },
 
   logging: {
-    level: process.env.LOG_LEVEL || 'debug',
-    dir: process.env.LOG_DIR || 'logs',
+    level: env.LOG_LEVEL,
+    dir: env.LOG_DIR,
   },
 
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:4200,https://siddharth971.github.io',
+    origin: env.CORS_ORIGIN,
   },
 };
 
-// Validate critical configuration
 export const validateConfig = (): void => {
   const required = [
     { key: 'JWT_SECRET', value: config.jwt.secret, default: 'default-secret-change-me' },

@@ -3,7 +3,7 @@ import { IClientRepository } from "../../domain/repositories/IClientRepository";
 import { CreateClientDTO, UpdateClientDTO, ClientResponseDTO } from "../dtos/ClientDtos";
 import { Client } from "../../domain/entities/Client";
 import { sequelize } from "../../../../config/database.config";
-import { folderInitializerService } from "../../../../services/folder-initializer.service";
+import { FolderInitializerService } from "../../../documents/application/services/FolderInitializerService";
 import { ConflictError, NotFoundError } from "../../../../utils/errors";
 import { IUserRepository } from "../../../auth/domain/repositories/IUserRepository";
 import { User } from "../../../auth/domain/entities/User";
@@ -13,53 +13,71 @@ import { logger } from "../../../../utils/logger";
 export class ClientService {
   constructor(
     @inject("IClientRepository") private clientRepository: IClientRepository,
-    @inject("IUserRepository") private userRepository: IUserRepository
+    @inject("IUserRepository") private userRepository: IUserRepository,
+    @inject(FolderInitializerService) private folderInitializer: FolderInitializerService
   ) { }
 
-  async create(dto: CreateClientDTO, adminId: string): Promise<ClientResponseDTO> {
-    const exists = await this.clientRepository.existsByCode(dto.code);
+  async create(dto: CreateClientDTO, adminId: string, organizationId: string): Promise<ClientResponseDTO> {
+    const exists = await this.clientRepository.existsByCode(dto.code, organizationId);
     if (exists) {
-      throw new ConflictError('Client code already exists');
+      throw new ConflictError('Client code already exists in this organization');
     }
 
     const t = await sequelize.transaction();
 
     try {
-      // 1. Create User
+      // 1. Create User for Client Login
       const userOrError = User.create({
+        organizationId,
         name: dto.name,
-        mobile: dto.mobile,
+        mobile: dto.mobile || '',
         role: 'client',
-        isActive: true
+        isActive: true,
+        lastLoginAt: null,
+        email: dto.email
       });
 
-      if (userOrError.isFailure) {
-        throw new Error(userOrError.getError().toString());
-      }
-      const user = userOrError.getValue();
-      await this.userRepository.save(user); // Assumption: UserRepo handles this (no transaction support yet)
+      if (userOrError.isFailure) throw new Error(userOrError.getError() as string);
+      let user = userOrError.getValue();
+      user = await this.userRepository.save(user); // Handled out of transaction until IUserRepository handles transactions
 
-      // 2. Create Client
+      // 2. Create Client Profile
       const clientOrError = Client.create({
+        organizationId,
+        userId: user.id,
         code: dto.code,
         name: dto.name,
-        userId: user.id,
-        status: 'active',
-        metadata: {}
+        gstin: dto.gstin,
+        pan: dto.pan,
+        mobile: dto.mobile,
+        email: dto.email,
+        address: dto.address,
+        stateCode: dto.stateCode || '24',
+        city: dto.city,
+        pincode: dto.pincode,
+        creditLimit: dto.creditLimit || 0.00,
+        entityType: dto.entityType || 'individual',
+        notes: dto.notes,
+        metadata: {},
+        isActive: true,
+        status: 'active'
       });
-      if (clientOrError.isFailure) {
-        throw new Error(clientOrError.getError().toString());
-      }
+      if (clientOrError.isFailure) throw new Error(clientOrError.getError() as string);
+      
       const client = clientOrError.getValue();
       await this.clientRepository.save(client, { transaction: t });
 
-      // 3. Folders
-      await folderInitializerService.initializeClientWorkspace(client.id, client.code, t);
+      // 3. Initialize Folders
+      await this.folderInitializer.initializeClientWorkspace(organizationId, client.id, client.code, t);
 
       await t.commit();
-
-      logger.info(`Client created: ${client.code}`);
-      return this.enrichClient(client, user);
+      logger.info(`Client created: ${client.code} in Org ${organizationId}`);
+      
+      const enriched = this.enrichClient(client, user);
+      if (!enriched.mobile) {
+        enriched.mobile = user.mobile;
+      }
+      return enriched;
 
     } catch (err) {
       await t.rollback();
@@ -68,19 +86,21 @@ export class ClientService {
     }
   }
 
-  async getAll(filters: any, pagination: any): Promise<{ clients: ClientResponseDTO[], total: number }> {
-    const { clients, total } = await this.clientRepository.findAll(filters, pagination);
-    // Clients here are Sequelize Instances likely, based on our Repo implementation using Model.findAndCountAll
-    // Ideally the Repo should return DTOs or Entities. 
-    // For now, mapping manually since we know the Repo logic.
+  async getAll(organizationId: string, filters: any, pagination: any): Promise<{ clients: ClientResponseDTO[], total: number }> {
+    // Inject organizationId into filters explicitly
+    const searchFilter = { ...filters, organizationId };
+    
+    const { clients, total } = await this.clientRepository.findAll(searchFilter, pagination);
     const formatted = clients.map(c => {
-      // Assuming c is Sequelize Instance with .user, .years included
       const plain = c.toJSON ? c.toJSON() : c;
       return {
         id: plain.id,
         code: plain.code,
         name: plain.name,
-        status: plain.status,
+        isActive: plain.isActive,
+        gstin: plain.gstin,
+        pan: plain.pan,
+        stateCode: plain.stateCode,
         metadata: plain.metadata,
         user: plain.user,
         years: plain.years,
@@ -91,42 +111,41 @@ export class ClientService {
     return { clients: formatted, total };
   }
 
-  async getById(id: string): Promise<ClientResponseDTO> {
+  async getById(id: string, organizationId: string): Promise<ClientResponseDTO> {
     const client = await this.clientRepository.findById(id);
-    if (!client) throw new NotFoundError('Client not found');
+    if (!client || client.organizationId !== organizationId) throw new NotFoundError('Client not found');
 
-    // We need user details. 
-    // Domain Repository returns Client Entity.
-    // We need to fetch User.
     const user = await this.userRepository.findById(client.userId);
     if (!user) throw new NotFoundError('User not found');
 
     return this.enrichClient(client, user);
   }
 
-  async update(id: string, dto: UpdateClientDTO, adminId: string): Promise<ClientResponseDTO> {
+  async update(id: string, dto: UpdateClientDTO, adminId: string, organizationId: string): Promise<ClientResponseDTO> {
     const client = await this.clientRepository.findById(id);
-    if (!client) throw new NotFoundError('Client not found');
+    if (!client || client.organizationId !== organizationId) throw new NotFoundError('Client not found');
 
     const user = await this.userRepository.findById(client.userId);
     if (!user) throw new NotFoundError('User not found');
 
     if (dto.code && dto.code !== client.code) {
-      const exists = await this.clientRepository.existsByCode(dto.code, id);
+      const exists = await this.clientRepository.existsByCode(dto.code, organizationId, id);
       if (exists) throw new ConflictError('Code exists');
     }
 
     // Update User
-    if (dto.name || dto.mobile) {
-      // User Entity is immutable? No, we can create new one or update props?
-      // User Entity props are read-only-ish in my definition?
-      // Let's just create a new User instance with updated props
+    if (dto.name || dto.mobile || (dto.isActive !== undefined)) {
       const updateUserOrError = User.create({
+        organizationId: user.organizationId,
         name: dto.name || user.name,
         mobile: dto.mobile || user.mobile,
         role: user.role as any,
-        isActive: user.isActive,
-        lastLogin: user.lastLogin
+        isActive: dto.isActive !== undefined ? dto.isActive : user.isActive,
+        lastLoginAt: user.lastLoginAt,
+        password: user.password,
+        email: user.email,
+        avatarS3Key: user.avatarS3Key,
+        preferences: user.preferences
       }, user.id);
 
       if (updateUserOrError.isSuccess) {
@@ -135,43 +154,45 @@ export class ClientService {
     }
 
     // Update Client
-    if (dto.code || dto.status || dto.metadata || dto.name) {
-      const updateClientOrError = Client.create({
-        code: dto.code || client.code,
-        name: dto.name || client.name,
-        userId: client.userId,
-        status: (dto.status as any) || client.status,
-        metadata: dto.metadata || client.metadata
-      }, client.id);
+    const updateClientOrError = Client.create({
+      organizationId: client.organizationId,
+      userId: client.userId,
+      code: dto.code || client.code,
+      name: dto.name || client.name,
+      gstin: dto.gstin ?? client.gstin,
+      pan: dto.pan ?? client.pan,
+      mobile: dto.mobile ?? client.mobile,
+      email: dto.email ?? client.email,
+      address: dto.address ?? client.address,
+      stateCode: dto.stateCode || client.stateCode,
+      city: dto.city ?? client.city,
+      pincode: dto.pincode ?? client.pincode,
+      creditLimit: dto.creditLimit ?? client.creditLimit,
+      entityType: dto.entityType || client.entityType,
+      notes: dto.notes ?? client.notes,
+      metadata: dto.metadata || client.metadata,
+      isActive: dto.isActive !== undefined ? dto.isActive : client.isActive,
+      status: 'active'
+    }, client.id);
 
-      if (updateClientOrError.isSuccess) {
-        await this.clientRepository.save(updateClientOrError.getValue());
-      }
+    if (updateClientOrError.isSuccess) {
+      await this.clientRepository.save(updateClientOrError.getValue());
     }
 
-    // Refresh
     const updatedClient = await this.clientRepository.findById(id);
     const updatedUser = await this.userRepository.findById(client.userId);
 
     return this.enrichClient(updatedClient!, updatedUser!);
   }
 
-  async delete(id: string): Promise<void> {
-    // Legacy 'delete' logic was complex with raw queries. 
-    // I should call a specialized method in Repo or keep the raw queries here?
-    // Raw queries belong in Infrastructure!
-    // But I cannot easily move them to 'SequelizeClientRepository' without polluting the interface.
-    // I will put the complicated delete logic in the Service but accessing sequelize directly 
-    // OR better, move the complex delete to the Repository as `deleteWithDependencies`.
-    // For now, I'll call delete on repo and hope cascade works? 
-    // No, legacy code explicitly disabled FKs and deleted manually. 
-    // I will implement `hardDelete` in Repository.
-
+  async delete(id: string, organizationId: string): Promise<void> {
+    const client = await this.clientRepository.findById(id);
+    if (!client || client.organizationId !== organizationId) throw new NotFoundError('Client not found');
     await this.clientRepository.delete(id);
   }
 
-  async getNextCode(): Promise<string> {
-    return this.clientRepository.getNextCode();
+  async getNextCode(organizationId: string): Promise<string> {
+    return this.clientRepository.getNextCode(organizationId);
   }
 
   private enrichClient(client: Client, user: User): ClientResponseDTO {
@@ -179,8 +200,13 @@ export class ClientService {
       id: client.id,
       code: client.code,
       name: client.name,
-      status: client.status,
+      isActive: client.isActive,
       metadata: client.metadata,
+      gstin: client.gstin,
+      pan: client.pan,
+      stateCode: client.stateCode,
+      mobile: client.mobile,
+      email: client.email,
       user: {
         id: user.id,
         name: user.name,

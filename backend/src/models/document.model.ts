@@ -1,117 +1,66 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { Model, DataTypes } from 'sequelize';
 import { sequelize } from '../config/database.config';
 
-export interface DocumentAttributes {
-  id: string;
-  fileName: string;
-  originalName: string;
-  s3Path: string;
-  mimeType: string;
-  size: number;
-  yearId: string;
-  uploadedBy: string;
-  currentVersion: number;
-  metadata?: object;
-  createdAt?: Date;
-  updatedAt?: Date;
-  deletedAt?: Date;
-}
-
-export interface DocumentCreationAttributes extends Optional<DocumentAttributes, 'id' | 'createdAt' | 'updatedAt' | 'metadata' | 'currentVersion' | 'deletedAt'> { }
-
-export class Document extends Model<DocumentAttributes, DocumentCreationAttributes> implements DocumentAttributes {
+export class Document extends Model {
   declare public id: string;
+  declare public organizationId: string;
+  declare public clientId: string;
+  declare public yearId: string | null;
+  declare public folderId: string | null;
+  declare public uploadedBy: string;
   declare public fileName: string;
   declare public originalName: string;
-  declare public s3Path: string;
+  declare public s3Key: string;
   declare public mimeType: string;
-  declare public size: number;
-  declare public yearId: string;
-  declare public uploadedBy: string;
-  declare public currentVersion: number;
-  declare public metadata?: object;
-
+  declare public sizeBytes: number;
+  declare public version: number;
+  declare public parentDocumentId: string | null;
+  declare public tags: any;
+  declare public description: string | null;
+  declare public isSharedWithClient: boolean;
+  declare public sharedAt: Date | null;
+  declare public whatsappSentAt: Date | null;
+  declare public whatsappSentBy: string | null;
+  declare public downloadCount: number;
+  declare public lastAccessedAt: Date | null;
   declare public readonly createdAt: Date;
   declare public readonly updatedAt: Date;
-  declare public readonly deletedAt?: Date;
-
-  // Associations
-  public readonly year?: any;
-  public readonly uploader?: any;
-  public readonly versions?: any[];
+  declare public readonly deletedAt: Date | null;
 }
 
-Document.init(
-  {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-    },
-    fileName: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-      field: 'file_name',
-    },
-    originalName: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-      field: 'original_name',
-    },
-    s3Path: {
-      type: DataTypes.STRING(500),
-      allowNull: false,
-      field: 's3_path',
-    },
-    mimeType: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-      field: 'mime_type',
-    },
-    size: {
-      type: DataTypes.BIGINT,
-      allowNull: false,
-    },
-    yearId: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: {
-        model: 'years',
-        key: 'id',
-      },
-      field: 'year_id',
-    },
-    uploadedBy: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: {
-        model: 'users',
-        key: 'id',
-      },
-      field: 'uploaded_by',
-    },
-    currentVersion: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 1,
-      field: 'current_version',
-    },
-    metadata: {
-      type: DataTypes.JSONB,
-      allowNull: true,
-    },
-  },
-  {
-    sequelize,
-    tableName: 'documents',
-    timestamps: true,
-    paranoid: true, // Enable Soft Deletes
-    indexes: [
-      { fields: ['year_id'] },
-      { fields: ['uploaded_by'] },
-      { fields: ['file_name'] },
-      { fields: ['created_at'] },
-      { fields: ['metadata'], using: 'gin' },
-    ],
-  }
-);
+Document.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  organizationId: { type: DataTypes.UUID, allowNull: false, field: 'organization_id' },
+  clientId: { type: DataTypes.UUID, allowNull: false, field: 'client_id' },
+  yearId: { type: DataTypes.UUID, allowNull: true, field: 'year_id' },
+  folderId: { type: DataTypes.UUID, allowNull: true, field: 'folder_id' },
+  uploadedBy: { type: DataTypes.UUID, allowNull: false, field: 'uploaded_by' },
+  fileName: { type: DataTypes.STRING(255), allowNull: false },
+  originalName: { type: DataTypes.STRING(255), allowNull: false },
+  s3Key: { type: DataTypes.STRING(500), allowNull: false, unique: true },
+  mimeType: { type: DataTypes.STRING(100), allowNull: false },
+  sizeBytes: { type: DataTypes.BIGINT, allowNull: false },
+  version: { type: DataTypes.SMALLINT, allowNull: false, defaultValue: 1 },
+  parentDocumentId: { type: DataTypes.UUID, allowNull: true, field: 'parent_document_id' },
+  tags: { type: DataTypes.JSONB, allowNull: false, defaultValue: [] },
+  description: { type: DataTypes.TEXT, allowNull: true },
+  isSharedWithClient: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'is_shared_with_client' },
+  sharedAt: { type: DataTypes.DATE, allowNull: true, field: 'shared_at' },
+  whatsappSentAt: { type: DataTypes.DATE, allowNull: true, field: 'whatsapp_sent_at' },
+  whatsappSentBy: { type: DataTypes.UUID, allowNull: true, field: 'whatsapp_sent_by' },
+  downloadCount: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0, field: 'download_count' },
+  lastAccessedAt: { type: DataTypes.DATE, allowNull: true, field: 'last_accessed_at' },
+  
+  createdAt: { type: DataTypes.DATE, field: 'created_at' },
+  updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
+  deletedAt: { type: DataTypes.DATE, field: 'deleted_at' },
+}, {
+  sequelize,
+  modelName: 'Document',
+  tableName: 'documents',
+  paranoid: true,
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+  deletedAt: 'deleted_at'
+});

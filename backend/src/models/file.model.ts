@@ -30,8 +30,8 @@ export class File extends Model<FileAttributes, FileCreationAttributes> implemen
   declare public readonly updatedAt: Date;
 
   // Associations
-  public readonly folder?: any;
-  public readonly uploader?: any;
+  declare public readonly folder?: any;
+  declare public readonly uploader?: any;
 }
 
 File.init(

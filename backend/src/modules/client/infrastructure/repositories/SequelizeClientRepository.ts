@@ -1,8 +1,7 @@
 import { injectable } from "tsyringe";
 import { IClientRepository } from "../../domain/repositories/IClientRepository";
 import { Client } from "../../domain/entities/Client";
-import { Client as ClientModel } from "../../../../models/client.model";
-import { User, Year } from "../../../../models";
+import { Client as ClientModel, User, Year } from "../../../../models";
 import { ClientMapper } from "../mappers/ClientMapper";
 import { Op } from "sequelize";
 
@@ -24,8 +23,8 @@ export class SequelizeClientRepository implements IClientRepository {
     return ClientMapper.toDomain(client);
   }
 
-  async findByCode(code: string): Promise<Client | null> {
-    const client = await ClientModel.findOne({ where: { code } });
+  async findByCode(code: string, organizationId: string): Promise<Client | null> {
+    const client = await ClientModel.findOne({ where: { code, organizationId } });
     if (!client) return null;
     return ClientMapper.toDomain(client);
   }
@@ -36,8 +35,8 @@ export class SequelizeClientRepository implements IClientRepository {
     return ClientMapper.toDomain(client);
   }
 
-  async existsByCode(code: string, excludeId?: string): Promise<boolean> {
-    const where: any = { code };
+  async existsByCode(code: string, organizationId: string, excludeId?: string): Promise<boolean> {
+    const where: any = { code, organizationId };
     if (excludeId) {
       where.id = { [Op.ne]: excludeId };
     }
@@ -45,8 +44,9 @@ export class SequelizeClientRepository implements IClientRepository {
     return count > 0;
   }
 
-  async getNextCode(): Promise<string> {
+  async getNextCode(organizationId: string): Promise<string> {
     const lastClient = await ClientModel.findOne({
+      where: { organizationId },
       order: [['code', 'desc']],
     });
 

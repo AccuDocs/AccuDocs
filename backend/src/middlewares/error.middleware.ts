@@ -1,110 +1,30 @@
-import { Request, Response, NextFunction } from 'express';
-import { AppError, ValidationError, InternalServerError } from '../utils/errors';
-import { logger } from '../utils/logger';
-import { config } from '../config';
+import { Response, NextFunction } from 'express';
+import { AuthenticatedRequest } from '../shared/types/auth.types';
+import { errorResponse } from '../shared/utils/response.util';
 
-/**
- * Global error handler middleware
- */
-export const errorHandler = (
-  err: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  // Log the error
-  logger.error(`Error: ${err.message}`, {
-    stack: err.stack,
-    path: req.path,
-    method: req.method,
-    ip: req.ip,
-  });
+export const errorHandler = (err: Error, req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  console.error(`[Error] ${err.name}: ${err.message}`, err.stack);
 
-  // Handle known application errors
-  if (err instanceof AppError) {
-    const response: any = {
-      success: false,
-      message: err.message,
-      code: err.code,
-    };
-
-    if (err instanceof ValidationError) {
-      response.errors = err.errors;
-    }
-
-    // Include stack trace in development
-    if (config.nodeEnv === 'development') {
-      response.stack = err.stack;
-    }
-
-    res.status(err.statusCode).json(response);
+  // Sequelize error handling can be expanded here if needed
+  if (err.name === 'SequelizeUniqueConstraintError') {
+    res.status(409).json(errorResponse('CONFLICT', 'Resource already exists'));
     return;
   }
 
-  // Handle Sequelize errors
-  if (err.name === 'SequelizeValidationError' || err.name === 'SequelizeUniqueConstraintError') {
-    const sequelizeError = err as any;
-    const errors: Record<string, string[]> = {};
+  const statusCode = (err as any).statusCode || 500;
+  const errorCode = (err as any).errorCode || 'INTERNAL_ERROR';
+  const message = process.env.NODE_ENV === 'development' || (err as any).isOperational 
+    ? err.message 
+    : 'An unexpected error occurred';
 
-    if (sequelizeError.errors) {
-      sequelizeError.errors.forEach((e: any) => {
-        const field = e.path || 'unknown';
-        if (!errors[field]) {
-          errors[field] = [];
-        }
-        errors[field].push(e.message);
-      });
-    }
-
-    res.status(422).json({
-      success: false,
-      message: 'Validation error',
-      code: 'VALIDATION_ERROR',
-      errors,
-    });
-    return;
+  if (process.env.NODE_ENV === 'development') {
+    console.error(`[DEV ERROR] ${err.name}: ${err.message}`, err.stack);
   }
 
-  // Handle JWT errors
-  if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-    res.status(401).json({
-      success: false,
-      message: 'Invalid or expired token',
-      code: 'UNAUTHORIZED',
-    });
-    return;
-  }
-
-  // Handle unknown errors
-  const response: any = {
-    success: false,
-    message: config.nodeEnv === 'production' ? 'Internal server error' : err.message,
-    code: 'INTERNAL_ERROR',
-  };
-
-  if (config.nodeEnv === 'development') {
-    response.stack = err.stack;
-  }
-
-  res.status(500).json(response);
+  res.status(statusCode).json(errorResponse(errorCode, message));
 };
 
-/**
- * 404 Not Found handler
- */
-export const notFoundHandler = (req: Request, res: Response): void => {
-  res.status(404).json({
-    success: false,
-    message: `Route ${req.method} ${req.path} not found`,
-    code: 'NOT_FOUND',
-  });
+export const asyncHandler = (fn: any) => (req: any, res: any, next: any) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
 };
 
-/**
- * Async wrapper to catch promise rejections
- */
-export const asyncHandler = (fn: Function) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-};

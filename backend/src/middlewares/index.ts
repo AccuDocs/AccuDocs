@@ -1,7 +1,6 @@
-export { authenticate, optionalAuth, requireOrganization } from './auth.middleware';
+export { authenticate } from './auth.middleware';
 export { requireRole, adminOnly, clientOnly, authenticated } from './role.middleware';
-export { validate, validateBody, validateQuery, validateParams } from './validate.middleware';
-export { errorHandler, notFoundHandler, asyncHandler } from './error.middleware';
-export { apiLimiter, authLimiter, otpLimiter, uploadLimiter } from './rateLimit.middleware';
-export { uploadSingle, uploadMultiple, getFileExtension, validateFileSize } from './upload.middleware';
+export { validate } from './validate.middleware';
+export { errorHandler, asyncHandler } from './error.middleware';
+export { apiLimiter } from './rateLimit.middleware';
 export { auditLogger } from './audit.middleware';

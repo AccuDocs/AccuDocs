@@ -30,8 +30,8 @@ export class UploadToken extends Model<UploadTokenAttributes, UploadTokenCreatio
   declare public readonly updatedAt: Date;
 
   // Associations
-  public readonly checklist?: any;
-  public readonly client?: any;
+  declare public readonly checklist?: any;
+  declare public readonly client?: any;
 }
 
 UploadToken.init(

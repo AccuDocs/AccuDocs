@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { container } from 'tsyringe';
 import { ClientController } from './controllers/ClientController';
-import { authenticate, adminOnly, validateBody, validateQuery } from '../../../middlewares';
+import { authenticate, adminOnly, validate } from '../../../middlewares';
 import { createClientSchema, updateClientSchema, paginationSchema } from '../../../utils/validators';
 
 // Register Dependencies
@@ -21,11 +21,11 @@ const router = Router();
 
 router.use(authenticate, adminOnly);
 
-router.post('/', validateBody(createClientSchema), ClientController.createClient);
-router.get('/', validateQuery(paginationSchema), ClientController.getClients);
+router.post('/', validate(createClientSchema), ClientController.createClient);
+router.get('/', validate(paginationSchema, 'query'), ClientController.getClients);
 router.get('/next-code', ClientController.getNextCode);
 router.get('/:id', ClientController.getClient);
-router.put('/:id', validateBody(updateClientSchema), ClientController.updateClient);
+router.put('/:id', validate(updateClientSchema), ClientController.updateClient);
 router.delete('/:id', ClientController.deleteClient);
 
 export default router;

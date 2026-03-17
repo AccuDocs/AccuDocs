@@ -1,6 +1,6 @@
 
 import { User } from "../../domain/entities/User";
-import { User as UserPersistence } from "../../../../models/user.model"; // Using existing Sequelize model
+import { User as UserPersistence } from "../../../../models";
 
 export class UserMapper {
   public static toDomain(raw: any): User | null {
@@ -10,12 +10,13 @@ export class UserMapper {
     const data = raw.toJSON ? raw.toJSON() : raw;
 
     const userOrError = User.create({
+      organizationId: data.organizationId,
       name: data.name,
       mobile: data.mobile,
       password: data.password,
       role: data.role,
       isActive: data.isActive,
-      lastLogin: data.lastLogin ? new Date(data.lastLogin) : undefined
+      lastLoginAt: data.lastLogin ? new Date(data.lastLogin) : null
     }, data.id);
 
     return userOrError.isSuccess ? userOrError.getValue() : null;
@@ -29,7 +30,7 @@ export class UserMapper {
       password: user.props.password,
       role: user.props.role,
       isActive: user.props.isActive,
-      lastLogin: user.props.lastLogin
+      lastLoginAt: user.props.lastLoginAt
     };
   }
 }

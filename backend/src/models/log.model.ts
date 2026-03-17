@@ -62,7 +62,7 @@ export class Log extends Model<LogAttributes, LogCreationAttributes> implements 
   declare public readonly createdAt: Date;
 
   // Associations
-  public readonly user?: any;
+  declare public readonly user?: any;
 }
 
 Log.init(

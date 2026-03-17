@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ForbiddenError } from '../utils/errors';
-import { UserRole } from '../models';
+import { AuthenticatedRequest } from '../shared/types/auth.types';
+export type UserRole = 'admin' | 'staff' | 'client' | 'super_admin';
 
 /**
  * Role-based access control middleware
@@ -18,11 +19,12 @@ export const requireRole = (...args: (UserRole | UserRole[])[]) => {
 
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
-      if (!req.user) {
+      const authReq = req as unknown as AuthenticatedRequest;
+      if (!authReq.user) {
         throw new ForbiddenError('Authentication required');
       }
 
-      const userRole = req.user.role as UserRole;
+      const userRole = authReq.user.role as UserRole;
 
       // Admin always has access to everything
       if (userRole === 'admin' || userRole === 'super_admin') {

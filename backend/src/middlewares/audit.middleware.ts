@@ -1,19 +1,14 @@
-import { Request, Response, NextFunction } from 'express';
-import { AuditLog } from '../models/audit-log.model';
+import { Response, NextFunction } from 'express';
+import { AuthenticatedRequest } from '../shared/types/auth.types';
+import { AuditLog } from '../models/AuditLog.model';
 import { logger } from '../utils/logger';
 
-/**
- * Immutable Audit Logger Middleware
- * Automatically captures mutating requests and logs them asynchronously
- */
 export const auditLogger = () => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    // Only trace mutating methods
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
-      // Capture the original send to monkey patch the response and observe changes
       const originalSend = res.send;
+
       res.send = function (body) {
-        // Fire & Forget asynchronously to not block the response
         if (res.statusCode >= 200 && res.statusCode < 300) {
           logActionAsync(req, res, body).catch(e => {
             logger.error(`Failed to register audit log: ${e.message}`);
@@ -26,12 +21,15 @@ export const auditLogger = () => {
   };
 };
 
-async function logActionAsync(req: Request, res: Response, resBody: any) {
+async function logActionAsync(req: AuthenticatedRequest, res: Response, resBody: any) {
   const user = req.user;
-  const orgId = user?.organizationId || res.locals?.organizationId || req.body?.organizationId;
-  const entityType = determineEntityType(req.path);
+  const orgId = user?.organizationId;
+  
+  if (!orgId) return;
 
-  // Try mapping the created/modified entity ID from the body natively
+  const entityType = determineEntityType(req.path);
+  if (entityType === 'UNKNOWN') return;
+
   let entityId = '(unknown)';
   try {
     const parsedBody = JSON.parse(resBody);
@@ -39,8 +37,6 @@ async function logActionAsync(req: Request, res: Response, resBody: any) {
       entityId = parsedBody.data.id;
     }
   } catch (e) { }
-
-  if (!orgId || entityType === 'UNKNOWN') return;
 
   const changesObj = {
     path: req.path,
@@ -56,26 +52,25 @@ async function logActionAsync(req: Request, res: Response, resBody: any) {
     action: req.method === 'POST' ? 'CREATE' : req.method === 'DELETE' ? 'DELETE' : 'UPDATE',
     changes: changesObj,
     performedBy: user?.userId,
-    ipAddress: req.ip || req.connection.remoteAddress,
+    ipAddress: req.ip || req.connection?.remoteAddress || 'unknown',
   });
 }
 
 function determineEntityType(path: string): string {
   if (path.includes('/invoice')) return 'INVOICE';
   if (path.includes('/payment')) return 'PAYMENT';
-  if (path.includes('/credit-note')) return 'CREDIT_NOTE';
   if (path.includes('/client')) return 'CLIENT';
-  if (path.includes('/organization')) return 'ORGANIZATION';
-  if (path.includes('/branch')) return 'BRANCH';
+  if (path.includes('/document')) return 'DOCUMENT';
+  if (path.includes('/task')) return 'TASK';
+  if (path.includes('/auth')) return 'AUTH';
   return 'UNKNOWN';
 }
 
 function redactSensitiveInfo(obj: any): any {
   if (!obj) return obj;
   const clone = { ...obj };
-
-  // Pan / Card masking
-  const sensitiveKeys = ['password', 'mfaSecret', 'creditCard', 'panNumber'];
+  
+  const sensitiveKeys = ['password', 'otp', 'token'];
   for (const key of sensitiveKeys) {
     if (clone[key]) clone[key] = '***REDACTED***';
   }

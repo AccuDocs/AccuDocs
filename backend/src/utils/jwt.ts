@@ -2,7 +2,7 @@ import jwt, { SignOptions, JwtPayload } from 'jsonwebtoken';
 import { config } from '../config/env.config';
 import { logger } from './logger';
 
-import { UserRole } from '../models';
+export type UserRole = 'admin' | 'staff' | 'client' | 'super_admin';
 
 export interface TokenPayload {
   userId: string;

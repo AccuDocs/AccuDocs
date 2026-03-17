@@ -1,51 +1,86 @@
-
-import { injectable } from "tsyringe";
-import { IOtpRepository } from "../../domain/repositories/IOtpRepository";
-import { Otp } from "../../domain/entities/Otp";
-import { OTP as OtpModel } from "../../../../models/otp.model";
+import { injectable } from 'tsyringe';
+import { IOtpRepository } from '../../domain/repositories/IOtpRepository';
+import { Otp } from '../../domain/entities/Otp';
+import { Otp as OtpModel } from '../../../../models';
+import { Op } from 'sequelize';
 
 @injectable()
 export class SequelizeOtpRepository implements IOtpRepository {
-  async save(otp: Otp): Promise<void> {
-    const raw = {
+  private toEntity(model: OtpModel): Otp {
+    const props = {
+      mobile: model.mobile,
+      otpHash: model.otpHash,
+      purpose: model.purpose as any,
+      expiresAt: model.expiresAt,
+      attempts: model.attempts,
+      isUsed: model.isUsed,
+      ipAddress: model.ipAddress,
+      createdAt: model.createdAt
+    };
+    return Otp.create(props, model.id).getValue();
+  }
+
+  async save(otp: Otp): Promise<Otp> {
+    const data = {
       mobile: otp.mobile,
       otpHash: otp.otpHash,
+      purpose: otp.purpose,
       expiresAt: otp.expiresAt,
-      attempts: otp.attempts
+      attempts: otp.attempts,
+      isUsed: otp.isUsed,
+      ipAddress: otp.ipAddress
     };
 
-    // We don't have an ID in the domain entity usually until saved, 
-    // but here we are using UUIDs generated in Domain/Entity base class?
-    // The Entity base class generates a UUID.
-
-    // Check if exists? Usually OTPs are just created.
-    // But we might want to invalidate old ones?
-    // For now, simple create.
-    await OtpModel.create({
-      ...raw,
-      id: otp.id
-    } as any);
+    if (otp.id) {
+      const [_, updated] = await OtpModel.update(data, {
+        where: { id: otp.id },
+        returning: true
+      });
+      if (updated.length > 0) return this.toEntity(updated[0]);
+      const found = await OtpModel.findByPk(otp.id);
+      return this.toEntity(found!);
+    } else {
+      const created = await OtpModel.create(data);
+      return this.toEntity(created);
+    }
   }
 
-  async findByMobile(mobile: string): Promise<Otp | null> {
-    const found = await OtpModel.findOne({
-      where: { mobile },
-      order: [['createdAt', 'DESC']]
+  async findLatestUnused(mobile: string): Promise<Otp | null> {
+    const model = await OtpModel.findOne({
+      where: {
+        mobile,
+        isUsed: false,
+        expiresAt: { [Op.gt]: new Date() }
+      },
+      order: [['created_at', 'DESC']]
     });
-
-    if (!found) return null;
-
-    const otpOrError = Otp.create({
-      mobile: found.mobile,
-      otpHash: found.otpHash,
-      expiresAt: found.expiresAt,
-      attempts: found.attempts
-    }, found.id);
-
-    return otpOrError.isSuccess ? otpOrError.getValue() : null;
+    return model ? this.toEntity(model) : null;
   }
 
-  async deleteByMobile(mobile: string): Promise<void> {
-    await OtpModel.destroy({ where: { mobile } });
+  async incrementAttempts(id: string): Promise<number> {
+    await OtpModel.increment('attempts', { by: 1, where: { id } });
+    const model = await OtpModel.findByPk(id);
+    return model!.attempts;
+  }
+
+  async markAsUsed(id: string): Promise<void> {
+    await OtpModel.update({ isUsed: true }, { where: { id } });
+  }
+
+  async deleteUnusedForMobile(mobile: string): Promise<void> {
+    await OtpModel.destroy({
+      where: {
+        mobile,
+        isUsed: false
+      }
+    });
+  }
+
+  async deleteExpired(): Promise<number> {
+    return await OtpModel.destroy({
+      where: {
+        expiresAt: { [Op.lt]: new Date() }
+      }
+    });
   }
 }

@@ -1,66 +1,38 @@
 import rateLimit from 'express-rate-limit';
-import { config } from '../config';
-import { TooManyRequestsError } from '../utils/errors';
+import { errorResponse } from '../shared/utils/response.util';
 
-/**
- * General rate limiter for API endpoints
- */
+// 3 requests per 10 minutes per IP
+export const sendOtpLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 3,
+  handler: (req, res) => {
+    res.status(429).json(errorResponse('RATE_LIMIT_EXCEEDED', 'Too many OTP requests, please try again later'));
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// 5 requests per 5 minutes per IP
+export const verifyOtpLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 5,
+  handler: (req, res) => {
+    res.status(429).json(errorResponse('RATE_LIMIT_EXCEEDED', 'Too many verify attempts, please try again later'));
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// 100 requests per minute per user (IP fallback)
 export const apiLimiter = rateLimit({
-  windowMs: config.rateLimit.windowMs, // 15 minutes
-  max: config.rateLimit.maxRequests, // 100 requests per window
-  message: {
-    success: false,
-    message: 'Too many requests, please try again later',
-    code: 'RATE_LIMIT_EXCEEDED',
+  windowMs: 60 * 1000,
+  max: 100,
+  keyGenerator: (req: any) => {
+    // Use userId if authenticated, else fallback to IP
+    return req.user ? req.user.userId : req.ip;
   },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => {
-    // Skip rate limiting for health check
-    return req.path === '/health';
-  },
-});
-
-/**
- * Strict rate limiter for authentication endpoints
- */
-export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 attempts per window
-  message: {
-    success: false,
-    message: 'Too many authentication attempts, please try again later',
-    code: 'RATE_LIMIT_EXCEEDED',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-/**
- * Rate limiter for OTP requests
- */
-export const otpLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // 5 OTP requests per hour
-  message: {
-    success: false,
-    message: 'Too many OTP requests, please try again later',
-    code: 'RATE_LIMIT_EXCEEDED',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-/**
- * Rate limiter for file uploads
- */
-export const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 50, // 50 uploads per hour
-  message: {
-    success: false,
-    message: 'Too many upload requests, please try again later',
-    code: 'RATE_LIMIT_EXCEEDED',
+  handler: (req, res) => {
+    res.status(429).json(errorResponse('RATE_LIMIT_EXCEEDED', 'Too many requests, please try again later'));
   },
   standardHeaders: true,
   legacyHeaders: false,

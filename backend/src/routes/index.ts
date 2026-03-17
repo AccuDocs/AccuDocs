@@ -1,46 +1,42 @@
-import { Router, Request, Response } from 'express';
-import authRoutes from './auth.routes';
-// import clientRoutes from './client.routes'; // Legacy
+import { Router } from 'express';
+import { logger } from '../utils/logger';
+
+import authRoutes from '../modules/auth/presentation/routes/auth.routes';
 import clientRoutes from '../modules/client/presentation/client.routes';
-import documentRoutes from './document.routes';
-import logRoutes from './log.routes';
-import whatsappRoutes from './whatsapp.routes';
-import workspaceRoutes from './workspace.routes';
-import telegramRoutes from './telegram.routes';
-import moduleAuthRoutes from '../modules/auth/presentation/auth.routes';
-import userRoutes from '../modules/user/presentation/user.routes';
-import checklistRoutes from './checklist.routes';
-import uploadRoutes from './upload.routes';
-import complianceRoutes from './compliance.routes';
-import taskRoutes from './task.routes';
-import billingRoutes from './billing.routes';
+import billingRoutes from '../modules/billing/presentation/routes/billing.routes';
+import documentRoutes from '../modules/documents/presentation/routes/documents.routes';
+import intelligenceRoutes from '../modules/intelligence/presentation/routes/intelligence.routes';
+import taskRoutes from '../modules/tasks/presentation/routes/tasks.routes';
+import notificationRoutes from '../modules/notifications/presentation/routes/notifications.routes';
+import workspaceRoutes from '../modules/documents/presentation/routes/workspace.routes';
+import complianceRoutes from '../modules/compliance/presentation/routes/compliance.routes';
+import checklistRoutes from '../modules/checklist/presentation/routes/checklist.routes';
+import logRoutes from '../modules/auth/presentation/routes/log.routes';
 
 const router = Router();
 
-// Health check endpoint
-router.get('/health', (req: Request, res: Response) => {
-  res.json({
-    success: true,
-    message: 'AccuDocs API is running',
-    timestamp: new Date().toISOString(),
-    version: process.env.npm_package_version || '1.0.0',
-  });
+// Middleware to log API hits
+router.use((req, res, next) => {
+  logger.info(`Incoming API Request: ${req.method} ${req.url}`);
+  next();
 });
 
-// API routes
+// App Health Check
+router.get('/health', (req, res) => {
+  res.status(200).json({ status: 'success', message: 'AccuDocs API is healthy' });
+});
+
+// Mount modular routes
 router.use('/auth', authRoutes);
-router.use('/v2/auth', moduleAuthRoutes);
 router.use('/clients', clientRoutes);
-router.use('/users', userRoutes);
-router.use('/documents', documentRoutes);
-router.use('/logs', logRoutes);
-router.use('/whatsapp', whatsappRoutes);
-router.use('/telegram', telegramRoutes);
-router.use('/workspace', workspaceRoutes);
-router.use('/checklists', checklistRoutes);
 router.use('/billing', billingRoutes);
-router.use('/upload', uploadRoutes); // Public upload routes (token-based, no auth)
-router.use('/compliance', complianceRoutes);
+router.use('/documents', documentRoutes);
+router.use('/intelligence', intelligenceRoutes);
 router.use('/tasks', taskRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/workspace', workspaceRoutes);
+router.use('/compliance', complianceRoutes);
+router.use('/checklists', checklistRoutes);
+router.use('/logs', logRoutes);
 
 export default router;
