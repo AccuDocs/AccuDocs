@@ -19,6 +19,25 @@ export class SequelizeComplianceRepository implements IComplianceRepository {
     return deadlines.map(ComplianceMapper.toDomain);
   }
 
+  async findAll(filters: any): Promise<any[]> {
+    const where: any = {};
+    if (filters.year) {
+      // Assuming year is a string or number, filter by date range
+      const yearStart = new Date(`${filters.year}-01-01`);
+      const yearEnd = new Date(`${filters.year}-12-31T23:59:59`);
+      where.dueDate = { [Op.between]: [yearStart, yearEnd] };
+    }
+    if (filters.clientId) {
+      where.clientId = filters.clientId;
+    }
+    
+    const deadlines = await ComplianceDeadlineModel.findAll({
+      where,
+      order: [['dueDate', 'asc']]
+    });
+    return deadlines.map(ComplianceMapper.toDomain);
+  }
+
   async getStats(): Promise<any> {
     const total = await ComplianceDeadlineModel.count();
     const upcoming = await ComplianceDeadlineModel.count({

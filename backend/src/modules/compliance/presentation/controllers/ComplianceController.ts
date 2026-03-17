@@ -14,6 +14,12 @@ export class ComplianceController {
     sendSuccess(res, deadlines);
   });
 
+  static getDeadlines = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(ComplianceService);
+    const deadlines = await service.getDeadlines(req.query);
+    sendSuccess(res, deadlines);
+  });
+
   static getStats = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(ComplianceService);
     const stats = await service.getStats();

@@ -31,7 +31,11 @@ async function runTests() {
       { name: 'Task Stats', url: '/tasks/stats' },
       { name: 'Compliance Stats', url: '/compliance/stats' },
       { name: 'Checklist Stats', url: '/checklists/stats' },
-      { name: 'Log Stats', url: '/logs/stats' }
+      { name: 'Log Stats', url: '/logs/stats' },
+      { name: 'Users List', url: '/users' },
+      { name: 'Compliance Deadlines', url: '/compliance/deadlines' },
+      { name: 'Client Deadlines', url: '/compliance/client-deadlines' },
+      { name: 'WhatsApp QR', url: '/whatsapp/qr' }
     ];
 
     console.log('\n--- Phase 2: Endpoint Verification ---');

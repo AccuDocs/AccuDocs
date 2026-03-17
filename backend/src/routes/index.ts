@@ -12,6 +12,8 @@ import workspaceRoutes from '../modules/documents/presentation/routes/workspace.
 import complianceRoutes from '../modules/compliance/presentation/routes/compliance.routes';
 import checklistRoutes from '../modules/checklist/presentation/routes/checklist.routes';
 import logRoutes from '../modules/auth/presentation/routes/log.routes';
+import userRoutes from '../modules/auth/presentation/routes/user.routes';
+import whatsappRoutes from '../modules/notifications/presentation/routes/whatsapp.routes';
 
 const router = Router();
 
@@ -38,5 +40,7 @@ router.use('/workspace', workspaceRoutes);
 router.use('/compliance', complianceRoutes);
 router.use('/checklists', checklistRoutes);
 router.use('/logs', logRoutes);
+router.use('/users', userRoutes);
+router.use('/whatsapp', whatsappRoutes);
 
 export default router;

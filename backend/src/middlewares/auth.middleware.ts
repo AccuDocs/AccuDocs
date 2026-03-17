@@ -36,3 +36,11 @@ export const authenticate = (req: AuthenticatedRequest, res: Response, next: Nex
     res.status(401).json(errorResponse('UNAUTHORIZED', 'Invalid token'));
   }
 };
+
+export const adminOnly = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'super_admin')) {
+    res.status(403).json(errorResponse('FORBIDDEN', 'Access denied: Admin privileges required'));
+    return;
+  }
+  next();
+};

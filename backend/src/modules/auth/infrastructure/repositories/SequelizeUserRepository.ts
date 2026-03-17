@@ -46,6 +46,34 @@ export class SequelizeUserRepository implements IUserRepository {
     await UserModel.update({ lastLoginAt: date }, { where: { id } });
   }
 
+  async findAll(filters: any, pagination: any): Promise<{ users: User[], total: number }> {
+    const where: any = {};
+    if (filters.organizationId) where.organizationId = filters.organizationId;
+    if (filters.role) where.role = filters.role;
+    if (filters.isActive !== undefined) where.isActive = filters.isActive;
+    
+    // Search by name or mobile if provided in filters.q or similar
+    if (filters.search) {
+      const { Op } = require('sequelize');
+      where[Op.or] = [
+        { name: { [Op.iLike]: `%${filters.search}%` } },
+        { mobile: { [Op.iLike]: `%${filters.search}%` } }
+      ];
+    }
+
+    const { rows, count } = await UserModel.findAndCountAll({
+      where,
+      limit: pagination.limit,
+      offset: (pagination.page - 1) * pagination.limit,
+      order: [['createdAt', 'DESC']]
+    });
+
+    return {
+      users: rows.map(r => this.toEntity(r)),
+      total: count
+    };
+  }
+
   async save(user: User): Promise<User> {
     const data = {
       organizationId: user.organizationId,

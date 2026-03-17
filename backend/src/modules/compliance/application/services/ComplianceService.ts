@@ -11,6 +11,10 @@ export class ComplianceService {
     return this.complianceRepo.findUpcoming(limit);
   }
 
+  async getDeadlines(filters: any) {
+    return this.complianceRepo.findAll(filters);
+  }
+
   async getStats() {
     return this.complianceRepo.getStats();
   }
