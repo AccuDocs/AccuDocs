@@ -18,4 +18,10 @@ export class WhatsAppController {
     const result = await service.getStatus();
     sendSuccess(res, result);
   });
+
+  static logout = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(WhatsAppService);
+    const result = await service.logout();
+    sendSuccess(res, result);
+  });
 }

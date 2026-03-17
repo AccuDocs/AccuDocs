@@ -31,6 +31,10 @@ export class User extends Entity<UserProps> {
   get createdAt(): Date | undefined { return this.props.createdAt; }
   get updatedAt(): Date | undefined { return this.props.updatedAt; }
 
+  public updateStatus(isActive: boolean): void {
+    this.props.isActive = isActive;
+  }
+
   private constructor(props: UserProps, id?: string) {
     super(props, id);
   }

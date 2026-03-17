@@ -9,5 +9,6 @@ router.use(adminOnly);
 
 router.get('/qr', WhatsAppController.getQR);
 router.get('/status', WhatsAppController.getStatus);
+router.post('/logout', WhatsAppController.logout);
 
 export default router;

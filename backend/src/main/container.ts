@@ -49,6 +49,9 @@ container.register("IChecklistRepository", { useClass: SequelizeChecklistReposit
 
 // Register External Services
 container.register("INotificationService", { useClass: WhatsAppServiceAdapter });
+container.register("WhatsAppServiceAdapter", { useClass: WhatsAppServiceAdapter });
+import { WhatsAppService } from "../modules/notifications/application/services/WhatsAppService";
+container.register("WhatsAppService", { useClass: WhatsAppService });
 
 // Core Services that are requested dynamically via container.resolve
 // usually they resolve automatically if marked as @injectable, but we export container for safety
