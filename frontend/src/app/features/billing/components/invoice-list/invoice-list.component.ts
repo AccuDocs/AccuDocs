@@ -1,25 +1,23 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatNativeDateModule } from '@angular/material/core';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSortModule, Sort } from '@angular/material/sort';
-import { MatTableModule } from '@angular/material/table';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import {
+  heroChevronLeftSolid,
+  heroChevronRightSolid,
+  heroClockSolid,
+  heroDocumentTextSolid,
+  heroExclamationTriangleSolid,
+  heroMagnifyingGlassSolid,
+} from '@ng-icons/heroicons/solid';
 import { HotToastService } from '@ngneat/hot-toast';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { ConfirmDialogComponent } from '@shared/components/confirm-dialog/confirm-dialog.component';
-import { InrCurrencyPipe } from '../../pipes/inr-currency.pipe';
 import { Invoice, InvoiceStatus } from '../../models/invoice.model';
+import { InrCurrencyPipe } from '../../pipes/inr-currency.pipe';
 import { InvoiceService } from '../../services/invoice.service';
 import { InvoiceListFacade } from './invoice-list.facade';
 
@@ -29,37 +27,37 @@ import { InvoiceListFacade } from './invoice-list.facade';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    MatButtonModule,
-    MatCardModule,
-    MatDatepickerModule,
     MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatNativeDateModule,
-    MatPaginatorModule,
-    MatProgressBarModule,
-    MatSelectModule,
-    MatSortModule,
-    MatTableModule,
+    NgIconComponent,
     InrCurrencyPipe,
   ],
-  providers: [InvoiceListFacade],
+  providers: [
+    InvoiceListFacade,
+    provideIcons({
+      heroChevronLeftSolid,
+      heroChevronRightSolid,
+      heroClockSolid,
+      heroDocumentTextSolid,
+      heroExclamationTriangleSolid,
+      heroMagnifyingGlassSolid,
+    }),
+  ],
   templateUrl: './invoice-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InvoiceListComponent implements OnInit {
-  facade = inject(InvoiceListFacade);
-  private invoiceService = inject(InvoiceService);
-  private route = inject(ActivatedRoute);
-  private destroyRef = inject(DestroyRef);
-  private fb = inject(FormBuilder);
-  router = inject(Router);
-  toast = inject(HotToastService);
-  dialog = inject(MatDialog);
+  readonly facade = inject(InvoiceListFacade);
+  private readonly invoiceService = inject(InvoiceService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly fb = inject(FormBuilder);
 
-  displayedColumns = ['index', 'invoiceNumber', 'client', 'services', 'invoiceDate', 'dueDate', 'amount', 'status', 'actions'];
-  statusOptions: Array<{ label: string; value: InvoiceStatus | '' }> = [
-    { label: 'All', value: '' },
+  readonly router = inject(Router);
+  readonly toast = inject(HotToastService);
+  readonly dialog = inject(MatDialog);
+
+  readonly statusOptions: Array<{ label: string; value: InvoiceStatus | '' }> = [
+    { label: 'All Statuses', value: '' },
     { label: 'Draft', value: 'draft' },
     { label: 'Issued', value: 'issued' },
     { label: 'Partially Paid', value: 'partially_paid' },
@@ -71,9 +69,33 @@ export class InvoiceListComponent implements OnInit {
   readonly filterForm = this.fb.group({
     search: this.fb.nonNullable.control(''),
     status: this.fb.nonNullable.control<InvoiceStatus | ''>(''),
-    dateFrom: this.fb.control<Date | null>(null),
-    dateTo: this.fb.control<Date | null>(null),
+    dateFrom: this.fb.nonNullable.control(''),
+    dateTo: this.fb.nonNullable.control(''),
   });
+
+  readonly totalResults = computed(() => this.facade.total());
+  readonly draftInView = computed(() =>
+    this.facade.invoices().filter((invoice) => invoice.status === 'draft').length
+  );
+  readonly overdueInView = computed(() =>
+    this.facade.invoices().filter((invoice) => invoice.status === 'overdue').length
+  );
+  readonly outstandingInView = computed(() =>
+    this.facade.invoices().reduce((sum, invoice) => sum + this.balanceDueAmount(invoice), 0)
+  );
+  readonly pageStart = computed(() => {
+    if (this.facade.total() === 0) {
+      return 0;
+    }
+
+    return this.facade.currentPage() * this.facade.pageSize() + 1;
+  });
+  readonly pageEnd = computed(() =>
+    Math.min((this.facade.currentPage() + 1) * this.facade.pageSize(), this.facade.total())
+  );
+  readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.facade.total() / this.facade.pageSize()))
+  );
 
   ngOnInit(): void {
     const status = this.route.snapshot.queryParamMap.get('status');
@@ -188,33 +210,72 @@ export class InvoiceListComponent implements OnInit {
     });
   }
 
-  onPageChange(event: PageEvent): void {
-    if (event.pageSize !== this.facade.pageSize()) {
-      this.facade.setPageSize(event.pageSize);
+  previousPage(): void {
+    if (this.facade.currentPage() === 0) {
       return;
     }
 
-    this.facade.setPage(event.pageIndex);
+    this.facade.setPage(this.facade.currentPage() - 1);
   }
 
-  sortChanged(sort: Sort): void {
-    const active = sort.active || 'invoiceDate';
-    const direction = sort.direction === 'asc' ? 'asc' : 'desc';
-    this.facade.setSort(active, direction);
+  nextPage(): void {
+    if (this.pageEnd() >= this.facade.total()) {
+      return;
+    }
+
+    this.facade.setPage(this.facade.currentPage() + 1);
+  }
+
+  updatePageSize(event: Event): void {
+    const size = Number((event.target as HTMLSelectElement).value);
+    if (!Number.isFinite(size) || size <= 0) {
+      return;
+    }
+
+    this.facade.setPageSize(size);
+  }
+
+  toggleSort(column: string): void {
+    const nextDirection: 'asc' | 'desc' =
+      this.facade.sortBy() === column && this.facade.sortOrder() === 'asc' ? 'desc' : 'asc';
+
+    this.facade.setSort(column, nextDirection);
+  }
+
+  sortIndicator(column: string): string {
+    if (this.facade.sortBy() !== column) {
+      return '';
+    }
+
+    return this.facade.sortOrder() === 'asc' ? 'ASC' : 'DESC';
+  }
+
+  clearFilters(): void {
+    this.filterForm.reset({
+      search: '',
+      status: '',
+      dateFrom: '',
+      dateTo: '',
+    });
   }
 
   statusLabel(status: InvoiceStatus): string {
-    return status.replace(/_/g, ' ');
+    return status
+      .split('_')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
   }
 
   statusClasses(status: InvoiceStatus): string {
     const classes: Record<InvoiceStatus, string> = {
-      draft: 'bg-gray-100 text-gray-600 border border-gray-200',
-      issued: 'bg-blue-100 text-blue-700 border border-blue-200',
-      partially_paid: 'bg-amber-100 text-amber-700 border border-amber-200',
-      paid: 'bg-green-100 text-green-700 border border-green-200',
-      overdue: 'bg-red-100 text-red-700 border border-red-200',
-      cancelled: 'bg-gray-100 text-gray-400 border border-gray-200 line-through',
+      draft: 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700/60 dark:text-slate-300 dark:border-slate-600',
+      issued: 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800/60',
+      partially_paid:
+        'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800/60',
+      paid: 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800/60',
+      overdue: 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800/60',
+      cancelled:
+        'bg-slate-100 text-slate-400 border border-slate-200 line-through dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700',
     };
 
     return classes[status];
@@ -222,12 +283,12 @@ export class InvoiceListComponent implements OnInit {
 
   displayDate(value: string | undefined): string {
     if (!value) {
-      return '—';
+      return '--';
     }
 
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
-      return '—';
+      return '--';
     }
 
     return new Intl.DateTimeFormat('en-IN', {
@@ -241,11 +302,11 @@ export class InvoiceListComponent implements OnInit {
     const lineItems = invoice.lineItems ?? [];
 
     if (lineItems.length === 0) {
-      return '—';
+      return 'No line items';
     }
 
     if (lineItems.length === 1) {
-      return lineItems[0]?.description ?? '—';
+      return lineItems[0]?.description ?? 'No line items';
     }
 
     const firstDescription = lineItems[0]?.description ?? 'Line item';
@@ -272,21 +333,29 @@ export class InvoiceListComponent implements OnInit {
     return status === 'issued' || status === 'partially_paid' || status === 'overdue';
   }
 
-  private syncDateRange(): void {
-    const dateFrom = this.toIsoDate(this.filterForm.controls.dateFrom.value);
-    const dateTo = this.toIsoDate(this.filterForm.controls.dateTo.value);
-    this.facade.setDateRange(dateFrom, dateTo);
-  }
-
-  private toIsoDate(value: Date | null): string {
-    if (!value) {
-      return '';
+  isDueSoon(invoice: Invoice): boolean {
+    if (!invoice.dueDate || invoice.status === 'paid' || invoice.status === 'cancelled') {
+      return false;
     }
 
-    const year = value.getFullYear();
-    const month = `${value.getMonth() + 1}`.padStart(2, '0');
-    const day = `${value.getDate()}`.padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    const dueDate = new Date(invoice.dueDate);
+    const today = new Date();
+    dueDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    return dueDate.getTime() <= today.getTime();
+  }
+
+  balanceDueAmount(invoice: Invoice): number {
+    const fallbackBalance = invoice.totalAmount - invoice.amountPaid;
+    return Number(invoice.balanceDue ?? fallbackBalance ?? 0);
+  }
+
+  private syncDateRange(): void {
+    this.facade.setDateRange(
+      this.filterForm.controls.dateFrom.value,
+      this.filterForm.controls.dateTo.value
+    );
   }
 
   private isInvoiceStatus(status: string | null): status is InvoiceStatus {

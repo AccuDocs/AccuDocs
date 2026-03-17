@@ -1,287 +1,383 @@
-<div class="p-6 space-y-6">
-  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-    <div>
-      <h1 class="text-2xl font-semibold text-gray-900">Invoices</h1>
-      <p class="text-sm text-gray-500">Monitor invoice lifecycles, collections, and delivery actions.</p>
-    </div>
-    <button
-      mat-flat-button
-      type="button"
-      class="!bg-amber-600 !text-white"
-      (click)="newInvoice()"
-    >
-      + New Invoice
-    </button>
-  </div>
+<div class="animate-in fade-in slide-in-from-bottom-4 p-6 duration-500">
+  <div class="space-y-6">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="space-y-2">
+        <div class="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+          <ng-icon name="heroDocumentTextSolid" size="14"></ng-icon>
+          Revenue and Invoices
+        </div>
+        <div>
+          <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Invoices</h1>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Monitor invoice lifecycles, collections, and delivery actions in one place.
+          </p>
+        </div>
+      </div>
 
-  @if (facade.isLoading()) {
-    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-  }
-
-  <mat-card class="rounded-2xl border border-gray-200 bg-white shadow-sm">
-    <form [formGroup]="filterForm" class="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-5">
-      <mat-form-field appearance="outline" class="xl:col-span-2">
-        <mat-label>Search invoices</mat-label>
-        <input
-          matInput
-          formControlName="search"
-          placeholder="Invoice number, client, GSTIN"
-        />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Status</mat-label>
-        <mat-select formControlName="status">
-          @for (option of statusOptions; track option.value) {
-            <mat-option [value]="option.value">{{ option.label }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Date from</mat-label>
-        <input matInput [matDatepicker]="dateFromPicker" formControlName="dateFrom" />
-        <mat-datepicker-toggle matIconSuffix [for]="dateFromPicker"></mat-datepicker-toggle>
-        <mat-datepicker #dateFromPicker></mat-datepicker>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Date to</mat-label>
-        <input matInput [matDatepicker]="dateToPicker" formControlName="dateTo" />
-        <mat-datepicker-toggle matIconSuffix [for]="dateToPicker"></mat-datepicker-toggle>
-        <mat-datepicker #dateToPicker></mat-datepicker>
-      </mat-form-field>
-    </form>
-  </mat-card>
-
-  <mat-card class="rounded-2xl border border-gray-200 bg-white shadow-sm">
-    <div class="overflow-x-auto">
-      <table
-        mat-table
-        matSort
-        [dataSource]="facade.invoices()"
-        class="min-w-full"
-        (matSortChange)="sortChanged($event)"
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition-all hover:from-blue-700 hover:to-blue-800 active:scale-[0.97]"
+        (click)="newInvoice()"
       >
-        <ng-container matColumnDef="index">
-          <th mat-header-cell *matHeaderCellDef class="text-xs font-medium uppercase tracking-wider text-gray-500">
-            #
-          </th>
-          <td mat-cell *matCellDef="let invoice; let index = index" class="px-4 py-3 text-sm text-gray-600">
-            {{ rowNumber(index) }}
-          </td>
-        </ng-container>
+        <span class="text-base leading-none">+</span>
+        New Invoice
+      </button>
+    </div>
 
-        <ng-container matColumnDef="invoiceNumber">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            mat-sort-header="invoiceNumber"
-            class="text-xs font-medium uppercase tracking-wider text-gray-500"
-          >
-            Invoice No
-          </th>
-          <td mat-cell *matCellDef="let invoice" class="px-4 py-3">
-            <button
-              type="button"
-              class="font-mono text-sm text-amber-700 hover:text-amber-800"
-              (click)="openInvoice(invoice.id)"
-            >
-              {{ invoice.invoiceNumber }}
-            </button>
-          </td>
-        </ng-container>
+    <div class="grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white px-6 py-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-200/50 dark:border-slate-700/50 dark:bg-slate-800 dark:hover:shadow-slate-950/30">
+        <div class="mb-3 flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/30">
+            <ng-icon name="heroDocumentTextSolid" size="18" class="text-blue-600 dark:text-blue-300"></ng-icon>
+          </div>
+          <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Total Results</span>
+        </div>
+        <div class="text-2xl font-black text-slate-900 dark:text-white">{{ totalResults() }}</div>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">matching invoices</p>
+      </div>
 
-        <ng-container matColumnDef="client">
-          <th mat-header-cell *matHeaderCellDef class="text-xs font-medium uppercase tracking-wider text-gray-500">
-            Client
-          </th>
-          <td mat-cell *matCellDef="let invoice" class="px-4 py-3 text-sm text-gray-800">
-            <div class="space-y-0.5">
-              <p class="font-medium text-gray-900">{{ invoice.client?.name || 'Client unavailable' }}</p>
-              <p class="text-xs text-gray-500">{{ invoice.client?.gstin || invoice.clientGstin || 'No GSTIN' }}</p>
-            </div>
-          </td>
-        </ng-container>
+      <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white px-6 py-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-200/50 dark:border-slate-700/50 dark:bg-slate-800 dark:hover:shadow-slate-950/30">
+        <div class="mb-3 flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700/60">
+            <ng-icon name="heroClockSolid" size="18" class="text-slate-600 dark:text-slate-300"></ng-icon>
+          </div>
+          <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Draft In View</span>
+        </div>
+        <div class="text-2xl font-black text-slate-900 dark:text-white">{{ draftInView() }}</div>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">ready for review or issue</p>
+      </div>
 
-        <ng-container matColumnDef="services">
-          <th mat-header-cell *matHeaderCellDef class="text-xs font-medium uppercase tracking-wider text-gray-500">
-            Services
-          </th>
-          <td mat-cell *matCellDef="let invoice" class="px-4 py-3 text-sm text-gray-600">
-            {{ serviceSummary(invoice) }}
-          </td>
-        </ng-container>
+      <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white px-6 py-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-200/50 dark:border-slate-700/50 dark:bg-slate-800 dark:hover:shadow-slate-950/30">
+        <div class="mb-3 flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 dark:bg-red-900/30">
+            <ng-icon name="heroExclamationTriangleSolid" size="18" class="text-red-600 dark:text-red-300"></ng-icon>
+          </div>
+          <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Overdue In View</span>
+        </div>
+        <div class="text-2xl font-black text-slate-900 dark:text-white">{{ overdueInView() }}</div>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">needs follow-up now</p>
+      </div>
 
-        <ng-container matColumnDef="invoiceDate">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            mat-sort-header="invoiceDate"
-            class="text-xs font-medium uppercase tracking-wider text-gray-500"
-          >
-            Date
-          </th>
-          <td mat-cell *matCellDef="let invoice" class="px-4 py-3 text-sm text-gray-600">
-            {{ displayDate(invoice.invoiceDate) }}
-          </td>
-        </ng-container>
+      <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white px-6 py-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-200/50 dark:border-slate-700/50 dark:bg-slate-800 dark:hover:shadow-slate-950/30">
+        <div class="mb-3 flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-900/30">
+            <ng-icon name="heroClockSolid" size="18" class="text-emerald-600 dark:text-emerald-300"></ng-icon>
+          </div>
+          <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Outstanding In View</span>
+        </div>
+        <div class="text-2xl font-black text-slate-900 dark:text-white">
+          {{ outstandingInView() | inrCurrency }}
+        </div>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">open balance on current page</p>
+      </div>
+    </div>
 
-        <ng-container matColumnDef="dueDate">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            mat-sort-header="dueDate"
-            class="text-xs font-medium uppercase tracking-wider text-gray-500"
-          >
-            Due
-          </th>
-          <td mat-cell *matCellDef="let invoice" class="px-4 py-3 text-sm text-gray-600">
-            {{ displayDate(invoice.dueDate) }}
-          </td>
-        </ng-container>
+    <form
+      [formGroup]="filterForm"
+      class="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700/50 dark:bg-slate-800"
+    >
+      <div class="relative min-w-[240px] flex-1">
+        <ng-icon
+          name="heroMagnifyingGlassSolid"
+          size="16"
+          class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+        ></ng-icon>
+        <input
+          type="text"
+          formControlName="search"
+          placeholder="Search invoices..."
+          class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+        />
+      </div>
 
-        <ng-container matColumnDef="amount">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-            mat-sort-header="totalAmount"
-            class="text-xs font-medium uppercase tracking-wider text-gray-500"
-          >
-            Amt
-          </th>
-          <td mat-cell *matCellDef="let invoice" class="px-4 py-3 font-mono text-sm text-gray-900">
-            {{ invoice.totalAmount | inrCurrency }}
-          </td>
-        </ng-container>
+      <select
+        formControlName="status"
+        class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+      >
+        @for (option of statusOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
 
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef class="text-xs font-medium uppercase tracking-wider text-gray-500">
-            Status
-          </th>
-          <td mat-cell *matCellDef="let invoice" class="px-4 py-3">
-            <span class="rounded-full px-2.5 py-1 text-xs font-medium capitalize" [class]="statusClasses(invoice.status)">
-              {{ statusLabel(invoice.status) }}
-            </span>
-          </td>
-        </ng-container>
+      <input
+        type="date"
+        formControlName="dateFrom"
+        class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+      />
 
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef class="text-xs font-medium uppercase tracking-wider text-gray-500">
-            Actions
-          </th>
-          <td mat-cell *matCellDef="let invoice" class="px-4 py-3">
-            <div class="flex flex-wrap gap-2">
-              @if (invoice.status === 'draft') {
-                <button
-                  mat-stroked-button
-                  type="button"
-                  class="!border-gray-300 !text-gray-700"
-                  (click)="editInvoice(invoice.id, $event)"
-                >
-                  Edit
-                </button>
-                <button
-                  mat-flat-button
-                  type="button"
-                  class="!bg-amber-600 !text-white"
-                  (click)="issueInvoice(invoice.id, $event)"
-                >
-                  Issue
-                </button>
-                <button
-                  mat-stroked-button
-                  type="button"
-                  class="!border-red-300 !text-red-700"
-                  (click)="confirmDelete(invoice, $event)"
-                >
-                  Delete
-                </button>
-              }
+      <input
+        type="date"
+        formControlName="dateTo"
+        class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+      />
 
-              @if (invoice.status !== 'draft') {
-                <button
-                  mat-stroked-button
-                  type="button"
-                  class="!border-gray-300 !text-gray-700"
+      <select
+        [value]="facade.pageSize()"
+        (change)="updatePageSize($event)"
+        class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+      >
+        <option value="10">10 / page</option>
+        <option value="20">20 / page</option>
+        <option value="50">50 / page</option>
+        <option value="100">100 / page</option>
+      </select>
+
+      <button
+        type="button"
+        class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+        (click)="clearFilters()"
+      >
+        Reset
+      </button>
+    </form>
+
+    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700/50 dark:bg-slate-800">
+      @if (facade.isLoading()) {
+        <div class="flex justify-center p-12">
+          <div class="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
+        </div>
+      } @else if (facade.invoices().length === 0) {
+        <div class="flex flex-col items-center justify-center px-4 py-16 text-center">
+          <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-900/20">
+            <ng-icon name="heroDocumentTextSolid" size="28" class="text-blue-500"></ng-icon>
+          </div>
+          <h3 class="mb-1 text-lg font-bold text-slate-900 dark:text-white">No invoices found</h3>
+          <p class="max-w-sm text-sm text-slate-500 dark:text-slate-400">
+            Try adjusting your filters or create a new invoice to get started.
+          </p>
+        </div>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[1180px] text-sm">
+            <thead>
+              <tr class="border-b border-slate-100 dark:border-slate-700/50">
+                <th class="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-slate-400">#</th>
+                <th class="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  <button type="button" class="inline-flex items-center gap-2" (click)="toggleSort('invoiceNumber')">
+                    Invoice No
+                    @if (sortIndicator('invoiceNumber')) {
+                      <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                        {{ sortIndicator('invoiceNumber') }}
+                      </span>
+                    }
+                  </button>
+                </th>
+                <th class="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-slate-400">Client</th>
+                <th class="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-slate-400">Services</th>
+                <th class="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  <button type="button" class="inline-flex items-center gap-2" (click)="toggleSort('invoiceDate')">
+                    Date
+                    @if (sortIndicator('invoiceDate')) {
+                      <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                        {{ sortIndicator('invoiceDate') }}
+                      </span>
+                    }
+                  </button>
+                </th>
+                <th class="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  <button type="button" class="inline-flex items-center gap-2" (click)="toggleSort('dueDate')">
+                    Due Date
+                    @if (sortIndicator('dueDate')) {
+                      <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                        {{ sortIndicator('dueDate') }}
+                      </span>
+                    }
+                  </button>
+                </th>
+                <th class="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  <button type="button" class="inline-flex items-center gap-2" (click)="toggleSort('totalAmount')">
+                    Amount
+                    @if (sortIndicator('totalAmount')) {
+                      <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                        {{ sortIndicator('totalAmount') }}
+                      </span>
+                    }
+                  </button>
+                </th>
+                <th class="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</th>
+                <th class="px-5 py-3 text-right text-[10px] font-bold uppercase tracking-widest text-slate-400">Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (invoice of facade.invoices(); track invoice.id; let index = $index) {
+                <tr
+                  class="cursor-pointer border-b border-slate-50 transition-colors hover:bg-slate-50 dark:border-slate-700/30 dark:hover:bg-slate-700/30"
                   (click)="openInvoice(invoice.id)"
                 >
-                  View
-                </button>
+                  <td class="px-5 py-4 text-sm font-medium text-slate-500 dark:text-slate-400">
+                    {{ rowNumber(index) }}
+                  </td>
+
+                  <td class="px-5 py-4">
+                    <div class="font-mono text-sm font-semibold text-blue-700 dark:text-blue-300">
+                      {{ invoice.invoiceNumber }}
+                    </div>
+                    <div class="mt-1 text-[11px] text-slate-400">updated {{ displayDate(invoice.updatedAt) }}</div>
+                  </td>
+
+                  <td class="px-5 py-4">
+                    <div class="font-semibold text-slate-900 dark:text-white">
+                      {{ invoice.client?.name || 'Client unavailable' }}
+                    </div>
+                    <div class="mt-1 text-[11px] text-slate-400">
+                      {{ invoice.client?.gstin || invoice.clientGstin || 'No GSTIN' }}
+                    </div>
+                  </td>
+
+                  <td class="px-5 py-4">
+                    <div class="font-medium text-slate-700 dark:text-slate-300">
+                      {{ serviceSummary(invoice) }}
+                    </div>
+                    <div class="mt-1 text-[11px] text-slate-400">
+                      {{ invoice.lineItems?.length || 0 }} service line(s)
+                    </div>
+                  </td>
+
+                  <td class="px-5 py-4 text-slate-600 dark:text-slate-400">
+                    {{ displayDate(invoice.invoiceDate) }}
+                  </td>
+
+                  <td class="px-5 py-4">
+                    <div
+                      class="inline-flex items-center gap-1.5 text-sm"
+                      [ngClass]="isDueSoon(invoice) ? 'font-semibold text-red-600 dark:text-red-300' : 'text-slate-600 dark:text-slate-400'"
+                    >
+                      @if (isDueSoon(invoice)) {
+                        <ng-icon name="heroExclamationTriangleSolid" size="14"></ng-icon>
+                      }
+                      {{ displayDate(invoice.dueDate) }}
+                    </div>
+                  </td>
+
+                  <td class="px-5 py-4">
+                    <div class="font-mono text-sm font-semibold text-slate-900 dark:text-white">
+                      {{ invoice.totalAmount | inrCurrency }}
+                    </div>
+                    <div class="mt-1 text-[11px] text-slate-400">
+                      Due {{ balanceDueAmount(invoice) | inrCurrency }}
+                    </div>
+                  </td>
+
+                  <td class="px-5 py-4">
+                    <span class="inline-flex items-center rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wide" [class]="statusClasses(invoice.status)">
+                      {{ statusLabel(invoice.status) }}
+                    </span>
+                  </td>
+
+                  <td class="px-5 py-4 text-right">
+                    <div class="flex flex-wrap items-center justify-end gap-1.5" (click)="$event.stopPropagation()">
+                      @if (invoice.status === 'draft') {
+                        <button
+                          type="button"
+                          class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                          (click)="editInvoice(invoice.id, $event)"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          class="rounded-lg bg-blue-600 px-2.5 py-1.5 text-[11px] font-semibold text-white transition hover:bg-blue-700"
+                          (click)="issueInvoice(invoice.id, $event)"
+                        >
+                          Issue
+                        </button>
+                        <button
+                          type="button"
+                          class="rounded-lg border border-red-200 px-2.5 py-1.5 text-[11px] font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-800/60 dark:text-red-300 dark:hover:bg-red-900/20"
+                          (click)="confirmDelete(invoice, $event)"
+                        >
+                          Delete
+                        </button>
+                      }
+
+                      @if (invoice.status !== 'draft') {
+                        <button
+                          type="button"
+                          class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                          (click)="openInvoice(invoice.id)"
+                        >
+                          View
+                        </button>
+                      }
+
+                      @if (canRecordPayment(invoice.status)) {
+                        <button
+                          type="button"
+                          class="rounded-lg border border-emerald-200 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-800/60 dark:text-emerald-300 dark:hover:bg-emerald-900/20"
+                          (click)="recordPayment(invoice.id, $event)"
+                        >
+                          Pay
+                        </button>
+                      }
+
+                      @if (canSend(invoice.status)) {
+                        <button
+                          type="button"
+                          class="rounded-lg border border-amber-200 px-2.5 py-1.5 text-[11px] font-semibold text-amber-700 transition hover:bg-amber-50 dark:border-amber-800/60 dark:text-amber-300 dark:hover:bg-amber-900/20"
+                          (click)="sendWhatsApp(invoice.id, $event)"
+                        >
+                          WA
+                        </button>
+                      }
+
+                      @if (canDownload(invoice.status)) {
+                        <button
+                          type="button"
+                          class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                          (click)="downloadPdf(invoice.id, $event)"
+                        >
+                          PDF
+                        </button>
+                      }
+
+                      @if (canCancel(invoice.status)) {
+                        <button
+                          type="button"
+                          class="rounded-lg border border-red-200 px-2.5 py-1.5 text-[11px] font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-800/60 dark:text-red-300 dark:hover:bg-red-900/20"
+                          (click)="cancelInvoice(invoice.id, $event)"
+                        >
+                          Cancel
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
               }
+            </tbody>
+          </table>
+        </div>
 
-              @if (canRecordPayment(invoice.status)) {
-                <button
-                  mat-stroked-button
-                  type="button"
-                  class="!border-gray-300 !text-gray-700"
-                  (click)="recordPayment(invoice.id, $event)"
-                >
-                  Record Payment
-                </button>
-              }
+        <div class="flex items-center justify-between border-t border-slate-100 px-5 py-3 dark:border-slate-700/50">
+          <span class="text-xs text-slate-500 dark:text-slate-400">
+            Showing {{ pageStart() }} to {{ pageEnd() }} of {{ facade.total() }}
+          </span>
 
-              @if (canSend(invoice.status)) {
-                <button
-                  mat-stroked-button
-                  type="button"
-                  class="!border-gray-300 !text-gray-700"
-                  (click)="sendWhatsApp(invoice.id, $event)"
-                >
-                  Send WhatsApp
-                </button>
-              }
+          <div class="flex items-center gap-1">
+            <button
+              type="button"
+              [disabled]="facade.currentPage() === 0"
+              class="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 disabled:opacity-30 dark:text-slate-300 dark:hover:bg-slate-700"
+              (click)="previousPage()"
+            >
+              <ng-icon name="heroChevronLeftSolid" size="16"></ng-icon>
+            </button>
 
-              @if (canDownload(invoice.status)) {
-                <button
-                  mat-stroked-button
-                  type="button"
-                  class="!border-gray-300 !text-gray-700"
-                  (click)="downloadPdf(invoice.id, $event)"
-                >
-                  Download PDF
-                </button>
-              }
+            <span class="px-3 py-1 text-sm font-bold text-slate-700 dark:text-slate-300">
+              {{ facade.currentPage() + 1 }} / {{ totalPages() }}
+            </span>
 
-              @if (canCancel(invoice.status)) {
-                <button
-                  mat-stroked-button
-                  type="button"
-                  class="!border-red-300 !text-red-700"
-                  (click)="cancelInvoice(invoice.id, $event)"
-                >
-                  Cancel
-                </button>
-              }
-            </div>
-          </td>
-        </ng-container>
-
-        <tr
-          mat-header-row
-          *matHeaderRowDef="displayedColumns"
-          class="bg-gray-50"
-        ></tr>
-        <tr
-          mat-row
-          *matRowDef="let row; columns: displayedColumns"
-          class="hover:bg-gray-50"
-        ></tr>
-      </table>
-
-      @if (!facade.isLoading() && facade.invoices().length === 0) {
-        <div class="px-6 py-12 text-center text-sm text-gray-500">
-          No invoices found for the current filters.
+            <button
+              type="button"
+              [disabled]="pageEnd() >= facade.total()"
+              class="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 disabled:opacity-30 dark:text-slate-300 dark:hover:bg-slate-700"
+              (click)="nextPage()"
+            >
+              <ng-icon name="heroChevronRightSolid" size="16"></ng-icon>
+            </button>
+          </div>
         </div>
       }
     </div>
-
-    <mat-paginator
-      [length]="facade.total()"
-      [pageIndex]="facade.currentPage()"
-      [pageSize]="facade.pageSize()"
-      [pageSizeOptions]="[10, 20, 50, 100]"
-      (page)="onPageChange($event)"
-    ></mat-paginator>
-  </mat-card>
+  </div>
 </div>
