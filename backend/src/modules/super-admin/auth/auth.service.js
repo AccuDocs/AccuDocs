@@ -17,7 +17,7 @@ class AuthService {
     return await withBypassRLS(async (client) => {
       // 1. Find super_admin by email
       const result = await client.query(
-        'SELECT id, name, email, password, is_active, mfa_enabled FROM super_admins WHERE email = $1 AND deleted_at IS NULL',
+        'SELECT id, name, email, password_hash AS password, is_active FROM super_admins WHERE email = $1',
         [email]
       );
 
@@ -26,9 +26,10 @@ class AuthService {
       }
 
       const admin = result.rows[0];
+      const sanitizedHash = (admin.password || '').replace(/\s/g, '');
 
       // 2. Compare password
-      const isMatch = await bcrypt.compare(password, admin.password);
+      const isMatch = await bcrypt.compare(password, sanitizedHash);
       if (!isMatch) {
         throw new UnauthorizedError('Invalid credentials');
       }
@@ -75,8 +76,7 @@ class AuthService {
         admin: {
           id: admin.id,
           name: admin.name,
-          email: admin.email,
-          mfa_enabled: admin.mfa_enabled
+          email: admin.email
         }
       };
     });
@@ -94,7 +94,7 @@ class AuthService {
 
       return await withBypassRLS(async (client) => {
         const result = await client.query(
-          'SELECT id, name, email, is_active FROM super_admins WHERE id = $1 AND deleted_at IS NULL',
+          'SELECT id, name, email, is_active FROM super_admins WHERE id = $1',
           [decoded.sub]
         );
 
@@ -129,7 +129,7 @@ class AuthService {
   async getMe(id) {
     return await withBypassRLS(async (client) => {
       const result = await client.query(
-        'SELECT id, name, email, is_active, mfa_enabled, last_login_at, last_login_ip, created_at FROM super_admins WHERE id = $1 AND deleted_at IS NULL',
+        'SELECT id, name, email, is_active, last_login_at, last_login_ip, created_at FROM super_admins WHERE id = $1',
         [id]
       );
 

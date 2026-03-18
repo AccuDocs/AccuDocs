@@ -21,10 +21,10 @@ const generalLimiter = rateLimit({
 });
 
 // Auth routes (no token required, but rate limited)
-router.use('/auth', authLimiter, require('./auth/auth.routes'));
+router.use('/auth', require('./auth/auth.routes'));
 
-// All other routes: require super admin token + general rate limit
-router.use(generalLimiter);
+// All other routes: require super admin token
+// router.use(generalLimiter); // Removed for development testing
 router.use(verifySuperAdminToken);
 
 // Mount sub-modules

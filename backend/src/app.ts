@@ -129,8 +129,10 @@ export const createApp = (): Application => {
     next();
   });
 
-  // Rate limiting
-  app.use(`/api/${config.apiVersion}`, apiLimiter);
+  // Rate limiting (Skipped in development for easier testing)
+  if (config.nodeEnv !== 'development') {
+    app.use(`/api/${config.apiVersion}`, apiLimiter);
+  }
 
   // Swagger documentation
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {

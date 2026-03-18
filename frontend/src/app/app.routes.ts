@@ -4,6 +4,10 @@ import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   {
+    path: 'super-admin',
+    loadChildren: () => import('./features/super-admin/super-admin.routes').then(m => m.SUPER_ADMIN_ROUTES)
+  },
+  {
     path: 'auth',
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES),
   },

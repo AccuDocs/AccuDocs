@@ -1,0 +1,212 @@
+<div class="flex h-screen overflow-hidden bg-slate-50">
+
+  <!-- Icon Rail (52px, slate-900) -->
+  <aside class="w-[52px] bg-slate-900 flex flex-col items-center py-4 flex-shrink-0 z-50">
+    <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white mb-8 shadow-lg shadow-indigo-500/20">
+      <ng-icon name="heroShieldCheckSolid" size="20"></ng-icon>
+    </div>
+
+    <nav class="flex-1 flex flex-col items-center gap-4">
+      <a routerLink="/super-admin/dashboard" routerLinkActive="bg-indigo-600 text-white" class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all transform hover:scale-105 active:scale-95 group relative">
+        <ng-icon name="heroSquares2x2Solid" size="20"></ng-icon>
+        <span class="absolute left-full ml-4 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100]">Dashboard</span>
+      </a>
+      <a routerLink="/super-admin/organizations" routerLinkActive="bg-indigo-600 text-white" class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all transform hover:scale-105 active:scale-95 group relative">
+        <ng-icon name="heroBuildingOffice2Solid" size="20"></ng-icon>
+        <span class="absolute left-full ml-4 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100]">Organizations</span>
+      </a>
+      <a routerLink="/super-admin/subscriptions" routerLinkActive="bg-indigo-600 text-white" class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all transform hover:scale-105 active:scale-95 group relative">
+        <ng-icon name="heroCreditCardSolid" size="20"></ng-icon>
+        <span class="absolute left-full ml-4 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100]">Subscriptions</span>
+      </a>
+      <a routerLink="/super-admin/analytics" routerLinkActive="bg-indigo-600 text-white" class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all transform hover:scale-105 active:scale-95 group relative">
+        <ng-icon name="heroChartBarSquareSolid" size="20"></ng-icon>
+        <span class="absolute left-full ml-4 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100]">Analytics</span>
+      </a>
+    </nav>
+
+    <div class="mt-auto flex flex-col items-center gap-4">
+      <a routerLink="/super-admin/settings" routerLinkActive="bg-indigo-600 text-white" class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all transform hover:scale-105 active:scale-95 group relative">
+        <ng-icon name="heroCog6ToothSolid" size="20"></ng-icon>
+        <span class="absolute left-full ml-4 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100]">Settings</span>
+      </a>
+      <div class="w-8 h-8 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[10px] font-bold text-white uppercase overflow-hidden">
+        {{ adminInitials() }}
+      </div>
+    </div>
+  </aside>
+
+  <!-- Sidebar (220px, white) -->
+  <aside 
+    [class.w-0]="sidebarCollapsed()" 
+    [class.w-[220px]]="!sidebarCollapsed()"
+    class="bg-white border-r border-slate-200 transition-all duration-300 ease-in-out relative flex flex-col overflow-hidden"
+  >
+    <!-- Toggle Button -->
+    <button 
+      (click)="toggleSidebar()"
+      class="absolute top-4 -right-1 z-[60] w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-indigo-600 shadow-sm transition-transform"
+      [class.rotate-180]="sidebarCollapsed()"
+    >
+      <ng-icon name="heroChevronLeftSolid" size="14"></ng-icon>
+    </button>
+
+    <div class="flex-1 py-6 px-4 space-y-8 overflow-y-auto scrollbar-thin">
+      <!-- Section: PLATFORM -->
+      <div>
+        <h3 class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+          Platform
+        </h3>
+        <nav class="space-y-1">
+          <a routerLink="/super-admin/dashboard" routerLinkActive="active" class="sidebar-link">
+            <ng-icon name="heroSquares2x2Solid" size="18"></ng-icon>
+            <span>Dashboard</span>
+          </a>
+          <a routerLink="/super-admin/organizations" routerLinkActive="active" class="sidebar-link">
+            <ng-icon name="heroBuildingOffice2Solid" size="18"></ng-icon>
+            <span>Organizations</span>
+          </a>
+          <a routerLink="/super-admin/subscriptions" routerLinkActive="active" class="sidebar-link">
+            <ng-icon name="heroCreditCardSolid" size="18"></ng-icon>
+            <span>Subscriptions</span>
+          </a>
+          <a routerLink="/super-admin/analytics" routerLinkActive="active" class="sidebar-link">
+            <ng-icon name="heroChartBarSquareSolid" size="18"></ng-icon>
+            <span>Analytics</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Section: MANAGEMENT -->
+      <div>
+        <h3 class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+          Management
+        </h3>
+        <nav class="space-y-1">
+          <a routerLink="/super-admin/service-templates" routerLinkActive="active" class="sidebar-link">
+            <ng-icon name="heroDocumentTextSolid" size="18"></ng-icon>
+            <span>Service Templates</span>
+          </a>
+          <a routerLink="/super-admin/audit-logs" routerLinkActive="active" class="sidebar-link">
+            <ng-icon name="heroBars3BottomLeftSolid" size="18"></ng-icon>
+            <span>Audit Logs</span>
+          </a>
+          <a routerLink="/super-admin/announcements" routerLinkActive="active" class="sidebar-link">
+            <ng-icon name="heroMegaphoneSolid" size="18"></ng-icon>
+            <span>Announcements</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Section: SYSTEM -->
+      <div>
+        <h3 class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+          System
+        </h3>
+        <nav class="space-y-1">
+          <a routerLink="/super-admin/admins" routerLinkActive="active" class="sidebar-link">
+            <ng-icon name="heroShieldCheckSolid" size="18"></ng-icon>
+            <span>Super Admins</span>
+          </a>
+          <a routerLink="/super-admin/settings" routerLinkActive="active" class="sidebar-link">
+            <ng-icon name="heroCog6ToothSolid" size="18"></ng-icon>
+            <span>Settings</span>
+          </a>
+        </nav>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Area -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <!-- Topbar (56px, white, border-bottom) -->
+    <header class="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between z-40">
+      <div class="flex items-center gap-4">
+        <nav class="flex items-center gap-2 text-sm">
+          <span class="text-slate-500">Home</span>
+          <ng-icon name="heroChevronRightSolid" size="12" class="text-slate-300"></ng-icon>
+          <span class="font-medium text-slate-800">{{ currentPageTitle() }}</span>
+        </nav>
+
+        <div class="h-4 w-px bg-slate-200 mx-2"></div>
+
+        <div class="relative group">
+          <ng-icon name="heroMagnifyingGlassSolid" size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors"></ng-icon>
+          <input 
+            type="text" 
+            placeholder="Search platform..." 
+            class="h-9 w-64 pl-10 pr-12 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+          />
+          <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-medium text-slate-400 shadow-sm">
+            <span>⌘</span><span>K</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-violet-50 border border-violet-100 rounded-full">
+          <span class="w-1.5 h-1.5 rounded-full bg-violet-600 animate-pulse"></span>
+          <span class="text-[10px] font-bold text-violet-700 uppercase tracking-widest">Super Admin</span>
+        </div>
+
+        <button class="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-indigo-600 transition-all relative">
+          <ng-icon name="heroBellSolid" size="20"></ng-icon>
+          <span class="absolute top-2 right-2 w-2 h-2 bg-rose-500 border-2 border-white rounded-full"></span>
+        </button>
+
+        <div class="h-6 w-px bg-slate-200"></div>
+
+        <div class="relative">
+          <button 
+            (click)="userMenuOpen.set(!userMenuOpen())"
+            class="flex items-center gap-3 p-1 rounded-xl hover:bg-slate-50 transition-all group"
+          >
+            <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-indigo-500/20">
+              {{ adminInitials() }}
+            </div>
+            <div class="hidden md:block text-left mr-1">
+              <p class="text-sm font-bold text-slate-900 leading-none">{{ admin()?.name }}</p>
+              <p class="text-[10px] font-medium text-slate-500 mt-1">Platform Control</p>
+            </div>
+            <ng-icon 
+              name="heroChevronDownSolid" 
+              size="14" 
+              class="text-slate-400 group-hover:text-slate-600 transition-transform"
+              [class.rotate-180]="userMenuOpen()"
+            ></ng-icon>
+          </button>
+
+          <!-- User Menu Dropdown -->
+          <div 
+            *ngIf="userMenuOpen()"
+            class="absolute top-full right-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2"
+          >
+             <div class="px-4 py-3 border-b border-slate-100 mb-2">
+               <p class="text-xs font-medium text-slate-400 uppercase tracking-widest mb-1">Signed in as</p>
+               <p class="text-sm font-bold text-slate-900 truncate">{{ admin()?.email }}</p>
+             </div>
+             <a routerLink="/super-admin/settings" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+               <ng-icon name="heroCog6ToothSolid" size="18" class="text-slate-400"></ng-icon>
+               <span>Profile Settings</span>
+             </a>
+             <button (click)="logout()" class="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+               <ng-icon name="heroArrowLeftOnRectangleSolid" size="18" class="text-red-400"></ng-icon>
+               <span>Logout</span>
+             </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="flex-1 overflow-y-auto bg-slate-50 p-8 scrollbar-thin">
+      <div class="max-w-7xl mx-auto">
+        <router-outlet></router-outlet>
+      </div>
+    </main>
+  </div>
+</div>

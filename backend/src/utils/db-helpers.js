@@ -1,6 +1,7 @@
 'use strict';
 
-const { pool } = require('../config/database.config'); // Adjusted to match existing project config
+const { v4: uuidv4 } = require('uuid');
+const { pool } = require('../config/database.config');
 
 /**
  * Executes a query function with RLS bypassed within a transaction
@@ -43,10 +44,11 @@ async function writeAuditLog(client, {
 }) {
   await client.query(
     `INSERT INTO audit_logs
-      (organization_id, user_id, action, entity_type, entity_id,
-       description, old_values, new_values, ip_address, user_agent, request_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      (id, organization_id, user_id, action, entity_type, entity_id,
+       description, old_values, new_values, ip_address, user_agent, request_id, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())`,
     [
+      uuidv4(),
       organization_id,
       user_id,
       action,

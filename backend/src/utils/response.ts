@@ -88,3 +88,9 @@ export const sendPaginated = <T>(
 export const sendNoContent = (res: Response): Response => {
   return res.status(204).send();
 };
+
+export const success = sendSuccess;
+export const paginated = sendPaginated;
+export const created = sendCreated;
+export const noContent = sendNoContent;
+export const error = sendError;

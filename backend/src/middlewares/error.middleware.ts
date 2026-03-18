@@ -12,8 +12,8 @@ export const errorHandler = (err: Error, req: AuthenticatedRequest, res: Respons
   }
 
   const statusCode = (err as any).statusCode || 500;
-  const errorCode = (err as any).errorCode || 'INTERNAL_ERROR';
-  const message = process.env.NODE_ENV === 'development' || (err as any).isOperational 
+  const errorCode = (err as any).errorCode || (statusCode === 401 ? 'UNAUTHORIZED' : 'INTERNAL_ERROR');
+  const message = (err as any).isOperational || process.env.NODE_ENV === 'development'
     ? err.message 
     : 'An unexpected error occurred';
 
