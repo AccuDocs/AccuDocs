@@ -1,13 +1,20 @@
 import { Sequelize, Options } from 'sequelize';
+import { Pool } from 'pg';
 import { config } from './env.config';
 import { logger } from '../utils/logger';
 
+// Enhanced logging
+logger.info(`--- DB Config DEBUG ---`);
+logger.info(`DB Host: ${config.database.host}`);
+logger.info(`DB Port type: ${typeof config.database.port}`);
+logger.info(`DB Port value: ${config.database.port}`);
+
 const sequelizeOptions: Options = {
   host: config.database.host,
-  port: config.database.port,
+  port: Number(config.database.port) || 5432,
   dialect: config.database.dialect as any,
   storage: config.database.storage,
-  logging: false,
+  logging: (msg) => logger.debug(msg),
   pool: {
     max: config.database.pool.max,
     min: config.database.pool.min,
@@ -36,19 +43,24 @@ export const sequelize = new Sequelize(
   sequelizeOptions
 );
 
+export const pool = new Pool({
+  host: config.database.host,
+  port: Number(config.database.port) || 5432,
+  database: config.database.name,
+  user: config.database.user,
+  password: config.database.password,
+  ssl: (config.nodeEnv === 'production' || (config.database as any).ssl) ? {
+    rejectUnauthorized: false
+  } : undefined,
+  max: config.database.pool.max,
+  idleTimeoutMillis: config.database.pool.idle,
+  connectionTimeoutMillis: config.database.pool.acquire
+});
+
 export const connectDatabase = async (): Promise<void> => {
   try {
     await sequelize.authenticate();
     logger.info(`✅ Database connection established successfully via ${config.database.host}:${config.database.port}`);
-
-    // Only synchronize if explicitly enabled or in development (but check env first)
-    const shouldSync = process.env.DB_SYNC_ALTER === 'true';
-    if (shouldSync) {
-      await sequelize.sync({ alter: true });
-      logger.info('✅ Database synchronized');
-    } else {
-      logger.info('ℹ️ Skipping sequelize sync alter (set DB_SYNC_ALTER=true to enable)');
-    }
   } catch (error) {
     logger.error('❌ Unable to connect to the database:', error);
     throw error;

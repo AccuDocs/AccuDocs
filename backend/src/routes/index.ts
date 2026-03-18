@@ -23,6 +23,8 @@ router.use((req, res, next) => {
   next();
 });
 
+import superAdminRoutes from '../modules/super-admin';
+
 // App Health Check
 router.get('/health', (req, res) => {
   res.status(200).json({ status: 'success', message: 'AccuDocs API is healthy' });
@@ -42,5 +44,8 @@ router.use('/checklists', checklistRoutes);
 router.use('/logs', logRoutes);
 router.use('/users', userRoutes);
 router.use('/whatsapp', whatsappRoutes);
+
+// Super Admin Module
+router.use('/super-admin', superAdminRoutes);
 
 export default router;
