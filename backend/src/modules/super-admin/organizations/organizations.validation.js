@@ -9,16 +9,17 @@ const createOrgSchema = z.object({
   phone: z.string().regex(/^\+91[6-9]\d{9}$/, 'Indian mobile format +91XXXXXXXXXX').optional(),
   gstin: z.string().regex(/^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/).optional(),
   pan: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/).optional(),
-  state_code: z.string().length(2),
+  state_code: z.string().length(2).optional(),
   address: z.string().optional(),
   subscription_plan: z.enum(['starter', 'professional', 'enterprise']),
-  admin_name: z.string().min(2).max(100),
-  admin_mobile: z.string().regex(/^\+91[6-9]\d{9}$/),
+  admin_name: z.string().min(2).max(100).optional(),
+  admin_mobile: z.string().regex(/^\+91[6-9]\d{9}$/).optional(),
   admin_email: z.string().email().optional(),
   admin_password: z.string().min(8)
     .regex(/[A-Z]/, 'Must contain uppercase')
     .regex(/[0-9]/, 'Must contain number')
-    .regex(/[^A-Za-z0-9]/, 'Must contain special character'),
+    .regex(/[^A-Za-z0-9]/, 'Must contain special character')
+    .optional(),
   settings: z.record(z.any()).optional(),
 });
 

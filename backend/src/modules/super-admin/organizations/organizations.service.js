@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../../../config/database.config');
 const {
+  uuidv4,
   withBypassRLS,
   writeAuditLog,
   buildPagination,
@@ -140,35 +141,46 @@ class OrganizationsService {
    * Create new organization
    */
   async create(data, { superAdminId, requestId, ipAddress, userAgent }) {
+    // 0. Handle defaults for missing optional fields
+    const finalData = {
+      ...data,
+      state_code: data.state_code || '27', // Default to Maharashtra
+      admin_name: data.admin_name || `Admin - ${data.name}`,
+      admin_email: data.admin_email || data.email,
+      admin_mobile: data.admin_mobile || data.phone,
+      admin_password: data.admin_password || 'Admin@123#'
+    };
+
     return await withBypassRLS(async (client) => {
       // 1. Check slug uniqueness
-      const existing = await client.query('SELECT 1 FROM organizations WHERE slug = $1', [data.slug]);
+      const existing = await client.query('SELECT 1 FROM organizations WHERE slug = $1', [finalData.slug]);
       if (existing.rows.length > 0) {
         throw new ConflictError('Slug already in use');
       }
 
       // 2. Insert organization
+      const orgId = uuidv4();
       const orgResult = await client.query(
-        `INSERT INTO organizations (name, slug, email, phone, gstin, pan, state_code, address, subscription_plan, settings)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
-        [data.name, data.slug, data.email, data.phone, data.gstin, data.pan, data.state_code, data.address, data.subscription_plan, JSON.stringify(data.settings || {})]
+        `INSERT INTO organizations (id, name, slug, email, phone, gstin, pan, state_code, address, subscription_plan, settings, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW()) RETURNING *`,
+        [orgId, finalData.name, finalData.slug, finalData.email, finalData.phone, finalData.gstin, finalData.pan, finalData.state_code, finalData.address, finalData.subscription_plan, JSON.stringify(finalData.settings || {})]
       );
       const org = orgResult.rows[0];
 
       // 3. Create admin user
-      const hashedPassword = await bcrypt.hash(data.admin_password, parseInt(process.env.BCRYPT_ROUNDS) || 12);
+      const hashedPassword = await bcrypt.hash(finalData.admin_password, parseInt(process.env.BCRYPT_ROUNDS) || 12);
       const userResult = await client.query(
-        `INSERT INTO users (name, role, email, mobile, password, organization_id, is_active)
-         VALUES ($1, 'admin', $2, $3, $4, $5, TRUE) RETURNING id, name, email, mobile`,
-        [data.admin_name, data.admin_email, data.admin_mobile, hashedPassword, org.id]
+        `INSERT INTO users (id, name, role, email, mobile, password, organization_id, is_active, created_at, updated_at)
+         VALUES ($1, $2, 'admin', $3, $4, $5, $6, TRUE, NOW(), NOW()) RETURNING id, name, email, mobile`,
+        [uuidv4(), finalData.admin_name, finalData.admin_email, finalData.admin_mobile, hashedPassword, org.id]
       );
       const adminUser = userResult.rows[0];
 
       // 4. Create subscription
       const subResult = await client.query(
-        `INSERT INTO subscriptions (organization_id, plan, status, current_period_start, current_period_end, max_clients, max_users, max_storage_gb)
-         VALUES ($1, $2, 'active', NOW(), NOW() + INTERVAL '30 days', $3, $4, $5) RETURNING *`,
-        [org.id, data.subscription_plan, 100, 5, 2] // Defaults
+        `INSERT INTO subscriptions (id, organization_id, plan, status, current_period_start, current_period_end, max_clients, max_users, max_storage_gb, created_at, updated_at)
+         VALUES ($1, $2, $3, 'active', NOW(), NOW() + INTERVAL '30 days', $4, $5, $6, NOW(), NOW()) RETURNING *`,
+        [uuidv4(), org.id, data.subscription_plan, 100, 5, 2] // Defaults
       );
       const subscription = subResult.rows[0];
 
@@ -178,8 +190,8 @@ class OrganizationsService {
       // 6. Initialize invoice number sequence
       const fy = getCurrentFinancialYear();
       await client.query(
-        'INSERT INTO invoice_number_sequences (organization_id, financial_year, last_number) VALUES ($1, $2, 0)',
-        [org.id, fy]
+        'INSERT INTO invoice_number_sequences (id, organization_id, financial_year, last_number, created_at, updated_at) VALUES ($1, $2, $3, 0, NOW(), NOW())',
+        [uuidv4(), org.id, fy]
       );
 
       // 7. Write audit log

@@ -136,6 +136,29 @@ export class SACreateOrgModalComponent {
     subscription_plan: ['trial', Validators.required]
   });
 
+  constructor() {
+    // Auto-generate slug from name and enforce lowercase
+    this.orgForm.get('name')?.valueChanges.subscribe(name => {
+      const slugControl = this.orgForm.get('slug');
+      if (name && (!slugControl?.value || slugControl?.pristine)) {
+        const generatedSlug = name.toLowerCase()
+          .replace(/[^a-z0-9]/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$/g, '');
+        slugControl?.setValue(generatedSlug, { emitEvent: false });
+      }
+    });
+
+    this.orgForm.get('slug')?.valueChanges.subscribe(val => {
+      if (val) {
+        const lowerVal = val.toLowerCase().replace(/[^a-z0-9-]/g, '');
+        if (val !== lowerVal) {
+          this.orgForm.get('slug')?.setValue(lowerVal, { emitEvent: false });
+        }
+      }
+    });
+  }
+
   onSubmit() {
     if (this.orgForm.invalid) return;
 

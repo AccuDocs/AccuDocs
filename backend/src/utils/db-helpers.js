@@ -132,6 +132,7 @@ function getCurrentFinancialYear() {
 }
 
 module.exports = {
+  uuidv4,
   withBypassRLS,
   writeAuditLog,
   buildPagination,
