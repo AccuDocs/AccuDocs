@@ -14,6 +14,8 @@ export class Document extends Model {
   declare public mimeType: string;
   declare public sizeBytes: number;
   declare public version: number;
+  declare public checksum: string | null;
+  declare public isDeletedFromS3: boolean;
   declare public parentDocumentId: string | null;
   declare public tags: any;
   declare public description: string | null;
@@ -41,6 +43,8 @@ Document.init({
   mimeType: { type: DataTypes.STRING(100), allowNull: false },
   sizeBytes: { type: DataTypes.BIGINT, allowNull: false },
   version: { type: DataTypes.SMALLINT, allowNull: false, defaultValue: 1 },
+  checksum: { type: DataTypes.STRING(64), allowNull: true },
+  isDeletedFromS3: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'is_deleted_from_s3' },
   parentDocumentId: { type: DataTypes.UUID, allowNull: true, field: 'parent_document_id' },
   tags: { type: DataTypes.JSONB, allowNull: false, defaultValue: [] },
   description: { type: DataTypes.TEXT, allowNull: true },

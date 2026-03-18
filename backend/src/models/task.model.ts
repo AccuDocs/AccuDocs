@@ -9,11 +9,12 @@ export class Task extends Model {
   declare public createdBy: string;
   declare public title: string;
   declare public description: string | null;
-  declare public priority: 'high' | 'medium' | 'low';
-  declare public status: 'todo' | 'in_progress' | 'review' | 'done';
+  declare public priority: 'low' | 'medium' | 'high' | 'urgent';
+  declare public status: 'pending' | 'in_progress' | 'review' | 'done' | 'cancelled';
   declare public dueDate: Date | null;
   declare public tags: any;
   declare public completedAt: Date | null;
+  declare public parentTaskId: string | null;
   declare public relatedInvoiceId: string | null;
   declare public relatedDocumentId: string | null;
   declare public readonly createdAt: Date;
@@ -30,10 +31,11 @@ Task.init({
   title: { type: DataTypes.STRING(255), allowNull: false },
   description: { type: DataTypes.TEXT, allowNull: true },
   priority: { type: DataTypes.STRING(10), allowNull: false, defaultValue: 'medium' },
-  status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'todo' },
+  status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'pending' },
   dueDate: { type: DataTypes.DATE, allowNull: true, field: 'due_date' },
   tags: { type: DataTypes.JSONB, allowNull: false, defaultValue: [] },
   completedAt: { type: DataTypes.DATE, allowNull: true, field: 'completed_at' },
+  parentTaskId: { type: DataTypes.UUID, allowNull: true, field: 'parent_task_id' },
   relatedInvoiceId: { type: DataTypes.UUID, allowNull: true, field: 'related_invoice_id' },
   relatedDocumentId: { type: DataTypes.UUID, allowNull: true, field: 'related_document_id' },
   

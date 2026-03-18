@@ -22,6 +22,9 @@ export class Invoice extends Model {
   declare public firmGstin: string | null;
   
   declare public subtotal: number;
+  declare public discountType: 'percent' | 'flat' | null;
+  declare public discountValue: number;
+  declare public discountAmount: number;
   declare public cgstAmount: number;
   declare public sgstAmount: number;
   declare public igstAmount: number;
@@ -73,6 +76,9 @@ Invoice.init({
   firmGstin: { type: DataTypes.STRING(15), allowNull: true, field: 'firm_gstin' },
   
   subtotal: { type: DataTypes.DECIMAL(12, 2), allowNull: false, defaultValue: 0.00, field: 'subtotal' },
+  discountType: { type: DataTypes.STRING(10), allowNull: true, field: 'discount_type' },
+  discountValue: { type: DataTypes.DECIMAL(12, 2), allowNull: false, defaultValue: 0.00, field: 'discount_value' },
+  discountAmount: { type: DataTypes.DECIMAL(12, 2), allowNull: false, defaultValue: 0.00, field: 'discount_amount' },
   cgstAmount: { type: DataTypes.DECIMAL(12, 2), allowNull: false, defaultValue: 0.00, field: 'cgst_amount' },
   sgstAmount: { type: DataTypes.DECIMAL(12, 2), allowNull: false, defaultValue: 0.00, field: 'sgst_amount' },
   igstAmount: { type: DataTypes.DECIMAL(12, 2), allowNull: false, defaultValue: 0.00, field: 'igst_amount' },

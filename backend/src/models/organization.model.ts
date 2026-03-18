@@ -17,7 +17,9 @@ export class Organization extends Model {
   declare public bankIfsc: string | null;
   declare public bankBranch: string | null;
   declare public udin: string | null;
-  declare public subscriptionPlan: 'starter' | 'professional' | 'enterprise';
+  declare public subscriptionPlan: 'trial' | 'starter' | 'professional' | 'enterprise';
+  declare public trialEndsAt: Date | null;
+  declare public currentSubscriptionId: string | null;
   declare public isActive: boolean;
   declare public settings: any;
   declare public readonly createdAt: Date;
@@ -42,6 +44,8 @@ Organization.init({
   bankBranch: { type: DataTypes.STRING(150), allowNull: true, field: 'bank_branch' },
   udin: { type: DataTypes.STRING(30), allowNull: true },
   subscriptionPlan: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'starter', field: 'subscription_plan' },
+  trialEndsAt: { type: DataTypes.DATE, allowNull: true, field: 'trial_ends_at' },
+  currentSubscriptionId: { type: DataTypes.UUID, allowNull: true, field: 'current_subscription_id' },
   isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true, field: 'is_active' },
   settings: { type: DataTypes.JSONB, allowNull: false, defaultValue: {} },
   

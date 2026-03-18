@@ -13,6 +13,9 @@ export class User extends Model {
   declare public avatarS3Key: string | null;
   declare public lastLoginAt: Date | null;
   declare public preferences: any;
+  declare public mfaSecret: string | null;
+  declare public otpAttempts: number;
+  declare public lockedUntil: Date | null;
   declare public readonly createdAt: Date;
   declare public readonly updatedAt: Date;
   declare public readonly deletedAt: Date | null;
@@ -26,10 +29,13 @@ User.init({
   email: { type: DataTypes.STRING(150), allowNull: true },
   password: { type: DataTypes.STRING(255), allowNull: true },
   role: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'client' },
-  isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+  isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true, field: 'is_active' },
   avatarS3Key: { type: DataTypes.STRING(500), allowNull: true, field: 'avatar_s3_key' },
   lastLoginAt: { type: DataTypes.DATE, allowNull: true, field: 'last_login_at' },
   preferences: { type: DataTypes.JSONB, allowNull: false, defaultValue: {} },
+  mfaSecret: { type: DataTypes.STRING(100), allowNull: true, field: 'mfa_secret' },
+  otpAttempts: { type: DataTypes.SMALLINT, allowNull: false, defaultValue: 0, field: 'otp_attempts' },
+  lockedUntil: { type: DataTypes.DATE, allowNull: true, field: 'locked_until' },
   
   createdAt: { type: DataTypes.DATE, field: 'created_at' },
   updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
