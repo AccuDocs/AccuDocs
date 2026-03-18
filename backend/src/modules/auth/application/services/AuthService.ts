@@ -134,10 +134,10 @@ export class AuthService {
     };
   }
 
-  async adminLogin(mobile: string, passwordInput: string, ipAddress: string) {
-    const users = await this.userRepository.findByMobile(mobile);
+  async adminLogin(identifier: string, passwordInput: string, ipAddress: string) {
+    const users = await this.userRepository.findByIdentifier(identifier);
     if (!users || users.length === 0) {
-      throw new AppError('Invalid mobile or password', 401, 'UNAUTHORIZED');
+      throw new AppError('Invalid identifier or password', 401, 'UNAUTHORIZED');
     }
 
     const user = users[0];
@@ -156,7 +156,7 @@ export class AuthService {
 
     const isValid = await bcrypt.compare(passwordInput, user.password);
     if (!isValid) {
-      throw new AppError('Invalid mobile or password', 401, 'UNAUTHORIZED');
+      throw new AppError('Invalid identifier or password', 401, 'UNAUTHORIZED');
     }
 
     await this.userRepository.updateLastLogin(user.id, new Date());

@@ -6,7 +6,11 @@ import { z } from 'zod';
 import { createFormState } from '@shared/utils/validation.util';
 
 const LoginSchema = z.object({
-  mobile: z.string().regex(/^\+?[1-9]\d{9,14}$/, 'Invalid mobile number (e.g. +919000000000)'),
+  identifier: z.string().min(1, 'Email or Phone is required').refine(val => {
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+    const isPhone = /^\+?[1-9]\d{7,14}$/.test(val);
+    return isEmail || isPhone;
+  }, 'Invalid email or phone number'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
@@ -19,16 +23,16 @@ export class LoginFacade {
   private route = inject(ActivatedRoute);
   private notification = inject(NotificationService);
 
-  form = createFormState<LoginData>({ mobile: '', password: '' }, LoginSchema);
+  form = createFormState<LoginData>({ identifier: '', password: '' }, LoginSchema);
   hidePassword = signal(true);
 
   async login() {
     if (!this.form.validate()) return;
 
     this.form.isSubmitting.set(true);
-    const { mobile, password } = this.form.value();
+    const { identifier, password } = this.form.value();
 
-    this.authService.adminLogin(mobile, password).subscribe({
+    this.authService.adminLogin(identifier, password).subscribe({
       next: () => {
         this.notification.success('Login successful!');
         const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';

@@ -42,6 +42,19 @@ export class SequelizeUserRepository implements IUserRepository {
     return models.map(m => this.toEntity(m));
   }
 
+  async findByIdentifier(identifier: string): Promise<User[]> {
+    const { Op } = require('sequelize');
+    const models = await UserModel.findAll({
+      where: {
+        [Op.or]: [
+          { mobile: identifier },
+          { email: identifier }
+        ]
+      }
+    });
+    return models.map(m => this.toEntity(m));
+  }
+
   async updateLastLogin(id: string, date: Date): Promise<void> {
     await UserModel.update({ lastLoginAt: date }, { where: { id } });
   }

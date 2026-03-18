@@ -65,5 +65,4 @@ const startServer = async (): Promise<void> => {
 startServer();
 
 // Trigger restart
-
-// Trigger restart for false sync
+// v2: login identifier update

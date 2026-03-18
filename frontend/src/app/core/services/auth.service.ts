@@ -72,9 +72,9 @@ export class AuthService {
       );
   }
 
-  adminLogin(mobile: string, password: string): Observable<AuthResponse> {
+  adminLogin(identifier: string, password: string): Observable<AuthResponse> {
     return this.http
-      .post<AuthResponse>(`${environment.apiUrl}/auth/admin-login`, { mobile, password })
+      .post<AuthResponse>(`${environment.apiUrl}/auth/admin-login`, { identifier, password })
       .pipe(
         tap((response) => this.handleAuthResponse(response)),
         catchError((error) => throwError(() => error))

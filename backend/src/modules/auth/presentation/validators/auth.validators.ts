@@ -13,6 +13,6 @@ export const RefreshTokenSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token is required')
 });
 export const AdminLoginSchema = z.object({
-  mobile: z.string(),
+  identifier: z.string().min(1, 'Email or Phone is required'),
   password: z.string().min(1, 'Password is required')
 });

@@ -48,17 +48,17 @@ export class AuthController {
   static async adminLogin(req: Request, res: Response, next: NextFunction) {
     try {
       const authService = container.resolve(AuthService);
-      const { mobile, password } = req.body;
+      const { identifier, password } = req.body;
       const ip = req.ip || req.socket.remoteAddress || 'unknown';
       
-      const result = await authService.adminLogin(mobile, password, ip);
+      const result = await authService.adminLogin(identifier, password, ip);
 
       // Audit log out of scope for pure app service
       await AuditLog.create({
         organizationId: result.user.organizationId,
         entityType: 'AUTH',
         action: 'auth.admin_login',
-        description: `Admin ${mobile} logged in with password`,
+        description: `Admin ${identifier} logged in with password`,
         userId: result.user.id,
         ipAddress: ip
       });

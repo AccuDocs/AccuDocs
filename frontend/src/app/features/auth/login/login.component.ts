@@ -59,27 +59,27 @@ import {
           </h2>
 
           <form class="space-y-5" (ngSubmit)="facade.login()">
-            <!-- Phone Number Field -->
+            <!-- Email/Phone Field -->
             <div>
-              <label for="mobile" class="block text-[13px] font-semibold text-slate-600 mb-2 ml-0.5">
-                Phone Number
+              <label for="identifier" class="block text-[13px] font-semibold text-slate-600 mb-2 ml-0.5">
+                Email or Phone
               </label>
               <input
-                id="mobile"
-                name="mobile"
+                id="identifier"
+                name="identifier"
                 type="text"
-                autocomplete="tel"
-                [(ngModel)]="facade.form.value().mobile"
+                autocomplete="username"
+                [(ngModel)]="facade.form.value().identifier"
                 class="block w-full h-12 px-4 bg-[#f8fafc] border-[1.5px] border-slate-200 rounded-2xl text-[15px] font-medium text-slate-900 placeholder-slate-400 transition-all duration-200 focus:bg-white focus:border-[#0074c9] focus:outline-none"
                 style="--tw-ring-color: rgba(0, 116, 201, 0.1);"
-                [class.!border-red-500]="facade.form.errors().mobile"
+                [class.!border-red-500]="facade.form.errors().identifier"
                 [class.focus:shadow-[0_0_0_4px_rgba(0,116,201,0.1)]]="true"
-                placeholder="+919XXXXXXXXX"
+                placeholder="Email or phone number"
               />
-              @if (facade.form.errors().mobile) {
+              @if (facade.form.errors().identifier) {
                 <p class="mt-1.5 text-xs font-medium text-red-600 flex items-center gap-1.5 ml-0.5 animate-in slide-in-from-left-2">
                   <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
-                  {{ facade.form.errors().mobile?.[0] }}
+                  {{ facade.form.errors().identifier?.[0] }}
                 </p>
               }
             </div>
