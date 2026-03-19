@@ -3,53 +3,13 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import swaggerUi from 'swagger-ui-express';
-import swaggerJsdoc from 'swagger-jsdoc';
-import { config } from './config';
+import { config, superAdminSpec, caFirmSpec } from './config';
 import routes from './routes';
 import { errorHandler, apiLimiter, auditLogger } from './middlewares';
 import { logger } from './utils/logger';
 
 
-// Swagger configuration
-const swaggerOptions = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'AccuDocs API',
-      version: '1.0.0',
-      description: 'Accountant Client Document Management System API',
-      contact: {
-        name: 'AccuDocs Support',
-        email: 'support@accudocs.example.com',
-      },
-    },
-    servers: [
-      {
-        url: `http://localhost:${config.port}/api/${config.apiVersion}`,
-        description: 'Development server',
-      },
-      {
-        url: process.env.PUBLIC_API_URL ? `${process.env.PUBLIC_API_URL}/api/${config.apiVersion}` : `http://13.233.143.174:3000/api/${config.apiVersion}`,
-        description: 'AWS Production server',
-      },
-    ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-        },
-      },
-    },
-  },
-  apis: [config.nodeEnv === 'production' ? './dist/routes/*.js' : './src/routes/*.ts'],
-};
-
 export const createApp = (): Application => {
-  // Generate Swagger spec inside createApp to avoid blocking import
-  const swaggerSpec = swaggerJsdoc(swaggerOptions);
-
   const app = express();
 
   // Trust proxy for rate limiting and IP detection
@@ -135,10 +95,53 @@ export const createApp = (): Application => {
   }
 
   // Swagger documentation
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  const swaggerOptions = {
     customCss: '.swagger-ui .topbar { display: none }',
     customSiteTitle: 'AccuDocs API Documentation',
-  }));
+  };
+
+  // CA Firm API Docs
+  app.use('/api-docs/ca-firm', swaggerUi.serve, (req: any, res: any, next: any) => {
+    // We pass the caFirmSpec to the setup
+    swaggerUi.setup(caFirmSpec, swaggerOptions)(req, res, next);
+  });
+
+  // Super Admin API Docs
+  app.use('/api-docs/super-admin', swaggerUi.serve, (req: any, res: any, next: any) => {
+    // We pass the superAdminSpec to the setup
+    swaggerUi.setup(superAdminSpec, swaggerOptions)(req, res, next);
+  });
+
+  // Landing page for API docs
+  app.get('/api-docs', (req, res) => {
+    res.send(`
+      <html>
+        <head>
+          <title>AccuDocs API Documentation</title>
+          <style>
+            body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #f4f7f6; }
+            .container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+            h1 { color: #333; }
+            .links { display: flex; gap: 1rem; margin-top: 2rem; }
+            a { text-decoration: none; color: white; background: #007bff; padding: 0.75rem 1.5rem; border-radius: 4px; transition: background 0.2s; }
+            a:hover { background: #0056b3; }
+            .admin { background: #dc3545; }
+            .admin:hover { background: #a71d2a; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>AccuDocs API Documentation</h1>
+            <p>Select the API documentation you wish to view:</p>
+            <div class="links">
+              <a href="/api-docs/ca-firm">CA Firm API</a>
+              <a href="/api-docs/super-admin" class="admin">Super Admin API</a>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+  });
 
   // Audit Logger (Tracks mutating operations globally if valid auth)
   app.use(auditLogger());
