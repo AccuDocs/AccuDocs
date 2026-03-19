@@ -190,7 +190,7 @@ class OrganizationsService {
       // 6. Initialize invoice number sequence
       const fy = getCurrentFinancialYear();
       await client.query(
-        'INSERT INTO invoice_number_sequences (id, organization_id, financial_year, last_number, created_at, updated_at) VALUES ($1, $2, $3, 0, NOW(), NOW())',
+        'INSERT INTO invoice_number_sequences (id, organization_id, financial_year, last_sequence) VALUES ($1, $2, $3, 0)',
         [uuidv4(), org.id, fy]
       );
 
