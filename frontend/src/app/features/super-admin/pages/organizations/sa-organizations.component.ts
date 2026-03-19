@@ -6,6 +6,7 @@ import { Organization, PaginatedResponse } from '../../models/sa.models';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { SACreateOrgModalComponent } from '../../shared/components/create-org-modal/create-org-modal.component';
+import { SAEditOrgModalComponent } from '../../shared/components/edit-org-modal/edit-org-modal.component';
 import { SASuspendOrgModalComponent } from '../../shared/components/suspend-org-modal/suspend-org-modal.component';
 import { 
   heroMagnifyingGlassSolid, 
@@ -15,6 +16,7 @@ import {
   heroChevronRightSolid,
   heroEllipsisVerticalSolid,
   heroEyeSolid,
+  heroPencilSquareSolid,
   heroNoSymbolSolid,
   heroCheckCircleSolid
 } from '@ng-icons/heroicons/solid';
@@ -32,6 +34,7 @@ import {
       heroChevronRightSolid,
       heroEllipsisVerticalSolid,
       heroEyeSolid,
+      heroPencilSquareSolid,
       heroNoSymbolSolid,
       heroCheckCircleSolid
     })
@@ -140,6 +143,9 @@ import {
                       <a [routerLink]="['/super-admin/organizations', org.id]" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="View Details">
                         <ng-icon name="heroEyeSolid" size="18"></ng-icon>
                       </a>
+                      <button (click)="openEditModal(org)" class="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" title="Edit Organization">
+                        <ng-icon name="heroPencilSquareSolid" size="18"></ng-icon>
+                      </button>
                       <button (click)="openSuspendModal(org)" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all" [title]="org.is_active ? 'Suspend' : 'Activate'">
                         <ng-icon [name]="org.is_active ? 'heroNoSymbolSolid' : 'heroCheckCircleSolid'" size="18"></ng-icon>
                       </button>
@@ -219,6 +225,18 @@ export class SAOrganizationsComponent implements OnInit {
       width: '600px',
       maxWidth: '95vw',
       panelClass: 'sa-modal-panel'
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) this.loadOrganizations();
+    });
+  }
+
+  openEditModal(org: Organization) {
+    const dialogRef = this.dialog.open(SAEditOrgModalComponent, {
+      width: '600px',
+      maxWidth: '95vw',
+      data: { org }
     });
 
     dialogRef.afterClosed().subscribe(result => {
