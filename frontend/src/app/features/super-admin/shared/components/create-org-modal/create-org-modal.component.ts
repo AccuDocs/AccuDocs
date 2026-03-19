@@ -5,14 +5,28 @@ import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { SAOrganizationsService } from '../../../services/sa-organizations.service';
 import { ApiResponse } from '../../../models/sa.models';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { heroXMarkSolid, heroBuildingOffice2Solid, heroCheckCircleSolid } from '@ng-icons/heroicons/solid';
+import { 
+  heroXMarkSolid, 
+  heroBuildingOffice2Solid, 
+  heroCheckCircleSolid,
+  heroEyeSolid,
+  heroEyeSlashSolid,
+  heroLockClosedSolid
+} from '@ng-icons/heroicons/solid';
 
 @Component({
   selector: 'app-create-org-modal',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, MatDialogModule, NgIconComponent],
   providers: [
-    provideIcons({ heroXMarkSolid, heroBuildingOffice2Solid, heroCheckCircleSolid })
+    provideIcons({ 
+      heroXMarkSolid, 
+      heroBuildingOffice2Solid, 
+      heroCheckCircleSolid,
+      heroEyeSolid,
+      heroEyeSlashSolid,
+      heroLockClosedSolid
+    })
   ],
   template: `
     <div class="modal-container p-0 overflow-hidden rounded-2xl border-none shadow-2xl animate-in zoom-in-95 duration-200">
@@ -33,51 +47,87 @@ import { heroXMarkSolid, heroBuildingOffice2Solid, heroCheckCircleSolid } from '
       </div>
 
       <!-- Modal Body -->
-      <form [formGroup]="orgForm" (ngSubmit)="onSubmit()" class="px-8 py-8 space-y-6 bg-white">
-        <div class="grid grid-cols-2 gap-6">
-           <div class="col-span-2 md:col-span-1 space-y-1.5">
-              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Organization Name</label>
-              <input 
-                type="text" 
-                formControlName="name"
-                class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                placeholder="e.g. Kapur & Associates"
-              />
-           </div>
-           <div class="col-span-2 md:col-span-1 space-y-1.5">
-              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Unique Slug</label>
-              <div class="relative">
-                 <input 
-                   type="text" 
-                   formControlName="slug"
-                   class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-500 transition-all font-mono"
-                   placeholder="kapur-ca"
-                 />
-                 <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">.accudocs.in</span>
-              </div>
-           </div>
-        </div>
+      <form [formGroup]="orgForm" (ngSubmit)="onSubmit()" class="px-8 py-8 space-y-5 bg-white max-h-[70vh] overflow-y-auto custom-scrollbar">
+        <div class="grid grid-cols-2 gap-5">
+            <div class="col-span-2 md:col-span-1 space-y-1.5">
+               <label class="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Organization Name</label>
+               <input 
+                 type="text" 
+                 formControlName="name"
+                 class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                 placeholder="e.g. Kapur & Associates"
+                 [class.border-rose-500]="orgForm.get('name')?.invalid && orgForm.get('name')?.touched"
+               />
+               <p *ngIf="orgForm.get('name')?.invalid && orgForm.get('name')?.touched" class="text-[10px] text-rose-500 font-bold pl-1">Name is required (min 3 chars)</p>
+            </div>
+            <div class="col-span-2 md:col-span-1 space-y-1.5">
+               <label class="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Unique Slug</label>
+               <div class="relative">
+                  <input 
+                    type="text" 
+                    formControlName="slug"
+                    class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-500 transition-all font-mono"
+                    placeholder="kapur-ca"
+                    [class.border-rose-500]="orgForm.get('slug')?.invalid && orgForm.get('slug')?.touched"
+                  />
+                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">.accudocs.in</span>
+               </div>
+               <p *ngIf="orgForm.get('slug')?.invalid && orgForm.get('slug')?.touched" class="text-[10px] text-rose-500 font-bold pl-1">Valid slug is required (lowercase & hyphens)</p>
+            </div>
+         </div>
 
-        <div class="grid grid-cols-2 gap-6">
-           <div class="col-span-2 md:col-span-1 space-y-1.5">
-              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Admin Email</label>
-              <input 
-                type="email" 
-                formControlName="email"
-                class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-500 transition-all"
-                placeholder="admin@firm.com"
-              />
-           </div>
-           <div class="col-span-2 md:col-span-1 space-y-1.5">
-              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Admin Phone</label>
-              <input 
-                type="tel" 
-                formControlName="phone"
-                class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-500 transition-all"
-                placeholder="+91 XXXXX XXXXX"
-              />
-           </div>
-        </div>
+         <div class="grid grid-cols-2 gap-5">
+            <div class="col-span-2 md:col-span-1 space-y-1.5">
+               <label class="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Admin Email</label>
+               <input 
+                 type="email" 
+                 formControlName="email"
+                 class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-500 transition-all"
+                 placeholder="admin@firm.com"
+                 [class.border-rose-500]="orgForm.get('email')?.invalid && orgForm.get('email')?.touched"
+               />
+               <p *ngIf="orgForm.get('email')?.invalid && orgForm.get('email')?.touched" class="text-[10px] text-rose-500 font-bold pl-1">Valid email is required</p>
+            </div>
+            <div class="col-span-2 md:col-span-1 space-y-1.5">
+               <label class="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Admin Phone</label>
+               <input 
+                 type="tel" 
+                 formControlName="phone"
+                 class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-500 transition-all"
+                 placeholder="+91 XXXXX XXXXX"
+                 [class.border-rose-500]="orgForm.get('phone')?.invalid && orgForm.get('phone')?.touched"
+               />
+               <p *ngIf="orgForm.get('phone')?.invalid && orgForm.get('phone')?.touched" class="text-[10px] text-rose-500 font-bold pl-1">Format: +91XXXXXXXXXX</p>
+            </div>
+         </div>
+
+         <!-- Password Field -->
+         <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1 flex items-center gap-1.5">
+              Admin Password
+              <span class="text-[9px] font-medium text-slate-400 normal-case">(Min 8 chars, 1 uppercase, 1 symbol)</span>
+            </label>
+            <div class="relative group">
+               <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors">
+                  <ng-icon name="heroLockClosedSolid" size="16"></ng-icon>
+               </div>
+               <input 
+                 [type]="showPassword() ? 'text' : 'password'" 
+                 formControlName="admin_password"
+                 class="w-full h-11 pl-11 pr-12 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                 placeholder="••••••••••••"
+                 [class.border-rose-500]="orgForm.get('admin_password')?.invalid && orgForm.get('admin_password')?.touched"
+               />
+               <button 
+                 type="button" 
+                 (click)="showPassword.set(!showPassword())"
+                 class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 rounded-lg transition-all"
+               >
+                 <ng-icon [name]="showPassword() ? 'heroEyeSlashSolid' : 'heroEyeSolid'" size="18"></ng-icon>
+               </button>
+            </div>
+            <p *ngIf="orgForm.get('admin_password')?.invalid && orgForm.get('admin_password')?.touched" class="text-[10px] text-rose-500 font-bold pl-1">Password must be at least 8 chars with uppercase, number, and symbol</p>
+         </div>
 
         <div class="space-y-1.5">
            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Initial Subscription Plan</label>
@@ -112,6 +162,11 @@ import { heroXMarkSolid, heroBuildingOffice2Solid, heroCheckCircleSolid } from '
     :host { display: block; max-width: 600px; margin: auto; }
     .modal-container { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
     input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   `]
 })
 export class SACreateOrgModalComponent {
@@ -120,6 +175,7 @@ export class SACreateOrgModalComponent {
   private orgService = inject(SAOrganizationsService);
 
   isLoading = signal(false);
+  showPassword = signal(false);
 
   plans = [
     { id: 'trial', name: 'Trial', price: 'Free' },
@@ -132,7 +188,12 @@ export class SACreateOrgModalComponent {
     name: ['', [Validators.required, Validators.minLength(3)]],
     slug: ['', [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)]],
     email: ['', [Validators.required, Validators.email]],
-    phone: ['', [Validators.required, Validators.pattern(/^\+?\d{10,12}$/)]],
+    phone: ['', [Validators.required, Validators.pattern(/^\+91[6-9]\d{9}$/)]],
+    admin_password: ['', [
+      Validators.required, 
+      Validators.minLength(8),
+      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+    ]],
     subscription_plan: ['trial', Validators.required]
   });
 

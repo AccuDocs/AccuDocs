@@ -11,15 +11,14 @@ const createOrgSchema = z.object({
   pan: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/).optional(),
   state_code: z.string().length(2).optional(),
   address: z.string().optional(),
-  subscription_plan: z.enum(['starter', 'professional', 'enterprise']),
+  subscription_plan: z.enum(['trial', 'starter', 'professional', 'enterprise']),
   admin_name: z.string().min(2).max(100).optional(),
   admin_mobile: z.string().regex(/^\+91[6-9]\d{9}$/).optional(),
   admin_email: z.string().email().optional(),
   admin_password: z.string().min(8)
     .regex(/[A-Z]/, 'Must contain uppercase')
     .regex(/[0-9]/, 'Must contain number')
-    .regex(/[^A-Za-z0-9]/, 'Must contain special character')
-    .optional(),
+    .regex(/[^A-Za-z0-9]/, 'Must contain special character'),
   settings: z.record(z.any()).optional(),
 });
 

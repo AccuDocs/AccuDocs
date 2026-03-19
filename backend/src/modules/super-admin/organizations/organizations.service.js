@@ -148,7 +148,7 @@ class OrganizationsService {
       admin_name: data.admin_name || `Admin - ${data.name}`,
       admin_email: data.admin_email || data.email,
       admin_mobile: data.admin_mobile || data.phone,
-      admin_password: data.admin_password || 'Admin@123#'
+      admin_password: data.admin_password
     };
 
     return await withBypassRLS(async (client) => {
