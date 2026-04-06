@@ -80,7 +80,7 @@ const auditLogMiddleware = (action, entityType) => async (req, res, next) => {
             await dbClient.query("SET LOCAL app.bypass_rls = 'true'");
             await writeAuditLog(dbClient, {
               organization_id: payload.organization_id || null,
-              user_id: req.superAdmin ? req.superAdmin.id : null,
+              super_admin_id: req.superAdmin ? req.superAdmin.id : null,
               action: action,
               entity_type: entityType,
               entity_id: payload.entity_id || null,

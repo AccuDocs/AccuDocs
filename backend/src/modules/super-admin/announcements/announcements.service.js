@@ -63,7 +63,7 @@ class AnnouncementsService {
 
       // 3. Write audit log
       await writeAuditLog(client, {
-        user_id: superAdminId,
+        super_admin_id: superAdminId,
         action: 'announcement.broadcast',
         entity_type: 'super_admin',
         entity_id: superAdminId,

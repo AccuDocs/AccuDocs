@@ -20,15 +20,16 @@ InvoiceLineItem.init({
   invoiceId: { type: DataTypes.UUID, allowNull: false, field: 'invoice_id' },
   serviceTemplateId: { type: DataTypes.UUID, allowNull: true, field: 'service_template_id' },
   description: { type: DataTypes.STRING(255), allowNull: false },
-  sacCode: { type: DataTypes.STRING(10), allowNull: false },
+  sacCode: { type: DataTypes.STRING(10), allowNull: false, field: 'sac_code' },
   quantity: { type: DataTypes.DECIMAL(8, 2), allowNull: false, defaultValue: 1.00 },
-  unitRate: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+  unitRate: { type: DataTypes.DECIMAL(10, 2), allowNull: false, field: 'unit_rate' },
   // Generated implicitly by Postgres, mapped to read only field here
   amount: { 
-    type: DataTypes.DECIMAL(12, 2), 
-    field: 'amount'
+    type: DataTypes.DECIMAL(12, 2)
   },
   sortOrder: { type: DataTypes.SMALLINT, allowNull: false, defaultValue: 0, field: 'sort_order' },
+  createdAt: { type: DataTypes.DATE, field: 'created_at' },
+  updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
 }, {
   sequelize,
   modelName: 'InvoiceLineItem',

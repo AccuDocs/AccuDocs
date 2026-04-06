@@ -77,7 +77,7 @@ class ServiceTemplatesService {
       const template = result.rows[0];
 
       await writeAuditLog(client, {
-        user_id: superAdminId,
+        super_admin_id: superAdminId,
         action: 'service_template.created',
         entity_type: 'service_template',
         entity_id: template.id,
@@ -108,7 +108,7 @@ class ServiceTemplatesService {
       const newTemplate = result.rows[0];
 
       await writeAuditLog(client, {
-        user_id: superAdminId,
+        super_admin_id: superAdminId,
         action: 'service_template.updated',
         entity_type: 'service_template',
         entity_id: id,
@@ -141,7 +141,7 @@ class ServiceTemplatesService {
       await client.query('UPDATE service_templates SET deleted_at = NOW(), is_active = FALSE WHERE id = $1', [id]);
 
       await writeAuditLog(client, {
-        user_id: superAdminId,
+        super_admin_id: superAdminId,
         action: 'service_template.deleted',
         entity_type: 'service_template',
         entity_id: id,

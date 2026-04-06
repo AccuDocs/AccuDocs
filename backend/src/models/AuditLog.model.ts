@@ -5,6 +5,7 @@ export class AuditLog extends Model {
   declare public id: string;
   declare public organizationId: string | null;
   declare public userId: string | null;
+  declare public superAdminId: string | null;
   declare public action: string;
   declare public entityType: string;
   declare public entityId: string | null;
@@ -22,6 +23,7 @@ AuditLog.init({
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   organizationId: { type: DataTypes.UUID, allowNull: true, field: 'organization_id' },
   userId: { type: DataTypes.UUID, allowNull: true, field: 'user_id' },
+  superAdminId: { type: DataTypes.UUID, allowNull: true, field: 'super_admin_id' },
   action: { type: DataTypes.STRING(80), allowNull: false },
   entityType: { type: DataTypes.STRING(50), allowNull: false, field: 'entity_type' },
   entityId: { type: DataTypes.UUID, allowNull: true, field: 'entity_id' },

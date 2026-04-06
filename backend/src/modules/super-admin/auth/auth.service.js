@@ -60,7 +60,7 @@ class AuthService {
 
       // 6. Write audit log
       await writeAuditLog(client, {
-        user_id: admin.id,
+        super_admin_id: admin.id,
         action: 'super_admin.login',
         entity_type: 'super_admin',
         entity_id: admin.id,

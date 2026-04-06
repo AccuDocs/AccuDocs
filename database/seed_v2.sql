@@ -3,7 +3,7 @@ SET LOCAL app.bypass_rls = 'true';
 -- CLEANUP: Truncate tables to ensure a clean seed
 TRUNCATE TABLE invoice_line_items, invoices, tasks, service_templates, clients, users, subscriptions, organizations, super_admins CASCADE;
 -- SECTION 1: super_admins
-INSERT INTO super_admins (id, name, email, password, created_at, updated_at) VALUES ('a0c47413-a5fd-42ee-a013-7212ad61d43d', 'Platform Master', 'admin@accudocs.app', '$2a$10$5PDHeq3xSre1Q4K2kP34fOY0ju1NZCKmzBbj/yXaFyxARbuKrsY2e', NOW(), NOW()) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, updated_at = NOW();
+INSERT INTO super_admins (id, name, email, password_hash, role, created_at, updated_at) VALUES ('a0c47413-a5fd-42ee-a013-7212ad61d43d', 'Platform Master', 'admin@accudocs.app', '$2a$10$5PDHeq3xSre1Q4K2kP34fOY0ju1NZCKmzBbj/yXaFyxARbuKrsY2e', 'super_admin', NOW(), NOW()) ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role, updated_at = NOW();
 -- SECTION 2: organizations
 INSERT INTO organizations (id, name, slug, gstin, state_code, address, subscription_plan, is_active, created_at, updated_at) 
     VALUES ('d248f759-d37d-4a07-84d4-2e71b678f8cf', 'Shah & Associates', 'shah-associates', '24AABCS4051A1Z4', '24', 'Main Street, Ahmedabad', 'starter', true, NOW(), NOW()) ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, updated_at = NOW();

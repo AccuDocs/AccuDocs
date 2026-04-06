@@ -119,7 +119,7 @@ class SubscriptionsService {
 
       // 5. Write audit log
       await writeAuditLog(client, {
-        user_id: superAdminId,
+        super_admin_id: superAdminId,
         action: 'subscription.assigned',
         entity_type: 'subscription',
         entity_id: newSub.id,
@@ -155,7 +155,7 @@ class SubscriptionsService {
       const updatedSub = updatedSubResult.rows[0];
 
       await writeAuditLog(client, {
-        user_id: superAdminId,
+        super_admin_id: superAdminId,
         action: 'subscription.extended',
         entity_type: 'subscription',
         entity_id: id,
@@ -201,7 +201,7 @@ class SubscriptionsService {
       }
 
       await writeAuditLog(client, {
-        user_id: superAdminId,
+        super_admin_id: superAdminId,
         action: 'subscription.cancelled',
         entity_type: 'subscription',
         entity_id: id,

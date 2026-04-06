@@ -2,7 +2,7 @@
 -- AccuDocs — Migration v1.0.0 → v2.0.0
 -- PostgreSQL 15+ | Run inside a single transaction
 -- Apply this to an existing v1 database.
--- For a fresh install, use schema_v2.sql instead.
+-- For a fresh install, use schema.sql instead.
 -- ============================================================
 -- Usage:
 --   psql -d accudocs -f migration_v1_to_v2.sql
@@ -106,6 +106,30 @@ CREATE INDEX IF NOT EXISTS idx_otps_mobile_active
 ALTER TABLE organizations
   ADD COLUMN IF NOT EXISTS trial_ends_at           TIMESTAMPTZ NULL,
   ADD COLUMN IF NOT EXISTS current_subscription_id UUID        NULL;
+
+DO $$
+DECLARE
+  subscription_plan_check TEXT;
+BEGIN
+  SELECT con.conname
+  INTO subscription_plan_check
+  FROM pg_constraint con
+  JOIN pg_class rel ON rel.oid = con.conrelid
+  WHERE rel.relname = 'organizations'
+    AND con.contype = 'c'
+    AND pg_get_constraintdef(con.oid) LIKE '%subscription_plan%';
+
+  IF subscription_plan_check IS NOT NULL THEN
+    EXECUTE format(
+      'ALTER TABLE organizations DROP CONSTRAINT IF EXISTS %I',
+      subscription_plan_check
+    );
+  END IF;
+
+  ALTER TABLE organizations
+    ADD CONSTRAINT organizations_subscription_plan_check
+    CHECK (subscription_plan IN ('trial','starter','professional','enterprise'));
+END $$;
 
 COMMENT ON COLUMN organizations.trial_ends_at IS
   'If set, org is on trial until this timestamp.';
@@ -218,7 +242,9 @@ CREATE TABLE IF NOT EXISTS super_admins (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name            VARCHAR(100)  NOT NULL,
   email           VARCHAR(150)  NOT NULL UNIQUE,
-  password        VARCHAR(255)  NOT NULL,
+  password_hash   VARCHAR(255)  NOT NULL,
+  role            VARCHAR(20)   NOT NULL DEFAULT 'super_admin'
+                    CHECK (role IN ('super_admin','read_only_admin')),
   is_active       BOOLEAN       NOT NULL DEFAULT TRUE,
   last_login_at   TIMESTAMPTZ   NULL,
   last_login_ip   VARCHAR(45)   NULL,
@@ -233,8 +259,49 @@ CREATE TRIGGER set_updated_at_super_admins
   BEFORE UPDATE ON super_admins
   FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
 
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_name = 'super_admins'
+      AND column_name = 'password'
+  ) AND NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_name = 'super_admins'
+      AND column_name = 'password_hash'
+  ) THEN
+    ALTER TABLE super_admins RENAME COLUMN password TO password_hash;
+  END IF;
+END $$;
+
+ALTER TABLE super_admins
+  ADD COLUMN IF NOT EXISTS role VARCHAR(20);
+
+UPDATE super_admins
+SET role = 'super_admin'
+WHERE role IS NULL;
+
+ALTER TABLE super_admins
+  ALTER COLUMN password_hash SET NOT NULL,
+  ALTER COLUMN role SET DEFAULT 'super_admin',
+  ALTER COLUMN role SET NOT NULL;
+
+ALTER TABLE super_admins
+  DROP CONSTRAINT IF EXISTS super_admins_role_check;
+
+ALTER TABLE super_admins
+  ADD CONSTRAINT super_admins_role_check
+  CHECK (role IN ('super_admin','read_only_admin'));
+
 CREATE INDEX IF NOT EXISTS idx_super_admins_email  ON super_admins(email)     WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_super_admins_active ON super_admins(is_active) WHERE deleted_at IS NULL;
+
+ALTER TABLE audit_logs
+  ADD COLUMN IF NOT EXISTS super_admin_id UUID NULL REFERENCES super_admins(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_audit_super_admin_id ON audit_logs(super_admin_id);
 
 -- subscriptions
 CREATE TABLE IF NOT EXISTS subscriptions (
@@ -668,12 +735,13 @@ GROUP BY o.id, o.name, o.subscription_plan,
 -- PART 8: SEED DEFAULT SUPER ADMIN
 -- ============================================================
 
-INSERT INTO super_admins (id, name, email, password, is_active)
+INSERT INTO super_admins (id, name, email, password_hash, role, is_active)
 VALUES (
   'd0000000-0000-0000-0000-000000000001',
   'Platform Admin',
   'admin@accudocs.in',
   '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.K8Ih4FhQIXP.Hy',
+  'super_admin',
   TRUE
 ) ON CONFLICT (id) DO NOTHING;
 

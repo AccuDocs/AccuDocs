@@ -14,7 +14,7 @@ exports.export = asyncHandler(async (req, res) => {
   const data = await service.export(req.query);
 
   if (format === 'csv') {
-    const fields = ['id', 'org_name', 'user_name', 'action', 'entity_type', 'entity_id', 'description', 'ip_address', 'created_at'];
+    const fields = ['id', 'org_name', 'actor_name', 'admin_id', 'action', 'entity_type', 'entity_id', 'description', 'ip_address', 'created_at'];
     
     // Manual CSV generation
     const csvRows = [];

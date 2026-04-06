@@ -32,6 +32,7 @@ async function withBypassRLS(queryFn) {
 async function writeAuditLog(client, {
   organization_id = null,
   user_id = null,
+  super_admin_id = null,
   action,
   entity_type,
   entity_id = null,
@@ -44,13 +45,14 @@ async function writeAuditLog(client, {
 }) {
   await client.query(
     `INSERT INTO audit_logs
-      (id, organization_id, user_id, action, entity_type, entity_id,
+      (id, organization_id, user_id, super_admin_id, action, entity_type, entity_id,
        description, old_values, new_values, ip_address, user_agent, request_id, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())`,
     [
       uuidv4(),
       organization_id,
       user_id,
+      super_admin_id,
       action,
       entity_type,
       entity_id,

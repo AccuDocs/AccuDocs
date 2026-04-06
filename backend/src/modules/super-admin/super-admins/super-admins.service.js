@@ -37,7 +37,7 @@ class SuperAdminsService {
       const newAdmin = result.rows[0];
 
       await writeAuditLog(client, {
-        user_id: superAdminId,
+        super_admin_id: superAdminId,
         action: 'super_admin.created',
         entity_type: 'super_admin',
         entity_id: newAdmin.id,
@@ -66,7 +66,7 @@ class SuperAdminsService {
       delete updatedAdmin.password_hash;
 
       await writeAuditLog(client, {
-        user_id: superAdminId,
+        super_admin_id: superAdminId,
         action: 'super_admin.updated',
         entity_type: 'super_admin',
         entity_id: id,
@@ -96,7 +96,7 @@ class SuperAdminsService {
       await client.query('UPDATE super_admins SET password_hash = $1, updated_at = NOW() WHERE id = $2', [newHash, id]);
 
       await writeAuditLog(client, {
-        user_id: id,
+        super_admin_id: id,
         action: 'super_admin.password_changed',
         entity_type: 'super_admin',
         entity_id: id,

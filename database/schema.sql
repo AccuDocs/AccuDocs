@@ -71,7 +71,9 @@ CREATE TABLE super_admins (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name            VARCHAR(100)  NOT NULL,
   email           VARCHAR(150)  NOT NULL UNIQUE,
-  password        VARCHAR(255)  NOT NULL,
+  password_hash   VARCHAR(255)  NOT NULL,
+  role            VARCHAR(20)   NOT NULL DEFAULT 'super_admin'
+                    CHECK (role IN ('super_admin','read_only_admin')),
   is_active       BOOLEAN       NOT NULL DEFAULT TRUE,
   last_login_at   TIMESTAMPTZ   NULL,
   last_login_ip   VARCHAR(45)   NULL,
@@ -111,7 +113,7 @@ CREATE TABLE organizations (
   bank_branch             VARCHAR(150)  NULL,
   udin                    VARCHAR(30)   NULL,
   subscription_plan       VARCHAR(20)   NOT NULL DEFAULT 'starter'
-                            CHECK (subscription_plan IN ('starter','professional','enterprise')),
+                            CHECK (subscription_plan IN ('trial','starter','professional','enterprise')),
   -- v2: trial support
   trial_ends_at           TIMESTAMPTZ   NULL,
   current_subscription_id UUID          NULL,     -- FK added after subscriptions table
@@ -883,6 +885,7 @@ CREATE TABLE audit_logs (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id  UUID          NULL REFERENCES organizations(id) ON DELETE SET NULL,
   user_id          UUID          NULL REFERENCES users(id) ON DELETE SET NULL,
+  super_admin_id   UUID          NULL REFERENCES super_admins(id) ON DELETE SET NULL,
   action           VARCHAR(80)   NOT NULL,
   entity_type      VARCHAR(50)   NOT NULL,
   entity_id        UUID          NULL,
@@ -1087,6 +1090,7 @@ CREATE INDEX idx_notif_sent_at         ON notifications(sent_at);
 -- audit_logs
 CREATE INDEX idx_audit_org_entity      ON audit_logs(organization_id, entity_type, entity_id);
 CREATE INDEX idx_audit_user_id         ON audit_logs(user_id);
+CREATE INDEX idx_audit_super_admin_id  ON audit_logs(super_admin_id);
 CREATE INDEX idx_audit_action          ON audit_logs(action);
 CREATE INDEX idx_audit_created_at      ON audit_logs(created_at);
 CREATE INDEX idx_audit_entity_id       ON audit_logs(entity_id) WHERE entity_id IS NOT NULL;
@@ -1852,12 +1856,13 @@ INSERT INTO organizations (
 ) ON CONFLICT (id) DO NOTHING;
 
 -- Default super admin
-INSERT INTO super_admins (id, name, email, password, is_active)
+INSERT INTO super_admins (id, name, email, password_hash, role, is_active)
 VALUES (
   'd0000000-0000-0000-0000-000000000001',
   'Platform Admin',
   'admin@accudocs.in',
   '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.K8Ih4FhQIXP.Hy',
+  'super_admin',
   TRUE
 ) ON CONFLICT (id) DO NOTHING;
 

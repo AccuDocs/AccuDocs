@@ -196,7 +196,7 @@ class OrganizationsService {
 
       // 7. Write audit log
       await writeAuditLog(client, {
-        user_id: superAdminId,
+        super_admin_id: superAdminId,
         action: 'organization.created',
         entity_type: 'organization',
         entity_id: org.id,
@@ -243,7 +243,7 @@ class OrganizationsService {
       }
 
       await writeAuditLog(client, {
-        user_id: superAdminId,
+        super_admin_id: superAdminId,
         action: 'organization.updated',
         entity_type: 'organization',
         entity_id: id,
@@ -280,7 +280,7 @@ class OrganizationsService {
       );
 
       await writeAuditLog(client, {
-        user_id: superAdminId,
+        super_admin_id: superAdminId,
         action: 'organization.suspended',
         entity_type: 'organization',
         entity_id: id,
@@ -323,7 +323,7 @@ class OrganizationsService {
       await client.query('UPDATE organizations SET current_subscription_id = $1 WHERE id = $2', [subscription.id, id]);
 
       await writeAuditLog(client, {
-        user_id: superAdminId,
+        super_admin_id: superAdminId,
         action: 'organization.activated',
         entity_type: 'organization',
         entity_id: id,
@@ -364,7 +364,7 @@ class OrganizationsService {
       await client.query('UPDATE users SET deleted_at = NOW(), is_active = FALSE WHERE organization_id = $1', [id]);
 
       await writeAuditLog(client, {
-        user_id: superAdminId,
+        super_admin_id: superAdminId,
         action: 'organization.deleted',
         entity_type: 'organization',
         entity_id: id,
@@ -413,7 +413,7 @@ class OrganizationsService {
       );
 
       await writeAuditLog(client, {
-        user_id: superAdminId,
+        super_admin_id: superAdminId,
         action: 'organization.impersonated',
         entity_type: 'organization',
         entity_id: id,

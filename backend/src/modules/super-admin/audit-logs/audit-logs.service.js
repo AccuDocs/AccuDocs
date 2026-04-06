@@ -12,6 +12,7 @@ class AuditLogsService {
     limit = 50, 
     org_id, 
     user_id, 
+    super_admin_id,
     entity_type, 
     entity_id, 
     action, 
@@ -32,8 +33,13 @@ class AuditLogsService {
       values.push(org_id);
     }
     if (user_id) {
-      whereClause += ` AND al.user_id = $${paramIndex++}`;
+      whereClause += ` AND (al.user_id = $${paramIndex} OR al.super_admin_id = $${paramIndex})`;
       values.push(user_id);
+      paramIndex++;
+    }
+    if (super_admin_id) {
+      whereClause += ` AND al.super_admin_id = $${paramIndex++}`;
+      values.push(super_admin_id);
     }
     if (entity_type) {
       whereClause += ` AND al.entity_type = $${paramIndex++}`;
@@ -72,10 +78,14 @@ class AuditLogsService {
         SELECT 
           al.*, 
           o.name as org_name,
-          u.name as user_name
+          COALESCE(sa.id, u.id) as actor_id,
+          sa.id as admin_id,
+          COALESCE(sa.name, u.name) as actor_name,
+          COALESCE(sa.name, u.name) as user_name
         FROM audit_logs al
         LEFT JOIN organizations o ON al.organization_id = o.id
         LEFT JOIN users u ON al.user_id = u.id
+        LEFT JOIN super_admins sa ON al.super_admin_id = sa.id
         ${whereClause}
         ORDER BY al.${sort} ${direction}
         LIMIT $${paramIndex++} OFFSET $${paramIndex}
