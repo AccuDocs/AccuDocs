@@ -36,8 +36,8 @@ export class SequelizeFolderRepository implements IFolderRepository {
     return folders.map(FolderMapper.toDomain);
   }
 
-  async findByParentId(parentId: string, organizationId: string): Promise<Folder[]> {
-    const folders = await FolderModel.findAll({ where: { parentId, organizationId } });
+  async findByParentId(parentFolderId: string, organizationId: string): Promise<Folder[]> {
+    const folders = await FolderModel.findAll({ where: { parentFolderId, organizationId } });
     return folders.map(FolderMapper.toDomain);
   }
 

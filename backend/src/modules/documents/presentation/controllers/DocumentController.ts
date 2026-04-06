@@ -23,6 +23,12 @@ export class DocumentController {
     sendCreated(res, doc, 'Document uploaded successfully');
   });
 
+  static createFolder = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(DocumentService);
+    const folder = await service.createFolder(req.user!.organizationId, req.user!.userId, req.body);
+    sendSuccess(res, folder, 'Folder created successfully');
+  });
+
   static getFolders = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(DocumentService);
     const folders = await service.getFolders(req.user!.organizationId, req.params.clientId);
@@ -31,8 +37,8 @@ export class DocumentController {
 
   static getFolderDocuments = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(DocumentService);
-    const docs = await service.getDocumentsInFolder(req.user!.organizationId, req.params.folderId);
-    sendSuccess(res, docs);
+    const result = await service.getFolderDetails(req.user!.organizationId, req.params.folderId);
+    sendSuccess(res, result);
   });
 
   static download = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {

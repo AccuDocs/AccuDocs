@@ -7,6 +7,7 @@ export interface DocumentProps {
   clientId: string;
   folderId: string;
   title: string;
+  originalName: string;
   fileName: string;
   fileSize: number;
   mimeType: string;
@@ -25,6 +26,7 @@ export class Document extends Entity<DocumentProps> {
   get clientId() { return this.props.clientId; }
   get folderId() { return this.props.folderId; }
   get title() { return this.props.title; }
+  get originalName() { return this.props.originalName; }
   get fileName() { return this.props.fileName; }
   get fileSize() { return this.props.fileSize; }
   get mimeType() { return this.props.mimeType; }
@@ -46,6 +48,7 @@ export class Document extends Entity<DocumentProps> {
       { argument: props.organizationId, argumentName: 'organizationId' },
       { argument: props.clientId, argumentName: 'clientId' },
       { argument: props.folderId, argumentName: 'folderId' },
+      { argument: props.originalName, argumentName: 'originalName' },
       { argument: props.fileName, argumentName: 'fileName' },
       { argument: props.s3Key, argumentName: 's3Key' },
       { argument: props.uploadedBy, argumentName: 'uploadedBy' }
