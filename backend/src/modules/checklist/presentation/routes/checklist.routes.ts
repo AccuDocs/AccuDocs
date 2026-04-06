@@ -55,4 +55,35 @@ router.get('/templates', ChecklistController.getTemplates);
  */
 router.get('/stats', ChecklistController.getStats);
 
+/**
+ * @openapi
+ * /checklist/bulk-create:
+ *   post:
+ *     tags: [Checklist]
+ *     summary: Bulk create checklists for clients
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - templateId
+ *               - clientIds
+ *               - financialYear
+ *             properties:
+ *               templateId:
+ *                 type: string
+ *               clientIds:
+ *                 type: string
+ *               financialYear:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Checklists created successfully
+ */
+router.post('/bulk-create', ChecklistController.bulkCreate);
+
 export default router;

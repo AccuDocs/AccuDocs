@@ -4,7 +4,7 @@ import { Checklist as ChecklistModel } from "../../../../models/checklist.model"
 import { ChecklistTemplate as ChecklistTemplateModel } from "../../../../models/checklist-template.model";
 import { Client as ClientModel } from "../../../../models/client.model";
 import { ChecklistMapper } from "../mappers/ChecklistMapper";
-import { Op } from "sequelize";
+import { Op, Transaction } from "sequelize";
 
 @injectable()
 export class SequelizeChecklistRepository implements IChecklistRepository {
@@ -75,5 +75,14 @@ export class SequelizeChecklistRepository implements IChecklistRepository {
     });
 
     return { total: count, completed };
+  }
+
+  async findTemplateById(id: string): Promise<any | null> {
+    const template = await ChecklistTemplateModel.findByPk(id);
+    return template ? ChecklistMapper.templateToDomain(template) : null;
+  }
+
+  async create(checklist: any, options?: { transaction?: Transaction }): Promise<void> {
+    await ChecklistModel.create(checklist, options);
   }
 }

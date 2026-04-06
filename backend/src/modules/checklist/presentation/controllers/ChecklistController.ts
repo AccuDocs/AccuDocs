@@ -29,4 +29,14 @@ export class ChecklistController {
     const stats = await service.getStats(req.user!.organizationId);
     sendSuccess(res, stats);
   });
+
+  static bulkCreate = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(ChecklistService);
+    const result = await service.bulkCreateChecklists(
+      req.user!.organizationId,
+      req.user!.userId,
+      req.body
+    );
+    sendSuccess(res, result, 'Checklists created successfully');
+  });
 }
