@@ -112,8 +112,8 @@ export class ClientService {
   }
 
   async getById(id: string, organizationId: string): Promise<ClientResponseDTO> {
-    const client = await this.clientRepository.findById(id);
-    if (!client || client.organizationId !== organizationId) throw new NotFoundError('Client not found');
+    const client = await this.clientRepository.findById(id, organizationId);
+    if (!client) throw new NotFoundError('Client not found');
 
     const user = await this.userRepository.findById(client.userId);
     if (!user) throw new NotFoundError('User not found');
@@ -122,8 +122,8 @@ export class ClientService {
   }
 
   async update(id: string, dto: UpdateClientDTO, adminId: string, organizationId: string): Promise<ClientResponseDTO> {
-    const client = await this.clientRepository.findById(id);
-    if (!client || client.organizationId !== organizationId) throw new NotFoundError('Client not found');
+    const client = await this.clientRepository.findById(id, organizationId);
+    if (!client) throw new NotFoundError('Client not found');
 
     const user = await this.userRepository.findById(client.userId);
     if (!user) throw new NotFoundError('User not found');
@@ -179,16 +179,16 @@ export class ClientService {
       await this.clientRepository.save(updateClientOrError.getValue());
     }
 
-    const updatedClient = await this.clientRepository.findById(id);
+    const updatedClient = await this.clientRepository.findById(id, organizationId);
     const updatedUser = await this.userRepository.findById(client.userId);
 
     return this.enrichClient(updatedClient!, updatedUser!);
   }
 
   async delete(id: string, organizationId: string): Promise<void> {
-    const client = await this.clientRepository.findById(id);
-    if (!client || client.organizationId !== organizationId) throw new NotFoundError('Client not found');
-    await this.clientRepository.delete(id);
+    const client = await this.clientRepository.findById(id, organizationId);
+    if (!client) throw new NotFoundError('Client not found');
+    await this.clientRepository.delete(id, organizationId);
   }
 
   async getNextCode(organizationId: string): Promise<string> {

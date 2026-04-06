@@ -17,8 +17,13 @@ export class SequelizeClientRepository implements IClientRepository {
     }
   }
 
-  async findById(id: string): Promise<Client | null> {
-    const client = await ClientModel.findByPk(id);
+  async findById(id: string, organizationId?: string): Promise<Client | null> {
+    const where: any = { id };
+    if (organizationId) {
+      where.organizationId = organizationId;
+    }
+
+    const client = await ClientModel.findOne({ where });
     if (!client) return null;
     return ClientMapper.toDomain(client);
   }
@@ -29,8 +34,13 @@ export class SequelizeClientRepository implements IClientRepository {
     return ClientMapper.toDomain(client);
   }
 
-  async findByUserId(userId: string): Promise<Client | null> {
-    const client = await ClientModel.findOne({ where: { userId } });
+  async findByUserId(userId: string, organizationId?: string): Promise<Client | null> {
+    const where: any = { userId };
+    if (organizationId) {
+      where.organizationId = organizationId;
+    }
+
+    const client = await ClientModel.findOne({ where });
     if (!client) return null;
     return ClientMapper.toDomain(client);
   }
@@ -58,12 +68,12 @@ export class SequelizeClientRepository implements IClientRepository {
     return String(lastCode + 1).padStart(2, '0');
   }
 
-  async delete(id: string, options?: any): Promise<void> {
-    await ClientModel.destroy({ where: { id }, ...options });
+  async delete(id: string, organizationId: string, options?: any): Promise<void> {
+    await ClientModel.destroy({ where: { id, organizationId }, ...options });
   }
 
   async findAll(
-    filters: { search?: string } = {},
+    filters: { search?: string; organizationId?: string } = {},
     pagination: { page: number; limit: number; sortBy?: string; sortOrder?: 'asc' | 'desc' } = { page: 1, limit: 10 }
   ): Promise<{ clients: any[]; total: number }> {
     const where: any = {};
@@ -72,20 +82,25 @@ export class SequelizeClientRepository implements IClientRepository {
       ? [[pagination.sortBy, pagination.sortOrder || 'desc']]
       : [['createdAt', 'desc']];
 
+    if (filters.organizationId) {
+      where.organizationId = filters.organizationId;
+    }
+
     if (filters.search) {
       const matchedUsers = await User.findAll({
         attributes: ['id'],
         where: {
+          ...(filters.organizationId ? { organizationId: filters.organizationId } : {}),
           [Op.or]: [
-            { name: { [Op.like]: `%${filters.search}%` } },
-            { mobile: { [Op.like]: `%${filters.search}%` } },
+            { name: { [Op.iLike]: `%${filters.search}%` } },
+            { mobile: { [Op.iLike]: `%${filters.search}%` } },
           ],
         },
       });
       const matchedUserIds = matchedUsers.map((u: any) => u.id);
 
       where[Op.or] = [
-        { code: { [Op.like]: `%${filters.search}%` } },
+        { code: { [Op.iLike]: `%${filters.search}%` } },
         { userId: { [Op.in]: matchedUserIds } }
       ];
     }

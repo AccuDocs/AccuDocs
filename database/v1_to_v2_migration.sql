@@ -162,6 +162,155 @@ COMMENT ON COLUMN documents.is_deleted_from_s3 IS
 CREATE INDEX IF NOT EXISTS idx_docs_checksum
   ON documents(checksum) WHERE checksum IS NOT NULL;
 
+-- tenant integrity: enforce same-organization ownership across related records
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'uq_users_id_org'
+  ) THEN
+    ALTER TABLE users
+      ADD CONSTRAINT uq_users_id_org UNIQUE (id, organization_id);
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'uq_clients_id_org'
+  ) THEN
+    ALTER TABLE clients
+      ADD CONSTRAINT uq_clients_id_org UNIQUE (id, organization_id);
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'uq_folders_id_org'
+  ) THEN
+    ALTER TABLE folders
+      ADD CONSTRAINT uq_folders_id_org UNIQUE (id, organization_id);
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_clients_user_org'
+  ) THEN
+    ALTER TABLE clients
+      ADD CONSTRAINT fk_clients_user_org
+      FOREIGN KEY (user_id, organization_id)
+      REFERENCES users(id, organization_id)
+      NOT VALID;
+    ALTER TABLE clients VALIDATE CONSTRAINT fk_clients_user_org;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_years_client_org'
+  ) THEN
+    ALTER TABLE years
+      ADD CONSTRAINT fk_years_client_org
+      FOREIGN KEY (client_id, organization_id)
+      REFERENCES clients(id, organization_id)
+      ON DELETE CASCADE
+      NOT VALID;
+    ALTER TABLE years VALIDATE CONSTRAINT fk_years_client_org;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_folders_client_org'
+  ) THEN
+    ALTER TABLE folders
+      ADD CONSTRAINT fk_folders_client_org
+      FOREIGN KEY (client_id, organization_id)
+      REFERENCES clients(id, organization_id)
+      ON DELETE CASCADE
+      NOT VALID;
+    ALTER TABLE folders VALIDATE CONSTRAINT fk_folders_client_org;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_documents_client_org'
+  ) THEN
+    ALTER TABLE documents
+      ADD CONSTRAINT fk_documents_client_org
+      FOREIGN KEY (client_id, organization_id)
+      REFERENCES clients(id, organization_id)
+      ON DELETE CASCADE
+      NOT VALID;
+    ALTER TABLE documents VALIDATE CONSTRAINT fk_documents_client_org;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_documents_folder_org'
+  ) THEN
+    ALTER TABLE documents
+      ADD CONSTRAINT fk_documents_folder_org
+      FOREIGN KEY (folder_id, organization_id)
+      REFERENCES folders(id, organization_id)
+      ON DELETE SET NULL
+      NOT VALID;
+    ALTER TABLE documents VALIDATE CONSTRAINT fk_documents_folder_org;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_recurring_templates_client_org'
+  ) THEN
+    ALTER TABLE recurring_invoice_templates
+      ADD CONSTRAINT fk_recurring_templates_client_org
+      FOREIGN KEY (client_id, organization_id)
+      REFERENCES clients(id, organization_id)
+      ON DELETE CASCADE
+      NOT VALID;
+    ALTER TABLE recurring_invoice_templates VALIDATE CONSTRAINT fk_recurring_templates_client_org;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_invoices_client_org'
+  ) THEN
+    ALTER TABLE invoices
+      ADD CONSTRAINT fk_invoices_client_org
+      FOREIGN KEY (client_id, organization_id)
+      REFERENCES clients(id, organization_id)
+      NOT VALID;
+    ALTER TABLE invoices VALIDATE CONSTRAINT fk_invoices_client_org;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_payments_client_org'
+  ) THEN
+    ALTER TABLE payments
+      ADD CONSTRAINT fk_payments_client_org
+      FOREIGN KEY (client_id, organization_id)
+      REFERENCES clients(id, organization_id)
+      ON DELETE CASCADE
+      NOT VALID;
+    ALTER TABLE payments VALIDATE CONSTRAINT fk_payments_client_org;
+  END IF;
+END $$;
+
 -- invoices: add discount columns
 ALTER TABLE invoices
   ADD COLUMN IF NOT EXISTS discount_type   VARCHAR(10)   NULL

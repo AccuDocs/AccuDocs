@@ -41,6 +41,28 @@ async function dropCheckConstraints(client, tableName, definitionMatch) {
   }
 }
 
+async function constraintExists(client, constraintName) {
+  const { rowCount } = await client.query(
+    `
+      SELECT 1
+      FROM pg_constraint
+      WHERE conname = $1
+      LIMIT 1
+    `,
+    [constraintName]
+  );
+
+  return rowCount > 0;
+}
+
+async function ensureConstraint(client, constraintName, ddl) {
+  if (await constraintExists(client, constraintName)) {
+    return;
+  }
+
+  await client.query(ddl);
+}
+
 async function main() {
   const client = new Client({
     host: process.env.DB_HOST,
@@ -123,6 +145,117 @@ async function main() {
       CREATE INDEX IF NOT EXISTS idx_audit_super_admin_id
       ON audit_logs(super_admin_id)
     `);
+
+    console.log('Adding tenant integrity constraints');
+    await ensureConstraint(
+      client,
+      'uq_users_id_org',
+      'ALTER TABLE users ADD CONSTRAINT uq_users_id_org UNIQUE (id, organization_id)'
+    );
+    await ensureConstraint(
+      client,
+      'uq_clients_id_org',
+      'ALTER TABLE clients ADD CONSTRAINT uq_clients_id_org UNIQUE (id, organization_id)'
+    );
+    await ensureConstraint(
+      client,
+      'uq_folders_id_org',
+      'ALTER TABLE folders ADD CONSTRAINT uq_folders_id_org UNIQUE (id, organization_id)'
+    );
+
+    await ensureConstraint(
+      client,
+      'fk_clients_user_org',
+      `ALTER TABLE clients
+       ADD CONSTRAINT fk_clients_user_org
+       FOREIGN KEY (user_id, organization_id)
+       REFERENCES users(id, organization_id)
+       NOT VALID`
+    );
+    await client.query('ALTER TABLE clients VALIDATE CONSTRAINT fk_clients_user_org');
+
+    await ensureConstraint(
+      client,
+      'fk_years_client_org',
+      `ALTER TABLE years
+       ADD CONSTRAINT fk_years_client_org
+       FOREIGN KEY (client_id, organization_id)
+       REFERENCES clients(id, organization_id)
+       ON DELETE CASCADE
+       NOT VALID`
+    );
+    await client.query('ALTER TABLE years VALIDATE CONSTRAINT fk_years_client_org');
+
+    await ensureConstraint(
+      client,
+      'fk_folders_client_org',
+      `ALTER TABLE folders
+       ADD CONSTRAINT fk_folders_client_org
+       FOREIGN KEY (client_id, organization_id)
+       REFERENCES clients(id, organization_id)
+       ON DELETE CASCADE
+       NOT VALID`
+    );
+    await client.query('ALTER TABLE folders VALIDATE CONSTRAINT fk_folders_client_org');
+
+    await ensureConstraint(
+      client,
+      'fk_documents_client_org',
+      `ALTER TABLE documents
+       ADD CONSTRAINT fk_documents_client_org
+       FOREIGN KEY (client_id, organization_id)
+       REFERENCES clients(id, organization_id)
+       ON DELETE CASCADE
+       NOT VALID`
+    );
+    await client.query('ALTER TABLE documents VALIDATE CONSTRAINT fk_documents_client_org');
+
+    await ensureConstraint(
+      client,
+      'fk_documents_folder_org',
+      `ALTER TABLE documents
+       ADD CONSTRAINT fk_documents_folder_org
+       FOREIGN KEY (folder_id, organization_id)
+       REFERENCES folders(id, organization_id)
+       ON DELETE SET NULL
+       NOT VALID`
+    );
+    await client.query('ALTER TABLE documents VALIDATE CONSTRAINT fk_documents_folder_org');
+
+    await ensureConstraint(
+      client,
+      'fk_recurring_templates_client_org',
+      `ALTER TABLE recurring_invoice_templates
+       ADD CONSTRAINT fk_recurring_templates_client_org
+       FOREIGN KEY (client_id, organization_id)
+       REFERENCES clients(id, organization_id)
+       ON DELETE CASCADE
+       NOT VALID`
+    );
+    await client.query('ALTER TABLE recurring_invoice_templates VALIDATE CONSTRAINT fk_recurring_templates_client_org');
+
+    await ensureConstraint(
+      client,
+      'fk_invoices_client_org',
+      `ALTER TABLE invoices
+       ADD CONSTRAINT fk_invoices_client_org
+       FOREIGN KEY (client_id, organization_id)
+       REFERENCES clients(id, organization_id)
+       NOT VALID`
+    );
+    await client.query('ALTER TABLE invoices VALIDATE CONSTRAINT fk_invoices_client_org');
+
+    await ensureConstraint(
+      client,
+      'fk_payments_client_org',
+      `ALTER TABLE payments
+       ADD CONSTRAINT fk_payments_client_org
+       FOREIGN KEY (client_id, organization_id)
+       REFERENCES clients(id, organization_id)
+       ON DELETE CASCADE
+       NOT VALID`
+    );
+    await client.query('ALTER TABLE payments VALIDATE CONSTRAINT fk_payments_client_org');
 
     await client.query('COMMIT');
     console.log('Schema fixes committed.');

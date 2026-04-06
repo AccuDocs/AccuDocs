@@ -89,7 +89,13 @@ export class SequelizeInvoiceRepository implements IInvoiceRepository {
       where,
       include: [
         { model: InvoiceLineItemModel, as: 'lineItems' },
-        { model: ClientModel, as: 'client', attributes: ['name', 'code'] }
+        {
+          model: ClientModel,
+          as: 'client',
+          attributes: ['name', 'code'],
+          where: { organizationId },
+          required: false
+        }
       ],
       offset,
       limit: pagination.limit,

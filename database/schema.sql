@@ -901,6 +901,59 @@ CREATE TABLE audit_logs (
 COMMENT ON TABLE audit_logs IS
   'Immutable audit trail. Append-only — never UPDATE or DELETE rows.';
 
+-- ------------------------------------------------------------
+-- TENANT INTEGRITY CONSTRAINTS
+-- Enforce that child records cannot point across organizations.
+-- ------------------------------------------------------------
+ALTER TABLE users
+  ADD CONSTRAINT uq_users_id_org UNIQUE (id, organization_id);
+
+ALTER TABLE clients
+  ADD CONSTRAINT uq_clients_id_org UNIQUE (id, organization_id),
+  ADD CONSTRAINT fk_clients_user_org
+    FOREIGN KEY (user_id, organization_id)
+    REFERENCES users(id, organization_id);
+
+ALTER TABLE folders
+  ADD CONSTRAINT uq_folders_id_org UNIQUE (id, organization_id),
+  ADD CONSTRAINT fk_folders_client_org
+    FOREIGN KEY (client_id, organization_id)
+    REFERENCES clients(id, organization_id)
+    ON DELETE CASCADE;
+
+ALTER TABLE years
+  ADD CONSTRAINT fk_years_client_org
+    FOREIGN KEY (client_id, organization_id)
+    REFERENCES clients(id, organization_id)
+    ON DELETE CASCADE;
+
+ALTER TABLE documents
+  ADD CONSTRAINT fk_documents_client_org
+    FOREIGN KEY (client_id, organization_id)
+    REFERENCES clients(id, organization_id)
+    ON DELETE CASCADE,
+  ADD CONSTRAINT fk_documents_folder_org
+    FOREIGN KEY (folder_id, organization_id)
+    REFERENCES folders(id, organization_id)
+    ON DELETE SET NULL;
+
+ALTER TABLE recurring_invoice_templates
+  ADD CONSTRAINT fk_recurring_templates_client_org
+    FOREIGN KEY (client_id, organization_id)
+    REFERENCES clients(id, organization_id)
+    ON DELETE CASCADE;
+
+ALTER TABLE invoices
+  ADD CONSTRAINT fk_invoices_client_org
+    FOREIGN KEY (client_id, organization_id)
+    REFERENCES clients(id, organization_id);
+
+ALTER TABLE payments
+  ADD CONSTRAINT fk_payments_client_org
+    FOREIGN KEY (client_id, organization_id)
+    REFERENCES clients(id, organization_id)
+    ON DELETE CASCADE;
+
 -- ============================================================
 -- SECTION 4: INDEXES
 -- ============================================================

@@ -105,6 +105,7 @@ export class BillingController {
           model: ClientModel,
           as: 'client',
           attributes: ['id', 'name', 'code', 'gstin', 'mobile', 'stateCode'],
+          where: { organizationId: req.user!.organizationId },
           required: false,
         },
         {
@@ -191,6 +192,7 @@ export class BillingController {
           model: ClientModel,
           as: 'client',
           attributes: ['id', 'name', 'code', 'gstin', 'mobile', 'stateCode', 'address', 'city', 'pincode'],
+          where: { organizationId: req.user!.organizationId },
           required: false,
         },
         {
@@ -452,7 +454,7 @@ export class BillingController {
           c.id as "client.id",
           c.name as "client.name"
         from recurring_invoice_templates rit
-        left join clients c on c.id = rit.client_id
+        left join clients c on c.id = rit.client_id and c.organization_id = :organizationId
         where ${filters.join(' and ')}
         order by rit.next_invoice_date asc, rit.created_at desc
       `,

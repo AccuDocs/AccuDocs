@@ -3,7 +3,7 @@ import {
 } from '../models';
 
 async function inspectModels() {
-  const models = [Document, Task, AuditLog, Client, User, Invoice, Organization, Year];
+  const models: Array<any> = [Document, Task, AuditLog, Client, User, Invoice, Organization, Year];
   
   for (const model of models) {
     console.log(`\nModel: ${model.name}`);
