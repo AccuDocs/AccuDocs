@@ -7,4 +7,5 @@ export interface IFolderRepository {
   findByOrganizationId(organizationId: string): Promise<Folder[]>;
   findByParentId(parentId: string, organizationId: string): Promise<Folder[]>;
   delete(id: string, organizationId: string, options?: any): Promise<void>;
+  bulkSave(folders: Folder[], options?: any): Promise<void>;
 }

@@ -15,7 +15,6 @@ export class FolderInitializerService {
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth(); // 0-indexed
 
-    // In India, FY starts in April (index 3)
     let startYear = currentYear;
     if (currentMonth < 3) {
       startYear = currentYear - 1;
@@ -41,19 +40,18 @@ export class FolderInitializerService {
         const e = s + 1;
         years.push(`FY ${s}-${e.toString().slice(-2)}`);
     }
-    return years.reverse(); // Standard order: oldest first
+    return years.reverse();
   }
 
   public async initializeClientWorkspace(organizationId: string, clientId: string, clientCode: string, transaction?: any): Promise<void> {
     try {
+      const { fyString, months } = this.getFiscalYearData();
+      const recentThreeFYs = this.getPastFiscalYears(3);
+      const recentTwoFYs = this.getPastFiscalYears(2);
+
       const rootFolderName = `${clientCode} Workspace`;
       const rootFolderSlug = `${clientCode.toLowerCase()}-workspace`;
       
-      const { fyString, months } = this.getFiscalYearData();
-      const recentThreeFYs = this.getPastFiscalYears(3); // [FY -2, FY -1, Current FY]
-      const recentTwoFYs = this.getPastFiscalYears(2);  // [FY -1, Current FY]
-
-      // Root Folder
       const rootFolderResult = Folder.create({
         organizationId,
         clientId,
@@ -65,7 +63,6 @@ export class FolderInitializerService {
 
       if (rootFolderResult.isFailure) throw new Error(rootFolderResult.getError() as string);
       const rootFolder = rootFolderResult.getValue();
-      await this.folderRepository.save(rootFolder, { transaction });
 
       const structure = [
         { name: '1. KYC & Registration' },
@@ -131,24 +128,27 @@ export class FolderInitializerService {
         { name: '12. Miscellaneous' }
       ];
 
-      await this.createFolders(organizationId, clientId, clientCode, rootFolder.id, `/${clientCode}`, structure, transaction);
+      const allFolders: Folder[] = [rootFolder];
+      this.collectFolders(organizationId, clientId, clientCode, rootFolder.id, `/${clientCode}`, structure, allFolders);
 
-      logger.info(`Workspace initialized dynamically for ${clientCode} (${fyString})`);
+      await this.folderRepository.bulkSave(allFolders, { transaction });
+
+      logger.info(`Workspace optimized initialization for ${clientCode} (${allFolders.length} folders created in 1 batch)`);
     } catch (error: any) {
       logger.error(`Failed to initialize workspace for client ${clientCode}: ${error.message}`);
       throw error;
     }
   }
 
-  private async createFolders(
+  private collectFolders(
     organizationId: string, 
     clientId: string, 
     clientCode: string, 
     parentId: string, 
     basePath: string, 
     children: any[], 
-    transaction?: any
-  ): Promise<void> {
+    collector: Folder[]
+  ): void {
     for (const spec of children) {
       const slugSuffix = spec.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
       const folderResult = Folder.create({
@@ -163,10 +163,10 @@ export class FolderInitializerService {
 
       if (folderResult.isFailure) throw new Error(folderResult.getError() as string);
       const folder = folderResult.getValue();
-      await this.folderRepository.save(folder, { transaction });
+      collector.push(folder);
 
       if (spec.children && spec.children.length > 0) {
-        await this.createFolders(organizationId, clientId, clientCode, folder.id, `${basePath}/${spec.name}`, spec.children, transaction);
+        this.collectFolders(organizationId, clientId, clientCode, folder.id, `${basePath}/${spec.name}`, spec.children, collector);
       }
     }
   }

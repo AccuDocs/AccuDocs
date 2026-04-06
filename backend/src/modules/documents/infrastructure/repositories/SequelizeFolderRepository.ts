@@ -44,4 +44,12 @@ export class SequelizeFolderRepository implements IFolderRepository {
   async delete(id: string, organizationId: string, options?: any): Promise<void> {
     await FolderModel.destroy({ where: { id, organizationId }, transaction: options?.transaction });
   }
+
+  async bulkSave(folders: Folder[], options?: any): Promise<void> {
+    const raw = folders.map(f => FolderMapper.toPersistence(f));
+    await FolderModel.bulkCreate(raw, { 
+      transaction: options?.transaction,
+      updateOnDuplicate: ['name', 'slug', 'path', 'parent_folder_id', 'is_system']
+    });
+  }
 }
