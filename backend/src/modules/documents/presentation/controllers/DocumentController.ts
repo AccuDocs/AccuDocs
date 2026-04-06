@@ -41,6 +41,18 @@ export class DocumentController {
     sendSuccess(res, result);
   });
 
+  static deleteDocument = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(DocumentService);
+    await service.deleteDocument(req.params.id, req.user!.organizationId);
+    sendSuccess(res, null, 'Document deleted successfully');
+  });
+
+  static deleteFolder = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(DocumentService);
+    await service.deleteFolder(req.params.id, req.user!.organizationId);
+    sendSuccess(res, null, 'Folder deleted successfully');
+  });
+
   static download = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(DocumentService);
     const result = await service.getDownloadUrl(req.user!.organizationId, req.params.id);

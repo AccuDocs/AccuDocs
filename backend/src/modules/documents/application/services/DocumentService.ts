@@ -234,4 +234,16 @@ export class DocumentService {
       totalFolders: folders.length
     };
   }
+
+  async deleteDocument(id: string, organizationId: string) {
+    const doc = await this.documentRepository.findById(id, organizationId);
+    if (!doc) throw new NotFoundError('Document not found');
+    await this.documentRepository.delete(id, organizationId);
+  }
+
+  async deleteFolder(id: string, organizationId: string) {
+    const folder = await this.folderRepository.findById(id, organizationId);
+    if (!folder) throw new NotFoundError('Folder not found');
+    await this.folderRepository.delete(id, organizationId);
+  }
 }

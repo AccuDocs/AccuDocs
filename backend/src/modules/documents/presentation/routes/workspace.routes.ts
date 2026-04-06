@@ -22,6 +22,10 @@ router.post('/files/upload', uploadSingle, DocumentController.upload);
 // Files Download
 router.get('/files/:id/download', DocumentController.download);
 
+// Multiple Items Action Delete
+router.delete('/files/:id', DocumentController.deleteDocument);
+router.delete('/folders/:id', DocumentController.deleteFolder);
+
 // Global Files List
 router.get('/files', DocumentController.listFiles);
 
