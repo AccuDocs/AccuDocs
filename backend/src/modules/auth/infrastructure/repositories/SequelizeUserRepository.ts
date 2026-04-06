@@ -87,7 +87,7 @@ export class SequelizeUserRepository implements IUserRepository {
     };
   }
 
-  async save(user: User): Promise<User> {
+  async save(user: User, options?: { transaction?: any }): Promise<User> {
     const data = {
       organizationId: user.organizationId,
       name: user.name,
@@ -100,18 +100,22 @@ export class SequelizeUserRepository implements IUserRepository {
       avatarS3Key: user.avatarS3Key,
       preferences: user.preferences
     };
-
-    if (user.id) {
+    
+    // In this user logic, since we handle both update and create,
+    // we must check for existence using the ID.
+    const exists = await UserModel.findByPk(user.id, { transaction: options?.transaction });
+    if (exists) {
       const [_, updated] = await UserModel.update(data, {
         where: { id: user.id },
-        returning: true
+        returning: true,
+        transaction: options?.transaction
       });
       if (!updated || updated.length === 0) {
         throw new Error('User not found for update');
       }
       return this.toEntity(updated[0]);
     } else {
-      const created = await UserModel.create(data);
+      const created = await UserModel.create({ ...data, id: user.id }, { transaction: options?.transaction });
       return this.toEntity(created);
     }
   }

@@ -7,5 +7,5 @@ export interface IUserRepository {
   findByIdentifier(identifier: string): Promise<User[]>;
   updateLastLogin(id: string, date: Date): Promise<void>;
   findAll(filters: any, pagination: any): Promise<{ users: User[], total: number }>;
-  save(user: User): Promise<User>;
+  save(user: User, options?: { transaction?: any }): Promise<User>;
 }

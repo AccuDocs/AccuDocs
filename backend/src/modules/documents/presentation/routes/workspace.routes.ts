@@ -6,6 +6,11 @@ const router = Router();
 
 router.use(authenticate);
 
+// Diagnostic test route
+router.get('/test', (req, res) => res.json({ status: 'ok', msg: 'workspace route reached' }));
+
+router.get('/clients/:clientId', DocumentController.getFolders);
+
 // Alias /workspace/files to document listing logic
 // The frontend calls /workspace/files?page=1&limit=50&sortBy=createdAt&sortOrder=desc
 // We can use getInvoices-like pagination if we had a getDocuments method.
@@ -37,10 +42,28 @@ router.use(authenticate);
  *         schema:
  *           type: string
  *           enum: [asc, desc]
- *     responses:
- *       200:
  *         description: List of files retrieved
  */
 router.get('/files', DocumentController.listFiles);
+
+/**
+ * @openapi
+ * /workspace/clients/{clientId}:
+ *   get:
+ *     tags: [Documents]
+ *     summary: Get client workspace (folders)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: clientId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Client workspace folders retrieved
+ */
+router.get('/clients/:clientId', DocumentController.getFolders);
 
 export default router;

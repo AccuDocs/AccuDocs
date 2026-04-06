@@ -7,6 +7,7 @@ export interface FolderProps {
   clientId: string;
   parentId?: string | null;
   name: string;
+  slug: string;
   path: string;
   isSystem: boolean;
   metadata?: any;
@@ -20,6 +21,7 @@ export class Folder extends Entity<FolderProps> {
   get clientId() { return this.props.clientId; }
   get parentId() { return this.props.parentId; }
   get name() { return this.props.name; }
+  get slug() { return this.props.slug; }
   get path() { return this.props.path; }
   get isSystem() { return this.props.isSystem; }
   get metadata() { return this.props.metadata; }
@@ -36,7 +38,7 @@ export class Folder extends Entity<FolderProps> {
       { argument: props.organizationId, argumentName: 'organizationId' },
       { argument: props.clientId, argumentName: 'clientId' },
       { argument: props.name, argumentName: 'name' },
-      { argument: props.path, argumentName: 'path' }
+      { argument: props.slug, argumentName: 'slug' }
     ];
     const guardResult = Guard.againstNullOrUndefinedBulk(guards);
     if (!guardResult.isSuccess) return Result.fail<Folder>(guardResult.getError() as string);

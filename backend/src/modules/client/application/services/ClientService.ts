@@ -26,20 +26,44 @@ export class ClientService {
     const t = await sequelize.transaction();
 
     try {
-      // 1. Create User for Client Login
-      const userOrError = User.create({
-        organizationId,
-        name: dto.name,
-        mobile: dto.mobile || '',
-        role: 'client',
-        isActive: true,
-        lastLoginAt: null,
-        email: dto.email
-      });
+      // 1. Resolve User for Client Login
+      let user: User;
+      const existingUser = await this.userRepository.findByMobileAndOrg(dto.mobile || '', organizationId);
+      
+      if (existingUser) {
+        // Update existing user with new name and ensure it's active
+        const userOrError = User.create({
+          organizationId,
+          name: dto.name,
+          mobile: existingUser.mobile,
+          role: 'client',
+          isActive: true,
+          lastLoginAt: existingUser.lastLoginAt,
+          password: existingUser.password,
+          email: dto.email || existingUser.email,
+          avatarS3Key: existingUser.avatarS3Key,
+          preferences: existingUser.preferences
+        }, existingUser.id);
+        
+        if (userOrError.isFailure) throw new Error(userOrError.getError() as string);
+        user = userOrError.getValue();
+      } else {
+        // Create New User
+        const userOrError = User.create({
+          organizationId,
+          name: dto.name,
+          mobile: dto.mobile || '',
+          role: 'client',
+          isActive: true,
+          lastLoginAt: null,
+          email: dto.email
+        });
+        
+        if (userOrError.isFailure) throw new Error(userOrError.getError() as string);
+        user = userOrError.getValue();
+      }
 
-      if (userOrError.isFailure) throw new Error(userOrError.getError() as string);
-      let user = userOrError.getValue();
-      user = await this.userRepository.save(user); // Handled out of transaction until IUserRepository handles transactions
+      user = await this.userRepository.save(user, { transaction: t });
 
       // 2. Create Client Profile
       const clientOrError = Client.create({

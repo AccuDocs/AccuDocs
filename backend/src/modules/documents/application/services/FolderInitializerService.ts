@@ -15,11 +15,15 @@ export class FolderInitializerService {
       // Create High-Level Folders
       const systemFolders = ['Invoices', 'Tax Returns', 'Financial Statements', 'Uploads'];
       
+      const rootFolderName = `${clientCode} Workspace`;
+      const rootFolderSlug = `${clientCode.toLowerCase()}-workspace`;
+      
       // Root Folder
       const rootFolderResult = Folder.create({
         organizationId,
         clientId,
-        name: `${clientCode} Workspace`,
+        name: rootFolderName,
+        slug: rootFolderSlug,
         path: `/${clientCode}`,
         isSystem: true
       }, uuidv4());
@@ -30,11 +34,13 @@ export class FolderInitializerService {
 
       // Sub Folders
       for (const name of systemFolders) {
+        const slug = name.toLowerCase().replace(/ /g, '-');
         const subFolderResult = Folder.create({
           organizationId,
           clientId,
           parentId: rootFolder.id,
           name,
+          slug: `${clientCode.toLowerCase()}-${slug}`,
           path: `/${clientCode}/${name}`,
           isSystem: true
         }, uuidv4());
