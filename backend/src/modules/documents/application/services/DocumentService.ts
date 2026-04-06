@@ -7,13 +7,16 @@ import { Folder } from "../../domain/entities/Folder";
 import { s3Helpers } from "../../../../config/s3.config";
 import { AppError, NotFoundError } from "../../../../utils/errors";
 import { v4 as uuidv4 } from "uuid";
+import { FolderInitializerService } from "./FolderInitializerService";
+import { container } from "tsyringe";
 
 @injectable()
 export class DocumentService {
   constructor(
     @inject("IDocumentRepository") private documentRepository: IDocumentRepository,
     @inject("IFolderRepository") private folderRepository: IFolderRepository,
-    @inject("IClientRepository") private clientRepository: IClientRepository
+    @inject("IClientRepository") private clientRepository: IClientRepository,
+    @inject(FolderInitializerService) private folderInitializer: FolderInitializerService
   ) {}
 
   async createFolder(organizationId: string, creatorId: string, props: { clientId?: string, parentId?: string, parentFolderId?: string, name: string }) {
@@ -132,6 +135,15 @@ export class DocumentService {
   }
 
   async getFolders(organizationId: string, clientId: string) {
+    // 1. Dynamic maintenance check in background (non-blocking)
+    const client = await this.clientRepository.findById(clientId, organizationId);
+    if (client) {
+      setImmediate(() => {
+        this.folderInitializer.initializeClientWorkspace(organizationId, clientId, client.code)
+          .catch((err: any) => console.error(`Background maintenance failed: ${err.message}`));
+      });
+    }
+    
     return this.getClientWorkspace(organizationId, clientId);
   }
 

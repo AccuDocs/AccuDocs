@@ -22,22 +22,26 @@ import { StaffPermission } from './StaffPermission.model';
 import { DocumentVersion } from './DocumentVersion.model';
 import { ClientAccessToken } from './ClientAccessToken.model';
 import { WhatsAppMessageLog } from './WhatsAppMessageLog.model';
+import { Checklist } from './checklist.model';
+import { ChecklistTemplate } from './checklist-template.model';
+import { ComplianceDeadline } from './compliance-deadline.model';
+import { ClientDeadline } from './client-deadline.model';
 
 // Set up associations
-Organization.hasMany(User, { foreignKey: 'organization_id' });
-Organization.hasMany(Client, { foreignKey: 'organization_id' });
-Organization.hasMany(Subscription, { foreignKey: 'organization_id' });
-Organization.hasMany(StaffPermission, { foreignKey: 'organization_id' });
-Organization.hasMany(WhatsAppMessageLog, { foreignKey: 'organization_id' });
+Organization.hasMany(User, { foreignKey: 'organizationId', as: 'users' });
+Organization.hasMany(Client, { foreignKey: 'organizationId', as: 'clients' });
+Organization.hasMany(Subscription, { foreignKey: 'organizationId', as: 'subscriptions' });
+Organization.hasMany(StaffPermission, { foreignKey: 'organizationId', as: 'permissions' });
+Organization.hasMany(WhatsAppMessageLog, { foreignKey: 'organizationId', as: 'whatsappLogs' });
 
-User.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organization' });
-User.hasMany(StaffPermission, { foreignKey: 'user_id' });
+User.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+User.hasMany(StaffPermission, { foreignKey: 'userId', as: 'staffPermissions' });
 
-Client.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organization' });
-Client.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-Client.hasMany(Invoice, { foreignKey: 'client_id', as: 'invoices' });
-Client.hasMany(Year, { foreignKey: 'client_id', as: 'years' });
-Client.hasMany(ClientAccessToken, { foreignKey: 'client_id' });
+Client.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+Client.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+Client.hasMany(Invoice, { foreignKey: 'clientId', as: 'invoices' });
+Client.hasMany(Year, { foreignKey: 'clientId', as: 'years' });
+Client.hasMany(ClientAccessToken, { foreignKey: 'clientId', as: 'accessTokens' });
 
 Invoice.hasMany(InvoiceLineItem, { foreignKey: 'invoice_id', as: 'lineItems' });
 Invoice.hasMany(Payment, { foreignKey: 'invoice_id', as: 'payments' });
@@ -52,6 +56,18 @@ Document.belongsTo(Folder, { foreignKey: 'folder_id', as: 'folder' });
 Document.hasMany(DocumentVersion, { foreignKey: 'document_id', as: 'versions' });
 
 DocumentVersion.belongsTo(Document, { foreignKey: 'document_id' });
+
+// Checklist associations
+Client.hasMany(Checklist, { foreignKey: 'client_id', as: 'checklists' });
+Checklist.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
+Checklist.belongsTo(ChecklistTemplate, { foreignKey: 'template_id', as: 'template' });
+Checklist.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+
+// Compliance associations
+Client.hasMany(ClientDeadline, { foreignKey: 'client_id', as: 'deadlines' });
+ClientDeadline.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
+ClientDeadline.belongsTo(ComplianceDeadline, { foreignKey: 'deadline_id', as: 'deadline' });
+ComplianceDeadline.hasMany(ClientDeadline, { foreignKey: 'deadline_id', as: 'clientDeadlines' });
 
 export {
   Organization,
@@ -77,5 +93,9 @@ export {
   StaffPermission,
   DocumentVersion,
   ClientAccessToken,
-  WhatsAppMessageLog
+  WhatsAppMessageLog,
+  Checklist,
+  ChecklistTemplate,
+  ComplianceDeadline,
+  ClientDeadline
 };

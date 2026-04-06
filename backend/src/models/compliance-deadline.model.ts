@@ -30,6 +30,9 @@ export class ComplianceDeadline extends Model<ComplianceDeadlineAttributes, Comp
 
   declare public readonly createdAt: Date;
   declare public readonly updatedAt: Date;
+
+  // Associations
+  declare public readonly clientDeadlines?: any[];
 }
 
 ComplianceDeadline.init(

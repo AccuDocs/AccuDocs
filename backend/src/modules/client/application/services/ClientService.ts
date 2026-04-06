@@ -91,10 +91,14 @@ export class ClientService {
       const client = clientOrError.getValue();
       await this.clientRepository.save(client, { transaction: t });
 
-      // 3. Initialize Folders
-      await this.folderInitializer.initializeClientWorkspace(organizationId, client.id, client.code, t);
-
       await t.commit();
+
+      // 3. Initialize Folders (Background)
+      setImmediate(() => {
+        this.folderInitializer.initializeClientWorkspace(organizationId, client.id, client.code)
+          .catch(err => logger.error(`Background folder init failed for ${client.code}: ${err.message}`));
+      });
+
       logger.info(`Client created: ${client.code} in Org ${organizationId}`);
       
       const enriched = this.enrichClient(client, user);

@@ -16,18 +16,22 @@ export class FolderInitializerService {
     const currentMonth = now.getMonth(); // 0-indexed
 
     let startYear = currentYear;
-    if (currentMonth < 3) {
+    if (currentMonth < 3) { // Jan, Feb, Mar belong to previous FY start
       startYear = currentYear - 1;
     }
     
     const endYear = startYear + 1;
     const fyString = `FY ${startYear}-${endYear.toString().slice(-2)}`;
     
-    const months = [
-      `April ${startYear}`, `May ${startYear}`, `June ${startYear}`, `July ${startYear}`, 
-      `August ${startYear}`, `September ${startYear}`, `October ${startYear}`, `November ${startYear}`, 
-      `December ${startYear}`, `January ${endYear}`, `February ${endYear}`, `March ${endYear}`
+    const monthNames = [
+      'April', 'May', 'June', 'July', 'August', 'September', 
+      'October', 'November', 'December', 'January', 'February', 'March'
     ];
+
+    const months = monthNames.map((m, i) => {
+        const year = i < 9 ? startYear : endYear;
+        return `${m} ${year}`;
+    });
 
     return { fyString, startYear, endYear, months };
   }
@@ -47,7 +51,6 @@ export class FolderInitializerService {
     try {
       const { fyString, months } = this.getFiscalYearData();
       const recentThreeFYs = this.getPastFiscalYears(3);
-      const recentTwoFYs = this.getPastFiscalYears(2);
 
       const rootFolderName = `${clientCode} Workspace`;
       const rootFolderSlug = `${clientCode.toLowerCase()}-workspace`;
@@ -71,8 +74,13 @@ export class FolderInitializerService {
           children: [
             { 
               name: fyString, 
-              children: months.map(m => ({ name: m })) 
-            }
+              children: months.map(m => ({ 
+                name: m,
+                children: [{ name: 'GSTR-1' }, { name: 'GSTR-3B' }]
+              }))
+            },
+            { name: 'GSTR-9 / Annual Return' },
+            { name: 'Notices & Replies' }
           ] 
         },
         { 
@@ -89,8 +97,12 @@ export class FolderInitializerService {
           children: [
             { 
               name: fyString, 
-              children: months.map(m => ({ name: m })) 
-            }
+              children: months.map(m => ({ 
+                name: m,
+                children: [{ name: 'Salary Slips' }, { name: 'PF' }, { name: 'ESIC' }]
+              })) 
+            },
+            { name: 'Form 16 (per FY)' }
           ] 
         },
         { 
@@ -99,29 +111,47 @@ export class FolderInitializerService {
             { 
               name: fyString, 
               children: [
-                { name: 'Q1 (Apr–Jun)' },
-                { name: 'Q2 (Jul–Sep)' },
-                { name: 'Q3 (Oct–Dec)' },
-                { name: 'Q4 (Jan–Mar)' }
+                { name: 'Q1 (Apr–Jun)', children: [{ name: '24Q' }, { name: '26Q' }, { name: 'Challan' }] },
+                { name: 'Q2 (Jul–Sep)', children: [{ name: '24Q' }, { name: '26Q' }, { name: 'Challan' }] },
+                { name: 'Q3 (Oct–Dec)', children: [{ name: '24Q' }, { name: '26Q' }, { name: 'Challan' }] },
+                { name: 'Q4 (Jan–Mar)', children: [{ name: '24Q' }, { name: '26Q' }, { name: 'Challan' }] }
               ] 
-            }
+            },
+            { name: '26AS / AIS' },
+            { name: 'TDS Certificates (Form 16 / 16A)' }
           ] 
         },
         { 
           name: '6. Income Tax (ITR)', 
-          children: recentThreeFYs.map(fy => ({ name: fy }))
+          children: recentThreeFYs.map(fy => ({ 
+            name: fy,
+            children: [{ name: 'ITR' }, { name: 'Acknowledgement' }, { name: 'Computation' }]
+          }))
         },
         { 
           name: '7. Financial Statements', 
-          children: recentThreeFYs.map(fy => ({ name: fy }))
+          children: recentThreeFYs.map(fy => ({ 
+            name: fy,
+            children: [{ name: 'Balance Sheet' }, { name: 'P&L' }, { name: 'Audit Report' }]
+          }))
         },
         { 
           name: '8. Audit', 
-          children: recentTwoFYs.map(fy => ({ name: fy }))
+          children: [
+            { 
+              name: fyString, 
+              children: [{ name: 'Documents' }, { name: 'Queries' }, { name: 'Final Report' }]
+            }
+          ]
         },
         { 
           name: '9. ROC / Company Compliance', 
-          children: recentTwoFYs.map(fy => ({ name: fy }))
+          children: [
+            { 
+              name: fyString, 
+              children: [{ name: 'Annual Filing' }, { name: 'Resolutions' }]
+            }
+          ]
         },
         { name: '10. Agreements & Contracts' },
         { name: '11. Correspondence' },
@@ -133,7 +163,7 @@ export class FolderInitializerService {
 
       await this.folderRepository.bulkSave(allFolders, { transaction });
 
-      logger.info(`Workspace optimized initialization for ${clientCode} (${allFolders.length} folders created in 1 batch)`);
+      logger.info(`Workspace initialized for ${clientCode} with ${allFolders.length} folders`);
     } catch (error: any) {
       logger.error(`Failed to initialize workspace for client ${clientCode}: ${error.message}`);
       throw error;

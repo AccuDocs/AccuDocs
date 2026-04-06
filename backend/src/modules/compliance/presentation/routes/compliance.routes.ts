@@ -69,4 +69,43 @@ router.get('/client-deadlines', ComplianceController.getDeadlines);
  */
 router.get('/stats', ComplianceController.getStats);
 
+/**
+ * @openapi
+ * /compliance/deadlines:
+ *   post:
+ *     tags: [Compliance]
+ *     summary: Create a new compliance deadline
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - type
+ *               - title
+ *               - dueDate
+ *             properties:
+ *               type:
+ *                 type: string
+ *               title:
+ *                 type: string
+ *               dueDate:
+ *                 type: string
+ *               recurring:
+ *                 type: boolean
+ *               recurringPattern:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               clientId:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Deadline created successfully
+ */
+router.post('/deadlines', ComplianceController.createDeadline);
+
 export default router;
