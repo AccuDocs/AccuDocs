@@ -18,7 +18,28 @@ export interface Client {
     documentCount: number;
   }[];
   gstin?: string;
+  pan?: string;
+  mobile?: string;
+  email?: string;
+  address?: string;
   stateCode?: string;
+  city?: string;
+  pincode?: string;
+  location?: string;
+  entityType?: string;
+  businessName?: string;
+  industrySector?: string;
+  incorporationDate?: string;
+  gstStatus?: string;
+  financialYearEnd?: string;
+  accountingMethod?: string;
+  estimatedTurnover?: string;
+  employeeCount?: string;
+  identityProofUrl?: string;
+  businessRegistrationUrl?: string;
+  taxCardCopyUrl?: string;
+  previousYearReturnUrl?: string;
+  termsAccepted?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,12 +48,27 @@ export interface CreateClientDto {
   name: string;
   mobile: string;
   code: string;
+  email?: string;
+  password?: string;
+  location?: string;
+  entityType?: string;
+  businessName?: string;
+  industrySector?: string;
+  incorporationDate?: string;
+  gstStatus?: string;
+  financialYearEnd?: string;
+  accountingMethod?: string;
+  estimatedTurnover?: string;
+  employeeCount?: string;
+  identityProofFile?: File;
+  businessRegistrationFile?: File;
+  taxCardCopyFile?: File;
+  previousYearReturnFile?: File;
+  termsAccepted?: boolean;
 }
 
-export interface UpdateClientDto {
-  name?: string;
-  mobile?: string;
-  code?: string;
+export interface UpdateClientDto extends Partial<CreateClientDto> {
+  id?: string;
 }
 
 export interface PaginatedResponse<T> {

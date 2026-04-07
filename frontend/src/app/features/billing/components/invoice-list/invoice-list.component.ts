@@ -4,15 +4,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import {
-  heroChevronLeftSolid,
-  heroChevronRightSolid,
-  heroClockSolid,
-  heroDocumentTextSolid,
-  heroExclamationTriangleSolid,
-  heroMagnifyingGlassSolid,
-} from '@ng-icons/heroicons/solid';
 import { HotToastService } from '@ngneat/hot-toast';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { ConfirmDialogComponent } from '@shared/components/confirm-dialog/confirm-dialog.component';
@@ -28,19 +19,10 @@ import { InvoiceListFacade } from './invoice-list.facade';
     CommonModule,
     ReactiveFormsModule,
     MatDialogModule,
-    NgIconComponent,
     InrCurrencyPipe,
   ],
   providers: [
     InvoiceListFacade,
-    provideIcons({
-      heroChevronLeftSolid,
-      heroChevronRightSolid,
-      heroClockSolid,
-      heroDocumentTextSolid,
-      heroExclamationTriangleSolid,
-      heroMagnifyingGlassSolid,
-    }),
   ],
   templateUrl: './invoice-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -15,12 +15,26 @@ export interface ClientProps {
   stateCode: string;
   city?: string | null;
   pincode?: string | null;
+  location?: string | null;
   creditLimit: number;
-  entityType: 'individual' | 'proprietorship' | 'partnership' | 'pvt_ltd' | 'llp' | 'trust' | 'huf' | 'other';
+  entityType: 'individual' | 'proprietorship' | 'partnership' | 'pvt_ltd' | 'pub_ltd' | 'llp' | 'trust_ngo' | 'other';
+  businessName?: string | null;
+  industrySector?: string | null;
+  incorporationDate?: Date | null;
+  gstStatus?: string | null;
+  financialYearEnd?: string | null;
+  accountingMethod?: string | null;
+  estimatedTurnover?: string | null;
+  employeeCount?: string | null;
+  identityProofUrl?: string | null;
+  businessRegistrationUrl?: string | null;
+  taxCardCopyUrl?: string | null;
+  previousYearReturnUrl?: string | null;
+  termsAccepted: boolean;
   notes?: string | null;
   metadata?: any;
   isActive: boolean;
-  status: 'active' | 'inactive' | 'suspended'; // Legacy support maybe? Schema only has is_active, but we can map it. Actually, wait. The schema does NOT have 'status' anymore. It has 'is_active'.
+  status: 'active' | 'inactive' | 'suspended';
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -38,8 +52,22 @@ export class Client extends Entity<ClientProps> {
   get stateCode(): string { return this.props.stateCode; }
   get city(): string | null | undefined { return this.props.city; }
   get pincode(): string | null | undefined { return this.props.pincode; }
+  get location(): string | null | undefined { return this.props.location; }
   get creditLimit(): number { return this.props.creditLimit; }
   get entityType(): string { return this.props.entityType; }
+  get businessName(): string | null | undefined { return this.props.businessName; }
+  get industrySector(): string | null | undefined { return this.props.industrySector; }
+  get incorporationDate(): Date | null | undefined { return this.props.incorporationDate; }
+  get gstStatus(): string | null | undefined { return this.props.gstStatus; }
+  get financialYearEnd(): string | null | undefined { return this.props.financialYearEnd; }
+  get accountingMethod(): string | null | undefined { return this.props.accountingMethod; }
+  get estimatedTurnover(): string | null | undefined { return this.props.estimatedTurnover; }
+  get employeeCount(): string | null | undefined { return this.props.employeeCount; }
+  get identityProofUrl(): string | null | undefined { return this.props.identityProofUrl; }
+  get businessRegistrationUrl(): string | null | undefined { return this.props.businessRegistrationUrl; }
+  get taxCardCopyUrl(): string | null | undefined { return this.props.taxCardCopyUrl; }
+  get previousYearReturnUrl(): string | null | undefined { return this.props.previousYearReturnUrl; }
+  get termsAccepted(): boolean { return this.props.termsAccepted; }
   get notes(): string | null | undefined { return this.props.notes; }
   get metadata(): any { return this.props.metadata; }
   get isActive(): boolean { return this.props.isActive; }
