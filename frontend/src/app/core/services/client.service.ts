@@ -17,6 +17,8 @@ export interface Client {
     year: string;
     documentCount: number;
   }[];
+  gstin?: string;
+  stateCode?: string;
   createdAt: string;
   updatedAt: string;
 }

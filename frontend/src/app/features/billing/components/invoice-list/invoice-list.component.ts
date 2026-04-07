@@ -80,8 +80,21 @@ export class InvoiceListComponent implements OnInit {
   readonly overdueInView = computed(() =>
     this.facade.invoices().filter((invoice) => invoice.status === 'overdue').length
   );
-  readonly outstandingInView = computed(() =>
+
+  readonly totalAmountInView = computed(() =>
+    this.facade.invoices().reduce((sum, invoice) => sum + Number(invoice.totalAmount || 0), 0)
+  );
+
+  readonly totalPaidInView = computed(() =>
+    this.facade.invoices().reduce((sum, invoice) => sum + Number(invoice.amountPaid || 0), 0)
+  );
+
+  readonly totalOutstandingInView = computed(() =>
     this.facade.invoices().reduce((sum, invoice) => sum + this.balanceDueAmount(invoice), 0)
+  );
+
+  readonly outstandingCount = computed(() =>
+    this.facade.invoices().filter((invoice) => this.balanceDueAmount(invoice) > 0).length
   );
   readonly pageStart = computed(() => {
     if (this.facade.total() === 0) {

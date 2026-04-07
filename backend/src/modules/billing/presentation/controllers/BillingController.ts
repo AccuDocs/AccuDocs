@@ -218,7 +218,7 @@ export class BillingController {
           client_id as "clientId",
           amount,
           payment_date as "paymentDate",
-          coalesce(payment_method, 'bank_transfer') as "paymentMode",
+          coalesce(payment_mode, 'bank_transfer') as "paymentMode",
           reference_number as "referenceNumber",
           notes,
           coalesce(recorded_by, organization_id) as "recordedBy",

@@ -4,49 +4,60 @@ import { Invoice } from "../../domain/entities/Invoice";
 import { Invoice as InvoiceModel, InvoiceLineItem as InvoiceLineItemModel, InvoiceNumberSequence, Client as ClientModel } from "../../../../models";
 import { InvoiceMapper } from "../mappers/InvoiceMapper";
 import { Op } from "sequelize";
+import { logger } from "../../../../utils/logger";
 
 @injectable()
 export class SequelizeInvoiceRepository implements IInvoiceRepository {
   async save(invoice: Invoice, options?: any): Promise<Invoice> {
-    const rawInvoice = InvoiceMapper.toPersistence(invoice);
-    const rawLineItems = invoice.lineItems.map(InvoiceMapper.toPersistenceLineItem);
+    try {
+      const rawInvoice = InvoiceMapper.toPersistence(invoice);
+      const rawLineItems = invoice.lineItems.map(InvoiceMapper.toPersistenceLineItem);
 
-    const exists = await InvoiceModel.findByPk(invoice.id, { transaction: options?.transaction });
+      const exists = await InvoiceModel.findByPk(invoice.id, { transaction: options?.transaction });
 
-    if (exists) {
-      await exists.update(rawInvoice, options);
-      
-      if (rawLineItems.length > 0) {
-        // Basic sync approach: delete missing, upsert rest
-        const currentLineItemIds = rawLineItems.map(li => li.id).filter(Boolean);
-        await InvoiceLineItemModel.destroy({
-          where: { invoiceId: invoice.id, id: { [Op.notIn]: currentLineItemIds } },
-          transaction: options?.transaction
-        });
+      if (exists) {
+        await exists.update(rawInvoice, options);
+        
+        if (rawLineItems.length > 0) {
+          // Basic sync approach: delete missing, upsert rest
+          const currentLineItemIds = rawLineItems.map(li => li.id).filter(Boolean);
+          await InvoiceLineItemModel.destroy({
+            where: { invoiceId: invoice.id, id: { [Op.notIn]: currentLineItemIds } },
+            transaction: options?.transaction
+          });
 
-        for (const item of rawLineItems) {
-          const itemExists = await InvoiceLineItemModel.findByPk(item.id, { transaction: options?.transaction });
-          if (itemExists) {
-            await itemExists.update(item, options);
-          } else {
-            await InvoiceLineItemModel.create(item, options);
+          for (const item of rawLineItems) {
+            const itemExists = await InvoiceLineItemModel.findByPk(item.id, { transaction: options?.transaction });
+            if (itemExists) {
+              await itemExists.update(item, options);
+            } else {
+              await InvoiceLineItemModel.create(item, options);
+            }
           }
         }
+      } else {
+        await InvoiceModel.create(rawInvoice, options);
+        if (rawLineItems.length > 0) {
+          await InvoiceLineItemModel.bulkCreate(rawLineItems, options);
+        }
       }
-    } else {
-      await InvoiceModel.create(rawInvoice, options);
-      if (rawLineItems.length > 0) {
-        await InvoiceLineItemModel.bulkCreate(rawLineItems, options);
+
+      // Refresh from DB to get calculated fields
+      const refreshed = await InvoiceModel.findByPk(invoice.id, {
+        include: [{ model: InvoiceLineItemModel, as: 'lineItems' }],
+        transaction: options?.transaction
+      });
+
+      return InvoiceMapper.toDomain(refreshed!);
+    } catch (error: any) {
+      logger.error('❌ DATABASE ERROR IN INVOICE REPOSITORY:', error.message);
+      if (error.original) {
+        logger.error('Raw PG Error:', error.original.message);
+        logger.error('Failed on Column:', (error.original as any).column);
+        logger.error('Failed on Table:', (error.original as any).table);
       }
+      throw error;
     }
-
-    // Refresh from DB to get calculated fields
-    const refreshed = await InvoiceModel.findByPk(invoice.id, {
-      include: [{ model: InvoiceLineItemModel, as: 'lineItems' }],
-      transaction: options?.transaction
-    });
-
-    return InvoiceMapper.toDomain(refreshed!);
   }
 
   async findById(id: string, organizationId: string): Promise<Invoice | null> {

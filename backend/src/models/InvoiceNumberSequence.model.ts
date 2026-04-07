@@ -12,7 +12,7 @@ export class InvoiceNumberSequence extends Model {
 InvoiceNumberSequence.init({
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   organizationId: { type: DataTypes.UUID, allowNull: false, field: 'organization_id' },
-  financialYear: { type: DataTypes.CHAR(4), allowNull: false, field: 'financial_year' },
+  financialYear: { type: DataTypes.STRING(10), allowNull: false, field: 'financial_year' },
   lastSequence: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0, field: 'last_sequence' },
 }, {
   sequelize,

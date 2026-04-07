@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -139,6 +139,26 @@ export class InvoiceDetailComponent {
   readonly payments = computed(() => this.invoice()?.payments ?? []);
   readonly timelineEvents = computed(() => this.buildTimeline(this.invoice()));
 
+  readonly isOverpaid = computed(() => {
+    const amount = this.paymentForm.controls.amount.value ?? 0;
+    const balance = this.invoice()?.balanceDue ?? 0;
+    return balance > 0 && amount > balance;
+  });
+
+  constructor() {
+    effect(() => {
+      const invoice = this.invoice();
+      if (invoice) {
+        this.paymentForm.controls.amount.setValidators([
+          Validators.required,
+          Validators.min(0.01),
+          Validators.max(invoice.balanceDue),
+        ]);
+        this.paymentForm.controls.amount.updateValueAndValidity({ emitEvent: false });
+      }
+    });
+  }
+
   onTabChange(index: number): void {
     this.selectedTabIndex.set(index);
   }
@@ -216,6 +236,15 @@ export class InvoiceDetailComponent {
     }
 
     void this.router.navigate(['/billing/invoices', invoice.id, 'edit']);
+  }
+
+  fillRemainingBalance(): void {
+    const invoice = this.invoice();
+    if (invoice && invoice.balanceDue > 0) {
+      this.paymentForm.patchValue({
+        amount: invoice.balanceDue,
+      });
+    }
   }
 
   cancelInvoice(): void {
