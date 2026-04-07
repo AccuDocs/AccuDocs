@@ -1,13 +1,19 @@
-import { Component, inject, signal, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, inject, signal, OnInit, Input, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSelectModule } from '@angular/material/select';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ClientService } from '@core/services/client.service';
 import { NotificationService } from '@core/services/notification.service';
+import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
 
 @Component({
   selector: 'app-client-form',
@@ -18,213 +24,39 @@ import { NotificationService } from '@core/services/notification.service';
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,
+    MatSelectModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatCheckboxModule,
+    MatTooltipModule,
     MatProgressSpinnerModule,
   ],
-  template: `
-    <div class="flex flex-col h-full bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-modal border border-slate-200/50 dark:border-slate-800/50">
-      
-      <!-- Premium Modal Header -->
-      <header class="px-8 py-6 border-b border-slate-100 dark:border-slate-800 relative bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-800/50">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-5">
-            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-primary-100 to-primary-50 dark:from-primary-900/40 dark:to-primary-900/20 flex items-center justify-center text-primary-600 dark:text-primary-400 shadow-inner border border-primary-200/50 dark:border-primary-800/50">
-              <mat-icon class="text-3xl" style="width: 30px; height: 30px; font-size: 30px;">
-                {{ isEditMode() ? 'edit_note' : 'person_add' }}
-              </mat-icon>
-            </div>
-            <div>
-              <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                {{ isEditMode() ? 'Edit Client Profile' : 'Add New Client' }}
-              </h1>
-              <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium italic opacity-80">
-                {{ isEditMode() ? 'Modify existing client information' : 'Create a fresh client profile in the system' }}
-              </p>
-            </div>
-          </div>
-          
-          <button 
-            type="button"
-            (click)="onCancel()"
-            class="group p-2.5 rounded-xl text-slate-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-all duration-300"
-            title="Close"
-          >
-            <mat-icon class="transition-transform duration-300 group-hover:rotate-90">close</mat-icon>
-          </button>
-        </div>
-      </header>
-
-      <!-- Scrollable Form Content -->
-      <main class="flex-1 overflow-y-auto p-8 custom-scrollbar">
-        @if (isLoadingData()) {
-          <div class="flex flex-col items-center justify-center py-24">
-            <div class="relative w-20 h-20">
-              <div class="absolute inset-0 border-4 border-primary-100 dark:border-primary-900/30 rounded-full"></div>
-              <div class="absolute inset-0 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-            <p class="mt-6 text-slate-500 dark:text-slate-400 font-bold tracking-wide animate-pulse">GATHERING CLIENT DATA...</p>
-          </div>
-        } @else {
-          <form [formGroup]="clientForm" (ngSubmit)="onSubmit()" class="space-y-10">
-            
-            <!-- Form Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-x-8 gap-y-10">
-              
-              <!-- Client Code Field (4 cols) -->
-              <div class="md:col-span-4 space-y-3">
-                <label class="flex items-center gap-2 text-[13px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider ml-1">
-                  <mat-icon class="text-lg opacity-50">tag</mat-icon>
-                  Client Code <span class="text-danger-500">*</span>
-                </label>
-                <div class="relative group">
-                  <input 
-                    type="text"
-                    formControlName="code"
-                    placeholder="e.g. CLI001"
-                    class="form-input-premium pr-10 bg-slate-50/80 dark:bg-slate-800/50 cursor-not-allowed opacity-80"
-                    [class.error]="clientForm.get('code')?.touched && clientForm.get('code')?.invalid"
-                  >
-                  <div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
-                    <mat-icon class="text-xl">lock</mat-icon>
-                  </div>
-                  <div class="input-focus-border !opacity-0"></div>
-                </div>
-                @if (clientForm.get('code')?.touched && clientForm.get('code')?.hasError('required')) {
-                  <p class="text-xs text-danger-500 font-bold mt-1.5 ml-1 flex items-center gap-1.5 animate-slide-up">
-                    <mat-icon class="text-[16px] w-[16px] h-[16px]">error</mat-icon> Code is required
-                  </p>
-                }
-              </div>
-
-              <!-- Full Name Field (8 cols) -->
-              <div class="md:col-span-8 space-y-3">
-                <label class="flex items-center gap-2 text-[13px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider ml-1">
-                  <mat-icon class="text-lg opacity-50">person</mat-icon>
-                  Full Name <span class="text-danger-500">*</span>
-                </label>
-                <div class="relative group">
-                  <input 
-                    type="text"
-                    formControlName="name"
-                    placeholder="John Doe"
-                    class="form-input-premium"
-                    [class.error]="clientForm.get('name')?.touched && clientForm.get('name')?.invalid"
-                  >
-                  <div class="input-focus-border"></div>
-                </div>
-                @if (clientForm.get('name')?.touched && clientForm.get('name')?.hasError('required')) {
-                  <p class="text-xs text-danger-500 font-bold mt-1.5 ml-1 flex items-center gap-1.5 animate-slide-up">
-                    <mat-icon class="text-[16px] w-[16px] h-[16px]">error_outline</mat-icon> Full name is required
-                  </p>
-                }
-              </div>
-
-              <!-- Mobile Number Field -->
-              <div class="md:col-span-12 space-y-3">
-                <label class="flex items-center gap-2 text-[13px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider ml-1">
-                  <mat-icon class="text-lg opacity-50">call</mat-icon>
-                  Mobile Number <span class="text-danger-500">*</span>
-                </label>
-                <div class="relative group max-w-lg">
-                  <div class="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2 px-4 text-slate-500 border-r border-slate-200 dark:border-slate-700 h-8 group-focus-within:border-primary-300 transition-colors z-10 pointer-events-none">
-                    <span class="text-sm font-extrabold flex items-center gap-1.5 whitespace-nowrap">
-                      <img src="https://flagcdn.com/w20/in.png" class="w-5 h-3.5 rounded-sm shadow-sm" alt="IN">
-                      +91
-                    </span>
-                  </div>
-                  <input 
-                    type="tel"
-                    formControlName="mobile"
-                    placeholder="00000 00000"
-                    class="form-input-premium !pl-32"
-                    [class.error]="clientForm.get('mobile')?.touched && clientForm.get('mobile')?.invalid"
-                    (input)="onMobileInput($event)"
-                  >
-                  <div class="input-focus-border"></div>
-                </div>
-                <div class="flex items-center justify-between max-w-lg px-1">
-                  <p class="text-[11px] text-slate-400 font-medium italic">Same number can be linked to multiple clients for WhatsApp access</p>
-                  @if (clientForm.get('mobile')?.touched && clientForm.get('mobile')?.invalid) {
-                    <p class="text-xs text-danger-500 font-bold flex items-center gap-1.5 animate-slide-up">
-                      <mat-icon class="text-[16px] w-[16px] h-[16px]">warning</mat-icon> Valid number required
-                    </p>
-                  }
-                </div>
-              </div>
-            </div>
-
-            <!-- Footer Actions -->
-            <div class="pt-8 mt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-6">
-              <button 
-                type="button" 
-                (click)="onCancel()" 
-                class="group flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/50 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20 shadow-sm border border-slate-200/50 dark:border-slate-700/30 transition-all duration-300"
-              >
-                <mat-icon class="text-xl opacity-60 group-hover:rotate-12 transition-transform">close</mat-icon>
-                Discard
-              </button>
-              
-              <button 
-                type="submit" 
-                [disabled]="clientForm.invalid || isSubmitting()"
-                class="relative overflow-hidden flex items-center gap-3 px-10 py-4 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 text-white font-bold text-sm shadow-xl shadow-primary-500/20 hover:shadow-primary-500/40 hover:-translate-y-1 active:translate-y-0 active:scale-95 transition-all duration-300 disabled:opacity-40 disabled:grayscale disabled:pointer-events-none group"
-              >
-                <div class="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out"></div>
-                
-                @if (isSubmitting()) {
-                  <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span class="relative z-10">{{ isEditMode() ? 'Updating...' : 'Creating...' }}</span>
-                } @else {
-                  <mat-icon class="relative z-10 text-xl group-hover:scale-110 transition-transform">{{ isEditMode() ? 'verified' : 'add_task' }}</mat-icon>
-                  <span class="relative z-10 tracking-wide uppercase">{{ isEditMode() ? 'Save Changes' : 'Create Client' }}</span>
-                }
-              </button>
-            </div>
-          </form>
-        }
-      </main>
-    </div>
-  `,
-  styles: [`
-    .form-input-premium {
-      @apply w-full px-5 py-3 rounded-xl border border-secondary-200 dark:border-secondary-700/50 bg-secondary-50/30 dark:bg-secondary-900/40 text-secondary-900 dark:text-white placeholder-secondary-400/60 focus:outline-none transition-all duration-300 font-semibold text-sm;
-      box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
-    }
-
-    .form-input-premium:focus {
-      @apply bg-white dark:bg-secondary-900 border-primary-400/50 shadow-sm ring-4 ring-primary-500/10;
-    }
-
-    .input-focus-border {
-      @apply absolute -inset-[2px] bg-gradient-to-r from-primary-400 to-indigo-400 rounded-[9px] opacity-0 blur-[2px] transition-opacity duration-300 pointer-events-none -z-10;
-    }
-
-    .group:focus-within .input-focus-border {
-      @apply opacity-30;
-    }
-
-    .form-input-premium.error {
-      @apply border-danger-300 bg-danger-50/20 dark:bg-danger-900/10 dark:border-danger-900/50 text-danger-950 dark:text-danger-100 placeholder-danger-300;
-      box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.05);
-    }
-
-    .form-input-premium.error:focus {
-      @apply ring-danger-500/10 border-danger-400;
-    }
-
-    /* Custom Scrollbar */
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 5px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      @apply bg-transparent;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      @apply bg-slate-200 dark:bg-slate-800 rounded-full;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      @apply bg-slate-300 dark:bg-slate-700;
-    }
-  `],
+  templateUrl: './client-form.component.html',
+  styleUrls: ['./client-form.component.scss'],
+  animations: [
+    trigger('stepAnimation', [
+      transition(':increment', [
+        query(':enter', [
+          style({ opacity: 0, transform: 'translateX(20px)' }),
+          animate('300ms ease-out', style({ opacity: 1, transform: 'translateX(0)' }))
+        ], { optional: true })
+      ]),
+      transition(':decrement', [
+        query(':enter', [
+          style({ opacity: 0, transform: 'translateX(-20px)' }),
+          animate('300ms ease-out', style({ opacity: 1, transform: 'translateX(0)' }))
+        ], { optional: true })
+      ])
+    ]),
+    trigger('listAnimation', [
+      transition('* <=> *', [
+        query(':enter', [
+          style({ opacity: 0, transform: 'translateY(10px)' }),
+          stagger('50ms', animate('300ms ease-out', style({ opacity: 1, transform: 'translateY(0)' })))
+        ], { optional: true })
+      ])
+    ])
+  ]
 })
 export class ClientFormComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -233,26 +65,101 @@ export class ClientFormComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
+  // Wizard State
+  currentStep = signal(1);
+  totalSteps = 4;
   isEditMode = signal(false);
   isLoadingData = signal(false);
   isSubmitting = signal(false);
+  isDraftSaving = signal(false);
   private clientId: string | null = null;
 
   @Input() isModal = false;
   @Input() closeCallback?: () => void;
+
+  // Dropdown Options
+  entityTypes = [
+    { value: 'individual', label: 'Individual / Freelancer', icon: 'person' },
+    { value: 'proprietorship', label: 'Sole Proprietorship', icon: 'storefront' },
+    { value: 'partnership', label: 'Partnership Firm', icon: 'groups' },
+    { value: 'pvt_ltd', label: 'Private Limited Company', icon: 'business' },
+    { value: 'pub_ltd', label: 'Public Limited Company', icon: 'domain' },
+    { value: 'llp', label: 'LLP (Limited Liability Partnership)', icon: 'account_balance' },
+    { value: 'trust_ngo', label: 'Trust / NGO', icon: 'volunteer_activism' }
+  ];
+
+  industrySectors = [
+    'IT & Software', 'Retail & E-commerce', 'Manufacturing', 'Healthcare/Medical',
+    'Real Estate/Construction', 'Hospitality/Tourism', 'Professional Services', 'Other'
+  ];
+
+  gstStatuses = ['Registered', 'Unregistered', 'Exempted'];
+  financialYearEnds = [
+    { value: 'march_31', label: 'March 31st' },
+    { value: 'december_31', label: 'December 31st' },
+    { value: 'other', label: 'Other (Custom Date)' }
+  ];
+  accountingMethods = ['Cash Basis', 'Accrual Basis'];
+  turnoverRanges = [
+    'Under $100k (or ₹10L)', '$100k - $500k (or ₹10L - ₹50L)',
+    '$500k - $1M (or ₹50L - ₹1Cr)', 'Over $1M (or ₹1Cr+)'
+  ];
+  employeeRanges = ['1 (Self)', '2 - 10', '11 - 50', '51 - 200', '200+'];
+
+  // File states
+  files = signal<{ [key: string]: File | null }>({
+    identityProof: null,
+    businessRegistration: null,
+    taxCardCopy: null,
+    previousReturn: null
+  });
+
+  // Form Progress Computed
+  stepProgress = computed(() => {
+    return (this.currentStep() / this.totalSteps) * 100;
+  });
+
+  clientForm: FormGroup = this.fb.group({
+    // Step 1: Personal Details
+    code: ['', [Validators.required]],
+    name: ['', [Validators.required, this.alphabeticalValidator]],
+    email: ['', [Validators.required, Validators.email]],
+    mobile: ['', [Validators.required, Validators.pattern(/^[0-9]{5}\s?[0-9]{5}$|^[0-9]{10}$/)]],
+    password: ['', [Validators.required, Validators.minLength(8), this.passwordComplexityValidator]],
+    confirmPassword: ['', [Validators.required]],
+
+    // Step 2: Business & Entity Profile
+    entityType: ['individual', [Validators.required]],
+    businessName: [''],
+    industrySector: ['', [Validators.required]],
+    incorporationDate: [null],
+    businessAddress: ['', [Validators.required]],
+    city: ['', [Validators.required]],
+    location: ['', [Validators.required]],
+
+    // Step 3: Tax & Compliance
+    taxId: ['', [Validators.required]],
+    gstStatus: ['Unregistered', [Validators.required]],
+    financialYearEnd: ['march_31', [Validators.required]],
+    accountingMethod: ['Cash Basis', [Validators.required]],
+    estimatedTurnover: ['', [Validators.required]],
+    employeeCount: ['', [Validators.required]],
+
+    // Step 4: KYC & Extra
+    termsAccepted: [false, [Validators.requiredTrue]]
+  }, { validators: this.passwordMatchValidator });
 
   // Modal Input
   @Input() set initialData(data: any) {
     if (data) {
       this.isEditMode.set(true);
       this.clientId = data.id;
-
+      
       // Strip +91 from mobile for UI
       let mobile = data.user?.mobile || data.mobile || '';
       if (mobile.startsWith('+91')) {
         mobile = mobile.substring(3).trim();
       }
-      // Format mobile for UI
       if (mobile.length > 5) {
         mobile = mobile.substring(0, 5) + ' ' + mobile.substring(5);
       }
@@ -260,130 +167,211 @@ export class ClientFormComponent implements OnInit {
       this.clientForm.patchValue({
         code: data.code,
         name: data.user?.name || data.name,
+        email: data.user?.email || data.email,
         mobile: mobile,
+        entityType: data.entityType || 'individual',
+        businessName: data.businessName,
+        industrySector: data.industrySector,
+        incorporationDate: data.incorporationDate,
+        businessAddress: data.address,
+        city: data.city,
+        location: data.location,
+        taxId: data.pan || data.gstin,
+        gstStatus: data.gstStatus || 'Unregistered',
+        financialYearEnd: data.financialYearEnd || 'march_31',
+        accountingMethod: data.accountingMethod || 'Cash Basis',
+        estimatedTurnover: data.estimatedTurnover,
+        employeeCount: data.employeeCount,
+        termsAccepted: true
       });
 
-      // Maintain code as read-only by default
       this.clientForm.get('code')?.disable();
+      // Remove password requirement in edit mode if not changing it
+      this.clientForm.get('password')?.clearValidators();
+      this.clientForm.get('password')?.updateValueAndValidity();
+      this.clientForm.get('confirmPassword')?.clearValidators();
+      this.clientForm.get('confirmPassword')?.updateValueAndValidity();
     }
   }
-
-  clientForm: FormGroup = this.fb.group({
-    code: ['', [Validators.required]],
-    name: ['', [Validators.required]],
-    mobile: ['', [Validators.required, Validators.pattern(/^[0-9]{5}\s?[0-9]{5}$/)]],
-  });
 
   ngOnInit(): void {
-    this.clientId = this.route.snapshot.paramMap.get('id');
-
-    if (this.clientId) {
+    const routeId = this.route.snapshot.paramMap.get('id');
+    if (routeId) {
+      this.clientId = routeId;
       this.isEditMode.set(true);
       this.loadClient();
-    } else {
+    } else if (!this.clientForm.get('code')?.value) {
       this.loadNextCode();
+    }
+
+    // Conditional logic for Entity Type
+    this.clientForm.get('entityType')?.valueChanges.subscribe(type => {
+      const busName = this.clientForm.get('businessName');
+      const incDate = this.clientForm.get('incorporationDate');
+      
+      if (type === 'individual') {
+        busName?.clearValidators();
+        incDate?.clearValidators();
+      } else {
+        busName?.setValidators([Validators.required]);
+        incDate?.setValidators([Validators.required]);
+      }
+      busName?.updateValueAndValidity();
+      incDate?.updateValueAndValidity();
+    });
+  }
+
+  // Validators
+  private alphabeticalValidator(control: AbstractControl): ValidationErrors | null {
+    const valid = /^[a-zA-Z\s]*$/.test(control.value);
+    return valid ? null : { alphabetical: true };
+  }
+
+  private passwordComplexityValidator(control: AbstractControl): ValidationErrors | null {
+    const value = control.value || '';
+    const hasUpper = /[A-Z]/.test(value);
+    const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/.test(value);
+    return hasUpper && hasSymbol ? null : { complexity: true };
+  }
+
+  private passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
+    const password = group.get('password')?.value;
+    const confirm = group.get('confirmPassword')?.value;
+    return password === confirm ? null : { passwordMismatch: true };
+  }
+
+  // Navigation
+  nextStep(): void {
+    if (this.currentStep() < this.totalSteps) {
+      if (this.isStepValid(this.currentStep())) {
+        this.currentStep.update(s => s + 1);
+      } else {
+        this.markStepTouched(this.currentStep());
+        this.notificationService.warning('Please complete all required fields correctly.');
+      }
     }
   }
 
+  prevStep(): void {
+    if (this.currentStep() > 1) {
+      this.currentStep.update(s => s - 1);
+    }
+  }
+
+  isStepValid(step: number): boolean {
+    const controls = this.getStepControls(step);
+    return controls.every(c => this.clientForm.get(c)?.valid);
+  }
+
+  private markStepTouched(step: number): void {
+    this.getStepControls(step).forEach(c => this.clientForm.get(c)?.markAsTouched());
+  }
+
+  private getStepControls(step: number): string[] {
+    switch (step) {
+      case 1: return ['code', 'name', 'email', 'mobile', 'password', 'confirmPassword'];
+      case 2: return ['entityType', 'businessName', 'industrySector', 'incorporationDate', 'businessAddress', 'city', 'location'];
+      case 3: return ['taxId', 'gstStatus', 'financialYearEnd', 'accountingMethod', 'estimatedTurnover', 'employeeCount'];
+      case 4: return ['termsAccepted'];
+      default: return [];
+    }
+  }
+
+  // Data Loading
   private loadClient(): void {
     if (!this.clientId) return;
-
     this.isLoadingData.set(true);
     this.clientService.getClient(this.clientId).subscribe({
-      next: (response) => {
-        const client = response.data;
-
-        // Strip +91 from mobile for UI
-        let mobile = client.user?.mobile || '';
-        if (mobile.startsWith('+91')) {
-          mobile = mobile.substring(3).trim();
-        }
-        // Format mobile for UI
-        if (mobile.length > 5) {
-          mobile = mobile.substring(0, 5) + ' ' + mobile.substring(5);
-        }
-
-        this.clientForm.patchValue({
-          code: client.code,
-          name: client.user?.name,
-          mobile: mobile,
-        });
-
-        // Maintain code as read-only by default
-        this.clientForm.get('code')?.disable();
-      },
-      error: () => {
-        this.notificationService.error('Failed to load client');
-        this.router.navigate(['/clients']);
-      },
-      complete: () => this.isLoadingData.set(false),
+      next: (res) => this.initialData = res.data,
+      error: () => this.notificationService.error('Failed to load client data'),
+      complete: () => this.isLoadingData.set(false)
     });
   }
 
   private loadNextCode(): void {
     this.clientService.getNextCode().subscribe({
-      next: (response) => {
-        this.clientForm.patchValue({ code: response.data.code });
-      },
+      next: (res) => this.clientForm.patchValue({ code: res.data.code }),
     });
+  }
+
+  // File Handling
+  onFileChange(event: any, field: string): void {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        this.notificationService.error('File size exceeds 5MB limit.');
+        event.target.value = '';
+        return;
+      }
+      this.files.update(f => ({ ...f, [field]: file }));
+    }
+  }
+
+  // Actions
+  onSaveAsDraft(): void {
+    this.isDraftSaving.set(true);
+    // Simulate draft saving
+    setTimeout(() => {
+      this.isDraftSaving.set(false);
+      this.notificationService.success('Draft saved successfully!');
+    }, 1200);
   }
 
   onSubmit(): void {
     if (this.clientForm.invalid) return;
 
     this.isSubmitting.set(true);
-
-    // Get all values including disabled ones (like code)
     const formValue = this.clientForm.getRawValue();
-
-    // Format data for backend
+    
+    // Cleanup data for backend
     const formData = {
       ...formValue,
-      mobile: `+91${formValue.mobile.replace(/\s/g, '')}`
+      mobile: `+91${formValue.mobile.replace(/\s/g, '')}`,
+      address: formValue.businessAddress,
+      pan: formValue.taxId, // Simple mapping for now
+      gstin: formValue.taxId
     };
 
+    // In a real scenario, we would use FormData for file uploads
     const request$ = this.isEditMode()
       ? this.clientService.updateClient(this.clientId!, formData)
       : this.clientService.createClient(formData);
 
     request$.subscribe({
       next: () => {
-        this.notificationService.success(
-          this.isEditMode() ? 'Client updated successfully' : 'Client created successfully'
-        );
-        if (this.isModal && this.closeCallback) {
-          this.closeCallback();
-        } else {
-          this.router.navigate(['/clients']);
-        }
+        this.notificationService.success(this.isEditMode() ? 'Client updated' : 'Client created');
+        this.isModal ? this.closeCallback?.() : this.router.navigate(['/clients']);
       },
       error: () => this.isSubmitting.set(false),
-      complete: () => this.isSubmitting.set(false),
+      complete: () => this.isSubmitting.set(false)
     });
+  }
+
+  onCancel(): void {
+    this.isModal ? this.closeCallback?.() : this.router.navigate(['/clients']);
   }
 
   onMobileInput(event: any): void {
     const input = event.target;
-    let value = input.value.replace(/\D/g, ''); // Remove non-digits
-
-    // Limit to 10 digits
-    if (value.length > 10) {
-      value = value.substring(0, 10);
-    }
-
-    // Format as 00000 00000
-    if (value.length > 5) {
-      value = value.substring(0, 5) + ' ' + value.substring(5);
-    }
-
+    let value = input.value.replace(/\D/g, '');
+    if (value.length > 10) value = value.substring(0, 10);
+    if (value.length > 5) value = value.substring(0, 5) + ' ' + value.substring(5);
     this.clientForm.get('mobile')?.setValue(value, { emitEvent: false });
   }
 
-  onCancel(): void {
-    if (this.isModal && this.closeCallback) {
-      this.closeCallback();
-    } else {
-      this.router.navigate(['/clients']);
+  // Helpers
+  getStepTitle(): string {
+    switch (this.currentStep()) {
+      case 1: return 'Personal & Security Details';
+      case 2: return 'Business & Entity Profile';
+      case 3: return 'Tax & Compliance Strategy';
+      case 4: return 'KYC Document Verification';
+      default: return '';
     }
+  }
+
+  isControlInvalid(controlName: string): boolean {
+    const control = this.clientForm.get(controlName);
+    return !!(control && control.invalid && (control.touched || control.dirty));
   }
 }

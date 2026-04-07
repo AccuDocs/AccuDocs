@@ -1,0 +1,191 @@
+/* Premium Wizard Custom Styles - Standard CSS for maximum compatibility */
+:host {
+  display: block;
+  height: 100%;
+}
+
+.shadow-modal {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 transparent;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+    &:hover {
+      background: #cbd5e1;
+    }
+  }
+}
+
+.label-premium {
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: 2px solid transparent;
+  background-color: #f8fafc;
+  border-radius: 0.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  &:focus-within {
+    background-color: #ffffff;
+    border-color: #4f46e6;
+    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.1);
+  }
+
+  &.disabled {
+    opacity: 0.6;
+    background-color: #f1f5f9;
+    cursor: not-allowed;
+  }
+
+  &.error {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+  }
+}
+
+.input-premium {
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  padding-left: 3rem;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1e293b;
+  
+  &::placeholder {
+    color: #94a3b8;
+  }
+}
+
+.icon-left {
+  position: absolute;
+  left: 1rem;
+  color: #94a3b8;
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  pointer-events: none;
+}
+
+.icon-right {
+  position: absolute;
+  right: 1rem;
+  color: #94a3b8;
+  font-size: 1.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.country-prefix {
+  position: absolute;
+  left: 1rem;
+  color: #475569;
+}
+
+.select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.select-premium {
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  background-color: #f8fafc;
+  border-radius: 0.75rem;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  
+  &:focus {
+    background-color: #ffffff;
+    border-color: #4f46e6;
+  }
+}
+
+.error-text {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ef4444;
+  margin-top: 0.25rem;
+  padding-left: 0.5rem;
+}
+
+.required {
+  color: #ef4444;
+  margin-left: 0.125rem;
+}
+
+/* Dark Mode Overrides */
+:host-context(.dark) {
+  .input-wrapper {
+    background-color: #1e293b;
+    &:focus-within {
+      background-color: #0f172a;
+    }
+    &.disabled {
+      background-color: #334155;
+    }
+  }
+  .input-premium {
+    color: #f1f5f9;
+  }
+  .label-premium {
+    color: #94a3b8;
+  }
+  .select-premium {
+    background-color: #1e293b;
+    color: #f1f5f9;
+  }
+}
+
+/* Step Animations */
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Material Overrides */
+::ng-deep {
+  .mat-mdc-checkbox-label {
+    font-size: 0.875rem !important;
+  }
+  .mat-mdc-icon-button {
+    --mdc-icon-button-state-layer-size: 40px;
+  }
+}

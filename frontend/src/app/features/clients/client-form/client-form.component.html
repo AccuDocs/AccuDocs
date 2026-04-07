@@ -1,0 +1,319 @@
+<div class="flex flex-col h-full bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-modal border border-slate-200/50 dark:border-slate-800/50">
+  
+  <header class="p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+    <div class="flex items-center gap-5 mb-8">
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-primary-500/20">
+        <mat-icon class="text-3xl" style="width: 30px; height: 30px; font-size: 30px;">
+          {{ isEditMode() ? 'edit_note' : 'person_add' }}
+        </mat-icon>
+      </div>
+      <div>
+        <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white leading-none">
+          {{ isEditMode() ? 'Update Business Profile' : 'Business Onboarding' }}
+        </h1>
+        <p class="text-[13px] text-slate-500 font-medium mt-2 flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-[10px] font-bold uppercase tracking-widest">Step {{currentStep()}}</span>
+          <span class="opacity-40">•</span>
+          {{ getStepTitle() }}
+        </p>
+      </div>
+    </div>
+
+    <div class="relative px-2">
+      <div class="flex items-center justify-between mb-4">
+        @for (step of [1, 2, 3, 4]; track step) {
+          <div class="z-10 flex flex-col items-center">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all duration-500"
+              [class.bg-primary-600]="currentStep() >= step"
+              [class.text-white]="currentStep() >= step"
+              [class.bg-slate-100]="currentStep() < step"
+              [class.text-slate-400]="currentStep() < step"
+              [class.dark:bg-slate-800]="currentStep() < step"
+              [class.shadow-lg]="currentStep() === step">
+              @if (currentStep() > step) {
+                <mat-icon class="text-sm">check</mat-icon>
+              } @else {
+                {{ step }}
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <div class="absolute top-4 left-6 right-6 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+        <div class="h-full bg-gradient-to-r from-primary-600 to-indigo-600 shadow-lg transition-all duration-700 ease-out"
+          [style.width.%]="stepProgress()"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 overflow-y-auto p-10 custom-scrollbar bg-slate-50/20 dark:bg-slate-900/30">
+    @if (isLoadingData()) {
+      <div class="flex flex-col items-center justify-center py-24 animate-pulse">
+        <mat-icon class="text-5xl text-primary-200">shield</mat-icon>
+        <p class="mt-4 text-slate-400 font-black tracking-widest text-[10px] uppercase">Protecting Core Data...</p>
+      </div>
+    } @else {
+      <form [formGroup]="clientForm" (ngSubmit)="onSubmit()" [@stepAnimation]="currentStep()" class="space-y-12">
+        
+        <!-- STEP 1: PERSONAL & SECURITY -->
+        @if (currentStep() === 1) {
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
+            <div class="space-y-2">
+              <label class="label-premium">System Code</label>
+              <div class="input-wrapper disabled">
+                <mat-icon class="icon-left">tag</mat-icon>
+                <input formControlName="code" class="input-premium" readonly>
+                <mat-icon class="icon-right opacity-30">lock</mat-icon>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="label-premium">Full Legal Name *</label>
+              <div class="input-wrapper" [class.error]="isControlInvalid('name')">
+                <mat-icon class="icon-left">person_outline</mat-icon>
+                <input formControlName="name" placeholder="Johnathan Doe" class="input-premium">
+              </div>
+              @if (isControlInvalid('name')) { <p class="error-text">alphabetical characters only</p> }
+            </div>
+
+            <div class="space-y-2">
+              <label class="label-premium">Personal Email *</label>
+              <div class="input-wrapper" [class.error]="isControlInvalid('email')">
+                <mat-icon class="icon-left">alternate_email</mat-icon>
+                <input type="email" formControlName="email" placeholder="john&#64;example.com" class="input-premium">
+              </div>
+              @if (isControlInvalid('email')) { <p class="error-text">valid email required</p> }
+            </div>
+
+            <div class="space-y-2">
+              <label class="label-premium">WhatsApp Phone *</label>
+              <div class="input-wrapper" [class.error]="isControlInvalid('mobile')">
+                <span class="country-prefix text-[11px] font-black">+91</span>
+                <input type="tel" formControlName="mobile" placeholder="00000 00000" class="input-premium !pl-14">
+              </div>
+              @if (isControlInvalid('mobile')) { <p class="error-text">10-digit mobile required</p> }
+            </div>
+
+            <div class="space-y-2">
+              <label class="label-premium">Access Password *</label>
+              <div class="input-wrapper" [class.error]="isControlInvalid('password')">
+                <mat-icon class="icon-left">password</mat-icon>
+                <input type="password" formControlName="password" placeholder="Min 8 chars" class="input-premium">
+              </div>
+              @if (clientForm.get('password')?.hasError('complexity')) { 
+                <p class="error-text">requires 1 uppercase, 1 symbol</p> 
+              } @else if (clientForm.get('password')?.hasError('minlength')) {
+                <p class="error-text">min 8 characters</p>
+              }
+            </div>
+
+            <div class="space-y-2">
+              <label class="label-premium">Verify Password *</label>
+              <div class="input-wrapper" [class.error]="isControlInvalid('confirmPassword') || (clientForm.get('confirmPassword')?.touched && clientForm.hasError('passwordMismatch'))">
+                <mat-icon class="icon-left">enhanced_encryption</mat-icon>
+                <input type="password" formControlName="confirmPassword" placeholder="Repeat password" class="input-premium">
+              </div>
+              @if (clientForm.get('confirmPassword')?.touched && clientForm.hasError('passwordMismatch')) { 
+                <p class="error-text">passwords must match</p> 
+              }
+            </div>
+          </div>
+        }
+
+        <!-- STEP 2: BUSINESS PROFILE -->
+        @if (currentStep() === 2) {
+          <div class="space-y-10 animate-fade-in">
+            <div class="space-y-4">
+              <label class="label-premium">Legal Entity Nature *</label>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                @for (type of entityTypes; track type.value) {
+                  <button type="button" (click)="clientForm.get('entityType')?.setValue(type.value)"
+                    class="p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 group"
+                    [class.border-primary-600]="clientForm.get('entityType')?.value === type.value"
+                    [class.bg-primary-50]="clientForm.get('entityType')?.value === type.value"
+                    [class.border-slate-100]="clientForm.get('entityType')?.value !== type.value"
+                    [class.dark:border-slate-800]="clientForm.get('entityType')?.value !== type.value">
+                    <mat-icon class="text-2xl" [class.text-primary-600]="clientForm.get('entityType')?.value === type.value" [class.text-slate-400]="clientForm.get('entityType')?.value !== type.value">{{type.icon}}</mat-icon>
+                    <span class="text-[10px] font-black tracking-tight transition-colors">{{type.label}}</span>
+                  </button>
+                }
+              </div>
+            </div>
+
+            @if (clientForm.get('entityType')?.value !== 'individual') {
+              <div class="space-y-2 animate-slide-up">
+                <label class="label-premium">Registered Business Name *</label>
+                <div class="input-wrapper" [class.error]="isControlInvalid('businessName')">
+                  <mat-icon class="icon-left">factory</mat-icon>
+                  <input formControlName="businessName" placeholder="Acme Corp Pvt Ltd" class="input-premium">
+                </div>
+                @if (isControlInvalid('businessName')) { <p class="error-text">required for non-individual entities</p> }
+              </div>
+            }
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div class="space-y-2">
+                <label class="label-premium">Industry Vertical *</label>
+                <div class="select-wrapper">
+                  <mat-select formControlName="industrySector" class="select-premium" placeholder="Select sector">
+                    @for (s of industrySectors; track s) { <mat-option [value]="s">{{s}}</mat-option> }
+                  </mat-select>
+                </div>
+                @if (isControlInvalid('industrySector')) { <p class="error-text">sector is required</p> }
+              </div>
+
+              <div class="space-y-2">
+                <label class="label-premium">Formation Date {{clientForm.get('entityType')?.value === 'individual' ? '(Optional)' : '*'}}</label>
+                <div class="input-wrapper" (click)="ipk.open()" [class.error]="isControlInvalid('incorporationDate')">
+                  <mat-icon class="icon-left">calendar_today</mat-icon>
+                  <input formControlName="incorporationDate" [matDatepicker]="ipk" class="input-premium cursor-pointer" readonly>
+                  <mat-datepicker #ipk></mat-datepicker>
+                </div>
+                @if (isControlInvalid('incorporationDate')) { <p class="error-text">required for entity profile</p> }
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="label-premium">Office Address *</label>
+              <div class="input-wrapper h-24 items-start pt-2" [class.error]="isControlInvalid('businessAddress')">
+                <mat-icon class="icon-left mt-1">place</mat-icon>
+                <textarea formControlName="businessAddress" placeholder="Suite/Apt, Street, Building..." class="input-premium h-full resize-none"></textarea>
+              </div>
+              @if (isControlInvalid('businessAddress')) { <p class="error-text">complete address required</p> }
+            </div>
+
+            <div class="grid grid-cols-2 gap-8">
+              <div class="space-y-2">
+                <label class="label-premium">City *</label>
+                <div class="input-wrapper" [class.error]="isControlInvalid('city')">
+                  <input formControlName="city" class="input-premium !pl-6" placeholder="Mumbai">
+                </div>
+              </div>
+              <div class="space-y-2">
+                <label class="label-premium">Location *</label>
+                <div class="input-wrapper" [class.error]="isControlInvalid('location')">
+                  <mat-icon class="icon-left">my_location</mat-icon>
+                  <input formControlName="location" class="input-premium" placeholder="State/Region">
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- STEP 3: TAX & COMPLIANCE -->
+        @if (currentStep() === 3) {
+          <div class="space-y-10 animate-fade-in">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div class="space-y-2">
+                <label class="label-premium">PAN / TAX ID *</label>
+                <div class="input-wrapper" [class.error]="isControlInvalid('taxId')">
+                  <mat-icon class="icon-left">badge</mat-icon>
+                  <input formControlName="taxId" placeholder="ABCDE1234F" class="input-premium uppercase">
+                </div>
+                @if (isControlInvalid('taxId')) { <p class="error-text">mandatory unique identifier</p> }
+              </div>
+
+              <div class="space-y-2">
+                <label class="label-premium">GST STATUS *</label>
+                <div class="select-wrapper">
+                  <mat-select formControlName="gstStatus" class="select-premium">
+                    @for (g of gstStatuses; track g) { <mat-option [value]="g">{{g}}</mat-option> }
+                  </mat-select>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <label class="label-premium">FY END *</label>
+                <div class="select-wrapper">
+                  <mat-select formControlName="financialYearEnd" class="select-premium">
+                    @for (f of financialYearEnds; track f.value) { <mat-option [value]="f.value">{{f.label}}</mat-option> }
+                  </mat-select>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <label class="label-premium">ESTIMATED TURNOVER *</label>
+                <div class="select-wrapper" [class.error]="isControlInvalid('estimatedTurnover')">
+                  <mat-select formControlName="estimatedTurnover" class="select-premium" placeholder="Select volume">
+                    @for (r of turnoverRanges; track r) { <mat-option [value]="r">{{r}}</mat-option> }
+                  </mat-select>
+                </div>
+                @if (isControlInvalid('estimatedTurnover')) { <p class="error-text">required for compliance bracket</p> }
+              </div>
+
+              <div class="space-y-2">
+                <label class="label-premium">HEADCOUNT STRENGTH *</label>
+                <div class="select-wrapper" [class.error]="isControlInvalid('employeeCount')">
+                  <mat-select formControlName="employeeCount" class="select-premium" placeholder="Employees">
+                    @for (e of employeeRanges; track e) { <mat-option [value]="e">{{e}}</mat-option> }
+                  </mat-select>
+                </div>
+                @if (isControlInvalid('employeeCount')) { <p class="error-text">required for payroll profiling</p> }
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- STEP 4: KYC & DOCUMENTS -->
+        @if (currentStep() === 4) {
+          <div class="space-y-10 animate-fade-in">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              @for (d of [
+                { id: 'identityProof', l: 'Identity Proof (PAN)', i: 'fingerprint' },
+                { id: 'businessRegistration', l: 'Reg Certificate (COI)', i: 'history_edu' },
+                { id: 'taxCardCopy', l: 'Tax Registration (GST)', i: 'article' },
+                { id: 'previousReturn', l: 'Last Filed Return', i: 'file_download_done' }
+              ]; track d.id) {
+                <div class="relative group">
+                  <input type="file" #dfi (change)="onFileChange($event, d.id)" class="hidden" accept=".pdf,.jpg,.jpeg,.png">
+                  <button type="button" (click)="dfi.click()" class="w-full flex items-center justify-between p-6 rounded-2xl border-2 border-dashed transition-all"
+                    [class.border-primary-600]="files()[d.id]" [class.bg-primary-50]="files()[d.id]" [class.border-slate-100]="!files()[d.id]">
+                    <div class="flex items-center gap-4">
+                      <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-colors" [class.bg-primary-600]="files()[d.id]" [class.bg-slate-100]="!files()[d.id]" [class.text-white]="files()[d.id]" [class.text-slate-400]="!files()[d.id]">
+                        <mat-icon>{{d.i}}</mat-icon>
+                      </div>
+                      <div class="text-left">
+                        <p class="text-[13px] font-black text-slate-800 dark:text-slate-200">{{d.l}}</p>
+                        <p class="text-[10px] font-black uppercase tracking-wider mt-1" [class.text-primary-600]="files()[d.id]" [class.text-slate-400]="!files()[d.id]">{{files()[d.id] ? files()[d.id]?.name : 'Max 5MB'}}</p>
+                      </div>
+                    </div>
+                    <mat-icon class="text-lg text-slate-300 group-hover:text-primary-600 transition-colors">cloud_upload</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+
+            <div class="p-6 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <mat-checkbox formControlName="termsAccepted" color="primary">
+                <span class="text-xs font-bold text-slate-600 dark:text-slate-400">
+                  I certify that all details provided above are true and I agree to the <a href="#" class="text-primary-600 underline">Compliance Agreement</a>.
+                </span>
+              </mat-checkbox>
+              @if (isControlInvalid('termsAccepted')) { <p class="error-text">agreement must be accepted to proceed</p> }
+            </div>
+          </div>
+        }
+
+        <!-- Wizard Navigation Footer -->
+        <div class="pt-10 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <button type="button" (click)="prevStep()" [disabled]="currentStep() === 1"
+            class="px-8 py-4 rounded-2xl text-sm font-black text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-20 transition-all active:scale-95">
+            Previous Step
+          </button>
+          
+          @if (currentStep() < totalSteps) {
+            <button type="button" (click)="nextStep()" 
+              class="px-12 py-4 rounded-2xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-black shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all active:scale-95 group">
+              Continue <mat-icon class="group-hover:translate-x-1 transition-transform">arrow_forward</mat-icon>
+            </button>
+          } @else {
+            <button type="submit" [disabled]="clientForm.invalid || isSubmitting()"
+              class="px-16 py-4 rounded-2xl bg-gradient-to-r from-primary-600 to-indigo-600 text-white font-black text-sm shadow-xl shadow-primary-500/20 hover:shadow-primary-500/40 hover:-translate-y-1 active:scale-95 transition-all disabled:opacity-40">
+              {{ isSubmitting() ? 'Saving Profile...' : 'Finish & Verify' }}
+            </button>
+          }
+        </div>
+      </form>
+    }
+  </main>
+</div>
