@@ -162,7 +162,7 @@ export class ClientService {
     }
 
     // Update User
-    if (dto.name || dto.mobile || (dto.isActive !== undefined)) {
+    if (dto.name || dto.mobile || dto.email || (dto.isActive !== undefined)) {
       const updateUserOrError = User.create({
         organizationId: user.organizationId,
         name: dto.name || user.name,
@@ -171,7 +171,7 @@ export class ClientService {
         isActive: dto.isActive !== undefined ? dto.isActive : user.isActive,
         lastLoginAt: user.lastLoginAt,
         password: user.password,
-        email: user.email,
+        email: dto.email || user.email,
         avatarS3Key: user.avatarS3Key,
         preferences: user.preferences
       }, user.id);
@@ -195,8 +195,18 @@ export class ClientService {
       stateCode: dto.stateCode || client.stateCode,
       city: dto.city ?? client.city,
       pincode: dto.pincode ?? client.pincode,
+      location: dto.location ?? client.location,
       creditLimit: dto.creditLimit ?? client.creditLimit,
       entityType: dto.entityType || client.entityType,
+      businessName: dto.businessName ?? client.businessName,
+      industrySector: dto.industrySector ?? client.industrySector,
+      incorporationDate: dto.incorporationDate ?? client.incorporationDate,
+      gstStatus: dto.gstStatus ?? client.gstStatus,
+      financialYearEnd: dto.financialYearEnd ?? client.financialYearEnd,
+      accountingMethod: dto.accountingMethod ?? client.accountingMethod,
+      estimatedTurnover: dto.estimatedTurnover ?? client.estimatedTurnover,
+      employeeCount: dto.employeeCount ?? client.employeeCount,
+      termsAccepted: dto.termsAccepted !== undefined ? dto.termsAccepted : client.termsAccepted,
       notes: dto.notes ?? client.notes,
       metadata: dto.metadata || client.metadata,
       isActive: dto.isActive !== undefined ? dto.isActive : client.isActive,

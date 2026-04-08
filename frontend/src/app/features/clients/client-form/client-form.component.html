@@ -89,7 +89,7 @@
               <label class="label-premium">WhatsApp Phone *</label>
               <div class="input-wrapper" [class.error]="isControlInvalid('mobile')">
                 <span class="country-prefix text-[11px] font-black">+91</span>
-                <input type="tel" formControlName="mobile" placeholder="00000 00000" class="input-premium !pl-14">
+                <input type="tel" formControlName="mobile" placeholder="99999 99999" (input)="onMobileInput($event)" class="input-premium !pl-14">
               </div>
               @if (isControlInvalid('mobile')) { <p class="error-text">10-digit mobile required</p> }
             </div>
@@ -97,8 +97,11 @@
             <div class="space-y-2">
               <label class="label-premium">Access Password *</label>
               <div class="input-wrapper" [class.error]="isControlInvalid('password')">
-                <mat-icon class="icon-left">password</mat-icon>
-                <input type="password" formControlName="password" placeholder="Min 8 chars" class="input-premium">
+                <mat-icon class="icon-left">lock_outline</mat-icon>
+                <input [type]="passwordVisible() ? 'text' : 'password'" formControlName="password" placeholder="Min 8 chars" class="input-premium">
+                <button type="button" (click)="togglePasswordVisibility('password')" class="icon-right hover:text-primary-600 transition-colors">
+                   <mat-icon>{{ passwordVisible() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
               </div>
               @if (clientForm.get('password')?.hasError('complexity')) { 
                 <p class="error-text">requires 1 uppercase, 1 symbol</p> 
@@ -111,7 +114,10 @@
               <label class="label-premium">Verify Password *</label>
               <div class="input-wrapper" [class.error]="isControlInvalid('confirmPassword') || (clientForm.get('confirmPassword')?.touched && clientForm.hasError('passwordMismatch'))">
                 <mat-icon class="icon-left">enhanced_encryption</mat-icon>
-                <input type="password" formControlName="confirmPassword" placeholder="Repeat password" class="input-premium">
+                <input [type]="confirmPasswordVisible() ? 'text' : 'password'" formControlName="confirmPassword" placeholder="Repeat password" class="input-premium">
+                <button type="button" (click)="togglePasswordVisibility('confirmPassword')" class="icon-right hover:text-primary-600 transition-colors">
+                  <mat-icon>{{ confirmPasswordVisible() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
               </div>
               @if (clientForm.get('confirmPassword')?.touched && clientForm.hasError('passwordMismatch')) { 
                 <p class="error-text">passwords must match</p> 

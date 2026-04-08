@@ -30,15 +30,31 @@ export const refreshTokenSchema = z.object({
 
 // Client schemas
 export const createClientSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must not exceed 100 characters'),
-  mobile: z.string().regex(patterns.mobile, 'Invalid mobile number format'),
-  code: z.string().regex(patterns.clientCode, 'Client code must be 2-10 uppercase alphanumeric characters'),
+  name: z.string().min(2, 'Name must be at least 2 characters').max(150, 'Name must not exceed 150 characters'),
+  mobile: z.string().min(10, 'Invalid mobile number format'), // Loosened for flexibility
+  code: z.string().min(2, 'Code must be at least 2 chars'),
+  email: z.string().email('Invalid email format').optional().nullable(),
+  entityType: z.string().optional().nullable(),
+  businessName: z.string().optional().nullable(),
+  industrySector: z.string().optional().nullable(),
+  incorporationDate: z.coerce.date().optional().nullable(),
+  address: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  location: z.string().optional().nullable(),
+  taxId: z.string().optional().nullable(),
+  pan: z.string().optional().nullable(),
+  gstin: z.string().optional().nullable(),
+  gstStatus: z.string().optional().nullable(),
+  financialYearEnd: z.string().optional().nullable(),
+  accountingMethod: z.string().optional().nullable(),
+  estimatedTurnover: z.string().optional().nullable(),
+  employeeCount: z.string().optional().nullable(),
+  termsAccepted: z.boolean().optional(),
+  password: z.string().min(8, 'Password must be at least 8 characters').optional(),
 });
 
-export const updateClientSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must not exceed 100 characters').optional(),
-  mobile: z.string().regex(patterns.mobile, 'Invalid mobile number format').optional(),
-  code: z.string().regex(patterns.clientCode, 'Client code must be 2-10 uppercase alphanumeric characters').optional(),
+export const updateClientSchema = createClientSchema.partial().extend({
+  isActive: z.boolean().optional(),
 });
 
 // User schemas

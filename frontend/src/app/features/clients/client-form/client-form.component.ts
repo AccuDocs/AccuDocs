@@ -71,7 +71,11 @@ export class ClientFormComponent implements OnInit {
   isEditMode = signal(false);
   isLoadingData = signal(false);
   isSubmitting = signal(false);
-  isDraftSaving = signal(false);
+  
+  // Password Visibility
+  passwordVisible = signal(false);
+  confirmPasswordVisible = signal(false);
+  
   private clientId: string | null = null;
 
   @Input() isModal = false;
@@ -119,13 +123,30 @@ export class ClientFormComponent implements OnInit {
     return (this.currentStep() / this.totalSteps) * 100;
   });
 
+  // Using arrow functions to ensure exact context binding
+  private passwordComplexityVal = (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value || '';
+    if (!value && this.isEditMode()) return null;
+    if (!value) return { required: true };
+    const hasUpper = /[A-Z]/.test(value);
+    const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/.test(value);
+    return hasUpper && hasSymbol ? null : { complexity: true };
+  };
+
+  private passwordMatchVal = (group: AbstractControl): ValidationErrors | null => {
+    const password = group.get('password')?.value;
+    const confirm = group.get('confirmPassword')?.value;
+    if (!password && this.isEditMode()) return null;
+    return password === confirm ? null : { passwordMismatch: true };
+  };
+
   clientForm: FormGroup = this.fb.group({
     // Step 1: Personal Details
     code: ['', [Validators.required]],
-    name: ['', [Validators.required, this.alphabeticalValidator]],
+    name: ['', [Validators.required, (c: AbstractControl) => /^[a-zA-Z\s]*$/.test(c.value) ? null : { alphabetical: true }]],
     email: ['', [Validators.required, Validators.email]],
-    mobile: ['', [Validators.required, Validators.pattern(/^[0-9]{5}\s?[0-9]{5}$|^[0-9]{10}$/)]],
-    password: ['', [Validators.required, Validators.minLength(8), this.passwordComplexityValidator]],
+    mobile: ['', [Validators.required, Validators.pattern(/^[0-9+\s-]{10,20}$/)]],
+    password: ['', [Validators.required, Validators.minLength(8), this.passwordComplexityVal]],
     confirmPassword: ['', [Validators.required]],
 
     // Step 2: Business & Entity Profile
@@ -147,50 +168,11 @@ export class ClientFormComponent implements OnInit {
 
     // Step 4: KYC & Extra
     termsAccepted: [false, [Validators.requiredTrue]]
-  }, { validators: this.passwordMatchValidator });
+  }, { validators: this.passwordMatchVal });
 
-  // Modal Input
   @Input() set initialData(data: any) {
     if (data) {
-      this.isEditMode.set(true);
-      this.clientId = data.id;
-      
-      // Strip +91 from mobile for UI
-      let mobile = data.user?.mobile || data.mobile || '';
-      if (mobile.startsWith('+91')) {
-        mobile = mobile.substring(3).trim();
-      }
-      if (mobile.length > 5) {
-        mobile = mobile.substring(0, 5) + ' ' + mobile.substring(5);
-      }
-
-      this.clientForm.patchValue({
-        code: data.code,
-        name: data.user?.name || data.name,
-        email: data.user?.email || data.email,
-        mobile: mobile,
-        entityType: data.entityType || 'individual',
-        businessName: data.businessName,
-        industrySector: data.industrySector,
-        incorporationDate: data.incorporationDate,
-        businessAddress: data.address,
-        city: data.city,
-        location: data.location,
-        taxId: data.pan || data.gstin,
-        gstStatus: data.gstStatus || 'Unregistered',
-        financialYearEnd: data.financialYearEnd || 'march_31',
-        accountingMethod: data.accountingMethod || 'Cash Basis',
-        estimatedTurnover: data.estimatedTurnover,
-        employeeCount: data.employeeCount,
-        termsAccepted: true
-      });
-
-      this.clientForm.get('code')?.disable();
-      // Remove password requirement in edit mode if not changing it
-      this.clientForm.get('password')?.clearValidators();
-      this.clientForm.get('password')?.updateValueAndValidity();
-      this.clientForm.get('confirmPassword')?.clearValidators();
-      this.clientForm.get('confirmPassword')?.updateValueAndValidity();
+      this.patchForm(data);
     }
   }
 
@@ -204,7 +186,7 @@ export class ClientFormComponent implements OnInit {
       this.loadNextCode();
     }
 
-    // Conditional logic for Entity Type
+    // Conditional Entity Logic
     this.clientForm.get('entityType')?.valueChanges.subscribe(type => {
       const busName = this.clientForm.get('businessName');
       const incDate = this.clientForm.get('incorporationDate');
@@ -221,32 +203,72 @@ export class ClientFormComponent implements OnInit {
     });
   }
 
-  // Validators
-  private alphabeticalValidator(control: AbstractControl): ValidationErrors | null {
-    const valid = /^[a-zA-Z\s]*$/.test(control.value);
-    return valid ? null : { alphabetical: true };
+  private patchForm(data: any): void {
+    this.isEditMode.set(true);
+    this.clientId = data.id;
+
+    // Mobile Formatting
+    let mobileValue = data.user?.mobile || data.mobile || '';
+    if (mobileValue.startsWith('+91')) mobileValue = mobileValue.substring(3).trim();
+    if (mobileValue.length === 10 && !mobileValue.includes(' ')) {
+      mobileValue = mobileValue.substring(0, 5) + ' ' + mobileValue.substring(5);
+    }
+
+    // Robust Date Object Creation
+    let incDate: Date | null = null;
+    if (data.incorporationDate) {
+      incDate = new Date(data.incorporationDate);
+    }
+
+    this.clientForm.patchValue({
+      code: data.code,
+      name: data.user?.name || data.name,
+      email: data.user?.email || data.email,
+      mobile: mobileValue,
+      entityType: data.entityType || 'individual',
+      businessName: data.businessName,
+      industrySector: data.industrySector,
+      incorporationDate: incDate,
+      // Map 'address' from backend to 'businessAddress' control
+      businessAddress: data.address || data.businessAddress,
+      city: data.city,
+      location: data.location,
+      // Map pan or gstin to taxId control
+      taxId: data.pan || data.gstin || data.taxId,
+      gstStatus: data.gstStatus || 'Unregistered',
+      financialYearEnd: data.financialYearEnd || 'march_31',
+      accountingMethod: data.accountingMethod || 'Cash Basis',
+      estimatedTurnover: data.estimatedTurnover,
+      employeeCount: data.employeeCount,
+      termsAccepted: true
+    }, { emitEvent: true });
+
+    this.clientForm.get('code')?.disable();
+    
+    // In edit mode, passwords are not mandatory initially
+    this.clientForm.get('password')?.clearValidators();
+    this.clientForm.get('password')?.updateValueAndValidity();
+    this.clientForm.get('confirmPassword')?.clearValidators();
+    this.clientForm.get('confirmPassword')?.updateValueAndValidity();
+    this.clientForm.updateValueAndValidity();
   }
 
-  private passwordComplexityValidator(control: AbstractControl): ValidationErrors | null {
-    const value = control.value || '';
-    const hasUpper = /[A-Z]/.test(value);
-    const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/.test(value);
-    return hasUpper && hasSymbol ? null : { complexity: true };
-  }
-
-  private passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
-    const password = group.get('password')?.value;
-    const confirm = group.get('confirmPassword')?.value;
-    return password === confirm ? null : { passwordMismatch: true };
-  }
-
-  // Navigation
   nextStep(): void {
     if (this.currentStep() < this.totalSteps) {
+      const controls = this.getStepControls(this.currentStep());
+      controls.forEach(c => {
+        const ctrl = this.clientForm.get(c);
+        ctrl?.markAsTouched();
+        ctrl?.markAsDirty();
+        ctrl?.updateValueAndValidity();
+      });
+      this.clientForm.updateValueAndValidity();
+
       if (this.isStepValid(this.currentStep())) {
         this.currentStep.update(s => s + 1);
       } else {
-        this.markStepTouched(this.currentStep());
+        const failures = controls.filter(c => this.clientForm.get(c)?.invalid);
+        console.error('Validation Blocked!', failures);
         this.notificationService.warning('Please complete all required fields correctly.');
       }
     }
@@ -260,11 +282,18 @@ export class ClientFormComponent implements OnInit {
 
   isStepValid(step: number): boolean {
     const controls = this.getStepControls(step);
-    return controls.every(c => this.clientForm.get(c)?.valid);
-  }
+    const controlsValid = controls.every(c => {
+      const ctrl = this.clientForm.get(c);
+      return ctrl?.valid || ctrl?.disabled;
+    });
+    
+    if (step === 1 && controlsValid) {
+      const passVal = this.clientForm.get('password')?.value;
+      if (!passVal && this.isEditMode()) return true;
+      return !this.clientForm.hasError('passwordMismatch');
+    }
 
-  private markStepTouched(step: number): void {
-    this.getStepControls(step).forEach(c => this.clientForm.get(c)?.markAsTouched());
+    return controlsValid;
   }
 
   private getStepControls(step: number): string[] {
@@ -277,13 +306,15 @@ export class ClientFormComponent implements OnInit {
     }
   }
 
-  // Data Loading
   private loadClient(): void {
     if (!this.clientId) return;
     this.isLoadingData.set(true);
     this.clientService.getClient(this.clientId).subscribe({
-      next: (res) => this.initialData = res.data,
-      error: () => this.notificationService.error('Failed to load client data'),
+      next: (res) => {
+        const clientData = res.data?.client || res.data || res;
+        this.patchForm(clientData);
+      },
+      error: () => this.notificationService.error('Failed to load profile'),
       complete: () => this.isLoadingData.set(false)
     });
   }
@@ -294,7 +325,6 @@ export class ClientFormComponent implements OnInit {
     });
   }
 
-  // File Handling
   onFileChange(event: any, field: string): void {
     const file = event.target.files[0];
     if (file) {
@@ -307,35 +337,41 @@ export class ClientFormComponent implements OnInit {
     }
   }
 
-  // Actions
-  onSaveAsDraft(): void {
-    this.isDraftSaving.set(true);
-    // Simulate draft saving
-    setTimeout(() => {
-      this.isDraftSaving.set(false);
-      this.notificationService.success('Draft saved successfully!');
-    }, 1200);
-  }
-
   onSubmit(): void {
     if (this.clientForm.invalid) return;
 
     this.isSubmitting.set(true);
     const formValue = this.clientForm.getRawValue();
     
-    // Cleanup data for backend
-    const formData = {
-      ...formValue,
-      mobile: `+91${formValue.mobile.replace(/\s/g, '')}`,
+    // Explicit payload mapping for backend to prevent data loss
+    const payload = {
+      code: formValue.code,
+      name: formValue.name,
+      email: formValue.email,
+      mobile: `+91${formValue.mobile.replace(/\D/g, '')}`,
+      entityType: formValue.entityType,
+      businessName: formValue.businessName,
+      industrySector: formValue.industrySector,
+      incorporationDate: formValue.incorporationDate,
       address: formValue.businessAddress,
-      pan: formValue.taxId, // Simple mapping for now
-      gstin: formValue.taxId
+      city: formValue.city,
+      location: formValue.location,
+      taxId: formValue.taxId,
+      pan: formValue.taxId,
+      gstin: formValue.taxId,
+      gstStatus: formValue.gstStatus?.toLowerCase(),
+      financialYearEnd: formValue.financialYearEnd,
+      accountingMethod: formValue.accountingMethod?.toLowerCase().includes('cash') ? 'cash' : 'accrual',
+      estimatedTurnover: formValue.estimatedTurnover,
+      employeeCount: formValue.employeeCount,
+      termsAccepted: formValue.termsAccepted,
+      isActive: true,
+      ...(formValue.password ? { password: formValue.password } : {})
     };
 
-    // In a real scenario, we would use FormData for file uploads
     const request$ = this.isEditMode()
-      ? this.clientService.updateClient(this.clientId!, formData)
-      : this.clientService.createClient(formData);
+      ? this.clientService.updateClient(this.clientId!, payload)
+      : this.clientService.createClient(payload);
 
     request$.subscribe({
       next: () => {
@@ -356,10 +392,9 @@ export class ClientFormComponent implements OnInit {
     let value = input.value.replace(/\D/g, '');
     if (value.length > 10) value = value.substring(0, 10);
     if (value.length > 5) value = value.substring(0, 5) + ' ' + value.substring(5);
-    this.clientForm.get('mobile')?.setValue(value, { emitEvent: false });
+    this.clientForm.get('mobile')?.setValue(value, { emitEvent: true });
   }
 
-  // Helpers
   getStepTitle(): string {
     switch (this.currentStep()) {
       case 1: return 'Personal & Security Details';
@@ -373,5 +408,13 @@ export class ClientFormComponent implements OnInit {
   isControlInvalid(controlName: string): boolean {
     const control = this.clientForm.get(controlName);
     return !!(control && control.invalid && (control.touched || control.dirty));
+  }
+  
+  togglePasswordVisibility(field: 'password' | 'confirmPassword'): void {
+    if (field === 'password') {
+      this.passwordVisible.update(v => !v);
+    } else {
+      this.confirmPasswordVisible.update(v => !v);
+    }
   }
 }
