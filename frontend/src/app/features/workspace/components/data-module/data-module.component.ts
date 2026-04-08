@@ -1,6 +1,7 @@
-import { Component, Input, signal, inject, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, inject, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { FolderNode } from '@core/services/workspace.service';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   heroChartBarSolid,
@@ -14,18 +15,22 @@ import { SalesComponent } from './sales/sales.component';
 import { PurchasesComponent } from './purchases/purchases.component';
 import { ExpensesComponent } from './expenses/expenses.component';
 import { UploadComponent } from './upload/upload.component';
+import { GstSummaryComponent } from '../gst-summary/gst-summary.component';
+import { heroDocumentCheckSolid, heroClipboardDocumentCheckSolid } from '@ng-icons/heroicons/solid';
+import { WorkspaceTab } from '../../client-workspace/client-workspace.component';
 
 @Component({
   selector: 'app-data-module',
   standalone: true,
   imports: [
     CommonModule, FormsModule, NgIconComponent,
-    SalesComponent, PurchasesComponent, ExpensesComponent, UploadComponent
+    SalesComponent, PurchasesComponent, ExpensesComponent, UploadComponent, GstSummaryComponent
   ],
   providers: [
     provideIcons({
       heroChartBarSolid, heroShoppingCartSolid, heroBanknotesSolid,
-      heroArrowUpTraySolid, heroFunnelSolid, heroArrowPathSolid
+      heroArrowUpTraySolid, heroFunnelSolid, heroArrowPathSolid,
+      heroDocumentCheckSolid, heroClipboardDocumentCheckSolid
     })
   ],
   template: `
@@ -104,6 +109,13 @@ import { UploadComponent } from './upload/upload.component';
         @case ('upload') {
           <app-upload [clientId]="clientId"></app-upload>
         }
+        @case ('gst-returns') {
+          <app-gst-summary 
+            [clientId]="clientId"
+            [rootFolder]="rootFolder"
+            (folderNavigationRequested)="folderNavigationRequested.emit($event)"
+          ></app-gst-summary>
+        }
       }
     </div>
   `,
@@ -125,8 +137,11 @@ import { UploadComponent } from './upload/upload.component';
 })
 export class DataModuleComponent implements OnInit {
   @Input() clientId: string = '';
+  @Input() rootFolder: FolderNode | null = null;
+  @Output() tabChangeRequested = new EventEmitter<WorkspaceTab>();
+  @Output() folderNavigationRequested = new EventEmitter<string>();
 
-  activeSubTab = signal<'sales' | 'purchases' | 'expenses' | 'upload'>('sales');
+  activeSubTab = signal<'sales' | 'purchases' | 'expenses' | 'upload' | 'gst-returns'>('sales');
 
   selectedFY = '';
   selectedMonth = 0;
@@ -136,6 +151,7 @@ export class DataModuleComponent implements OnInit {
     { key: 'purchases' as const, label: 'Purchases', icon: 'heroShoppingCartSolid' },
     { key: 'expenses' as const, label: 'Expenses', icon: 'heroBanknotesSolid' },
     { key: 'upload' as const, label: 'Upload', icon: 'heroArrowUpTraySolid' },
+    { key: 'gst-returns' as const, label: 'GST Filing', icon: 'heroClipboardDocumentCheckSolid' },
   ];
 
   months = [

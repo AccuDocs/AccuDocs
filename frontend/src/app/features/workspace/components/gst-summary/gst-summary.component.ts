@@ -1,4 +1,4 @@
-import { Component, Input, inject, signal, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, signal, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
@@ -9,14 +9,33 @@ import {
 } from '@ng-icons/heroicons/solid';
 import { DataService, GstSummaryRow } from '@core/services/data.service';
 import { ToastService } from '@core/services/toast.service';
+import { GstService } from '@core/services/gst.service';
+import { Gstr1FormComponent } from '../../../gst-filing/components/gstr1-form/gstr1-form.component';
+import { Gstr3bFormComponent } from '../../../gst-filing/components/gstr3b-form/gstr3b-form.component';
+import { WorkspaceService, FolderNode } from '@core/services/workspace.service';
+import {
+  heroDocumentCheckSolid, 
+  heroDocumentPlusSolid,
+  heroArrowDownTraySolid,
+  heroClockSolid,
+  heroFolderOpenSolid,
+  heroBoltSolid
+} from '@ng-icons/heroicons/solid';
 
 @Component({
   selector: 'app-gst-summary',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgIconComponent, DecimalPipe],
-  providers: [provideIcons({ heroReceiptPercentSolid, heroCurrencyRupeeSolid, heroArrowTrendingUpSolid, heroArrowTrendingDownSolid, heroBanknotesSolid, heroChartBarSolid })],
+  imports: [CommonModule, FormsModule, NgIconComponent, DecimalPipe, Gstr1FormComponent, Gstr3bFormComponent],
+  providers: [provideIcons({ 
+    heroReceiptPercentSolid, heroCurrencyRupeeSolid, heroArrowTrendingUpSolid, 
+    heroArrowTrendingDownSolid, heroBanknotesSolid, heroChartBarSolid,
+    heroDocumentCheckSolid, heroDocumentPlusSolid, heroArrowDownTraySolid, heroClockSolid, heroFolderOpenSolid,
+    heroBoltSolid
+  })],
   template: `
     <div class="space-y-6 animate-in fade-in duration-500">
+      @if (activeView() === 'summary') {
+      <!-- Existing Summary View -->
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -24,19 +43,22 @@ import { ToastService } from '@core/services/toast.service';
           <p class="text-sm text-slate-500 font-medium">Computed monthly GST liability from sales & purchases data.</p>
           <div class="w-10 h-[3px] bg-indigo-600 rounded-full mt-2"></div>
         </div>
-        <select
-          [(ngModel)]="selectedFY"
-          (ngModelChange)="loadData()"
-          class="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 outline-none focus:border-indigo-500 transition-all cursor-pointer"
-        >
-          @for (fy of financialYears; track fy) {
-            <option [value]="fy">FY {{ fy }}</option>
-          }
-        </select>
+        <div class="flex items-center gap-3">
+          <select
+            [(ngModel)]="selectedFY"
+            (ngModelChange)="loadData()"
+            class="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 outline-none focus:border-indigo-500 transition-all cursor-pointer"
+          >
+            @for (fy of financialYears; track fy) {
+              <option [value]="fy">FY {{ fy }}</option>
+            }
+          </select>
+        </div>
       </div>
 
       <!-- Top Summary Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- ... existing cards ... -->
         <div class="sa-card group">
           <div class="flex items-start justify-between">
             <div>
@@ -100,10 +122,11 @@ import { ToastService } from '@core/services/toast.service';
                 <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Month</th>
                 <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Sales</th>
                 <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Output GST</th>
-                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Purchases</th>
                 <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Input GST</th>
-                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Expenses</th>
                 <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">GST Payable</th>
+                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Docs</th>
+                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">GSTR-1</th>
+                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">GSTR-3B</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -112,51 +135,114 @@ import { ToastService } from '@core/services/toast.service';
                   <td class="py-3.5 px-4 text-sm font-bold text-slate-900">{{ getMonthName(row.month) }}</td>
                   <td class="py-3.5 px-4 text-sm text-emerald-700 font-mono font-bold text-right">₹{{ row.total_sales | number:'1.0-0' }}</td>
                   <td class="py-3.5 px-4 text-sm text-indigo-700 font-mono font-bold text-right">₹{{ row.output_gst | number:'1.0-0' }}</td>
-                  <td class="py-3.5 px-4 text-sm text-teal-700 font-mono font-bold text-right">₹{{ row.total_purchases | number:'1.0-0' }}</td>
                   <td class="py-3.5 px-4 text-sm text-amber-700 font-mono font-bold text-right">₹{{ row.input_gst | number:'1.0-0' }}</td>
-                  <td class="py-3.5 px-4 text-sm text-rose-600 font-mono font-bold text-right">₹{{ row.total_expenses | number:'1.0-0' }}</td>
                   <td class="py-3.5 px-4 text-sm font-mono font-bold text-right" [class]="row.gst_payable >= 0 ? 'text-rose-700' : 'text-emerald-700'">
                     {{ row.gst_payable >= 0 ? '' : '−' }}₹{{ (row.gst_payable >= 0 ? row.gst_payable : -row.gst_payable) | number:'1.0-0' }}
                   </td>
-                </tr>
-              }
-              @if (rows().length === 0) {
-                <tr><td colspan="7" class="py-12 text-center">
-                  <div class="flex flex-col items-center text-slate-400">
-                    <ng-icon name="heroChartBarSolid" size="48" class="mb-4 opacity-20"></ng-icon>
-                    <p class="font-bold">No GST data available</p>
-                    <p class="text-xs mt-1">Add sales & purchase entries in the Data tab to see GST computations.</p>
-                  </div>
-                </td></tr>
-              }
-            </tbody>
-            @if (rows().length > 0) {
-              <tfoot>
-                <tr class="bg-slate-100 border-t-2 border-slate-300">
-                  <td class="py-3 px-4 text-xs font-bold text-slate-900 uppercase tracking-widest">FY Total</td>
-                  <td class="py-3 px-4 text-sm font-mono font-bold text-emerald-800 text-right">₹{{ totalSales() | number:'1.0-0' }}</td>
-                  <td class="py-3 px-4 text-sm font-mono font-bold text-indigo-800 text-right">₹{{ totalOutputGST() | number:'1.0-0' }}</td>
-                  <td class="py-3 px-4 text-sm font-mono font-bold text-teal-800 text-right">₹{{ totalPurchases() | number:'1.0-0' }}</td>
-                  <td class="py-3 px-4 text-sm font-mono font-bold text-amber-800 text-right">₹{{ totalInputGST() | number:'1.0-0' }}</td>
-                  <td class="py-3 px-4 text-sm font-mono font-bold text-rose-700 text-right">₹{{ totalExpenses() | number:'1.0-0' }}</td>
-                  <td class="py-3 px-4 text-sm font-mono font-bold text-right" [class]="totalPayable() >= 0 ? 'text-rose-800' : 'text-emerald-800'">
-                    {{ totalPayable() >= 0 ? '' : '−' }}₹{{ (totalPayable() >= 0 ? totalPayable() : -totalPayable()) | number:'1.0-0' }}
+                  <!-- Docs Folder -->
+                  <td class="py-3.5 px-4 text-center">
+                    <button 
+                      (click)="openGstFolder(row)"
+                      class="text-indigo-400 hover:text-indigo-600 transition-colors"
+                      title="View Document Folder"
+                    >
+                      <ng-icon name="heroFolderOpenSolid" size="18"></ng-icon>
+                    </button>
+                  </td>
+                  <!-- GSTR-1 Status/Action -->
+                  <td class="py-3.5 px-4 text-center">
+                    @let status1 = getReturnStatus(row.month, 'GSTR-1');
+                    <div class="flex items-center justify-center gap-2">
+                      @if (status1) {
+                        <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                          (click)="openForm('GSTR-1', status1)">
+                          <ng-icon [name]="status1.status === 'filed' ? 'heroDocumentCheckSolid' : 'heroClockSolid'"></ng-icon>
+                          {{ status1.status }}
+                        </div>
+                        <button (click)="downloadReturnJson(status1)" class="text-slate-400 hover:text-indigo-600 transition-colors p-1" title="Download JSON">
+                          <ng-icon name="heroArrowDownTraySolid" size="16"></ng-icon>
+                        </button>
+                      } @else {
+                        <button (click)="generateAndSaveReturn(row.month, 'GSTR-1')" class="text-indigo-600 hover:text-indigo-800 transition-colors bg-indigo-50 p-1.5 rounded-lg flex items-center gap-1" title="Generate & Save to Workspace">
+                          <ng-icon name="heroBoltSolid" size="16"></ng-icon>
+                          <span class="text-[10px] font-bold uppercase">Generate</span>
+                        </button>
+                      }
+                    </div>
+                  </td>
+                  <!-- GSTR-3B Status/Action -->
+                  <td class="py-3.5 px-4 text-center">
+                    @let status3 = getReturnStatus(row.month, 'GSTR-3B');
+                    <div class="flex items-center justify-center gap-2">
+                      @if (status3) {
+                        <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer bg-teal-50 text-teal-700 hover:bg-teal-100"
+                          (click)="openForm('GSTR-3B', status3)">
+                          <ng-icon [name]="status3.status === 'filed' ? 'heroDocumentCheckSolid' : 'heroClockSolid'"></ng-icon>
+                          {{ status3.status }}
+                        </div>
+                        <button (click)="downloadReturnJson(status3)" class="text-slate-400 hover:text-teal-600 transition-colors p-1" title="Download JSON">
+                          <ng-icon name="heroArrowDownTraySolid" size="16"></ng-icon>
+                        </button>
+                      } @else {
+                        <button (click)="generateAndSaveReturn(row.month, 'GSTR-3B')" class="text-teal-600 hover:text-teal-800 transition-colors bg-teal-50 p-1.5 rounded-lg flex items-center gap-1" title="Generate & Save to Workspace">
+                          <ng-icon name="heroBoltSolid" size="16"></ng-icon>
+                          <span class="text-[10px] font-bold uppercase">Generate</span>
+                        </button>
+                      }
+                    </div>
                   </td>
                 </tr>
-              </tfoot>
-            }
+              }
+            </tbody>
           </table>
         </div>
       </div>
+      } @else if (activeView() === 'gstr1') {
+        <app-gstr1-form 
+          [clientId]="clientId" 
+          [returnId]="selectedReturn()?.id || 'new'"
+          [periodMonth]="selectedMonth()"
+          [periodYear]="getSelectedYear(selectedMonth())"
+          [financialYear]="selectedFY"
+          (back)="onBackFromForm()">
+        </app-gstr1-form>
+      } @else if (activeView() === 'gstr3b') {
+        <app-gstr3b-form 
+          [clientId]="clientId" 
+          [returnId]="selectedReturn()?.id || 'new'"
+          [periodMonth]="selectedMonth()"
+          [periodYear]="getSelectedYear(selectedMonth())"
+          [financialYear]="selectedFY"
+          (back)="onBackFromForm()">
+        </app-gstr3b-form>
+      }
     </div>
   `,
-  styles: [`:host{display:block}.sa-card{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.06);transition:all .2s ease}.sa-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);transform:translateY(-1px)}`]
+  styles: [`
+    :host { display: block; }
+    .sa-card {
+      background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06); transition: all .2s ease;
+    }
+    .sa-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,.08); transform: translateY(-1px);
+    }
+  `]
 })
 export class GstSummaryComponent implements OnInit {
   @Input() clientId = '';
+  @Input() rootFolder: FolderNode | null = null;
+  @Output() folderNavigationRequested = new EventEmitter<string>();
 
   private dataService = inject(DataService);
+  private gstService = inject(GstService);
+  private workspaceService = inject(WorkspaceService);
   private toast = inject(ToastService);
+
+  activeView = signal<'summary' | 'gstr1' | 'gstr3b'>('summary');
+  selectedReturn = signal<any>(null);
+  selectedMonth = signal<number>(4);
+  returnStatuses = signal<any[]>([]);
 
   rows = signal<GstSummaryRow[]>([]);
   selectedFY = '';
@@ -181,6 +267,87 @@ export class GstSummaryComponent implements OnInit {
       this.financialYears.push(`${y}-${(y + 1).toString().slice(2)}`);
     }
     this.loadData();
+    this.fetchReturns();
+  }
+
+  fetchReturns() {
+    if (!this.clientId) return;
+    this.gstService.getReturnsByClient(this.clientId).subscribe({
+      next: (res: any) => {
+        this.returnStatuses.set(res.data || []);
+      }
+    });
+  }
+
+  getReturnStatus(month: number, type: string) {
+    return this.returnStatuses().find(r => r.periodMonth === month && r.returnType === type);
+  }
+
+  getSelectedYear(month: number) {
+    const parts = this.selectedFY.split('-');
+    const yearStart = parseInt(parts[0]);
+    return month >= 4 ? yearStart : yearStart + 1;
+  }
+
+  openForm(type: 'GSTR-1' | 'GSTR-3B', ret: any, month?: number) {
+    this.selectedReturn.set(ret);
+    if (month) this.selectedMonth.set(month);
+    else if (ret) this.selectedMonth.set(ret.periodMonth);
+    
+    this.activeView.set(type === 'GSTR-1' ? 'gstr1' : 'gstr3b');
+  }
+
+  onBackFromForm() {
+    this.activeView.set('summary');
+    this.fetchReturns();
+  }
+
+  generateAndSaveReturn(month: number, type: string) {
+    if (!this.clientId) return;
+    
+    const year = this.getSelectedYear(month);
+    const payload = {
+      clientId: this.clientId,
+      returnType: type,
+      periodMonth: month,
+      periodYear: year,
+      financialYear: this.selectedFY,
+      saveToWorkspace: true
+    };
+
+    const monthName = this.getMonthName(month);
+    this.toast.info(`Generating ${type} for ${monthName}...`);
+
+    this.gstService.generateDraft(payload).subscribe({
+      next: (res: any) => {
+        const msg = res.data?.id ? `${type} generated and archived in ${monthName} folder.` : `${type} generated successfully.`;
+        this.toast.success(msg);
+        this.fetchReturns();
+      },
+      error: (err) => this.toast.error(`Error generating ${type}`, err.message)
+    });
+  }
+
+  downloadReturnJson(ret: any) {
+    if (!ret?.id) return;
+    const monthName = this.getMonthName(ret.periodMonth);
+    const fileName = `${ret.returnType}_${monthName}_${ret.periodYear}.json`;
+    
+    // 1. Trigger Download
+    this.gstService.downloadJson(ret.id, fileName);
+    this.toast.info(`Downloading ${fileName}...`);
+
+    // 2. Automatically Sync to Workspace Storage (S3)
+    this.gstService.saveToWorkspace(ret.id).subscribe({
+      next: () => {
+        console.log(`[GST] Synced ${fileName} to workspace.`);
+        this.toast.success(`Archived ${ret.returnType} in client workspace.`);
+      },
+      error: (err) => {
+        console.error(`[GST] Sync failed for ${fileName}`, err);
+        this.toast.error(`Could not archive ${ret.returnType} in workspace.`, 'Folder Resolution Error');
+      }
+    });
   }
 
   loadData() {
@@ -204,5 +371,25 @@ export class GstSummaryComponent implements OnInit {
 
   getMonthName(m: number): string {
     return this.monthNames[m] || '';
+  }
+
+  openGstFolder(row: GstSummaryRow) {
+    if (!this.rootFolder) {
+      this.toast.error('Workspace folders not loaded');
+      return;
+    }
+
+    const monthName = this.getMonthName(row.month);
+    // Path pattern: 2. GST Returns / FY 2026-27 / April 2026
+    const path = ['2. GST Returns', `FY ${this.selectedFY}`, `${monthName} ${this.getSelectedYear(row.month)}`];
+    
+    console.log('Navigating to path:', path);
+    const folder = this.workspaceService.findFolderByPath(this.rootFolder, path);
+    
+    if (folder) {
+      this.folderNavigationRequested.emit(folder.id);
+    } else {
+      this.toast.error(`Folder not found: ${path.join(' > ')}`);
+    }
   }
 }

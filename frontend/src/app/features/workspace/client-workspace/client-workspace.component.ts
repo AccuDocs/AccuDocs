@@ -51,6 +51,8 @@ import { GstSummaryComponent } from '../components/gst-summary/gst-summary.compo
 import { ClientDashboardComponent } from '../components/client-dashboard/client-dashboard.component';
 import { heroClipboardDocumentCheckSolid, heroCalendarSolid, heroChartBarSolid, heroReceiptPercentSolid, heroPresentationChartBarSolid } from '@ng-icons/heroicons/solid';
 
+export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst' | 'dashboard';
+
 @Component({
   selector: 'app-client-workspace',
   standalone: true,
@@ -188,7 +190,7 @@ import { heroClipboardDocumentCheckSolid, heroCalendarSolid, heroChartBarSolid, 
           [class]="activeTab() === 'gst' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
         >
           <ng-icon name="heroReceiptPercentSolid" size="18"></ng-icon>
-          GST
+          GST Filing
         </button>
         <button 
           (click)="activeTab.set('dashboard')"
@@ -203,11 +205,23 @@ import { heroClipboardDocumentCheckSolid, heroCalendarSolid, heroChartBarSolid, 
       @if (activeTab() === 'checklists') {
         <app-checklists [clientId]="workspace()?.clientId || ''"></app-checklists>
       } @else if (activeTab() === 'deadlines') {
-        <app-client-deadlines [clientId]="workspace()?.clientId || ''"></app-client-deadlines>
+        <app-client-deadlines 
+          [clientId]="workspace()?.clientId || ''"
+          (tabChangeRequested)="onTabChangeRequested($event)"
+        ></app-client-deadlines>
       } @else if (activeTab() === 'data') {
-        <app-data-module [clientId]="workspace()?.clientId || ''"></app-data-module>
+        <app-data-module 
+          [clientId]="workspace()?.clientId || ''"
+          [rootFolder]="workspace()?.rootFolder || null"
+          (tabChangeRequested)="onTabChangeRequested($event)"
+          (folderNavigationRequested)="onFolderNavigationRequested($event)"
+        ></app-data-module>
       } @else if (activeTab() === 'gst') {
-        <app-gst-summary [clientId]="workspace()?.clientId || ''"></app-gst-summary>
+        <app-gst-summary 
+          [clientId]="workspace()?.clientId || ''"
+          [rootFolder]="workspace()?.rootFolder || null"
+          (folderNavigationRequested)="onFolderNavigationRequested($event)"
+        ></app-gst-summary>
       } @else if (activeTab() === 'dashboard') {
         <app-client-dashboard [clientId]="workspace()?.clientId || ''"></app-client-dashboard>
       } @else {
@@ -749,6 +763,15 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
     }
   }
 
+  onFolderNavigationRequested(folderId: string) {
+    this.activeTab.set('files');
+    this.navigateToFolder(folderId);
+  }
+
+  onTabChangeRequested(tab: any) {
+    this.activeTab.set(tab as WorkspaceTab);
+  }
+
   // State
   workspace = signal<WorkspaceTree | null>(null);
   currentFolder = signal<FolderNode | null>(null);
@@ -779,7 +802,7 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   newFolderName = '';
 
   // Tab state
-  activeTab = signal<'files' | 'checklists' | 'deadlines' | 'data' | 'gst' | 'dashboard'>('files');
+  activeTab = signal<WorkspaceTab>('files');
 
   // Modal states aggregation for overflow control
   private isAnyModalOpen = computed(() =>

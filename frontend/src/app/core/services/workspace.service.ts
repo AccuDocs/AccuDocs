@@ -267,4 +267,21 @@ export class WorkspaceService {
     if (mimeType.includes('image')) return 'image';
     return 'other';
   }
+
+  /**
+   * Find a folder by its path names starting from a root node
+   */
+  findFolderByPath(root: FolderNode, path: string[]): FolderNode | null {
+    let current = root;
+    for (const segment of path) {
+      if (!current.children) return null;
+      const found = current.children.find(
+        (child) => child.name.trim().toLowerCase() === segment.trim().toLowerCase()
+      );
+      if (!found) return null;
+      current = found;
+    }
+    return current;
+  }
 }
+

@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ComplianceService, ClientDeadlineAssignment } from '@core/services/compliance.service';
@@ -7,8 +7,12 @@ import {
   heroClockSolid,
   heroCheckCircleSolid,
   heroCalendarSolid,
-  heroArchiveBoxSolid
+  heroArchiveBoxSolid,
+  heroDocumentCheckSolid,
+  heroExclamationTriangleSolid
 } from '@ng-icons/heroicons/solid';
+import { GstService } from '@core/services/gst.service';
+import { WorkspaceTab } from '../../client-workspace/client-workspace.component';
 
 @Component({
   selector: 'app-client-deadlines',
@@ -110,7 +114,17 @@ import {
                 </div>
               </div>
               
-              <div class="flex items-center gap-3">
+              <div class="flex items-center gap-6">
+                @if (dl.deadline?.type === 'GST') {
+                  <button 
+                    (click)="tabChangeRequested.emit('gst')"
+                    class="text-xs font-bold text-indigo-600 hover:text-white hover:bg-indigo-600 px-3 py-1.5 rounded-lg border border-indigo-200 transition-all flex items-center gap-1.5"
+                  >
+                    <ng-icon name="heroDocumentCheckSolid"></ng-icon>
+                    START FILING
+                  </button>
+                }
+
                 <select
                   [value]="dl.status"
                   (change)="updateStatus(dl.id, $any($event.target).value)"
@@ -138,16 +152,20 @@ import {
       heroClockSolid,
       heroCheckCircleSolid,
       heroCalendarSolid,
-      heroArchiveBoxSolid
+      heroArchiveBoxSolid,
+      heroDocumentCheckSolid,
+      heroExclamationTriangleSolid
     })
   ]
 })
 export class ClientDeadlinesComponent implements OnChanges {
   @Input({ required: true }) clientId!: string;
+  @Output() tabChangeRequested = new EventEmitter<WorkspaceTab>();
 
   private complianceService = inject(ComplianceService);
+  private gstService = inject(GstService);
 
-  deadlines = signal<ClientDeadlineAssignment[]>([]);
+  deadlines = signal<any[]>([]);
   loading = signal(false);
 
   ngOnChanges(changes: SimpleChanges) {
@@ -158,15 +176,50 @@ export class ClientDeadlinesComponent implements OnChanges {
 
   loadData() {
     this.loading.set(true);
+    
+    // Fetch official assignments
     this.complianceService.getClientDeadlines({ clientId: this.clientId }).subscribe({
       next: (res) => {
-        if (res.success) {
-          this.deadlines.set(res.data || []);
-        }
-        this.loading.set(false);
+        let allDeadlines = res.success ? [...(res.data || [])] : [];
+        
+        // Fetch GST returns for real status
+        this.gstService.getReturnsByClient(this.clientId).subscribe({
+          next: (gstRes: any) => {
+            const returns = gstRes.data || [];
+            
+            // Add Virtual GST Deadlines for current period (e.g., April 2026)
+            const gstr1Status = returns.find((r: any) => r.returnType === 'GSTR-1' && r.periodMonth === 4 && r.periodYear === 2026);
+            const gstr3bStatus = returns.find((r: any) => r.returnType === 'GSTR-3B' && r.periodMonth === 4 && r.periodYear === 2026);
+
+            allDeadlines.push(this.createGstDeadline('GSTR-1', gstr1Status, '2026-05-11'));
+            allDeadlines.push(this.createGstDeadline('GSTR-3B', gstr3bStatus, '2026-05-20'));
+
+            this.deadlines.set(allDeadlines);
+            this.loading.set(false);
+          },
+          error: () => {
+            this.deadlines.set(allDeadlines);
+            this.loading.set(false);
+          }
+        });
       },
       error: () => this.loading.set(false)
     });
+  }
+
+  createGstDeadline(type: string, ret: any, dueDate: string): any {
+    return {
+      id: `virtual-${type}`,
+      status: ret ? (ret.status === 'filed' ? 'filed' : 'pending') : 'pending',
+      isVirtual: true,
+      deadline: {
+        title: `${type} Filing`,
+        type: 'GST',
+        dueDate: dueDate,
+        recurring: true,
+        recurringPattern: 'Monthly'
+      }
+    };
   }
 
   getCountByStatus(status: string): number {

@@ -15,8 +15,10 @@ import logRoutes from '../modules/auth/presentation/routes/log.routes';
 import userRoutes from '../modules/auth/presentation/routes/user.routes';
 import whatsappRoutes from '../modules/notifications/presentation/routes/whatsapp.routes';
 import dataRoutes from '../modules/data/data.routes';
+import gstRoutes from '../modules/gst/presentation/routes/gst.routes';
 
 const router = Router();
+
 
 // Middleware to log API hits
 router.use((req, res, next) => {
@@ -46,6 +48,7 @@ router.use('/logs', logRoutes);
 router.use('/users', userRoutes);
 router.use('/whatsapp', whatsappRoutes);
 router.use('/clients', dataRoutes); // Data module: /:clientId/sales, /purchases, /expenses, /gst-summary
+router.use('/gst', gstRoutes);
 
 // Super Admin Module
 router.use('/super-admin', superAdminRoutes);

@@ -41,6 +41,36 @@ export class SequelizeFolderRepository implements IFolderRepository {
     return folders.map(FolderMapper.toDomain);
   }
 
+  async findByPath(path: string, organizationId: string): Promise<Folder | null> {
+    const folder = await FolderModel.findOne({ where: { path, organizationId } });
+    if (!folder) return null;
+    return FolderMapper.toDomain(folder);
+  }
+
+  async findByNameAndParent(name: string, parentId: string | null, organizationId: string): Promise<Folder | null> {
+    const folder = await FolderModel.findOne({ 
+      where: { 
+        name, 
+        parentFolderId: parentId, 
+        organizationId 
+      } 
+    });
+    if (!folder) return null;
+    return FolderMapper.toDomain(folder);
+  }
+
+  async findRootByClient(clientId: string, organizationId: string): Promise<Folder | null> {
+    const folder = await FolderModel.findOne({ 
+      where: { 
+        clientId, 
+        parentFolderId: null, 
+        organizationId 
+      } 
+    });
+    if (!folder) return null;
+    return FolderMapper.toDomain(folder);
+  }
+
   async delete(id: string, organizationId: string, options?: any): Promise<void> {
     await FolderModel.destroy({ where: { id, organizationId }, transaction: options?.transaction });
   }

@@ -75,6 +75,12 @@ export const routes: Routes = [
             canActivate: [roleGuard],
             data: { roles: ['admin'] },
           },
+          {
+            path: 'gst',
+            loadChildren: () => import('./features/gst-filing/gst-filing.routes').then(m => m.GST_FILING_ROUTES),
+            canActivate: [roleGuard],
+            data: { roles: ['admin', 'accountant', 'client'] },
+          },
         ],
       },
 
