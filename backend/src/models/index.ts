@@ -26,6 +26,9 @@ import { Checklist } from './checklist.model';
 import { ChecklistTemplate } from './checklist-template.model';
 import { ComplianceDeadline } from './compliance-deadline.model';
 import { ClientDeadline } from './client-deadline.model';
+import { ClientSale } from './client-sale.model';
+import { ClientPurchase } from './client-purchase.model';
+import { ClientExpense } from './client-expense.model';
 
 // Set up associations
 Organization.hasMany(User, { foreignKey: 'organizationId', as: 'users' });
@@ -69,6 +72,14 @@ ClientDeadline.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
 ClientDeadline.belongsTo(ComplianceDeadline, { foreignKey: 'deadline_id', as: 'deadline' });
 ComplianceDeadline.hasMany(ClientDeadline, { foreignKey: 'deadline_id', as: 'clientDeadlines' });
 
+// Data module associations (Sales, Purchases, Expenses)
+Client.hasMany(ClientSale, { foreignKey: 'client_id', as: 'sales' });
+ClientSale.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
+Client.hasMany(ClientPurchase, { foreignKey: 'client_id', as: 'purchases' });
+ClientPurchase.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
+Client.hasMany(ClientExpense, { foreignKey: 'client_id', as: 'expenses' });
+ClientExpense.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
+
 export {
   Organization,
   User,
@@ -97,5 +108,8 @@ export {
   Checklist,
   ChecklistTemplate,
   ComplianceDeadline,
-  ClientDeadline
+  ClientDeadline,
+  ClientSale,
+  ClientPurchase,
+  ClientExpense
 };

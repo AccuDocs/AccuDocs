@@ -46,7 +46,9 @@ import { FileItem } from '../../file-explorer/models/file-explorer.models';
 import { MatIconModule } from '@angular/material/icon';
 import { ChecklistsComponent } from '../components/checklists/checklists.component';
 import { ClientDeadlinesComponent } from '../components/client-deadlines/client-deadlines.component';
-import { heroClipboardDocumentCheckSolid, heroCalendarSolid } from '@ng-icons/heroicons/solid';
+import { DataModuleComponent } from '../components/data-module/data-module.component';
+import { GstSummaryComponent } from '../components/gst-summary/gst-summary.component';
+import { heroClipboardDocumentCheckSolid, heroCalendarSolid, heroChartBarSolid, heroReceiptPercentSolid } from '@ng-icons/heroicons/solid';
 
 @Component({
   selector: 'app-client-workspace',
@@ -66,7 +68,9 @@ import { heroClipboardDocumentCheckSolid, heroCalendarSolid } from '@ng-icons/he
     PreviewPaneComponent,
     MatIconModule,
     ChecklistsComponent,
-    ClientDeadlinesComponent
+    ClientDeadlinesComponent,
+    DataModuleComponent,
+    GstSummaryComponent
   ],
   providers: [
     provideIcons({
@@ -91,7 +95,9 @@ import { heroClipboardDocumentCheckSolid, heroCalendarSolid } from '@ng-icons/he
       heroFolderPlusSolid,
       heroEllipsisVerticalSolid,
       heroClipboardDocumentCheckSolid,
-      heroCalendarSolid
+      heroCalendarSolid,
+      heroChartBarSolid,
+      heroReceiptPercentSolid
     })
   ],
   template: `
@@ -165,12 +171,32 @@ import { heroClipboardDocumentCheckSolid, heroCalendarSolid } from '@ng-icons/he
           <ng-icon name="heroCalendarSolid" size="18"></ng-icon>
           Deadlines
         </button>
+        <button 
+          (click)="activeTab.set('data')"
+          class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
+          [class]="activeTab() === 'data' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
+        >
+          <ng-icon name="heroChartBarSolid" size="18"></ng-icon>
+          Data
+        </button>
+        <button 
+          (click)="activeTab.set('gst')"
+          class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
+          [class]="activeTab() === 'gst' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
+        >
+          <ng-icon name="heroReceiptPercentSolid" size="18"></ng-icon>
+          GST
+        </button>
       </div>
 
       @if (activeTab() === 'checklists') {
         <app-checklists [clientId]="workspace()?.clientId || ''"></app-checklists>
       } @else if (activeTab() === 'deadlines') {
         <app-client-deadlines [clientId]="workspace()?.clientId || ''"></app-client-deadlines>
+      } @else if (activeTab() === 'data') {
+        <app-data-module [clientId]="workspace()?.clientId || ''"></app-data-module>
+      } @else if (activeTab() === 'gst') {
+        <app-gst-summary [clientId]="workspace()?.clientId || ''"></app-gst-summary>
       } @else {
       <!-- Main Content Grid -->
       <div class="flex-1 grid grid-cols-12 gap-6 items-stretch min-h-0">
@@ -740,7 +766,7 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   newFolderName = '';
 
   // Tab state
-  activeTab = signal<'files' | 'checklists' | 'deadlines'>('files');
+  activeTab = signal<'files' | 'checklists' | 'deadlines' | 'data' | 'gst'>('files');
 
   // Modal states aggregation for overflow control
   private isAnyModalOpen = computed(() =>

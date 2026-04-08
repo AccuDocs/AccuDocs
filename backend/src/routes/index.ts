@@ -14,6 +14,7 @@ import checklistRoutes from '../modules/checklist/presentation/routes/checklist.
 import logRoutes from '../modules/auth/presentation/routes/log.routes';
 import userRoutes from '../modules/auth/presentation/routes/user.routes';
 import whatsappRoutes from '../modules/notifications/presentation/routes/whatsapp.routes';
+import dataRoutes from '../modules/data/data.routes';
 
 const router = Router();
 
@@ -44,6 +45,7 @@ router.use('/checklists', checklistRoutes);
 router.use('/logs', logRoutes);
 router.use('/users', userRoutes);
 router.use('/whatsapp', whatsappRoutes);
+router.use('/clients', dataRoutes); // Data module: /:clientId/sales, /purchases, /expenses, /gst-summary
 
 // Super Admin Module
 router.use('/super-admin', superAdminRoutes);
