@@ -106,16 +106,24 @@ import { ToastService } from '@core/services/toast.service';
 
       <!-- Download Template -->
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-4 mb-4">
           <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-600">
             <ng-icon name="heroDocumentArrowDownSolid" size="20"></ng-icon>
           </div>
           <div class="flex-1">
-            <p class="text-sm font-bold text-slate-900">Download Template</p>
-            <p class="text-xs text-slate-500 mt-0.5">Use our Excel template for correct formatting</p>
+            <p class="text-sm font-bold text-slate-900">Download Excel Templates</p>
+            <p class="text-xs text-slate-500 mt-0.5">Use our predefined formats for uploading bulk data without errors</p>
           </div>
-          <button class="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
-            Download .xlsx
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <button (click)="downloadTemplate('sales')" class="text-sm flex py-2 px-4 gap-2 items-center bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100 border border-indigo-100 rounded-lg transition-all focus:outline-none">
+            <ng-icon name="heroDocumentArrowDownSolid" size="16"></ng-icon> Sales
+          </button>
+          <button (click)="downloadTemplate('purchases')" class="text-sm flex py-2 px-4 gap-2 items-center bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100 border border-indigo-100 rounded-lg transition-all focus:outline-none">
+            <ng-icon name="heroDocumentArrowDownSolid" size="16"></ng-icon> Purchases
+          </button>
+          <button (click)="downloadTemplate('expenses')" class="text-sm flex py-2 px-4 gap-2 items-center bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100 border border-indigo-100 rounded-lg transition-all focus:outline-none">
+            <ng-icon name="heroDocumentArrowDownSolid" size="16"></ng-icon> Expenses
           </button>
         </div>
       </div>
@@ -180,5 +188,104 @@ export class UploadComponent {
       },
       error: (err) => { this.isUploading.set(false); this.toast.error('Upload failed', err.message); }
     });
+  }
+
+  async downloadTemplate(typeOverride?: 'sales' | 'purchases' | 'expenses') {
+    const ExcelJS = await import('exceljs');
+    const { saveAs } = await import('file-saver');
+
+    const workbook = new ExcelJS.Workbook();
+    const type = typeOverride || this.selectedType();
+    const sheet = workbook.addWorksheet(`${type.charAt(0).toUpperCase() + type.slice(1)} Template`);
+
+    let columns: any[] = [];
+    let sampleData: any[] = [];
+
+    switch (type) {
+      case 'sales':
+        columns = [
+          { header: 'Invoice No', key: 'invoiceNo', width: 15 },
+          { header: 'Invoice Date', key: 'invoiceDate', width: 15 },
+          { header: 'Customer Name', key: 'customerName', width: 25 },
+          { header: 'GSTIN', key: 'gstin', width: 20 },
+          { header: 'Invoice Type', key: 'invoiceType', width: 15 },
+          { header: 'Place of Supply', key: 'placeOfSupply', width: 20 },
+          { header: 'Description', key: 'description', width: 20 },
+          { header: 'HSN SAC', key: 'hsnSac', width: 15 },
+          { header: 'Quantity', key: 'quantity', width: 10 },
+          { header: 'Rate', key: 'rate', width: 10 },
+          { header: 'Base Amount', key: 'baseAmount', width: 15 },
+          { header: 'GST Rate', key: 'gstRate', width: 10 },
+          { header: 'CGST Amount', key: 'cgst', width: 15 },
+          { header: 'SGST Amount', key: 'sgst', width: 15 },
+          { header: 'IGST Amount', key: 'igst', width: 15 },
+          { header: 'Cess Amount', key: 'cess', width: 15 },
+          { header: 'Is Nil Rated', key: 'isNilRated', width: 15 },
+          { header: 'Is Advance', key: 'isAdvance', width: 15 },
+        ];
+        sampleData = [
+          { invoiceNo: 'INV-001', invoiceDate: '15-04-2026', customerName: 'Acme Corp', gstin: '27AABCU9603R1ZM', invoiceType: 'B2B', placeOfSupply: '27-Maharashtra', description: 'Consulting', hsnSac: '9983', quantity: 1, rate: 10000, baseAmount: 10000, gstRate: 18, cgst: 900, sgst: 900, igst: 0, cess: 0, isNilRated: 'No', isAdvance: 'No' },
+          { invoiceNo: 'INV-002', invoiceDate: '20-04-2026', customerName: 'Global Tech', gstin: '29ABCDE1234F1Z5', invoiceType: 'B2B', placeOfSupply: '29-Karnataka', description: 'Software License', hsnSac: '9973', quantity: 2, rate: 50000, baseAmount: 100000, gstRate: 18, cgst: 0, sgst: 0, igst: 18000, cess: 0, isNilRated: 'No', isAdvance: 'No' }
+        ];
+        break;
+
+      case 'purchases':
+        columns = [
+          { header: 'Bill No', key: 'billNo', width: 15 },
+          { header: 'Bill Date', key: 'billDate', width: 15 },
+          { header: 'Vendor Name', key: 'vendorName', width: 25 },
+          { header: 'GSTIN', key: 'gstin', width: 20 },
+          { header: 'Purchase Type', key: 'purchaseType', width: 15 },
+          { header: 'Description', key: 'description', width: 20 },
+          { header: 'HSN SAC', key: 'hsnSac', width: 15 },
+          { header: 'Quantity', key: 'quantity', width: 10 },
+          { header: 'Rate', key: 'rate', width: 10 },
+          { header: 'Base Amount', key: 'baseAmount', width: 15 },
+          { header: 'GST Rate', key: 'gstRate', width: 10 },
+          { header: 'CGST Amount', key: 'cgst', width: 15 },
+          { header: 'SGST Amount', key: 'sgst', width: 15 },
+          { header: 'IGST Amount', key: 'igst', width: 15 },
+          { header: 'ITC Eligible', key: 'itcEligible', width: 15 },
+          { header: 'RCM Applicable', key: 'rcmApplicable', width: 15 },
+          { header: 'Is Capital Goods', key: 'isCapitalGoods', width: 15 },
+        ];
+        sampleData = [
+          { billNo: 'PO-991', billDate: '10-04-2026', vendorName: 'Office Supplies Inc', gstin: '27XYZABC1234F2Z1', purchaseType: 'local', description: 'Stationery', hsnSac: '4820', quantity: 10, rate: 500, baseAmount: 5000, gstRate: 18, cgst: 450, sgst: 450, igst: 0, itcEligible: 'Yes', rcmApplicable: 'No', isCapitalGoods: 'No' }
+        ];
+        break;
+
+      case 'expenses':
+        columns = [
+          { header: 'Expense Date', key: 'expenseDate', width: 15 },
+          { header: 'Category', key: 'category', width: 15 },
+          { header: 'Description', key: 'description', width: 25 },
+          { header: 'Vendor Name', key: 'vendorName', width: 20 },
+          { header: 'Amount', key: 'amount', width: 15 },
+          { header: 'Payment Mode', key: 'paymentMode', width: 15 },
+          { header: 'Reference No', key: 'referenceNo', width: 15 },
+          { header: 'GST Applicable', key: 'gstApplicable', width: 15 },
+          { header: 'GST Rate', key: 'gstRate', width: 10 },
+          { header: 'GST Amount', key: 'gstAmount', width: 15 },
+          { header: 'ITC Allowed', key: 'itcAllowed', width: 15 },
+          { header: 'ITC Blocked Reason', key: 'itcBlockedReason', width: 20 },
+        ];
+        sampleData = [
+          { expenseDate: '01-04-2026', category: 'travel', description: 'Flight to Delhi', vendorName: 'Air India', amount: 8500, paymentMode: 'credit_card', referenceNo: 'TXN8821', gstApplicable: 'Yes', gstRate: 5, gstAmount: 425, itcAllowed: 'Yes', itcBlockedReason: '' }
+        ];
+        break;
+    }
+
+    sheet.columns = columns;
+
+    // Style the header row
+    sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+    
+    // Add sample data
+    sampleData.forEach(data => sheet.addRow(data));
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, `AccuDocs_${type}_template.xlsx`);
   }
 }
