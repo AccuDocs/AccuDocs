@@ -18,9 +18,9 @@ export interface ParsedSaleRow {
   month: number;
   financialYear: string;
   // V2
-  gstin?: string;
+  gstin?: string | null;
   invoiceType?: string;
-  placeOfSupply?: string;
+  placeOfSupply?: string | null;
   cgstAmount?: number;
   sgstAmount?: number;
   igstAmount?: number;
@@ -42,7 +42,7 @@ export interface ParsedPurchaseRow {
   month: number;
   financialYear: string;
   // V2
-  gstin?: string;
+  gstin?: string | null;
   purchaseType?: string;
   cgstAmount?: number;
   sgstAmount?: number;
@@ -55,7 +55,7 @@ export interface ParsedPurchaseRow {
 export interface ParsedExpenseRow {
   expenseDate: string;
   category: string;
-  description: string;
+  description?: string;
   vendorName?: string;
   amount: number;
   paymentMode?: string;
@@ -83,6 +83,8 @@ export interface ParseResult<T> {
 
 function parseExcelDate(raw: any): Date | null {
   if (!raw) return null;
+  if (raw instanceof Date) return raw;
+  
   if (typeof raw === 'number') {
     // Excel serial date
     const d = XLSX.SSF.parse_date_code(raw);
@@ -90,25 +92,37 @@ function parseExcelDate(raw: any): Date | null {
   }
   
   if (typeof raw === 'string') {
-    // Try catching DD-MM-YYYY or DD/MM/YYYY
-    const parts = raw.split(/[-/]/);
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+
+    // Handle DD.MM.YYYY
+    const normalized = trimmed.replace(/\./g, '-').replace(/\//g, '-');
+    const parts = normalized.split('-');
+    
     if (parts.length === 3) {
-      const p1 = parseInt(parts[0], 10);
-      const p2 = parseInt(parts[1], 10);
-      const p3 = parseInt(parts[2], 10);
-      if (!isNaN(p1) && !isNaN(p2) && !isNaN(p3)) {
-        if (p3 > 1000) {
-          if (p1 > 12 && p2 <= 12) {
-              // DD-MM-YYYY (e.g. 15-04-2026)
-              return new Date(p3, p2 - 1, p1);
-          } else if (p2 > 12 && p1 <= 12) {
-              // MM-DD-YYYY (e.g. 04-15-2026)
-              return new Date(p3, p1 - 1, p2);
-          } else if (p1 <= 12 && p2 <= 12) {
-              // Ambiguous (e.g. 01-04-2026). Assume DD-MM-YYYY for India formats.
-              return new Date(p3, p2 - 1, p1);
-          }
-        }
+      let p1 = parseInt(parts[0], 10);
+      let p2 = parseInt(parts[1], 10);
+      let p3 = parseInt(parts[2], 10);
+
+      // YYYY-MM-DD (ISO)
+      if (p1 > 1000) {
+        return new Date(p1, p2 - 1, p3);
+      }
+      
+      // Handle 2-digit years in DD-MM-YY
+      if (p3 < 100) {
+        p3 += 2000;
+      }
+
+      if (p1 > 12) {
+        // Assume DD-MM-YYYY
+        return new Date(p3, p2 - 1, p1);
+      } else if (p2 > 12) {
+        // Assume MM-DD-YYYY
+        return new Date(p3, p1 - 1, p2);
+      } else {
+        // Ambiguous, default to DD-MM-YYYY
+        return new Date(p3, p2 - 1, p1);
       }
     }
   }
@@ -177,8 +191,8 @@ export function parseSalesExcel(buffer: Buffer): ParseResult<ParsedSaleRow> {
     const customerName = String(norm['customername'] || norm['partyname'] || norm['party'] || norm['customer'] || '').trim();
     if (!customerName) { errors.push({ row: rowNum, field: 'Customer Name', message: 'Required' }); return; }
 
-    const baseAmount = parseFloat(norm['baseamount'] || norm['amount'] || norm['taxablevalue'] || norm['taxable'] || '0');
-    if (isNaN(baseAmount) || baseAmount <= 0) { errors.push({ row: rowNum, field: 'Base Amount', message: 'Must be > 0' }); return; }
+    const baseAmount = safeNum(norm['baseamount'] || norm['amount'] || norm['taxablevalue'] || norm['taxable'], 0);
+    if (baseAmount <= 0) { errors.push({ row: rowNum, field: 'Base Amount', message: 'Must be > 0' }); return; }
 
     const gstRate = safeNum(norm['gstrate'] || norm['gst'], 18);
 
@@ -232,8 +246,8 @@ export function parsePurchasesExcel(buffer: Buffer): ParseResult<ParsedPurchaseR
     const vendorName = String(norm['vendorname'] || norm['partyname'] || norm['vendor'] || norm['party'] || '').trim();
     if (!vendorName) { errors.push({ row: rowNum, field: 'Vendor Name', message: 'Required' }); return; }
 
-    const baseAmount = parseFloat(norm['baseamount'] || norm['amount'] || norm['taxablevalue'] || norm['taxable'] || '0');
-    if (isNaN(baseAmount) || baseAmount <= 0) { errors.push({ row: rowNum, field: 'Base Amount', message: 'Must be > 0' }); return; }
+    const baseAmount = safeNum(norm['baseamount'] || norm['amount'] || norm['taxablevalue'] || norm['taxable'], 0);
+    if (baseAmount <= 0) { errors.push({ row: rowNum, field: 'Base Amount', message: 'Must be > 0' }); return; }
 
     const gstRate = safeNum(norm['gstrate'] || norm['gst'], 18);
 
@@ -281,11 +295,14 @@ export function parseExpensesExcel(buffer: Buffer): ParseResult<ParsedExpenseRow
     if (!date) { errors.push({ row: rowNum, field: 'Expense Date', message: 'Invalid date format' }); return; }
 
     const description = String(norm['description'] || norm['desc'] || '').trim();
-    if (!description) { errors.push({ row: rowNum, field: 'Description', message: 'Required' }); return; }
+    // Description is optional in V3
 
     const amount = parseFloat(norm['amount'] || norm['expenseamount'] || norm['totalamount'] || '0');
     if (isNaN(amount) || amount <= 0) { errors.push({ row: rowNum, field: 'Amount', message: 'Must be > 0' }); return; }
 
+    const gstRate = safeNum(norm['gstrate'] || norm['gst'], 0);
+    const gstAmount = safeNum(norm['gstamount'] || norm['taxamount'], (amount * gstRate) / (100 + gstRate));
+    
     valid.push({
       expenseDate: date.toISOString().split('T')[0],
       category: String(norm['category'] || norm['expensecategory'] || 'general'),
@@ -298,8 +315,8 @@ export function parseExpensesExcel(buffer: Buffer): ParseResult<ParsedExpenseRow
       financialYear: getFinancialYear(date),
       // V2
       gstApplicable: parseBoolean(norm['gstapplicable'] || norm['isgst']),
-      gstRate: safeNum(norm['gstrate'] || norm['gst'], 0),
-      gstAmount: safeNum(norm['gstamount'] || norm['taxamount'], 0),
+      gstRate,
+      gstAmount,
       itcAllowed: parseBoolean(norm['itcallowed'] || norm['itc'] || norm['itceligible']),
       itcBlockedReason: String(norm['itcblockedreason'] || norm['blockedreason'] || ''),
     });
