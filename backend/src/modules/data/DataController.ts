@@ -507,6 +507,38 @@ export const deleteExpense = async (req: AuthenticatedRequest, res: Response): P
   }
 };
 
+export const uploadExpenses = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { clientId } = req.params;
+    const orgId = req.user!.organizationId;
+    const file = (req as any).file;
+    if (!file) { res.status(400).json(errorResponse('BAD_REQUEST', 'No file uploaded')); return; }
+
+    const { valid, errors } = parseExpensesExcel(file.buffer);
+
+    if (valid.length > 0) {
+      await ClientExpense.bulkCreate(
+        valid.map(row => ({ ...row, clientId, organizationId: orgId }))
+      );
+    }
+
+    await pool.query(
+      `INSERT INTO data_uploads (client_id, organization_id, uploaded_by, upload_type, file_name, rows_imported, rows_failed, error_log)
+       VALUES ($1, $2, $3, 'expenses', $4, $5, $6, $7)`,
+      [clientId, orgId, req.user!.userId, file.originalname, valid.length, errors.length, JSON.stringify(errors)]
+    );
+
+    res.json(successResponse({
+      imported: valid.length,
+      failed: errors.length,
+      errors: errors.slice(0, 20),
+    }));
+  } catch (error: any) {
+    logger.error('uploadExpenses error:', error);
+    res.status(500).json(errorResponse('INTERNAL_ERROR', error.message));
+  }
+};
+
 // ===================== GST SUMMARY =====================
 
 export const getGstSummary = async (req: AuthenticatedRequest, res: Response): Promise<void> => {

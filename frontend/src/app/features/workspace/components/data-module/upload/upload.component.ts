@@ -175,7 +175,7 @@ export class UploadComponent {
     switch (this.selectedType()) {
       case 'sales': obs = this.dataService.uploadSales(this.clientId, file); break;
       case 'purchases': obs = this.dataService.uploadPurchases(this.clientId, file); break;
-      default: this.toast.error('Expenses upload not supported yet'); this.isUploading.set(false); return;
+      case 'expenses': obs = this.dataService.uploadExpenses(this.clientId, file); break;
     }
 
     obs.subscribe({
@@ -250,7 +250,8 @@ export class UploadComponent {
           { header: 'Is Capital Goods', key: 'isCapitalGoods', width: 15 },
         ];
         sampleData = [
-          { billNo: 'PO-991', billDate: '10-04-2026', vendorName: 'Office Supplies Inc', gstin: '27XYZABC1234F2Z1', purchaseType: 'local', description: 'Stationery', hsnSac: '4820', quantity: 10, rate: 500, baseAmount: 5000, gstRate: 18, cgst: 450, sgst: 450, igst: 0, itcEligible: 'Yes', rcmApplicable: 'No', isCapitalGoods: 'No' }
+          { billNo: 'BILL-001', billDate: '10-04-2026', vendorName: 'Office Supplies Inc', gstin: '27XYZABC1234F2Z1', purchaseType: 'local', description: 'Stationery', hsnSac: '4820', quantity: 10, rate: 500, baseAmount: 5000, gstRate: 18, cgst: 450, sgst: 450, igst: 0, itcEligible: 'Yes', rcmApplicable: 'No', isCapitalGoods: 'No' },
+          { billNo: 'BILL-002', billDate: '18-04-2026', vendorName: 'Tech Solutions Ltd', gstin: '27ABCDE5678G1Z2', purchaseType: 'interstate', description: 'Server Hardware', hsnSac: '8471', quantity: 1, rate: 75000, baseAmount: 75000, gstRate: 18, cgst: 0, sgst: 0, igst: 13500, itcEligible: 'Yes', rcmApplicable: 'No', isCapitalGoods: 'Yes' }
         ];
         break;
 
@@ -270,7 +271,8 @@ export class UploadComponent {
           { header: 'ITC Blocked Reason', key: 'itcBlockedReason', width: 20 },
         ];
         sampleData = [
-          { expenseDate: '01-04-2026', category: 'travel', description: 'Flight to Delhi', vendorName: 'Air India', amount: 8500, paymentMode: 'credit_card', referenceNo: 'TXN8821', gstApplicable: 'Yes', gstRate: 5, gstAmount: 425, itcAllowed: 'Yes', itcBlockedReason: '' }
+          { expenseDate: '01-04-2026', category: 'travel', description: 'Flight to Delhi', vendorName: 'Air India', amount: 8500, paymentMode: 'credit_card', referenceNo: 'TXN-8821', gstApplicable: 'Yes', gstRate: 5, gstAmount: 425, itcAllowed: 'Yes', itcBlockedReason: '' },
+          { expenseDate: '05-04-2026', category: 'office', description: 'Rent April 2026', vendorName: 'ABC Realty', amount: 25000, paymentMode: 'bank_transfer', referenceNo: 'NEFT-4421', gstApplicable: 'Yes', gstRate: 18, gstAmount: 4500, itcAllowed: 'No', itcBlockedReason: 'Blocked under Section 17(5)' }
         ];
         break;
     }
@@ -278,11 +280,82 @@ export class UploadComponent {
     sheet.columns = columns;
 
     // Style the header row
-    sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
-    
-    // Add sample data
-    sampleData.forEach(data => sheet.addRow(data));
+    const headerRow = sheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+    headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+    headerRow.height = 28;
+
+    // Add thin border to header
+    headerRow.eachCell((cell) => {
+      cell.border = {
+        top: { style: 'thin' }, bottom: { style: 'thin' },
+        left: { style: 'thin' }, right: { style: 'thin' }
+      };
+    });
+
+    // Add sample data with light styling
+    sampleData.forEach(data => {
+      const row = sheet.addRow(data);
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
+        };
+      });
+    });
+
+    // Add instructions sheet
+    const instrSheet = workbook.addWorksheet('Instructions');
+    instrSheet.columns = [
+      { header: 'Field', key: 'field', width: 20 },
+      { header: 'Required', key: 'required', width: 10 },
+      { header: 'Format', key: 'format', width: 35 },
+      { header: 'Example', key: 'example', width: 30 },
+    ];
+    instrSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    instrSheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF334155' } };
+
+    const instructions: Record<string, any[]> = {
+      sales: [
+        { field: 'Invoice No', required: 'Yes', format: 'Text', example: 'INV-001' },
+        { field: 'Invoice Date', required: 'Yes', format: 'DD-MM-YYYY', example: '15-04-2026' },
+        { field: 'Customer Name', required: 'Yes', format: 'Text', example: 'Acme Corp' },
+        { field: 'Base Amount', required: 'Yes', format: 'Number (>0)', example: '10000' },
+        { field: 'GST Rate', required: 'No', format: '0, 5, 12, 18, 28', example: '18' },
+        { field: 'GSTIN', required: 'No', format: '15-char GST No', example: '27AABCU9603R1ZM' },
+        { field: 'Invoice Type', required: 'No', format: 'B2B / B2C / Export / SEZ', example: 'B2B' },
+        { field: 'Place of Supply', required: 'No', format: 'StateCode-Name', example: '27-Maharashtra' },
+        { field: 'Is Nil Rated', required: 'No', format: 'Yes / No', example: 'No' },
+        { field: 'Is Advance', required: 'No', format: 'Yes / No', example: 'No' },
+      ],
+      purchases: [
+        { field: 'Bill No', required: 'Yes', format: 'Text', example: 'BILL-001' },
+        { field: 'Bill Date', required: 'Yes', format: 'DD-MM-YYYY', example: '10-04-2026' },
+        { field: 'Vendor Name', required: 'Yes', format: 'Text', example: 'Office Supplies Inc' },
+        { field: 'Base Amount', required: 'Yes', format: 'Number (>0)', example: '5000' },
+        { field: 'GST Rate', required: 'No', format: '0, 5, 12, 18, 28', example: '18' },
+        { field: 'GSTIN', required: 'No', format: '15-char GST No', example: '27XYZABC1234F2Z1' },
+        { field: 'Purchase Type', required: 'No', format: 'local / interstate / import', example: 'local' },
+        { field: 'ITC Eligible', required: 'No', format: 'Yes / No', example: 'Yes' },
+        { field: 'RCM Applicable', required: 'No', format: 'Yes / No', example: 'No' },
+        { field: 'Is Capital Goods', required: 'No', format: 'Yes / No', example: 'No' },
+      ],
+      expenses: [
+        { field: 'Expense Date', required: 'Yes', format: 'DD-MM-YYYY', example: '01-04-2026' },
+        { field: 'Description', required: 'Yes', format: 'Text', example: 'Flight to Delhi' },
+        { field: 'Amount', required: 'Yes', format: 'Number (>0)', example: '8500' },
+        { field: 'Category', required: 'No', format: 'travel / office / salary / rent / other', example: 'travel' },
+        { field: 'Payment Mode', required: 'No', format: 'cash / bank_transfer / credit_card / upi', example: 'credit_card' },
+        { field: 'GST Applicable', required: 'No', format: 'Yes / No', example: 'Yes' },
+        { field: 'GST Rate', required: 'No', format: '0, 5, 12, 18, 28', example: '5' },
+        { field: 'ITC Allowed', required: 'No', format: 'Yes / No', example: 'Yes' },
+      ],
+    };
+
+    (instructions[type] || []).forEach((row: any) => instrSheet.addRow(row));
 
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });

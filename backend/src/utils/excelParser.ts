@@ -136,6 +136,25 @@ function parseBoolean(val: any): boolean {
   return false;
 }
 
+/** Safely parse a number, returning the fallback if NaN */
+function safeNum(val: any, fallback: number = 0): number {
+  if (val === null || val === undefined || val === '') return fallback;
+  const n = parseFloat(val);
+  return isNaN(n) ? fallback : n;
+}
+
+/** Extract 2-digit state code from place of supply (e.g. '27-Maharashtra' -> '27', '27' -> '27') */
+function extractStateCode(pos: string): string | null {
+  if (!pos) return null;
+  const trimmed = pos.trim();
+  // If it contains a separator, grab the first part
+  const match = trimmed.match(/^(\d{1,2})/);
+  if (match) {
+    return match[1].padStart(2, '0');
+  }
+  return trimmed.length <= 2 ? trimmed : null;
+}
+
 export function parseSalesExcel(buffer: Buffer): ParseResult<ParsedSaleRow> {
   const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const ws = wb.Sheets[wb.SheetNames[0]];
@@ -161,7 +180,7 @@ export function parseSalesExcel(buffer: Buffer): ParseResult<ParsedSaleRow> {
     const baseAmount = parseFloat(norm['baseamount'] || norm['amount'] || norm['taxablevalue'] || norm['taxable'] || '0');
     if (isNaN(baseAmount) || baseAmount <= 0) { errors.push({ row: rowNum, field: 'Base Amount', message: 'Must be > 0' }); return; }
 
-    const gstRate = parseFloat(norm['gstrate'] || norm['gst'] || '18');
+    const gstRate = safeNum(norm['gstrate'] || norm['gst'], 18);
 
     valid.push({
       invoiceNo,
@@ -169,20 +188,20 @@ export function parseSalesExcel(buffer: Buffer): ParseResult<ParsedSaleRow> {
       customerName,
       description: String(norm['description'] || norm['desc'] || ''),
       hsnSacCode: String(norm['hsnsac'] || norm['hsn'] || norm['sac'] || ''),
-      quantity: parseFloat(norm['quantity'] || norm['qty'] || '1') || 1,
-      rate: parseFloat(norm['rate'] || norm['price'] || '0') || 0,
+      quantity: safeNum(norm['quantity'] || norm['qty'], 1),
+      rate: safeNum(norm['rate'] || norm['price'], 0),
       baseAmount,
       gstRate,
       month: getMonthFromDate(date),
       financialYear: getFinancialYear(date),
       // V2
-      gstin: String(norm['gstin'] || norm['gstinuin'] || '').toUpperCase(),
+      gstin: String(norm['gstin'] || norm['gstinuin'] || '').toUpperCase() || null,
       invoiceType: String(norm['invoicetype'] || norm['type'] || 'B2B'),
-      placeOfSupply: String(norm['placeofsupply'] || norm['pos'] || ''),
-      cgstAmount: parseFloat(norm['cgstamount'] || norm['cgst'] || '0') || 0,
-      sgstAmount: parseFloat(norm['sgstamount'] || norm['sgst'] || '0') || 0,
-      igstAmount: parseFloat(norm['igstamount'] || norm['igst'] || '0') || 0,
-      cessAmount: parseFloat(norm['cessamount'] || norm['cess'] || '0') || 0,
+      placeOfSupply: extractStateCode(String(norm['placeofsupply'] || norm['pos'] || '')),
+      cgstAmount: safeNum(norm['cgstamount'] || norm['cgst'], 0),
+      sgstAmount: safeNum(norm['sgstamount'] || norm['sgst'], 0),
+      igstAmount: safeNum(norm['igstamount'] || norm['igst'], 0),
+      cessAmount: safeNum(norm['cessamount'] || norm['cess'], 0),
       isNilRated: parseBoolean(norm['isnilrated'] || norm['nilrated']),
       isAdvance: parseBoolean(norm['isadvance'] || norm['advance']),
     });
@@ -216,7 +235,7 @@ export function parsePurchasesExcel(buffer: Buffer): ParseResult<ParsedPurchaseR
     const baseAmount = parseFloat(norm['baseamount'] || norm['amount'] || norm['taxablevalue'] || norm['taxable'] || '0');
     if (isNaN(baseAmount) || baseAmount <= 0) { errors.push({ row: rowNum, field: 'Base Amount', message: 'Must be > 0' }); return; }
 
-    const gstRate = parseFloat(norm['gstrate'] || norm['gst'] || '18');
+    const gstRate = safeNum(norm['gstrate'] || norm['gst'], 18);
 
     valid.push({
       billNo,
@@ -224,19 +243,19 @@ export function parsePurchasesExcel(buffer: Buffer): ParseResult<ParsedPurchaseR
       vendorName,
       description: String(norm['description'] || norm['desc'] || ''),
       hsnSacCode: String(norm['hsnsac'] || norm['hsn'] || norm['sac'] || ''),
-      quantity: parseFloat(norm['quantity'] || norm['qty'] || '1') || 1,
-      rate: parseFloat(norm['rate'] || norm['price'] || '0') || 0,
+      quantity: safeNum(norm['quantity'] || norm['qty'], 1),
+      rate: safeNum(norm['rate'] || norm['price'], 0),
       baseAmount,
       gstRate,
       month: getMonthFromDate(date),
       financialYear: getFinancialYear(date),
       // V2
-      gstin: String(norm['gstin'] || norm['gstinuin'] || '').toUpperCase(),
+      gstin: String(norm['gstin'] || norm['gstinuin'] || '').toUpperCase() || null,
       purchaseType: String(norm['purchasetype'] || norm['type'] || 'local'),
-      cgstAmount: parseFloat(norm['cgstamount'] || norm['cgst'] || '0') || 0,
-      sgstAmount: parseFloat(norm['sgstamount'] || norm['sgst'] || '0') || 0,
-      igstAmount: parseFloat(norm['igstamount'] || norm['igst'] || '0') || 0,
-      itcEligible: norm['itceligible'] !== undefined ? parseBoolean(norm['itceligible']) : true, // Default to true if missing
+      cgstAmount: safeNum(norm['cgstamount'] || norm['cgst'], 0),
+      sgstAmount: safeNum(norm['sgstamount'] || norm['sgst'], 0),
+      igstAmount: safeNum(norm['igstamount'] || norm['igst'], 0),
+      itcEligible: norm['itceligible'] !== undefined ? parseBoolean(norm['itceligible']) : true,
       rcmApplicable: parseBoolean(norm['rcmapplicable'] || norm['rcm']),
       isCapitalGoods: parseBoolean(norm['iscapitalgoods'] || norm['capitalgoods']),
     });
@@ -279,8 +298,8 @@ export function parseExpensesExcel(buffer: Buffer): ParseResult<ParsedExpenseRow
       financialYear: getFinancialYear(date),
       // V2
       gstApplicable: parseBoolean(norm['gstapplicable'] || norm['isgst']),
-      gstRate: parseFloat(norm['gstrate'] || norm['gst'] || '0') || 0,
-      gstAmount: parseFloat(norm['gstamount'] || norm['taxamount'] || '0') || 0,
+      gstRate: safeNum(norm['gstrate'] || norm['gst'], 0),
+      gstAmount: safeNum(norm['gstamount'] || norm['taxamount'], 0),
       itcAllowed: parseBoolean(norm['itcallowed'] || norm['itc'] || norm['itceligible']),
       itcBlockedReason: String(norm['itcblockedreason'] || norm['blockedreason'] || ''),
     });

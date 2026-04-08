@@ -286,6 +286,12 @@ export class DataService {
     return this.http.delete(`${this.baseUrl}/${clientId}/expenses/${expenseId}`);
   }
 
+  uploadExpenses(clientId: string, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.baseUrl}/${clientId}/expenses/upload`, formData);
+  }
+
   // ===================== GST SUMMARY =====================
   getGstSummary(clientId: string, financialYear?: string): Observable<any> {
     let params = new HttpParams();

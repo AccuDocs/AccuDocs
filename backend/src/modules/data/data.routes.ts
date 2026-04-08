@@ -29,6 +29,7 @@ router.get('/:clientId/expenses', DataController.getExpenses);
 router.post('/:clientId/expenses', DataController.createExpense);
 router.put('/:clientId/expenses/:expenseId', DataController.updateExpense);
 router.delete('/:clientId/expenses/:expenseId', DataController.deleteExpense);
+router.post('/:clientId/expenses/upload', upload.single('file'), DataController.uploadExpenses);
 
 // ===================== GST SUMMARY =====================
 router.get('/:clientId/gst-summary', DataController.getGstSummary);
