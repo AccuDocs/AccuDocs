@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { authenticate, adminOnly } from '../../middlewares';
 import * as DataController from './DataController';
+import * as DashboardController from './DashboardController';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB
@@ -31,5 +32,18 @@ router.delete('/:clientId/expenses/:expenseId', DataController.deleteExpense);
 
 // ===================== GST SUMMARY =====================
 router.get('/:clientId/gst-summary', DataController.getGstSummary);
+
+// ===================== DASHBOARD V2 =====================
+router.get('/:clientId/dashboard/summary', DashboardController.getDashboardSummary);
+router.get('/:clientId/dashboard/analytics', DashboardController.getDashboardAnalytics);
+router.get('/:clientId/dashboard/return-status', DashboardController.getReturnStatus);
+router.get('/:clientId/dashboard/alerts', DashboardController.getAlerts);
+router.get('/:clientId/dashboard/activity', DashboardController.getActivity);
+router.get('/:clientId/dashboard/upload-status', DashboardController.getUploadStatus);
+
+// ===================== GST ACTIONS =====================
+router.post('/:clientId/compute-gst', DashboardController.computeGST);
+router.post('/:clientId/validate', DashboardController.validateTransactions);
+router.post('/:clientId/gst-returns', DashboardController.saveGstReturn);
 
 export default router;

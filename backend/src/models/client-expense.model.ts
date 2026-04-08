@@ -14,6 +14,14 @@ export class ClientExpense extends Model {
   declare public referenceNo: string | null;
   declare public month: number;
   declare public financialYear: string;
+  // V2 Fields
+  declare public gstApplicable: boolean;
+  declare public gstRate: number;
+  declare public gstAmount: number;
+  declare public itcAllowed: boolean;
+  declare public itcBlockedReason: string | null;
+  declare public status: string;
+  declare public notes: string | null;
   declare public readonly createdAt: Date;
   declare public readonly updatedAt: Date;
 }
@@ -31,6 +39,14 @@ ClientExpense.init({
   referenceNo: { type: DataTypes.STRING(50), allowNull: true, field: 'reference_no' },
   month: { type: DataTypes.INTEGER, allowNull: false },
   financialYear: { type: DataTypes.STRING(9), allowNull: false, field: 'financial_year' },
+  // V2 Fields
+  gstApplicable: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'gst_applicable' },
+  gstRate: { type: DataTypes.DECIMAL(5, 2), allowNull: false, defaultValue: 0, field: 'gst_rate' },
+  gstAmount: { type: DataTypes.DECIMAL(14, 2), allowNull: false, defaultValue: 0, field: 'gst_amount' },
+  itcAllowed: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'itc_allowed' },
+  itcBlockedReason: { type: DataTypes.STRING(100), allowNull: true, field: 'itc_blocked_reason' },
+  status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'draft' },
+  notes: { type: DataTypes.TEXT, allowNull: true },
   createdAt: { type: DataTypes.DATE, field: 'created_at' },
   updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
 }, {

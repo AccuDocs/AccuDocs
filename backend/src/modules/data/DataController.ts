@@ -1,5 +1,6 @@
 /**
- * Data Controller — Handles Sales, Purchases, Expenses CRUD + Excel Upload + GST Summary
+ * Data Controller V2 — Handles Sales, Purchases, Expenses CRUD + Excel Upload + GST Summary
+ * Updated with V2 fields: GSTIN, invoice_type, place_of_supply, CGST/SGST/IGST, ITC, RCM, status
  */
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../../shared/types/auth.types';
@@ -7,8 +8,9 @@ import { successResponse, errorResponse } from '../../shared/utils/response.util
 import { ClientSale } from '../../models/client-sale.model';
 import { ClientPurchase } from '../../models/client-purchase.model';
 import { ClientExpense } from '../../models/client-expense.model';
+import { ActivityLog } from '../../models/activity-log.model';
 import { pool } from '../../config/database.config';
-import { getFinancialYear, getMonthFromDate } from '../../utils/gstCalculator';
+import { getFinancialYear, getMonthFromDate, splitGST } from '../../utils/gstCalculator';
 import { parseSalesExcel, parsePurchasesExcel, parseExpensesExcel } from '../../utils/excelParser';
 import { logger } from '../../utils/logger';
 
@@ -17,12 +19,14 @@ import { logger } from '../../utils/logger';
 export const getSales = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { clientId } = req.params;
-    const { month, financial_year } = req.query;
+    const { month, financial_year, status, invoice_type } = req.query;
     const orgId = req.user!.organizationId;
 
     const where: any = { clientId, organizationId: orgId };
     if (month) where.month = Number(month);
     if (financial_year) where.financialYear = financial_year;
+    if (status) where.status = status;
+    if (invoice_type) where.invoiceType = invoice_type;
 
     const sales = await ClientSale.findAll({
       where,
@@ -40,9 +44,27 @@ export const createSale = async (req: AuthenticatedRequest, res: Response): Prom
   try {
     const { clientId } = req.params;
     const orgId = req.user!.organizationId;
-    const { invoiceNo, invoiceDate, customerName, description, hsnSacCode, quantity, rate, baseAmount, gstRate } = req.body;
+    const {
+      invoiceNo, invoiceDate, customerName, description, hsnSacCode,
+      quantity, rate, baseAmount, gstRate,
+      // V2 fields
+      gstin, invoiceType, placeOfSupply, cgstAmount, sgstAmount, igstAmount,
+      cessAmount, isNilRated, isAdvance, status, notes
+    } = req.body;
 
     const date = new Date(invoiceDate);
+
+    // Auto-compute tax split if not provided
+    let cgst = cgstAmount || 0, sgst = sgstAmount || 0, igst = igstAmount || 0;
+    if (cgst === 0 && sgst === 0 && igst === 0 && baseAmount && gstRate) {
+      const client = await pool.query('SELECT state_code FROM clients WHERE id = $1', [clientId]);
+      const orgState = client.rows[0]?.state_code || '24';
+      const split = splitGST(baseAmount, gstRate || 18, placeOfSupply || null, orgState);
+      cgst = split.cgstAmount;
+      sgst = split.sgstAmount;
+      igst = split.igstAmount;
+    }
+
     const sale = await ClientSale.create({
       clientId,
       organizationId: orgId,
@@ -57,10 +79,28 @@ export const createSale = async (req: AuthenticatedRequest, res: Response): Prom
       gstRate: gstRate || 18,
       month: getMonthFromDate(date),
       financialYear: getFinancialYear(date),
+      gstin: gstin || null,
+      invoiceType: invoiceType || 'B2B',
+      placeOfSupply: placeOfSupply || null,
+      cgstAmount: cgst,
+      sgstAmount: sgst,
+      igstAmount: igst,
+      cessAmount: cessAmount || 0,
+      isNilRated: isNilRated || false,
+      isAdvance: isAdvance || false,
+      status: status || 'draft',
+      notes: notes || null,
     });
 
-    // Re-fetch to get computed columns
     const result = await ClientSale.findByPk(sale.id);
+
+    // Activity log
+    await ActivityLog.create({
+      clientId, organizationId: orgId, userId: req.user!.userId,
+      action: 'SALE_CREATED', entityType: 'sale', entityId: sale.id,
+      details: { invoiceNo, amount: baseAmount },
+    }).catch(() => {});
+
     res.status(201).json(successResponse(result));
   } catch (error: any) {
     logger.error('createSale error:', error);
@@ -76,7 +116,12 @@ export const updateSale = async (req: AuthenticatedRequest, res: Response): Prom
     const sale = await ClientSale.findOne({ where: { id: saleId, clientId, organizationId: orgId } });
     if (!sale) { res.status(404).json(errorResponse('NOT_FOUND', 'Sale entry not found')); return; }
 
-    const { invoiceNo, invoiceDate, customerName, description, hsnSacCode, quantity, rate, baseAmount, gstRate } = req.body;
+    const {
+      invoiceNo, invoiceDate, customerName, description, hsnSacCode,
+      quantity, rate, baseAmount, gstRate,
+      gstin, invoiceType, placeOfSupply, cgstAmount, sgstAmount, igstAmount,
+      cessAmount, isNilRated, isAdvance, status, notes
+    } = req.body;
 
     const updateData: any = {};
     if (invoiceNo !== undefined) updateData.invoiceNo = invoiceNo;
@@ -87,6 +132,18 @@ export const updateSale = async (req: AuthenticatedRequest, res: Response): Prom
     if (rate !== undefined) updateData.rate = rate;
     if (baseAmount !== undefined) updateData.baseAmount = baseAmount;
     if (gstRate !== undefined) updateData.gstRate = gstRate;
+    // V2 fields
+    if (gstin !== undefined) updateData.gstin = gstin;
+    if (invoiceType !== undefined) updateData.invoiceType = invoiceType;
+    if (placeOfSupply !== undefined) updateData.placeOfSupply = placeOfSupply;
+    if (cgstAmount !== undefined) updateData.cgstAmount = cgstAmount;
+    if (sgstAmount !== undefined) updateData.sgstAmount = sgstAmount;
+    if (igstAmount !== undefined) updateData.igstAmount = igstAmount;
+    if (cessAmount !== undefined) updateData.cessAmount = cessAmount;
+    if (isNilRated !== undefined) updateData.isNilRated = isNilRated;
+    if (isAdvance !== undefined) updateData.isAdvance = isAdvance;
+    if (status !== undefined) updateData.status = status;
+    if (notes !== undefined) updateData.notes = notes;
 
     if (invoiceDate) {
       const date = new Date(invoiceDate);
@@ -129,14 +186,12 @@ export const uploadSales = async (req: AuthenticatedRequest, res: Response): Pro
 
     const { valid, errors } = parseSalesExcel(file.buffer);
 
-    // Bulk insert valid rows
     if (valid.length > 0) {
       await ClientSale.bulkCreate(
         valid.map(row => ({ ...row, clientId, organizationId: orgId }))
       );
     }
 
-    // Log the upload
     await pool.query(
       `INSERT INTO data_uploads (client_id, organization_id, uploaded_by, upload_type, file_name, rows_imported, rows_failed, error_log)
        VALUES ($1, $2, $3, 'sales', $4, $5, $6, $7)`,
@@ -146,7 +201,7 @@ export const uploadSales = async (req: AuthenticatedRequest, res: Response): Pro
     res.json(successResponse({
       imported: valid.length,
       failed: errors.length,
-      errors: errors.slice(0, 20), // Limit error details
+      errors: errors.slice(0, 20),
     }));
   } catch (error: any) {
     logger.error('uploadSales error:', error);
@@ -159,12 +214,14 @@ export const uploadSales = async (req: AuthenticatedRequest, res: Response): Pro
 export const getPurchases = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { clientId } = req.params;
-    const { month, financial_year } = req.query;
+    const { month, financial_year, status, itc_eligible } = req.query;
     const orgId = req.user!.organizationId;
 
     const where: any = { clientId, organizationId: orgId };
     if (month) where.month = Number(month);
     if (financial_year) where.financialYear = financial_year;
+    if (status) where.status = status;
+    if (itc_eligible !== undefined) where.itcEligible = itc_eligible === 'true';
 
     const purchases = await ClientPurchase.findAll({
       where,
@@ -182,7 +239,12 @@ export const createPurchase = async (req: AuthenticatedRequest, res: Response): 
   try {
     const { clientId } = req.params;
     const orgId = req.user!.organizationId;
-    const { billNo, billDate, vendorName, description, hsnSacCode, quantity, rate, baseAmount, gstRate } = req.body;
+    const {
+      billNo, billDate, vendorName, description, hsnSacCode,
+      quantity, rate, baseAmount, gstRate,
+      gstin, purchaseType, cgstAmount, sgstAmount, igstAmount,
+      itcEligible, rcmApplicable, isCapitalGoods, status, notes
+    } = req.body;
 
     const date = new Date(billDate);
     const purchase = await ClientPurchase.create({
@@ -199,6 +261,16 @@ export const createPurchase = async (req: AuthenticatedRequest, res: Response): 
       gstRate: gstRate || 18,
       month: getMonthFromDate(date),
       financialYear: getFinancialYear(date),
+      gstin: gstin || null,
+      purchaseType: purchaseType || 'local',
+      cgstAmount: cgstAmount || 0,
+      sgstAmount: sgstAmount || 0,
+      igstAmount: igstAmount || 0,
+      itcEligible: itcEligible !== false,
+      rcmApplicable: rcmApplicable || false,
+      isCapitalGoods: isCapitalGoods || false,
+      status: status || 'draft',
+      notes: notes || null,
     });
 
     const result = await ClientPurchase.findByPk(purchase.id);
@@ -217,7 +289,12 @@ export const updatePurchase = async (req: AuthenticatedRequest, res: Response): 
     const purchase = await ClientPurchase.findOne({ where: { id: purchaseId, clientId, organizationId: orgId } });
     if (!purchase) { res.status(404).json(errorResponse('NOT_FOUND', 'Purchase entry not found')); return; }
 
-    const { billNo, billDate, vendorName, description, hsnSacCode, quantity, rate, baseAmount, gstRate } = req.body;
+    const {
+      billNo, billDate, vendorName, description, hsnSacCode,
+      quantity, rate, baseAmount, gstRate,
+      gstin, purchaseType, cgstAmount, sgstAmount, igstAmount,
+      itcEligible, rcmApplicable, isCapitalGoods, status, notes
+    } = req.body;
 
     const updateData: any = {};
     if (billNo !== undefined) updateData.billNo = billNo;
@@ -228,6 +305,16 @@ export const updatePurchase = async (req: AuthenticatedRequest, res: Response): 
     if (rate !== undefined) updateData.rate = rate;
     if (baseAmount !== undefined) updateData.baseAmount = baseAmount;
     if (gstRate !== undefined) updateData.gstRate = gstRate;
+    if (gstin !== undefined) updateData.gstin = gstin;
+    if (purchaseType !== undefined) updateData.purchaseType = purchaseType;
+    if (cgstAmount !== undefined) updateData.cgstAmount = cgstAmount;
+    if (sgstAmount !== undefined) updateData.sgstAmount = sgstAmount;
+    if (igstAmount !== undefined) updateData.igstAmount = igstAmount;
+    if (itcEligible !== undefined) updateData.itcEligible = itcEligible;
+    if (rcmApplicable !== undefined) updateData.rcmApplicable = rcmApplicable;
+    if (isCapitalGoods !== undefined) updateData.isCapitalGoods = isCapitalGoods;
+    if (status !== undefined) updateData.status = status;
+    if (notes !== undefined) updateData.notes = notes;
 
     if (billDate) {
       const date = new Date(billDate);
@@ -298,12 +385,14 @@ export const uploadPurchases = async (req: AuthenticatedRequest, res: Response):
 export const getExpenses = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { clientId } = req.params;
-    const { month, financial_year } = req.query;
+    const { month, financial_year, status, gst_applicable } = req.query;
     const orgId = req.user!.organizationId;
 
     const where: any = { clientId, organizationId: orgId };
     if (month) where.month = Number(month);
     if (financial_year) where.financialYear = financial_year;
+    if (status) where.status = status;
+    if (gst_applicable !== undefined) where.gstApplicable = gst_applicable === 'true';
 
     const expenses = await ClientExpense.findAll({
       where,
@@ -321,9 +410,15 @@ export const createExpense = async (req: AuthenticatedRequest, res: Response): P
   try {
     const { clientId } = req.params;
     const orgId = req.user!.organizationId;
-    const { expenseDate, category, description, vendorName, amount, paymentMode, referenceNo } = req.body;
+    const {
+      expenseDate, category, description, vendorName, amount,
+      paymentMode, referenceNo,
+      gstApplicable, gstRate, gstAmount, itcAllowed, itcBlockedReason, status, notes
+    } = req.body;
 
     const date = new Date(expenseDate);
+    const computedGstAmount = gstApplicable && gstRate ? Math.round(amount * gstRate) / 100 : 0;
+
     const expense = await ClientExpense.create({
       clientId,
       organizationId: orgId,
@@ -336,6 +431,13 @@ export const createExpense = async (req: AuthenticatedRequest, res: Response): P
       referenceNo,
       month: getMonthFromDate(date),
       financialYear: getFinancialYear(date),
+      gstApplicable: gstApplicable || false,
+      gstRate: gstRate || 0,
+      gstAmount: gstAmount || computedGstAmount,
+      itcAllowed: itcAllowed || false,
+      itcBlockedReason: itcBlockedReason || null,
+      status: status || 'draft',
+      notes: notes || null,
     });
 
     res.status(201).json(successResponse(expense));
@@ -353,7 +455,11 @@ export const updateExpense = async (req: AuthenticatedRequest, res: Response): P
     const expense = await ClientExpense.findOne({ where: { id: expenseId, clientId, organizationId: orgId } });
     if (!expense) { res.status(404).json(errorResponse('NOT_FOUND', 'Expense entry not found')); return; }
 
-    const { expenseDate, category, description, vendorName, amount, paymentMode, referenceNo } = req.body;
+    const {
+      expenseDate, category, description, vendorName, amount,
+      paymentMode, referenceNo,
+      gstApplicable, gstRate, gstAmount, itcAllowed, itcBlockedReason, status, notes
+    } = req.body;
 
     const updateData: any = {};
     if (category !== undefined) updateData.category = category;
@@ -362,6 +468,13 @@ export const updateExpense = async (req: AuthenticatedRequest, res: Response): P
     if (amount !== undefined) updateData.amount = amount;
     if (paymentMode !== undefined) updateData.paymentMode = paymentMode;
     if (referenceNo !== undefined) updateData.referenceNo = referenceNo;
+    if (gstApplicable !== undefined) updateData.gstApplicable = gstApplicable;
+    if (gstRate !== undefined) updateData.gstRate = gstRate;
+    if (gstAmount !== undefined) updateData.gstAmount = gstAmount;
+    if (itcAllowed !== undefined) updateData.itcAllowed = itcAllowed;
+    if (itcBlockedReason !== undefined) updateData.itcBlockedReason = itcBlockedReason;
+    if (status !== undefined) updateData.status = status;
+    if (notes !== undefined) updateData.notes = notes;
 
     if (expenseDate) {
       const date = new Date(expenseDate);
@@ -415,7 +528,10 @@ export const getGstSummary = async (req: AuthenticatedRequest, res: Response): P
     const result = await pool.query(query, params);
 
     // Also get total expenses for each month
-    let expenseQuery = `SELECT month, financial_year, SUM(amount) as total_expenses
+    let expenseQuery = `SELECT month, financial_year,
+                          SUM(amount) as total_expenses,
+                          SUM(gst_amount) FILTER (WHERE gst_applicable = true) as expense_gst,
+                          SUM(gst_amount) FILTER (WHERE itc_allowed = true) as expense_itc
                         FROM client_expenses
                         WHERE client_id = $1 AND organization_id = $2`;
     const expenseParams: any[] = [clientId, orgId];
@@ -429,21 +545,31 @@ export const getGstSummary = async (req: AuthenticatedRequest, res: Response): P
 
     const expenseResult = await pool.query(expenseQuery, expenseParams);
 
-    // Merge expenses into summary
-    const expenseMap = new Map<string, number>();
+    const expenseMap = new Map<string, any>();
     expenseResult.rows.forEach((row: any) => {
-      expenseMap.set(`${row.financial_year}-${row.month}`, parseFloat(row.total_expenses));
+      expenseMap.set(`${row.financial_year}-${row.month}`, row);
     });
 
-    const summary = result.rows.map((row: any) => ({
-      ...row,
-      total_sales: parseFloat(row.total_sales) || 0,
-      output_gst: parseFloat(row.output_gst) || 0,
-      total_purchases: parseFloat(row.total_purchases) || 0,
-      input_gst: parseFloat(row.input_gst) || 0,
-      gst_payable: parseFloat(row.gst_payable) || 0,
-      total_expenses: expenseMap.get(`${row.financial_year}-${row.month}`) || 0,
-    }));
+    const summary = result.rows.map((row: any) => {
+      const exp = expenseMap.get(`${row.financial_year}-${row.month}`) || {};
+      return {
+        ...row,
+        total_sales: parseFloat(row.total_sales) || 0,
+        output_gst: parseFloat(row.output_gst) || 0,
+        output_cgst: parseFloat(row.output_cgst) || 0,
+        output_sgst: parseFloat(row.output_sgst) || 0,
+        output_igst: parseFloat(row.output_igst) || 0,
+        total_purchases: parseFloat(row.total_purchases) || 0,
+        input_gst: parseFloat(row.input_gst) || 0,
+        input_cgst: parseFloat(row.input_cgst) || 0,
+        input_sgst: parseFloat(row.input_sgst) || 0,
+        input_igst: parseFloat(row.input_igst) || 0,
+        gst_payable: parseFloat(row.gst_payable) || 0,
+        total_expenses: parseFloat(exp.total_expenses) || 0,
+        expense_gst: parseFloat(exp.expense_gst) || 0,
+        expense_itc: parseFloat(exp.expense_itc) || 0,
+      };
+    });
 
     res.json(successResponse(summary));
   } catch (error: any) {

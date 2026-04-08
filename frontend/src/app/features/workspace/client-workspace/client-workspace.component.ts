@@ -48,7 +48,8 @@ import { ChecklistsComponent } from '../components/checklists/checklists.compone
 import { ClientDeadlinesComponent } from '../components/client-deadlines/client-deadlines.component';
 import { DataModuleComponent } from '../components/data-module/data-module.component';
 import { GstSummaryComponent } from '../components/gst-summary/gst-summary.component';
-import { heroClipboardDocumentCheckSolid, heroCalendarSolid, heroChartBarSolid, heroReceiptPercentSolid } from '@ng-icons/heroicons/solid';
+import { ClientDashboardComponent } from '../components/client-dashboard/client-dashboard.component';
+import { heroClipboardDocumentCheckSolid, heroCalendarSolid, heroChartBarSolid, heroReceiptPercentSolid, heroPresentationChartBarSolid } from '@ng-icons/heroicons/solid';
 
 @Component({
   selector: 'app-client-workspace',
@@ -70,7 +71,8 @@ import { heroClipboardDocumentCheckSolid, heroCalendarSolid, heroChartBarSolid, 
     ChecklistsComponent,
     ClientDeadlinesComponent,
     DataModuleComponent,
-    GstSummaryComponent
+    GstSummaryComponent,
+    ClientDashboardComponent
   ],
   providers: [
     provideIcons({
@@ -97,7 +99,8 @@ import { heroClipboardDocumentCheckSolid, heroCalendarSolid, heroChartBarSolid, 
       heroClipboardDocumentCheckSolid,
       heroCalendarSolid,
       heroChartBarSolid,
-      heroReceiptPercentSolid
+      heroReceiptPercentSolid,
+      heroPresentationChartBarSolid
     })
   ],
   template: `
@@ -187,6 +190,14 @@ import { heroClipboardDocumentCheckSolid, heroCalendarSolid, heroChartBarSolid, 
           <ng-icon name="heroReceiptPercentSolid" size="18"></ng-icon>
           GST
         </button>
+        <button 
+          (click)="activeTab.set('dashboard')"
+          class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
+          [class]="activeTab() === 'dashboard' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
+        >
+          <ng-icon name="heroPresentationChartBarSolid" size="18"></ng-icon>
+          Dashboard
+        </button>
       </div>
 
       @if (activeTab() === 'checklists') {
@@ -197,6 +208,8 @@ import { heroClipboardDocumentCheckSolid, heroCalendarSolid, heroChartBarSolid, 
         <app-data-module [clientId]="workspace()?.clientId || ''"></app-data-module>
       } @else if (activeTab() === 'gst') {
         <app-gst-summary [clientId]="workspace()?.clientId || ''"></app-gst-summary>
+      } @else if (activeTab() === 'dashboard') {
+        <app-client-dashboard [clientId]="workspace()?.clientId || ''"></app-client-dashboard>
       } @else {
       <!-- Main Content Grid -->
       <div class="flex-1 grid grid-cols-12 gap-6 items-stretch min-h-0">
@@ -766,7 +779,7 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   newFolderName = '';
 
   // Tab state
-  activeTab = signal<'files' | 'checklists' | 'deadlines' | 'data' | 'gst'>('files');
+  activeTab = signal<'files' | 'checklists' | 'deadlines' | 'data' | 'gst' | 'dashboard'>('files');
 
   // Modal states aggregation for overflow control
   private isAnyModalOpen = computed(() =>

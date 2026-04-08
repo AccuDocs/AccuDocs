@@ -18,6 +18,18 @@ export class ClientSale extends Model {
   declare public totalAmount: number;
   declare public month: number;
   declare public financialYear: string;
+  // V2 Fields
+  declare public gstin: string | null;
+  declare public invoiceType: string;
+  declare public placeOfSupply: string | null;
+  declare public cgstAmount: number;
+  declare public sgstAmount: number;
+  declare public igstAmount: number;
+  declare public cessAmount: number;
+  declare public isNilRated: boolean;
+  declare public isAdvance: boolean;
+  declare public status: string;
+  declare public notes: string | null;
   declare public readonly createdAt: Date;
   declare public readonly updatedAt: Date;
 }
@@ -39,6 +51,18 @@ ClientSale.init({
   totalAmount: { type: DataTypes.DECIMAL(14, 2), allowNull: true, field: 'total_amount' },
   month: { type: DataTypes.INTEGER, allowNull: false },
   financialYear: { type: DataTypes.STRING(9), allowNull: false, field: 'financial_year' },
+  // V2 Fields
+  gstin: { type: DataTypes.STRING(15), allowNull: true },
+  invoiceType: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'B2B', field: 'invoice_type' },
+  placeOfSupply: { type: DataTypes.CHAR(2), allowNull: true, field: 'place_of_supply' },
+  cgstAmount: { type: DataTypes.DECIMAL(14, 2), allowNull: false, defaultValue: 0, field: 'cgst_amount' },
+  sgstAmount: { type: DataTypes.DECIMAL(14, 2), allowNull: false, defaultValue: 0, field: 'sgst_amount' },
+  igstAmount: { type: DataTypes.DECIMAL(14, 2), allowNull: false, defaultValue: 0, field: 'igst_amount' },
+  cessAmount: { type: DataTypes.DECIMAL(14, 2), allowNull: false, defaultValue: 0, field: 'cess_amount' },
+  isNilRated: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'is_nil_rated' },
+  isAdvance: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'is_advance' },
+  status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'draft' },
+  notes: { type: DataTypes.TEXT, allowNull: true },
   createdAt: { type: DataTypes.DATE, field: 'created_at' },
   updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
 }, {

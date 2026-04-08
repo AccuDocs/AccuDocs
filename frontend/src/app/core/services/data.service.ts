@@ -3,6 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@environments/environment';
 
+// ===================== V2 INTERFACES =====================
+
 export interface SaleEntry {
   id: string;
   clientId: string;
@@ -19,6 +21,18 @@ export interface SaleEntry {
   totalAmount: number;
   month: number;
   financialYear: string;
+  // V2
+  gstin?: string;
+  invoiceType: string;
+  placeOfSupply?: string;
+  cgstAmount: number;
+  sgstAmount: number;
+  igstAmount: number;
+  cessAmount: number;
+  isNilRated: boolean;
+  isAdvance: boolean;
+  status: string;
+  notes?: string;
   createdAt: string;
 }
 
@@ -38,6 +52,17 @@ export interface PurchaseEntry {
   totalAmount: number;
   month: number;
   financialYear: string;
+  // V2
+  gstin?: string;
+  purchaseType: string;
+  cgstAmount: number;
+  sgstAmount: number;
+  igstAmount: number;
+  itcEligible: boolean;
+  rcmApplicable: boolean;
+  isCapitalGoods: boolean;
+  status: string;
+  notes?: string;
   createdAt: string;
 }
 
@@ -53,6 +78,14 @@ export interface ExpenseEntry {
   referenceNo?: string;
   month: number;
   financialYear: string;
+  // V2
+  gstApplicable: boolean;
+  gstRate: number;
+  gstAmount: number;
+  itcAllowed: boolean;
+  itcBlockedReason?: string;
+  status: string;
+  notes?: string;
   createdAt: string;
 }
 
@@ -62,10 +95,112 @@ export interface GstSummaryRow {
   financial_year: string;
   total_sales: number;
   output_gst: number;
+  output_cgst: number;
+  output_sgst: number;
+  output_igst: number;
   total_purchases: number;
   input_gst: number;
+  input_cgst: number;
+  input_sgst: number;
+  input_igst: number;
   gst_payable: number;
   total_expenses: number;
+  expense_gst: number;
+  expense_itc: number;
+}
+
+export interface DashboardSummary {
+  client: {
+    id: string;
+    name: string;
+    businessName: string;
+    gstin: string;
+    stateCode: string;
+  };
+  financialYear: string;
+  month?: number;
+  cards: {
+    totalSales: number;
+    totalPurchases: number;
+    totalExpenses: number;
+    outputGST: number;
+    inputITC: number;
+    blockedITC: number;
+    rcmLiability: number;
+    netGSTPayable: number;
+  };
+  salesBreakdown: {
+    count: number;
+    b2b: { count: number; value: number };
+    b2c: { count: number; value: number };
+    export: { count: number; value: number };
+  };
+  purchasesBreakdown: {
+    count: number;
+    itcEligible: { count: number; value: number };
+    itcBlocked: { count: number; value: number };
+    rcm: { count: number; value: number };
+  };
+  expensesBreakdown: {
+    count: number;
+    gstApplicable: number;
+    nonGst: number;
+    itcBlocked: number;
+  };
+  taxSplit: { cgst: number; sgst: number; igst: number };
+  validationErrorCount: number;
+}
+
+export interface AnalyticsMonth {
+  month: number;
+  totalSales: number;
+  outputGST: number;
+  outputCGST: number;
+  outputSGST: number;
+  outputIGST: number;
+  totalPurchases: number;
+  inputGST: number;
+  inputCGST: number;
+  inputSGST: number;
+  inputIGST: number;
+  gstPayable: number;
+  totalExpenses: number;
+  expenseGST: number;
+  expenseITC: number;
+}
+
+export interface GstReturnEntry {
+  id: string;
+  returnType: string;
+  periodMonth: number;
+  periodYear: number;
+  financialYear: string;
+  status: string;
+  dueDate: string;
+  filedDate: string;
+  arn: string;
+  remarks: string;
+}
+
+export interface ValidationAlert {
+  id: string;
+  errorCategory: string;
+  errorType: string;
+  severity: string;
+  message: string;
+  entityType: string;
+  entityId: string;
+  fieldName: string;
+  isResolved: boolean;
+}
+
+export interface ActivityEntry {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  details: any;
+  createdAt: string;
 }
 
 export interface UploadResult {
@@ -156,5 +291,52 @@ export class DataService {
     let params = new HttpParams();
     if (financialYear) params = params.set('financial_year', financialYear);
     return this.http.get(`${this.baseUrl}/${clientId}/gst-summary`, { params });
+  }
+
+  // ===================== DASHBOARD V2 =====================
+  getDashboardSummary(clientId: string, financialYear?: string, month?: number): Observable<any> {
+    let params = new HttpParams();
+    if (financialYear) params = params.set('financial_year', financialYear);
+    if (month) params = params.set('month', month.toString());
+    return this.http.get(`${this.baseUrl}/${clientId}/dashboard/summary`, { params });
+  }
+
+  getDashboardAnalytics(clientId: string, financialYear?: string): Observable<any> {
+    let params = new HttpParams();
+    if (financialYear) params = params.set('financial_year', financialYear);
+    return this.http.get(`${this.baseUrl}/${clientId}/dashboard/analytics`, { params });
+  }
+
+  getReturnStatus(clientId: string, financialYear?: string): Observable<any> {
+    let params = new HttpParams();
+    if (financialYear) params = params.set('financial_year', financialYear);
+    return this.http.get(`${this.baseUrl}/${clientId}/dashboard/return-status`, { params });
+  }
+
+  getAlerts(clientId: string, financialYear?: string): Observable<any> {
+    let params = new HttpParams();
+    if (financialYear) params = params.set('financial_year', financialYear);
+    return this.http.get(`${this.baseUrl}/${clientId}/dashboard/alerts`, { params });
+  }
+
+  getActivity(clientId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/${clientId}/dashboard/activity`);
+  }
+
+  getUploadStatus(clientId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/${clientId}/dashboard/upload-status`);
+  }
+
+  // ===================== GST ACTIONS =====================
+  computeGST(clientId: string, financialYear: string, month?: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/${clientId}/compute-gst`, { financial_year: financialYear, month });
+  }
+
+  validateTransactions(clientId: string, financialYear: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/${clientId}/validate`, { financial_year: financialYear });
+  }
+
+  saveGstReturn(clientId: string, data: Partial<GstReturnEntry>): Observable<any> {
+    return this.http.post(`${this.baseUrl}/${clientId}/gst-returns`, data);
   }
 }

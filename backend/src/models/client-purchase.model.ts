@@ -18,6 +18,17 @@ export class ClientPurchase extends Model {
   declare public totalAmount: number;
   declare public month: number;
   declare public financialYear: string;
+  // V2 Fields
+  declare public gstin: string | null;
+  declare public purchaseType: string;
+  declare public cgstAmount: number;
+  declare public sgstAmount: number;
+  declare public igstAmount: number;
+  declare public itcEligible: boolean;
+  declare public rcmApplicable: boolean;
+  declare public isCapitalGoods: boolean;
+  declare public status: string;
+  declare public notes: string | null;
   declare public readonly createdAt: Date;
   declare public readonly updatedAt: Date;
 }
@@ -39,6 +50,17 @@ ClientPurchase.init({
   totalAmount: { type: DataTypes.DECIMAL(14, 2), allowNull: true, field: 'total_amount' },
   month: { type: DataTypes.INTEGER, allowNull: false },
   financialYear: { type: DataTypes.STRING(9), allowNull: false, field: 'financial_year' },
+  // V2 Fields
+  gstin: { type: DataTypes.STRING(15), allowNull: true },
+  purchaseType: { type: DataTypes.STRING(30), allowNull: false, defaultValue: 'local', field: 'purchase_type' },
+  cgstAmount: { type: DataTypes.DECIMAL(14, 2), allowNull: false, defaultValue: 0, field: 'cgst_amount' },
+  sgstAmount: { type: DataTypes.DECIMAL(14, 2), allowNull: false, defaultValue: 0, field: 'sgst_amount' },
+  igstAmount: { type: DataTypes.DECIMAL(14, 2), allowNull: false, defaultValue: 0, field: 'igst_amount' },
+  itcEligible: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true, field: 'itc_eligible' },
+  rcmApplicable: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'rcm_applicable' },
+  isCapitalGoods: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'is_capital_goods' },
+  status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'draft' },
+  notes: { type: DataTypes.TEXT, allowNull: true },
   createdAt: { type: DataTypes.DATE, field: 'created_at' },
   updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
 }, {

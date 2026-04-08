@@ -29,6 +29,9 @@ import { ClientDeadline } from './client-deadline.model';
 import { ClientSale } from './client-sale.model';
 import { ClientPurchase } from './client-purchase.model';
 import { ClientExpense } from './client-expense.model';
+import { GstReturn } from './gst-return.model';
+import { ValidationError } from './validation-error.model';
+import { ActivityLog } from './activity-log.model';
 
 // Set up associations
 Organization.hasMany(User, { foreignKey: 'organizationId', as: 'users' });
@@ -80,6 +83,14 @@ ClientPurchase.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
 Client.hasMany(ClientExpense, { foreignKey: 'client_id', as: 'expenses' });
 ClientExpense.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
 
+// GST V2 associations
+Client.hasMany(GstReturn, { foreignKey: 'client_id', as: 'gstReturns' });
+GstReturn.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
+Client.hasMany(ValidationError, { foreignKey: 'client_id', as: 'validationErrors' });
+ValidationError.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
+Client.hasMany(ActivityLog, { foreignKey: 'client_id', as: 'activityLogs' });
+ActivityLog.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
+
 export {
   Organization,
   User,
@@ -111,5 +122,8 @@ export {
   ClientDeadline,
   ClientSale,
   ClientPurchase,
-  ClientExpense
+  ClientExpense,
+  GstReturn,
+  ValidationError,
+  ActivityLog
 };
