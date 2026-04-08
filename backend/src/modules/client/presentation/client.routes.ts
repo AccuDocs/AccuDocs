@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { container } from 'tsyringe';
 import { ClientController } from './controllers/ClientController';
-import { authenticate, adminOnly, validate } from '../../../middlewares';
+import { authenticate, adminOnly, validate, uploadClientDocs } from '../../../middlewares';
 import { createClientSchema, updateClientSchema, paginationSchema } from '../../../utils/validators';
 
 // Register Dependencies
@@ -54,7 +54,7 @@ router.use(authenticate, adminOnly);
  *       201:
  *         description: Client created successfully
  */
-router.post('/', validate(createClientSchema), ClientController.createClient);
+router.post('/', uploadClientDocs, validate(createClientSchema), ClientController.createClient);
 
 /**
  * @openapi
@@ -137,7 +137,7 @@ router.get('/:id', ClientController.getClient);
  *       200:
  *         description: Client updated successfully
  */
-router.put('/:id', validate(updateClientSchema), ClientController.updateClient);
+router.put('/:id', uploadClientDocs, validate(updateClientSchema), ClientController.updateClient);
 
 /**
  * @openapi

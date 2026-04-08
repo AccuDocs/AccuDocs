@@ -273,14 +273,16 @@
                 <div class="relative group">
                   <input type="file" #dfi (change)="onFileChange($event, d.id)" class="hidden" accept=".pdf,.jpg,.jpeg,.png">
                   <button type="button" (click)="dfi.click()" class="w-full flex items-center justify-between p-6 rounded-2xl border-2 border-dashed transition-all"
-                    [class.border-primary-600]="files()[d.id]" [class.bg-primary-50]="files()[d.id]" [class.border-slate-100]="!files()[d.id]">
+                    [class.border-primary-600]="files()[d.id] || existingFiles()[d.id]" [class.bg-primary-50]="files()[d.id] || (existingFiles()[d.id] && !files()[d.id])" [class.border-slate-100]="!files()[d.id] && !existingFiles()[d.id]">
                     <div class="flex items-center gap-4">
-                      <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-colors" [class.bg-primary-600]="files()[d.id]" [class.bg-slate-100]="!files()[d.id]" [class.text-white]="files()[d.id]" [class.text-slate-400]="!files()[d.id]">
-                        <mat-icon>{{d.i}}</mat-icon>
+                      <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-colors" [class.bg-primary-600]="files()[d.id] || existingFiles()[d.id]" [class.bg-slate-100]="!files()[d.id] && !existingFiles()[d.id]" [class.text-white]="files()[d.id] || existingFiles()[d.id]" [class.text-slate-400]="!files()[d.id] && !existingFiles()[d.id]">
+                        <mat-icon>{{ files()[d.id] || existingFiles()[d.id] ? 'check_circle' : d.i }}</mat-icon>
                       </div>
                       <div class="text-left">
                         <p class="text-[13px] font-black text-slate-800 dark:text-slate-200">{{d.l}}</p>
-                        <p class="text-[10px] font-black uppercase tracking-wider mt-1" [class.text-primary-600]="files()[d.id]" [class.text-slate-400]="!files()[d.id]">{{files()[d.id] ? files()[d.id]?.name : 'Max 5MB'}}</p>
+                        <p class="text-[10px] font-black uppercase tracking-wider mt-1" [class.text-primary-600]="files()[d.id] || existingFiles()[d.id]" [class.text-slate-400]="!files()[d.id] && !existingFiles()[d.id]">
+                          {{ files()[d.id] ? files()[d.id]?.name : (existingFiles()[d.id] ? 'Document Uploaded' : 'Max 5MB') }}
+                        </p>
                       </div>
                     </div>
                     <mat-icon class="text-lg text-slate-300 group-hover:text-primary-600 transition-colors">cloud_upload</mat-icon>

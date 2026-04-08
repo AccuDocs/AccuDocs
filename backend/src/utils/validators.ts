@@ -9,6 +9,17 @@ export const patterns = {
   uuid: /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
 };
 
+// Helper for multipart/form-data boolean coercion
+// - [x] Backend: Add boolean coercion to Zod validators
+// - [ ] Verification: Test multipart submission with "true"/"false" strings
+const booleanCoerce = z.preprocess((val) => {
+  if (typeof val === 'string') {
+    if (val.toLowerCase() === 'true') return true;
+    if (val.toLowerCase() === 'false') return false;
+  }
+  return val;
+}, z.boolean());
+
 // Auth schemas
 export const sendOTPSchema = z.object({
   mobile: z.string().regex(patterns.mobile, 'Invalid mobile number format'),
@@ -49,12 +60,12 @@ export const createClientSchema = z.object({
   accountingMethod: z.string().optional().nullable(),
   estimatedTurnover: z.string().optional().nullable(),
   employeeCount: z.string().optional().nullable(),
-  termsAccepted: z.boolean().optional(),
+  termsAccepted: booleanCoerce.optional(),
   password: z.string().min(8, 'Password must be at least 8 characters').optional(),
 });
 
 export const updateClientSchema = createClientSchema.partial().extend({
-  isActive: z.boolean().optional(),
+  isActive: booleanCoerce.optional(),
 });
 
 // User schemas
@@ -64,7 +75,7 @@ export const createUserSchema = z.object({
   role: z.enum(['admin', 'client']),
   email: z.string().email('Invalid email format').optional().nullable(),
   password: z.string().min(8, 'Password must be at least 8 characters').optional(),
-  isActive: z.boolean().optional(),
+  isActive: booleanCoerce.optional(),
 });
 
 export const updateUserSchema = z.object({
@@ -73,7 +84,7 @@ export const updateUserSchema = z.object({
   role: z.enum(['admin', 'client']).optional(),
   email: z.string().email('Invalid email format').optional().nullable(),
   password: z.string().min(8, 'Password must be at least 8 characters').optional(),
-  isActive: z.boolean().optional(),
+  isActive: booleanCoerce.optional(),
 });
 
 export const userFilterSchema = z.object({

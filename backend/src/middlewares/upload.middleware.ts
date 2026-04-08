@@ -57,6 +57,23 @@ export const uploadMultiple = (maxCount: number = 10) =>
   }).array('files', maxCount);
 
 /**
+ * Multer upload middleware for client KYC documents
+ */
+export const uploadClientDocs = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: MAX_FILE_SIZE,
+    files: 4,
+  },
+}).fields([
+  { name: 'identityProofFile', maxCount: 1 },
+  { name: 'businessRegistrationFile', maxCount: 1 },
+  { name: 'taxCardCopyFile', maxCount: 1 },
+  { name: 'previousYearReturnFile', maxCount: 1 },
+]);
+
+/**
  * Get file extension from filename
  */
 export const getFileExtension = (filename: string): string => {

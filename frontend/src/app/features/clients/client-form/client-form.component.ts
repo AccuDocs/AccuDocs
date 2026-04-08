@@ -118,6 +118,13 @@ export class ClientFormComponent implements OnInit {
     previousReturn: null
   });
 
+  existingFiles = signal<{ [key: string]: string | null }>({
+    identityProof: null,
+    businessRegistration: null,
+    taxCardCopy: null,
+    previousReturn: null
+  });
+
   // Form Progress Computed
   stepProgress = computed(() => {
     return (this.currentStep() / this.totalSteps) * 100;
@@ -235,13 +242,22 @@ export class ClientFormComponent implements OnInit {
       location: data.location,
       // Map pan or gstin to taxId control
       taxId: data.pan || data.gstin || data.taxId,
-      gstStatus: data.gstStatus || 'Unregistered',
+      // Map lowercased backend values back to frontend dropdowns
+      gstStatus: data.gstStatus ? (data.gstStatus.charAt(0).toUpperCase() + data.gstStatus.slice(1)) : 'Unregistered',
       financialYearEnd: data.financialYearEnd || 'march_31',
-      accountingMethod: data.accountingMethod || 'Cash Basis',
+      accountingMethod: data.accountingMethod === 'cash' ? 'Cash Basis' : (data.accountingMethod === 'accrual' ? 'Accrual Basis' : 'Cash Basis'),
       estimatedTurnover: data.estimatedTurnover,
       employeeCount: data.employeeCount,
       termsAccepted: true
     }, { emitEvent: true });
+
+    // Map existing document URLs
+    this.existingFiles.set({
+      identityProof: data.identityProofUrl || null,
+      businessRegistration: data.businessRegistrationUrl || null,
+      taxCardCopy: data.taxCardCopyUrl || null,
+      previousReturn: data.previousYearReturnUrl || null
+    });
 
     this.clientForm.get('code')?.disable();
     
@@ -366,12 +382,17 @@ export class ClientFormComponent implements OnInit {
       employeeCount: formValue.employeeCount,
       termsAccepted: formValue.termsAccepted,
       isActive: true,
-      ...(formValue.password ? { password: formValue.password } : {})
+      ...(formValue.password ? { password: formValue.password } : {}),
+      // Include KYC Files
+      identityProofFile: this.files()['identityProof'],
+      businessRegistrationFile: this.files()['businessRegistration'],
+      taxCardCopyFile: this.files()['taxCardCopy'],
+      previousYearReturnFile: this.files()['previousReturn']
     };
 
     const request$ = this.isEditMode()
-      ? this.clientService.updateClient(this.clientId!, payload)
-      : this.clientService.createClient(payload);
+      ? this.clientService.updateClient(this.clientId as string, payload as any)
+      : this.clientService.createClient(payload as any);
 
     request$.subscribe({
       next: () => {

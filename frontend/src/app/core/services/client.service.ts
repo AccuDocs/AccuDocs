@@ -60,17 +60,27 @@ export interface CreateClientDto {
   accountingMethod?: string;
   estimatedTurnover?: string;
   employeeCount?: string;
-  identityProofFile?: File;
-  businessRegistrationFile?: File;
-  taxCardCopyFile?: File;
-  previousYearReturnFile?: File;
+  address?: string;
+  city?: string;
+  pincode?: string;
+  taxId?: string;
+  pan?: string;
+  gstin?: string;
+  identityProofFile?: File | null;
+  businessRegistrationFile?: File | null;
+  taxCardCopyFile?: File | null;
+  previousYearReturnFile?: File | null;
   termsAccepted?: boolean;
+  isActive?: boolean;
 }
 
 export interface UpdateClientDto extends Partial<CreateClientDto> {
   id?: string;
 }
 
+// - [x] Backend: Update ClientService to handle S3 uploads and signed URLs
+// - [/] Frontend: Update ClientService to send FormData
+// - [/] Frontend: Update ClientFormComponent to include files in payload
 export interface PaginatedResponse<T> {
   success: boolean;
   message: string;
@@ -117,11 +127,13 @@ export class ClientService {
   }
 
   createClient(data: CreateClientDto): Observable<any> {
-    return this.http.post(this.baseUrl, data);
+    const formData = this.toFormData(data);
+    return this.http.post(this.baseUrl, formData);
   }
 
   updateClient(id: string, data: UpdateClientDto): Observable<any> {
-    return this.http.put(`${this.baseUrl}/${id}`, data);
+    const formData = this.toFormData(data);
+    return this.http.put(`${this.baseUrl}/${id}`, formData);
   }
 
   deleteClient(id: string): Observable<any> {
@@ -134,5 +146,27 @@ export class ClientService {
 
   getNextCode(): Observable<any> {
     return this.http.get(`${this.baseUrl}/next-code`);
+  }
+
+  private toFormData(data: any): FormData | any {
+    const hasFiles = Object.values(data).some(v => v instanceof File);
+    if (!hasFiles) return data;
+
+    const formData = new FormData();
+    Object.keys(data).forEach(key => {
+      const value = data[key];
+      if (value !== null && value !== undefined) {
+        if (value instanceof File) {
+          formData.append(key, value);
+        } else if (value instanceof Date) {
+          formData.append(key, value.toISOString());
+        } else if (typeof value === 'object') {
+          formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(key, value.toString());
+        }
+      }
+    });
+    return formData;
   }
 }

@@ -26,6 +26,7 @@ export interface CreateClientDTO {
   taxCardCopyUrl?: string;
   previousYearReturnUrl?: string;
   termsAccepted?: boolean;
+  taxId?: string;
   notes?: string;
 }
 
@@ -57,6 +58,7 @@ export interface UpdateClientDTO {
   taxCardCopyUrl?: string;
   previousYearReturnUrl?: string;
   termsAccepted?: boolean;
+  taxId?: string;
   notes?: string;
   isActive?: boolean;
   metadata?: any;
@@ -72,6 +74,26 @@ export interface ClientResponseDTO {
   stateCode: string;
   mobile?: string | null;
   email?: string | null;
+  address?: string | null;
+  city?: string | null;
+  pincode?: string | null;
+  location?: string | null;
+  creditLimit?: number;
+  entityType?: string;
+  businessName?: string | null;
+  industrySector?: string | null;
+  incorporationDate?: Date | null;
+  gstStatus?: string | null;
+  financialYearEnd?: string | null;
+  accountingMethod?: string | null;
+  estimatedTurnover?: string | null;
+  employeeCount?: string | null;
+  identityProofUrl?: string | null;
+  businessRegistrationUrl?: string | null;
+  taxCardCopyUrl?: string | null;
+  previousYearReturnUrl?: string | null;
+  termsAccepted?: boolean;
+  notes?: string | null;
   metadata?: any;
   user: {
     id: string;

@@ -9,7 +9,7 @@ export class ClientController {
 
   static createClient = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(ClientService);
-    const client = await service.create(req.body, req.user!.userId, req.user!.organizationId);
+    const client = await service.create(req.body, req.user!.userId, req.user!.organizationId, req.files);
     sendCreated(res, client, 'Client created successfully');
   });
 
@@ -33,7 +33,7 @@ export class ClientController {
 
   static updateClient = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(ClientService);
-    const client = await service.update(req.params.id, req.body, req.user!.userId, req.user!.organizationId);
+    const client = await service.update(req.params.id, req.body, req.user!.userId, req.user!.organizationId, req.files);
     sendSuccess(res, client, 'Client updated successfully');
   });
 
