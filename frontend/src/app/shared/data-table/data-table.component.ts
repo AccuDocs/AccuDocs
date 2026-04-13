@@ -23,7 +23,7 @@ import {
   Injector,
   inject
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NgxDatatableModule, DatatableComponent, ColumnMode, SelectionType } from '@swimlane/ngx-datatable';
@@ -39,7 +39,9 @@ import { PdfUtil } from '../utils/pdf.util';
     CommonModule,
     FormsModule,
     NgxDatatableModule,
-    RouterModule
+    RouterModule,
+    DecimalPipe,
+    DatePipe
     // Icons will be SVG or standard for simplicity avoiding unresolved lib imports
   ],
   encapsulation: ViewEncapsulation.None,

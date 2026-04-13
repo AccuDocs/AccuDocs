@@ -1,4 +1,4 @@
-import { Component, Input, inject, signal, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, inject, signal, OnInit, OnChanges, SimpleChanges, TemplateRef, viewChild } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
@@ -9,11 +9,15 @@ import {
 } from '@ng-icons/heroicons/solid';
 import { DataService, SaleEntry } from '@core/services/data.service';
 import { ToastService } from '@core/services/toast.service';
+import { ExcelUtil } from '../../../../../shared/utils/excel.util';
+import { PdfUtil } from '../../../../../shared/utils/pdf.util';
+import { DataTableComponent } from '../../../../../shared/data-table/data-table.component';
+import { TableColumn } from '../../../../../shared/data-table/models';
 
 @Component({
   selector: 'app-sales',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgIconComponent, DecimalPipe],
+  imports: [CommonModule, FormsModule, NgIconComponent, DecimalPipe, DataTableComponent],
   providers: [
     provideIcons({
       heroChartBarSolid, heroPlusSolid, heroPencilSquareSolid,
@@ -75,119 +79,58 @@ import { ToastService } from '@core/services/toast.service';
         </div>
       </div>
 
-      <!-- Action Bar -->
-      <div class="flex items-center justify-between">
-        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sales Register</p>
-        <button
-          (click)="openModal()"
-          class="bg-indigo-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
-        >
-          <ng-icon name="heroPlusSolid" size="18"></ng-icon>
-          Add Entry
-        </button>
-      </div>
-
       <!-- Data Table -->
-      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Invoice</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Date</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Customer</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Type</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Base Amt</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">GST%</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">CGST</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">SGST</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">IGST</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Total</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Status</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-              @for (entry of entries(); track entry.id) {
-                <tr class="hover:bg-slate-50/50 transition-colors group">
-                  <td class="py-3 px-3 text-sm font-bold text-slate-900">{{ entry.invoiceNo }}</td>
-                  <td class="py-3 px-3 text-sm text-slate-600">{{ entry.invoiceDate | date:'dd MMM yy' }}</td>
-                  <td class="py-3 px-3">
-                    <p class="text-sm text-slate-700 font-medium truncate max-w-[140px]">{{ entry.customerName }}</p>
-                    @if (entry.gstin) {
-                      <p class="text-[10px] font-mono text-slate-400 mt-0.5">{{ entry.gstin }}</p>
-                    }
-                  </td>
-                  <td class="py-3 px-3 text-center">
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                      [ngClass]="{
-                        'bg-blue-50 text-blue-700': entry.invoiceType === 'B2B',
-                        'bg-purple-50 text-purple-700': entry.invoiceType === 'B2C',
-                        'bg-teal-50 text-teal-700': entry.invoiceType === 'EXPORT',
-                        'bg-slate-100 text-slate-600': entry.invoiceType === 'NIL'
-                      }"
-                    >{{ entry.invoiceType }}</span>
-                  </td>
-                  <td class="py-3 px-3 text-sm text-slate-900 font-mono font-bold text-right">₹{{ entry.baseAmount | number:'1.0-0' }}</td>
-                  <td class="py-3 px-3 text-center">
-                    <span class="text-[11px] font-bold px-2 py-0.5 rounded-full border"
-                      [ngClass]="{
-                        'bg-emerald-50 text-emerald-700 border-emerald-200': entry.gstRate == 5,
-                        'bg-sky-50 text-sky-700 border-sky-200': entry.gstRate == 12,
-                        'bg-indigo-50 text-indigo-700 border-indigo-200': entry.gstRate == 18,
-                        'bg-rose-50 text-rose-700 border-rose-200': entry.gstRate == 28,
-                        'bg-slate-50 text-slate-600 border-slate-200': entry.gstRate == 0
-                      }"
-                    >{{ entry.gstRate }}%</span>
-                  </td>
-                  <td class="py-3 px-3 text-sm text-blue-700 font-mono text-right">{{ entry.cgstAmount | number:'1.0-0' }}</td>
-                  <td class="py-3 px-3 text-sm text-blue-700 font-mono text-right">{{ entry.sgstAmount | number:'1.0-0' }}</td>
-                  <td class="py-3 px-3 text-sm text-violet-700 font-mono text-right">{{ entry.igstAmount | number:'1.0-0' }}</td>
-                  <td class="py-3 px-3 text-sm text-slate-900 font-mono font-bold text-right">₹{{ entry.totalAmount | number:'1.0-0' }}</td>
-                  <td class="py-3 px-3 text-center">
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
-                      [ngClass]="{
-                        'bg-amber-50 text-amber-700': entry.status === 'draft',
-                        'bg-emerald-50 text-emerald-700': entry.status === 'validated',
-                        'bg-blue-50 text-blue-700': entry.status === 'filed',
-                        'bg-rose-50 text-rose-700': entry.status === 'revised'
-                      }"
-                    >{{ entry.status }}</span>
-                  </td>
-                  <td class="py-3 px-3 text-right">
-                    <div class="flex items-center justify-end gap-1">
-                      <button (click)="editEntry(entry)" class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" title="Edit">
-                        <ng-icon name="heroPencilSquareSolid" size="15"></ng-icon>
-                      </button>
-                      <button (click)="deleteEntry(entry)" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all" title="Delete">
-                        <ng-icon name="heroTrashSolid" size="15"></ng-icon>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              }
-              @if (entries().length === 0) {
-                <tr>
-                  <td colspan="12" class="py-12 text-center">
-                    <div class="flex flex-col items-center justify-center text-slate-400">
-                      <ng-icon name="heroChartBarSolid" size="48" class="mb-4 opacity-20"></ng-icon>
-                      <p class="font-bold">No sales entries found</p>
-                      <p class="text-xs mt-1">Click "Add Entry" to create your first sale record.</p>
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <app-data-table
+        title="Sales Register"
+        [tableData]="entries()"
+        [tableColumns]="columns"
+        [canAdd]="true"
+        (add)="openModal()"
+        (rowAction)="handleRowAction($event)"
+      >
+      </app-data-table>
+
+      <!-- Custom Templates -->
+      <ng-template #typeTpl let-row>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+          [ngClass]="{
+            'bg-blue-50 text-blue-700': row.invoiceType === 'B2B',
+            'bg-purple-50 text-purple-700': row.invoiceType === 'B2C',
+            'bg-teal-50 text-teal-700': row.invoiceType === 'EXPORT',
+            'bg-slate-100 text-slate-600': row.invoiceType === 'NIL'
+          }"
+        >{{ row.invoiceType }}</span>
+      </ng-template>
+
+      <ng-template #gstRateTpl let-row>
+        <span class="text-[11px] font-bold px-2 py-0.5 rounded-full border"
+          [ngClass]="{
+            'bg-emerald-50 text-emerald-700 border-emerald-200': row.gstRate == 5,
+            'bg-sky-50 text-sky-700 border-sky-200': row.gstRate == 12,
+            'bg-indigo-50 text-indigo-700 border-indigo-200': row.gstRate == 18,
+            'bg-rose-50 text-rose-700 border-rose-200': row.gstRate == 28,
+            'bg-slate-50 text-slate-600 border-slate-200': row.gstRate == 0
+          }"
+        >{{ row.gstRate }}%</span>
+      </ng-template>
+
+      <ng-template #statusTpl let-row>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
+          [ngClass]="{
+            'bg-amber-50 text-amber-700': row.status === 'draft',
+            'bg-emerald-50 text-emerald-700': row.status === 'validated',
+            'bg-blue-50 text-blue-700': row.status === 'filed',
+            'bg-rose-50 text-rose-700': row.status === 'revised'
+          }"
+        >{{ row.status }}</span>
+      </ng-template>
 
       <!-- Add/Edit Modal -->
       @if (showModal()) {
         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" (click)="closeModal()">
           <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-200" (click)="$event.stopPropagation()">
             <div class="flex items-center justify-between p-6 border-b border-slate-200">
-              <h3 class="text-lg font-bold text-slate-900">{{ editingId ? 'Edit' : 'Add' }} Sale Entry</h3>
+              <h3 class="text-lg font-bold text-slate-900">{{ editingEntry() ? 'Edit' : 'Add' }} Sale Entry</h3>
               <button (click)="closeModal()" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all">
                 <ng-icon name="heroXMarkSolid" size="20"></ng-icon>
               </button>
@@ -316,7 +259,7 @@ import { ToastService } from '@core/services/toast.service';
             <div class="flex items-center justify-end gap-3 p-6 border-t border-slate-200">
               <button (click)="closeModal()" class="h-10 px-4 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all">Cancel</button>
               <button (click)="saveEntry()" [disabled]="!isFormValid()" class="h-10 px-6 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed">
-                {{ editingId ? 'Update' : 'Create' }}
+                {{ editingEntry() ? 'Update' : 'Create' }}
               </button>
             </div>
           </div>
@@ -357,16 +300,38 @@ import { ToastService } from '@core/services/toast.service';
   `]
 })
 export class SalesComponent implements OnInit, OnChanges {
-  @Input() clientId: string = '';
+  @Input() clientId!: string;
   @Input() month: number = 0;
   @Input() financialYear: string = '';
 
-  private dataService = inject(DataService);
-  private toast = inject(ToastService);
+  dataService = inject(DataService);
+  toast = inject(ToastService);
 
   entries = signal<SaleEntry[]>([]);
   showModal = signal(false);
   editingId: string | null = null;
+  editingEntry = signal<SaleEntry | null>(null);
+
+  // Template Signals
+  typeTpl = viewChild.required<TemplateRef<any>>('typeTpl');
+  gstRateTpl = viewChild.required<TemplateRef<any>>('gstRateTpl');
+  statusTpl = viewChild.required<TemplateRef<any>>('statusTpl');
+
+  get columns(): TableColumn[] {
+    return [
+      { name: 'Invoice', prop: 'invoiceNo', type: 'text', sortable: true, width: 120 },
+      { name: 'Date', prop: 'invoiceDate', type: 'date', sortable: true, width: 120 },
+      { name: 'Customer', prop: 'customerName', type: 'text', sortable: true, width: 200 },
+      { name: 'Type', prop: 'invoiceType', type: 'text', template: this.typeTpl(), width: 100 },
+      { name: 'Base Amt', prop: 'baseAmount', type: 'currency', width: 120 },
+      { name: 'GST%', prop: 'gstRate', type: 'text', template: this.gstRateTpl(), width: 80 },
+      { name: 'CGST', prop: 'cgstAmount', type: 'currency', width: 100 },
+      { name: 'SGST', prop: 'sgstAmount', type: 'currency', width: 100 },
+      { name: 'IGST', prop: 'igstAmount', type: 'currency', width: 100 },
+      { name: 'Total', prop: 'totalAmount', type: 'currency', width: 130 },
+      { name: 'Status', prop: 'status', type: 'status', template: this.statusTpl(), width: 100 }
+    ];
+  }
 
   form: any = this.resetForm();
 
@@ -480,5 +445,13 @@ export class SalesComponent implements OnInit, OnChanges {
       next: () => { this.toast.success('Deleted'); this.loadData(); },
       error: (err) => this.toast.error('Delete failed', err.message)
     });
+  }
+
+  handleRowAction(event: { action: string, row: any }) {
+    if (event.action === 'edit') {
+      this.editEntry(event.row);
+    } else if (event.action === 'delete') {
+      this.deleteEntry(event.row);
+    }
   }
 }

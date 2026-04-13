@@ -1,4 +1,4 @@
-import { Component, Input, inject, signal, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, inject, signal, OnInit, OnChanges, SimpleChanges, TemplateRef, viewChild } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
@@ -9,11 +9,15 @@ import {
 } from '@ng-icons/heroicons/solid';
 import { DataService, PurchaseEntry } from '@core/services/data.service';
 import { ToastService } from '@core/services/toast.service';
+import { ExcelUtil } from '../../../../../shared/utils/excel.util';
+import { PdfUtil } from '../../../../../shared/utils/pdf.util';
+import { DataTableComponent } from '../../../../../shared/data-table/data-table.component';
+import { TableColumn } from '../../../../../shared/data-table/models';
 
 @Component({
   selector: 'app-purchases',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgIconComponent, DecimalPipe],
+  imports: [CommonModule, FormsModule, NgIconComponent, DecimalPipe, DataTableComponent],
   providers: [
     provideIcons({
       heroShoppingCartSolid, heroPlusSolid, heroPencilSquareSolid,
@@ -75,105 +79,51 @@ import { ToastService } from '@core/services/toast.service';
         </div>
       </div>
 
-      <!-- Action Bar -->
-      <div class="flex items-center justify-between">
-        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Purchase Register</p>
-        <button (click)="openModal()" class="bg-indigo-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 active:scale-95">
-          <ng-icon name="heroPlusSolid" size="18"></ng-icon>
-          Add Entry
-        </button>
-      </div>
-
       <!-- Data Table -->
-      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Bill No</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Date</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Vendor</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Base Amt</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">GST%</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">CGST</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">SGST</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">IGST</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">ITC</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">RCM</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Status</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-              @for (entry of entries(); track entry.id) {
-                <tr class="hover:bg-slate-50/50 transition-colors group">
-                  <td class="py-3 px-3 text-sm font-bold text-slate-900">{{ entry.billNo }}</td>
-                  <td class="py-3 px-3 text-sm text-slate-600">{{ entry.billDate | date:'dd MMM yy' }}</td>
-                  <td class="py-3 px-3">
-                    <p class="text-sm text-slate-700 font-medium truncate max-w-[130px]">{{ entry.vendorName }}</p>
-                    @if (entry.gstin) {
-                      <p class="text-[10px] font-mono text-slate-400 mt-0.5">{{ entry.gstin }}</p>
-                    }
-                  </td>
-                  <td class="py-3 px-3 text-sm text-slate-900 font-mono font-bold text-right">₹{{ entry.baseAmount | number:'1.0-0' }}</td>
-                  <td class="py-3 px-3 text-center">
-                    <span class="text-[11px] font-bold px-2 py-0.5 rounded-full border"
-                      [ngClass]="{
-                        'bg-emerald-50 text-emerald-700 border-emerald-200': entry.gstRate == 5,
-                        'bg-sky-50 text-sky-700 border-sky-200': entry.gstRate == 12,
-                        'bg-indigo-50 text-indigo-700 border-indigo-200': entry.gstRate == 18,
-                        'bg-rose-50 text-rose-700 border-rose-200': entry.gstRate == 28,
-                        'bg-slate-50 text-slate-600 border-slate-200': entry.gstRate == 0
-                      }"
-                    >{{ entry.gstRate }}%</span>
-                  </td>
-                  <td class="py-3 px-3 text-sm text-blue-700 font-mono text-right">{{ entry.cgstAmount | number:'1.0-0' }}</td>
-                  <td class="py-3 px-3 text-sm text-blue-700 font-mono text-right">{{ entry.sgstAmount | number:'1.0-0' }}</td>
-                  <td class="py-3 px-3 text-sm text-violet-700 font-mono text-right">{{ entry.igstAmount | number:'1.0-0' }}</td>
-                  <td class="py-3 px-3 text-center">
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                      [ngClass]="entry.itcEligible ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
-                    >{{ entry.itcEligible ? 'YES' : 'NO' }}</span>
-                  </td>
-                  <td class="py-3 px-3 text-center">
-                    @if (entry.rcmApplicable) {
-                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">RCM</span>
-                    }
-                  </td>
-                  <td class="py-3 px-3 text-center">
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
-                      [ngClass]="{
-                        'bg-amber-50 text-amber-700': entry.status === 'draft',
-                        'bg-emerald-50 text-emerald-700': entry.status === 'validated',
-                        'bg-blue-50 text-blue-700': entry.status === 'filed'
-                      }"
-                    >{{ entry.status }}</span>
-                  </td>
-                  <td class="py-3 px-3 text-right">
-                    <div class="flex items-center justify-end gap-1">
-                      <button (click)="editEntry(entry)" class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
-                        <ng-icon name="heroPencilSquareSolid" size="15"></ng-icon>
-                      </button>
-                      <button (click)="deleteEntry(entry)" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
-                        <ng-icon name="heroTrashSolid" size="15"></ng-icon>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              }
-              @if (entries().length === 0) {
-                <tr><td colspan="12" class="py-12 text-center">
-                  <div class="flex flex-col items-center justify-center text-slate-400">
-                    <ng-icon name="heroShoppingCartSolid" size="48" class="mb-4 opacity-20"></ng-icon>
-                    <p class="font-bold">No purchase entries found</p>
-                    <p class="text-xs mt-1">Click "Add Entry" to create your first purchase record.</p>
-                  </div>
-                </td></tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <app-data-table
+        title="Purchase Register"
+        [tableData]="entries()"
+        [tableColumns]="columns"
+        [canAdd]="true"
+        (add)="openModal()"
+        (rowAction)="handleRowAction($event)"
+      >
+      </app-data-table>
+
+      <!-- Custom Templates -->
+      <ng-template #gstRateTpl let-row>
+        <span class="text-[11px] font-bold px-2 py-0.5 rounded-full border"
+          [ngClass]="{
+            'bg-emerald-50 text-emerald-700 border-emerald-200': row.gstRate == 5,
+            'bg-sky-50 text-sky-700 border-sky-200': row.gstRate == 12,
+            'bg-indigo-50 text-indigo-700 border-indigo-200': row.gstRate == 18,
+            'bg-rose-50 text-rose-700 border-rose-200': row.gstRate == 28,
+            'bg-slate-50 text-slate-600 border-slate-200': row.gstRate == 0
+          }"
+        >{{ row.gstRate }}%</span>
+      </ng-template>
+
+      <ng-template #itcTpl let-row>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+          [ngClass]="row.itcEligible ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
+        >{{ row.itcEligible ? 'YES' : 'NO' }}</span>
+      </ng-template>
+
+      <ng-template #rcmTpl let-row>
+        @if (row.rcmApplicable) {
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">RCM</span>
+        }
+      </ng-template>
+
+      <ng-template #statusTpl let-row>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
+          [ngClass]="{
+            'bg-amber-50 text-amber-700': row.status === 'draft',
+            'bg-emerald-50 text-emerald-700': row.status === 'validated',
+            'bg-blue-50 text-blue-700': row.status === 'filed'
+          }"
+        >{{ row.status }}</span>
+      </ng-template>
 
       <!-- Add/Edit Modal -->
       @if (showModal()) {
@@ -302,16 +252,39 @@ import { ToastService } from '@core/services/toast.service';
   `]
 })
 export class PurchasesComponent implements OnInit, OnChanges {
-  @Input() clientId = '';
-  @Input() month = 0;
-  @Input() financialYear = '';
+  @Input() clientId!: string;
+  @Input() month: number = 0;
+  @Input() financialYear: string = '';
 
-  private dataService = inject(DataService);
-  private toast = inject(ToastService);
+  dataService = inject(DataService);
+  toast = inject(ToastService);
 
   entries = signal<PurchaseEntry[]>([]);
   showModal = signal(false);
   editingId: string | null = null;
+  editingEntry = signal<PurchaseEntry | null>(null);
+
+  // Template Signals
+  gstRateTpl = viewChild.required<TemplateRef<any>>('gstRateTpl');
+  itcTpl = viewChild.required<TemplateRef<any>>('itcTpl');
+  rcmTpl = viewChild.required<TemplateRef<any>>('rcmTpl');
+  statusTpl = viewChild.required<TemplateRef<any>>('statusTpl');
+
+  get columns(): TableColumn[] {
+    return [
+      { name: 'Bill No', prop: 'billNo', type: 'text', sortable: true, width: 120 },
+      { name: 'Date', prop: 'billDate', type: 'date', sortable: true, width: 120 },
+      { name: 'Vendor', prop: 'vendorName', type: 'text', sortable: true, width: 200 },
+      { name: 'Base Amt', prop: 'baseAmount', type: 'currency', width: 120 },
+      { name: 'GST%', prop: 'gstRate', type: 'text', template: this.gstRateTpl(), width: 80 },
+      { name: 'CGST', prop: 'cgstAmount', type: 'currency', width: 100 },
+      { name: 'SGST', prop: 'sgstAmount', type: 'currency', width: 100 },
+      { name: 'IGST', prop: 'igstAmount', type: 'currency', width: 100 },
+      { name: 'ITC', prop: 'itcEligible', type: 'text', template: this.itcTpl(), width: 80 },
+      { name: 'RCM', prop: 'rcmApplicable', type: 'text', template: this.rcmTpl(), width: 80 },
+      { name: 'Status', prop: 'status', type: 'status', template: this.statusTpl(), width: 100 }
+    ];
+  }
   form: any = this.resetForm();
   totalPurchases = signal(0);
   totalGST = signal(0);
@@ -376,5 +349,13 @@ export class PurchasesComponent implements OnInit, OnChanges {
   deleteEntry(e: PurchaseEntry) {
     if (!confirm(`Delete bill ${e.billNo}?`)) return;
     this.dataService.deletePurchase(this.clientId, e.id).subscribe({ next: () => { this.toast.success('Deleted'); this.loadData(); }, error: (err) => this.toast.error('Failed', err.message) });
+  }
+
+  handleRowAction(event: { action: string, row: any }) {
+    if (event.action === 'edit') {
+      this.editEntry(event.row);
+    } else if (event.action === 'delete') {
+      this.deleteEntry(event.row);
+    }
   }
 }

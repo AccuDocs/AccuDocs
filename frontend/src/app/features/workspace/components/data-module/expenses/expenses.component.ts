@@ -1,15 +1,19 @@
-import { Component, Input, inject, signal, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, inject, signal, OnInit, OnChanges, SimpleChanges, TemplateRef, viewChild } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { heroBanknotesSolid, heroPlusSolid, heroPencilSquareSolid, heroTrashSolid, heroXMarkSolid, heroCurrencyRupeeSolid, heroReceiptPercentSolid, heroShieldExclamationSolid } from '@ng-icons/heroicons/solid';
 import { DataService, ExpenseEntry } from '@core/services/data.service';
 import { ToastService } from '@core/services/toast.service';
+import { ExcelUtil } from '../../../../../shared/utils/excel.util';
+import { PdfUtil } from '../../../../../shared/utils/pdf.util';
+import { DataTableComponent } from '../../../../../shared/data-table/data-table.component';
+import { TableColumn } from '../../../../../shared/data-table/models';
 
 @Component({
   selector: 'app-expenses',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgIconComponent, DecimalPipe],
+  imports: [CommonModule, FormsModule, NgIconComponent, DecimalPipe, DataTableComponent],
   providers: [provideIcons({ heroBanknotesSolid, heroPlusSolid, heroPencilSquareSolid, heroTrashSolid, heroXMarkSolid, heroCurrencyRupeeSolid, heroReceiptPercentSolid, heroShieldExclamationSolid })],
   template: `
     <div class="space-y-6">
@@ -65,77 +69,48 @@ import { ToastService } from '@core/services/toast.service';
         </div>
       </div>
 
-      <!-- Action Bar -->
-      <div class="flex items-center justify-between">
-        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Expense Register</p>
-        <button (click)="openModal()" class="bg-indigo-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 active:scale-95">
-          <ng-icon name="heroPlusSolid" size="18"></ng-icon> Add Expense
-        </button>
-      </div>
+      <!-- Data Table -->
+      <app-data-table
+        title="Expense Register"
+        [tableData]="entries()"
+        [tableColumns]="columns"
+        [canAdd]="true"
+        (add)="openModal()"
+        (rowAction)="handleRowAction($event)"
+      >
+      </app-data-table>
 
-      <!-- Table -->
-      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Date</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Category</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Description</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Vendor</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Amount</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">GST</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">GST Amt</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">ITC</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Status</th>
-                <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-              @for (e of entries(); track e.id) {
-                <tr class="hover:bg-slate-50/50 transition-colors group">
-                  <td class="py-3 px-3 text-sm text-slate-600">{{ e.expenseDate | date:'dd MMM yy' }}</td>
-                  <td class="py-3 px-3"><span class="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 text-slate-700 border-slate-200 capitalize">{{ e.category }}</span></td>
-                  <td class="py-3 px-3 text-sm text-slate-700 font-medium max-w-[160px] truncate">{{ e.description }}</td>
-                  <td class="py-3 px-3 text-sm text-slate-500">{{ e.vendorName || '—' }}</td>
-                  <td class="py-3 px-3 text-sm text-slate-900 font-mono font-bold text-right">₹{{ e.amount | number:'1.0-0' }}</td>
-                  <td class="py-3 px-3 text-center">
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                      [ngClass]="e.gstApplicable ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-500'"
-                    >{{ e.gstApplicable ? e.gstRate + '%' : 'N/A' }}</span>
-                  </td>
-                  <td class="py-3 px-3 text-sm text-indigo-700 font-mono text-right">{{ e.gstApplicable ? '₹' + (e.gstAmount | number:'1.0-0') : '—' }}</td>
-                  <td class="py-3 px-3 text-center">
-                    @if (e.gstApplicable) {
-                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        [ngClass]="e.itcAllowed ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
-                      >{{ e.itcAllowed ? 'YES' : 'NO' }}</span>
-                    }
-                  </td>
-                  <td class="py-3 px-3 text-center">
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
-                      [ngClass]="{
-                        'bg-amber-50 text-amber-700': e.status === 'draft',
-                        'bg-emerald-50 text-emerald-700': e.status === 'validated',
-                        'bg-blue-50 text-blue-700': e.status === 'filed'
-                      }"
-                    >{{ e.status }}</span>
-                  </td>
-                  <td class="py-3 px-3 text-right">
-                    <div class="flex items-center justify-end gap-1">
-                      <button (click)="editEntry(e)" class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"><ng-icon name="heroPencilSquareSolid" size="15"></ng-icon></button>
-                      <button (click)="deleteEntry(e)" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"><ng-icon name="heroTrashSolid" size="15"></ng-icon></button>
-                    </div>
-                  </td>
-                </tr>
-              }
-              @if (entries().length === 0) {
-                <tr><td colspan="10" class="py-12 text-center"><div class="flex flex-col items-center text-slate-400"><ng-icon name="heroBanknotesSolid" size="48" class="mb-4 opacity-20"></ng-icon><p class="font-bold">No expenses found</p><p class="text-xs mt-1">Click "Add Expense" to record an expense.</p></div></td></tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <!-- Custom Templates -->
+      <ng-template #categoryTpl let-row>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 text-slate-700 border-slate-200 capitalize">
+          {{ row.category }}
+        </span>
+      </ng-template>
+
+      <ng-template #gstTpl let-row>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+          [ngClass]="row.gstApplicable ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-500'"
+        >{{ row.gstApplicable ? row.gstRate + '%' : 'N/A' }}</span>
+      </ng-template>
+
+      <ng-template #itcTpl let-row>
+        @if (row.gstApplicable) {
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+            [ngClass]="row.itcAllowed ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
+          >{{ row.itcAllowed ? 'YES' : 'NO' }}</span>
+        }
+      </ng-template>
+
+      <ng-template #statusTpl let-row>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
+          [ngClass]="{
+            'bg-amber-50 text-amber-700': row.status === 'draft',
+            'bg-emerald-50 text-emerald-700': row.status === 'validated',
+            'bg-blue-50 text-blue-700': row.status === 'filed'
+          }"
+        >{{ row.status }}</span>
+      </ng-template>
+
 
       <!-- Modal -->
       @if (showModal()) {
@@ -248,9 +223,9 @@ import { ToastService } from '@core/services/toast.service';
   `]
 })
 export class ExpensesComponent implements OnInit, OnChanges {
-  @Input() clientId = '';
-  @Input() month = 0;
-  @Input() financialYear = '';
+  @Input() clientId!: string;
+  @Input() month: number = 0;
+  @Input() financialYear: string = '';
 
   private dataService = inject(DataService);
   private toast = inject(ToastService);
@@ -258,6 +233,27 @@ export class ExpensesComponent implements OnInit, OnChanges {
   entries = signal<ExpenseEntry[]>([]);
   showModal = signal(false);
   editingId: string | null = null;
+
+  // Template Signals
+  categoryTpl = viewChild.required<TemplateRef<any>>('categoryTpl');
+  gstTpl = viewChild.required<TemplateRef<any>>('gstTpl');
+  itcTpl = viewChild.required<TemplateRef<any>>('itcTpl');
+  statusTpl = viewChild.required<TemplateRef<any>>('statusTpl');
+
+  get columns(): TableColumn[] {
+    return [
+      { name: 'Date', prop: 'expenseDate', type: 'date', sortable: true, width: 120 },
+      { name: 'Category', prop: 'category', type: 'text', template: this.categoryTpl(), width: 120 },
+      { name: 'Description', prop: 'description', type: 'text', sortable: true, width: 200 },
+      { name: 'Vendor', prop: 'vendorName', type: 'text', sortable: true, width: 150 },
+      { name: 'Amount', prop: 'amount', type: 'currency', width: 120 },
+      { name: 'GST', prop: 'gstRate', type: 'text', template: this.gstTpl(), width: 80 },
+      { name: 'GST Amt', prop: 'gstAmount', type: 'currency', width: 100 },
+      { name: 'ITC', prop: 'itcAllowed', type: 'text', template: this.itcTpl(), width: 80 },
+      { name: 'Status', prop: 'status', type: 'status', template: this.statusTpl(), width: 100 }
+    ];
+  }
+
   form: any = this.resetForm();
   totalExpenses = signal(0);
   expenseGST = signal(0);
@@ -322,5 +318,13 @@ export class ExpensesComponent implements OnInit, OnChanges {
   deleteEntry(e: ExpenseEntry) {
     if (!confirm(`Delete expense "${e.description}"?`)) return;
     this.dataService.deleteExpense(this.clientId, e.id).subscribe({ next: () => { this.toast.success('Deleted'); this.loadData(); }, error: (err) => this.toast.error('Failed', err.message) });
+  }
+
+  handleRowAction(event: { action: string, row: any }) {
+    if (event.action === 'edit') {
+      this.editEntry(event.row);
+    } else if (event.action === 'delete') {
+      this.deleteEntry(event.row);
+    }
   }
 }

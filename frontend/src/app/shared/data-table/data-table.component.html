@@ -103,24 +103,51 @@
         </ng-template>
 
         <ng-template let-row="row" let-value="value" ngx-datatable-cell-template>
-          <!-- Status Column Special Case -->
-          <ng-container *ngIf="col.type === 'status'; else standardCell">
-            <div class="switch pointer-events-none md:pointer-events-auto">
+          <!-- Cell based on type -->
+          <ng-container [ngSwitch]="col.type">
+            <!-- Status Toggle -->
+            <div *ngSwitchCase="'status'" class="switch pointer-events-none md:pointer-events-auto">
               <input type="checkbox" [checked]="value" disabled>
               <span class="slider round"></span>
             </div>
-          </ng-container>
 
-          <!-- Standard Cell -->
-          <ng-template #standardCell>
-            <ng-container *ngIf="col.template; else textVal">
-              <ng-container *ngTemplateOutlet="col.template; context: { $implicit: row }"></ng-container>
+            <!-- Currency -->
+            <span *ngSwitchCase="'currency'" class="text-sm font-bold text-slate-900 dark:text-white">
+              {{ value | number:'1.2-2' }}
+            </span>
+
+            <!-- Date -->
+            <span *ngSwitchCase="'date'" class="text-sm font-medium text-slate-600 dark:text-slate-400">
+              {{ value | date:'dd-MMM-yyyy' }}
+            </span>
+
+            <!-- Number -->
+            <span *ngSwitchCase="'number'" class="text-sm font-medium text-slate-700 dark:text-slate-300">
+              {{ value }}
+            </span>
+
+            <!-- Custom Template -->
+            <ng-container *ngSwitchDefault>
+                <ng-container [ngSwitch]="col.type">
+                  <ng-container *ngSwitchCase="'currency'">
+                    {{ value | number:'1.2-2' }}
+                  </ng-container>
+                  <ng-container *ngSwitchCase="'date'">
+                    {{ value | date:'dd MMM yyyy' }}
+                  </ng-container>
+                  <ng-container *ngSwitchDefault>
+                    <ng-container *ngIf="col.template; else textVal">
+                      <ng-container *ngTemplateOutlet="col.template; context: { $implicit: row }"></ng-container>
+                    </ng-container>
+                    <ng-template #textVal>
+                      <span class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate block" [title]="value">
+                        {{ value }}
+                      </span>
+                    </ng-template>
+                  </ng-container>
+                </ng-container>
             </ng-container>
-            <ng-template #textVal>
-              <span class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate block" [title]="value">{{
-                value }}</span>
-            </ng-template>
-          </ng-template>
+          </ng-container>
         </ng-template>
 
       </ngx-datatable-column>
