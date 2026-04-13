@@ -6,6 +6,7 @@ import { Client } from '../../../../models/client.model';
 import { Op } from 'sequelize';
 import { DocumentService } from '../../../documents/application/services/DocumentService';
 import { IFolderRepository } from '../../../documents/domain/repositories/IFolderRepository';
+import { generateGSTR1, generateGSTR3B } from '../../../../utils/gstGenerator';
 
 @injectable()
 export class GstCalculationService {
@@ -45,8 +46,6 @@ export class GstCalculationService {
     console.log(`[GST-WS] Traversing folders for client ${client.code}: ${pathSteps.join(' > ')}`);
 
     for (const step of pathSteps) {
-      // Robust search: find by name AND parent AND organization AND clientId (if possible)
-      // Actually, my repository findByNameAndParent uses parentId which is enough
       const nextFolder = await this.folderRepository.findByNameAndParent(step, currentFolder.id, organizationId);
       if (!nextFolder) {
         console.warn(`[GST-WS] FAILED: Could not find step "${step}" under "${currentFolder.name}"`);
@@ -58,7 +57,6 @@ export class GstCalculationService {
     console.log(`[GST-WS] TARGET VERIFIED: ${currentFolder.name} (ID: ${currentFolder.id})`);
 
     const jsonContent = JSON.stringify(gstReturn.jsonData, null, 2);
-    // Cleaner naming: GSTR-1_April_2026.json
     const fileName = `${gstReturn.returnType}_${monthName}_${gstReturn.periodYear}.json`;
     
     const file = {
@@ -75,10 +73,14 @@ export class GstCalculationService {
       file
     );
   }
+
   /**
-   * Generates or fetches GSTR-1 Draft data for a client.
+   * Generates production-ready GSTR-1 data for a client.
    */
   async generateGstr1(clientId: string, organizationId: string, month: number, financialYear: string): Promise<any> {
+    const client = await Client.findByPk(clientId);
+    if (!client) throw new Error('Client not found');
+
     const sales = await ClientSale.findAll({
       where: {
         clientId,
@@ -89,53 +91,42 @@ export class GstCalculationService {
       },
     });
 
-    const b2bMap = new Map<string, any>();
-
-    sales.forEach((sale: any) => {
-      if (sale.invoiceType === 'B2B' && sale.gstin) {
-        const ctin = sale.gstin;
-        if (!b2bMap.has(ctin)) {
-          b2bMap.set(ctin, { ctin, inv: [] });
-        }
-
-        const b2bEntry = b2bMap.get(ctin);
-        b2bEntry.inv.push({
-          inum: sale.invoiceNo,
-          idt: new Date(sale.invoiceDate).toLocaleDateString('en-GB').replace(/\//g, '-'), // DD-MM-YYYY
-          val: Number(sale.totalAmount),
-          pos: sale.placeOfSupply || '',
-          itms: [
-            {
-              // Basic simplified structure for line items
-              txval: Number(sale.baseAmount),
-              rt: Number(sale.gstRate),
-              iamt: Number(sale.igstAmount),
-              camt: Number(sale.cgstAmount),
-              samt: Number(sale.sgstAmount),
-              csamt: Number(sale.cessAmount),
-            },
-          ],
-        });
-      }
-    });
-
-    const b2bArray = Array.from(b2bMap.values());
-
     const periodYearStr = financialYear.substring(0, 4); 
-    const fpStr = `${month.toString().padStart(2, '0')}${periodYearStr}`; // e.g. 032025
+    const fpStr = `${month.toString().padStart(2, '0')}${periodYearStr}`;
 
-    const payload = {
-      b2b: b2bArray,
-      fp: fpStr,
-    };
+    console.log(`[DIAGNOSTIC] Client: ${client.gstin}, FP: ${fpStr}, Sales Found: ${sales.length}`);
+    if (sales.length > 0) {
+      console.log("[DIAGNOSTIC] Sample Sales Data (First 3):");
+      console.table(sales.slice(0, 3).map(s => {
+        const raw = s.toJSON();
+        return {
+          invoiceNo: raw.invoiceNo,
+          gstin: raw.gstin,
+          baseAmount: raw.baseAmount,
+          base_amount: raw.base_amount,
+          taxableValue: raw.taxableValue,
+          taxable_value: raw.taxable_value,
+          cgst: raw.cgstAmount
+        };
+      }));
+    }
 
-    return payload;
+    return generateGSTR1({
+      client_gstin: client.gstin,
+      return_period: fpStr,
+      invoices: sales.map(s => s.toJSON()),
+      purchases: [],
+      expenses: []
+    });
   }
 
   /**
-   * Generates or fetches GSTR-3B Draft data for a client.
+   * Generates production-ready GSTR-3B data for a client.
    */
   async generateGstr3b(clientId: string, organizationId: string, month: number, financialYear: string): Promise<any> {
+    const client = await Client.findByPk(clientId);
+    if (!client) throw new Error('Client not found');
+
     const sales = await ClientSale.findAll({
       where: {
         clientId,
@@ -152,59 +143,22 @@ export class GstCalculationService {
         organizationId,
         month,
         financialYear,
-        itcEligible: true,
         status: { [Op.ne]: 'cancelled' },
       },
-    });
-
-    let totalOutputBase = 0;
-    let totalOutputIamt = 0;
-    let totalOutputCamt = 0;
-    let totalOutputSamt = 0;
-
-    sales.forEach((sale: any) => {
-      totalOutputBase += Number(sale.baseAmount || 0);
-      totalOutputIamt += Number(sale.igstAmount || 0);
-      totalOutputCamt += Number(sale.cgstAmount || 0);
-      totalOutputSamt += Number(sale.sgstAmount || 0);
-    });
-
-    let totalItcIamt = 0;
-    let totalItcCamt = 0;
-    let totalItcSamt = 0;
-
-    purchases.forEach((pur: any) => {
-      totalItcIamt += Number(pur.igstAmount || 0);
-      totalItcCamt += Number(pur.cgstAmount || 0);
-      totalItcSamt += Number(pur.sgstAmount || 0);
     });
 
     const periodYearStr = financialYear.substring(0, 4);
     const fpStr = `${month.toString().padStart(2, '0')}${periodYearStr}`;
 
-    const payload = {
-      fp: fpStr,
-      sup_details: {
-        osup_det: {
-          txval: totalOutputBase,
-          iamt: totalOutputIamt,
-          camt: totalOutputCamt,
-          samt: totalOutputSamt,
-        },
-      },
-      itc_elg: {
-        itc_avl: [
-          {
-            ty: 'All other ITC',
-            iamt: totalItcIamt,
-            camt: totalItcCamt,
-            samt: totalItcSamt,
-          },
-        ],
-      },
-    };
+    console.log(`[DIAGNOSTIC] GSTR-3B for ${client.gstin}. Sales: ${sales.length}, Purchases: ${purchases.length}`);
 
-    return payload;
+    return generateGSTR3B({
+      client_gstin: client.gstin,
+      return_period: fpStr,
+      invoices: sales.map(s => s.toJSON()),
+      purchases: purchases.map(p => p.toJSON()),
+      expenses: []
+    });
   }
 
   /**
@@ -253,7 +207,7 @@ export class GstCalculationService {
         financialYear,
         status: 'draft',
         jsonData,
-      } as any); // Type cast due to sequelize init limits in this snippet
+      } as any);
     }
 
     return gstReturn;
