@@ -1,15 +1,15 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LoginFacade } from './login.facade';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
-  heroPhoneSolid,
+  heroEnvelopeSolid,
   heroLockClosedSolid,
   heroEyeSolid,
   heroEyeSlashSolid,
-  heroArrowRightOnRectangleSolid,
-  heroShieldCheckSolid
+  heroShieldCheckSolid,
+  heroCheckCircleSolid
 } from '@ng-icons/heroicons/solid';
 
 @Component({
@@ -19,152 +19,185 @@ import {
   providers: [
     LoginFacade,
     provideIcons({
-      heroPhoneSolid,
+      heroEnvelopeSolid,
       heroLockClosedSolid,
       heroEyeSolid,
       heroEyeSlashSolid,
-      heroArrowRightOnRectangleSolid,
-      heroShieldCheckSolid
+      heroShieldCheckSolid,
+      heroCheckCircleSolid
     })
   ],
   template: `
-    <div class="min-h-screen flex flex-col items-center justify-center px-4 bg-[#f8fafc]">
-
-      <!-- Logo + Identity -->
-      <div class="flex flex-col items-center" style="margin-bottom: 40px;">
-        <!-- Rotated blue square with lock icon -->
-        <div class="w-[72px] h-[72px] bg-[#0074c9] rounded-2xl flex items-center justify-center text-white shadow-2xl rotate-[6deg] transition-transform duration-500 hover:rotate-0">
-          <ng-icon name="heroLockClosedSolid" size="32" class="-rotate-[6deg]"></ng-icon>
+    <div class="flex min-h-screen bg-white">
+      <!-- Left Column: Decorative Panel (Hidden on mobile) -->
+      <div class="hidden lg:flex w-1/2 bg-[#0f172a] relative overflow-hidden flex-col justify-center px-12 xl:px-20">
+        <!-- Abstract Grid Pattern -->
+        <div class="absolute inset-0 opacity-10 pointer-events-none">
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="1"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+          </svg>
         </div>
-        <h1 class="mt-4 text-4xl font-black text-slate-900 tracking-tight" style="letter-spacing: -0.03em; line-height: 1.1;">
-          AccuDocs Portal
-        </h1>
-        <p class="mt-2 text-[15px] font-medium text-slate-500" style="letter-spacing: -0.01em;">
-          Secure document management for professionals
-        </p>
-      </div>
 
-      <!-- Login Card -->
-      <div class="w-[420px] max-w-[calc(100vw-32px)] relative" style="margin-bottom: 24px;">
-        <div
-          class="bg-white rounded-3xl border border-slate-200 overflow-hidden"
-          style="padding: 40px; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.08);"
-        >
-          <!-- Gradient decoration bar -->
-          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#0074c9] to-[#0284c7] rounded-t-3xl"></div>
+        <div class="relative z-10">
+          <div class="flex items-center gap-4 mb-12">
+            <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-indigo-500/40 rotate-3">
+              <ng-icon name="heroShieldCheckSolid" size="36"></ng-icon>
+            </div>
+            <div>
+              <h1 class="text-4xl font-black text-white tracking-tight">AccuDocs</h1>
+              <p class="text-indigo-400 font-bold uppercase tracking-[0.2em] text-xs mt-1">Document Management Portal</p>
+            </div>
+          </div>
 
-          <!-- Card Title -->
-          <h2 class="text-xl font-bold text-slate-900 text-center" style="margin-bottom: 32px;">
-            Sign in to your account
+          <h2 class="text-3xl font-bold text-slate-200 mb-8 leading-tight">
+            Your Professional <br/> Document Ecosystem.
           </h2>
 
-          <form class="space-y-5" (ngSubmit)="facade.login()">
-            <!-- Email/Phone Field -->
+          <div class="space-y-6">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-indigo-400">
+                <ng-icon name="heroCheckCircleSolid" size="20"></ng-icon>
+              </div>
+              <div>
+                <p class="text-slate-100 font-semibold">Smart Workspace</p>
+                <p class="text-slate-400 text-sm">Effortless organization and management for your files.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-indigo-400">
+                <ng-icon name="heroCheckCircleSolid" size="20"></ng-icon>
+              </div>
+              <div>
+                <p class="text-slate-100 font-semibold">Advanced Security</p>
+                <p class="text-slate-400 text-sm">Industry-standard encryption to keep your data safe.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-indigo-400">
+                <ng-icon name="heroCheckCircleSolid" size="20"></ng-icon>
+              </div>
+              <div>
+                <p class="text-slate-100 font-semibold">Real-time Collaboration</p>
+                <p class="text-slate-400 text-sm">Seamlessly share and work together with your team.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Decoration -->
+        <div class="absolute bottom-12 left-12 xl:left-20 text-slate-500 text-sm font-medium">
+          &copy; 2026 AccuDocs Platform • Secure & Encrypted
+        </div>
+      </div>
+
+      <!-- Right Column: Login Form -->
+      <div class="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 lg:px-24 xl:px-32 bg-slate-50">
+        <div class="max-w-md w-full mx-auto">
+          <div class="mb-10 text-center lg:text-left">
+            <h3 class="text-3xl font-bold text-slate-900 mb-2">Welcome back</h3>
+            <p class="text-slate-500 font-medium">Sign in to your AccuDocs account</p>
+          </div>
+
+          <form class="space-y-6" (ngSubmit)="facade.login()">
             <div>
-              <label for="identifier" class="block text-[13px] font-semibold text-slate-600 mb-2 ml-0.5">
-                Email or Phone
-              </label>
-              <input
-                id="identifier"
-                name="identifier"
-                type="text"
-                autocomplete="username"
-                [(ngModel)]="facade.form.value().identifier"
-                class="block w-full h-12 px-4 bg-[#f8fafc] border-[1.5px] border-slate-200 rounded-2xl text-[15px] font-medium text-slate-900 placeholder-slate-400 transition-all duration-200 focus:bg-white focus:border-[#0074c9] focus:outline-none"
-                style="--tw-ring-color: rgba(0, 116, 201, 0.1);"
-                [class.!border-red-500]="facade.form.errors().identifier"
-                [class.focus:shadow-[0_0_0_4px_rgba(0,116,201,0.1)]]="true"
-                placeholder="Email or phone number"
-              />
+              <label class="block text-sm font-bold text-slate-700 mb-2">Email or Phone</label>
+              <div class="relative group">
+                <ng-icon name="heroEnvelopeSolid" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors"></ng-icon>
+                <input 
+                  id="identifier"
+                  name="identifier"
+                  type="text" 
+                  autocomplete="username"
+                  [(ngModel)]="facade.form.value().identifier"
+                  placeholder="name@company.com or phone"
+                  class="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 transition-all font-medium text-slate-900"
+                  [class.border-red-500]="facade.form.errors().identifier"
+                />
+              </div>
               @if (facade.form.errors().identifier) {
-                <p class="mt-1.5 text-xs font-medium text-red-600 flex items-center gap-1.5 ml-0.5 animate-in slide-in-from-left-2">
-                  <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+                <div class="mt-2 text-xs font-bold text-red-500">
                   {{ facade.form.errors().identifier?.[0] }}
-                </p>
+                </div>
               }
             </div>
 
-            <!-- Password Field -->
             <div>
-              <label for="password" class="block text-[13px] font-semibold text-slate-600 mb-2 ml-0.5">
-                Password
-              </label>
-              <div class="relative">
-                <input
+              <div class="flex items-center justify-between mb-2">
+                <label class="block text-sm font-bold text-slate-700">Password</label>
+                <a href="#" class="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors">Forgot password?</a>
+              </div>
+              <div class="relative group">
+                <ng-icon name="heroLockClosedSolid" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors"></ng-icon>
+                <input 
                   id="password"
                   name="password"
-                  autocomplete="current-password"
-                  [type]="facade.hidePassword() ? 'password' : 'text'"
+                  [type]="facade.hidePassword() ? 'password' : 'text'" 
                   [(ngModel)]="facade.form.value().password"
-                  class="block w-full h-12 pl-4 pr-12 bg-[#f8fafc] border-[1.5px] border-slate-200 rounded-2xl text-[15px] font-medium text-slate-900 placeholder-slate-400 transition-all duration-200 focus:bg-white focus:border-[#0074c9] focus:outline-none"
-                  [class.!border-red-500]="facade.form.errors().password"
                   placeholder="••••••••"
+                  class="w-full h-12 pl-12 pr-12 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 transition-all font-medium text-slate-900"
+                  [class.border-red-500]="facade.form.errors().password"
                 />
-                <button
+                <button 
                   type="button"
                   (click)="facade.hidePassword.set(!facade.hidePassword())"
-                  class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
-                  aria-label="Toggle password visibility"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   <ng-icon [name]="facade.hidePassword() ? 'heroEyeSolid' : 'heroEyeSlashSolid'" size="20"></ng-icon>
                 </button>
               </div>
               @if (facade.form.errors().password) {
-                <p class="mt-1.5 text-xs font-medium text-red-600 flex items-center gap-1.5 ml-0.5 animate-in slide-in-from-left-2">
-                  <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+                <div class="mt-2 text-xs font-bold text-red-500">
                   {{ facade.form.errors().password?.[0] }}
-                </p>
+                </div>
               }
             </div>
 
-            <!-- Options Row -->
-            <div class="flex items-center justify-between px-0.5" style="margin-top: 20px;">
-              <div class="flex items-center gap-2.5">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  class="h-[18px] w-[18px] rounded-md border-[1.5px] border-slate-300 text-[#0074c9] focus:ring-[#0074c9] cursor-pointer transition-colors accent-[#0074c9]"
-                />
-                <label for="remember-me" class="text-[13px] font-medium text-slate-500 cursor-pointer select-none">
-                  Remember me
-                </label>
-              </div>
-              <a href="#" class="text-[13px] font-semibold text-[#0074c9] hover:text-[#005fa3] hover:underline transition-colors">
-                Forgot password?
-              </a>
+            <div class="flex items-center gap-2">
+              <input 
+                id="remember" 
+                name="remember"
+                type="checkbox" 
+                class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600/20 cursor-pointer"
+              />
+              <label for="remember" class="text-sm font-medium text-slate-600 cursor-pointer select-none">Remember me</label>
             </div>
 
-            <!-- CTA Button -->
-            <div style="margin-top: 28px;">
-              <button
-                type="submit"
-                [disabled]="facade.form.isSubmitting()"
-                class="w-full h-[52px] flex items-center justify-center bg-[#0074c9] text-white text-[15px] font-bold rounded-2xl border-none transition-all duration-200 hover:bg-[#005fa3] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none focus:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(0,116,201,0.25)]"
-                style="box-shadow: 0 8px 24px -4px rgba(0, 116, 201, 0.3);"
-              >
-                @if (facade.form.isSubmitting()) {
-                  <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                } @else {
-                  Sign In
-                  <ng-icon name="heroArrowRightOnRectangleSolid" class="ml-2" size="20"></ng-icon>
-                }
-              </button>
-            </div>
+            <button 
+              type="submit" 
+              [disabled]="facade.form.isSubmitting()"
+              class="w-full h-12 bg-indigo-600 text-white rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-indigo-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-indigo-600/20"
+            >
+              @if (!facade.form.isSubmitting()) {
+                <span>Sign In to Portal</span>
+              } @else {
+                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              }
+            </button>
           </form>
-        </div>
-      </div>
 
-      <!-- Footer Security Note -->
-      <div class="flex items-center gap-2 text-slate-400">
-        <ng-icon name="heroShieldCheckSolid" size="16"></ng-icon>
-        <span class="text-xs font-medium" style="letter-spacing: 0.01em;">256-bit SSL encrypted. Your data is secure.</span>
+          <div class="mt-12 text-center">
+            <p class="text-sm text-slate-400 font-medium flex items-center justify-center gap-2">
+              <ng-icon name="heroShieldCheckSolid" size="16"></ng-icon>
+              Secure 256-bit SSL encrypted access
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   `,
+  styles: [`
+    :host { display: block; }
+    .animate-in { animation-fill-mode: both; }
+    .fade-in { animation: fadeIn 0.4s ease-out; }
+    .slide-in-from-top-2 { animation: slideInFromTop 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideInFromTop { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent {
