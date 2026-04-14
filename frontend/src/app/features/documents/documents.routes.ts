@@ -7,8 +7,8 @@ export const DOCUMENTS_ROUTES: Routes = [
   },
   {
     path: 'scanner',
-    loadComponent: () =>
-      import('../document-scanner/components/document-scanner.component').then((m) => m.DocumentScannerComponent),
+    redirectTo: '',
+    pathMatch: 'full',
   },
   {
     path: 'scanner/all',

@@ -42,7 +42,7 @@ export const HUBS: Hub[] = [
 // MODULE REGISTRY
 // ==========================================
 
-export const MODULE_REGISTRY: AppModule[] = [
+export const MODULE_REGISTRY: AppModule[] = ([
 
   // ── CORE ──
   { id: 'dashboard', hub: 'core', label: 'Dashboard', icon: '⊞', desc: 'Today\'s office overview', status: 'live', badge: null, route: '/dashboard', pinned: true },
@@ -68,7 +68,7 @@ export const MODULE_REGISTRY: AppModule[] = [
 
   // ── SETTINGS ──
   { id: 'whatsapp_setup', hub: 'settings', label: 'WhatsApp Setup', icon: '💬', desc: 'Connect WhatsApp account', status: 'live', badge: null, route: '/settings/whatsapp', pinned: true },
-];
+] as AppModule[]).filter((module) => module.id !== 'documents_scanner');
 
 
 // ==========================================

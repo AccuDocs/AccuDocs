@@ -20,7 +20,7 @@ import { DocumentType, ScannerDocumentData, ScannerLineItem } from '../models/do
           <p class="eyebrow">Scanned Documents</p>
           <h1>Browse, export, edit, and soft-delete saved OCR records.</h1>
         </div>
-        <a routerLink="/documents/scanner" class="primary-link">Scan Another Document</a>
+        <a routerLink="/documents" class="primary-link">Back to Documents</a>
       </header>
 
       <section class="filter-card" [formGroup]="filterForm">

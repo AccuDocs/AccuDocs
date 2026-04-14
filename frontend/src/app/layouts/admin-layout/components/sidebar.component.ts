@@ -153,7 +153,6 @@ export class SidebarComponent {
   navLinks = [
     { label: 'Dashboard', path: '/dashboard', icon: 'heroSquares2x2Solid', exact: true, adminOnly: false },
     { label: 'Documents', path: '/documents', icon: 'heroFolderOpenSolid', exact: false, adminOnly: false },
-    { label: 'Scan Docs', path: '/documents/scanner', icon: 'heroDocumentTextSolid', exact: false, adminOnly: false },
     { label: 'Tasks', path: '/tasks', icon: 'heroListBulletSolid', exact: false, adminOnly: false },
     { label: 'Clients', path: '/clients', icon: 'heroUsersSolid', exact: false, adminOnly: true },
     { label: 'Staff', path: '/staff', icon: 'heroUsersSolid', exact: false, adminOnly: true },
