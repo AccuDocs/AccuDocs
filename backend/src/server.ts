@@ -5,6 +5,8 @@ import { config, validateConfig, connectDatabase, connectRedis, disconnectDataba
 import { logger } from './utils/logger';
 import { scheduler } from './config/scheduler';
 import './models/index'; // Associations run on load
+import { initializeOcrWorker, terminateOcrWorker } from './modules/scanner/ocr/engine';
+import { ensureScannerSchema } from './modules/scanner/db/repository';
 
 const startServer = async (): Promise<void> => {
   try {
@@ -13,6 +15,8 @@ const startServer = async (): Promise<void> => {
 
     logger.info('🚀 Starting AccuDocs Server initialization...');
     await connectDatabase();
+    await ensureScannerSchema();
+    await initializeOcrWorker();
 
     try {
       await connectRedis();
@@ -34,6 +38,7 @@ const startServer = async (): Promise<void> => {
         try {
           await disconnectDatabase();
           await disconnectRedis();
+          await terminateOcrWorker();
           scheduler.stop();
           logger.info('✅ Graceful shutdown complete');
           process.exit(0);

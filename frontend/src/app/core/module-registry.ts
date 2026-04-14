@@ -47,6 +47,7 @@ export const MODULE_REGISTRY: AppModule[] = [
   // ── CORE ──
   { id: 'dashboard', hub: 'core', label: 'Dashboard', icon: '⊞', desc: 'Today\'s office overview', status: 'live', badge: null, route: '/dashboard', pinned: true },
   { id: 'documents_all', hub: 'core', label: 'Documents', icon: '📁', desc: 'Global document vault', status: 'live', badge: null, route: '/documents', pinned: true },
+  { id: 'documents_scanner', hub: 'core', label: 'Document Scanner', icon: '🧾', desc: 'OCR capture for receipts and bills', status: 'live', badge: null, route: '/documents/scanner', pinned: true },
 
   // ── BILLING ──
   { id: 'billing_invoices', hub: 'billing', label: 'Revenue & Invoices', icon: '🧾', desc: 'CA Invoicing & prediction', status: 'live', badge: 12, route: '/billing/invoices', pinned: true },

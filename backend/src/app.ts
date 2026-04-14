@@ -7,6 +7,9 @@ import { config, superAdminSpec, caFirmSpec } from './config';
 import routes from './routes';
 import { errorHandler, apiLimiter, auditLogger } from './middlewares';
 import { logger } from './utils/logger';
+import scannerScanRoutes from './modules/scanner/presentation/routes/scan.routes';
+import scannerDocumentRoutes from './modules/scanner/presentation/routes/documents.routes';
+import scannerExportRoutes from './modules/scanner/presentation/routes/export.routes';
 
 
 export const createApp = (): Application => {
@@ -145,6 +148,16 @@ export const createApp = (): Application => {
 
   // Audit Logger (Tracks mutating operations globally if valid auth)
   app.use(auditLogger());
+
+  // Document scanner aliases requested by the scanner workflow
+  app.use('/api/scan', scannerScanRoutes);
+  app.use('/api/documents', scannerDocumentRoutes);
+  app.use('/api/export', scannerExportRoutes);
+
+  // Versioned scanner routes for internal app usage
+  app.use(`/api/${config.apiVersion}/scan`, scannerScanRoutes);
+  app.use(`/api/${config.apiVersion}/scanner/documents`, scannerDocumentRoutes);
+  app.use(`/api/${config.apiVersion}/scanner/export`, scannerExportRoutes);
 
   // API routes
   app.use(`/api/${config.apiVersion}`, routes);

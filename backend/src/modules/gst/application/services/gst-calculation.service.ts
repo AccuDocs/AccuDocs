@@ -112,7 +112,7 @@ export class GstCalculationService {
     }
 
     return generateGSTR1({
-      client_gstin: client.gstin,
+      client_gstin: client.gstin || '',
       return_period: fpStr,
       invoices: sales.map(s => s.toJSON()),
       purchases: [],
@@ -153,7 +153,7 @@ export class GstCalculationService {
     console.log(`[DIAGNOSTIC] GSTR-3B for ${client.gstin}. Sales: ${sales.length}, Purchases: ${purchases.length}`);
 
     return generateGSTR3B({
-      client_gstin: client.gstin,
+      client_gstin: client.gstin || '',
       return_period: fpStr,
       invoices: sales.map(s => s.toJSON()),
       purchases: purchases.map(p => p.toJSON()),

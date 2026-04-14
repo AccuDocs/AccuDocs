@@ -37,7 +37,11 @@ const envSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string().default(''),
   AWS_SECRET_ACCESS_KEY: z.string().default(''),
   AWS_S3_BUCKET: z.string().default('accudocs-documents'),
+  S3_BUCKET_NAME: z.string().default(''),
   AWS_S3_SIGNED_URL_EXPIRY: z.string().transform(Number).default('300'),
+  LOCAL_STORAGE_PATH: z.string().default('./storage/documents'),
+  OCR_LANG: z.string().default('eng'),
+  MAX_FILE_SIZE_MB: z.string().transform(Number).default('10'),
 
   WHATSAPP_ENABLED: z.string().transform((val) => val !== 'false').default('true'),
 
@@ -108,8 +112,15 @@ export const config = {
     region: env.AWS_REGION,
     accessKeyId: env.AWS_ACCESS_KEY_ID,
     secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
-    s3Bucket: env.AWS_S3_BUCKET,
+    s3Bucket: env.S3_BUCKET_NAME || env.AWS_S3_BUCKET,
     signedUrlExpiry: env.AWS_S3_SIGNED_URL_EXPIRY,
+  },
+
+  scanner: {
+    s3BucketName: env.S3_BUCKET_NAME || env.AWS_S3_BUCKET,
+    localStoragePath: env.LOCAL_STORAGE_PATH,
+    ocrLang: env.OCR_LANG,
+    maxFileSizeMb: env.MAX_FILE_SIZE_MB,
   },
 
   whatsapp: {

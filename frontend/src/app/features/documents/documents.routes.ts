@@ -5,4 +5,14 @@ export const DOCUMENTS_ROUTES: Routes = [
     path: '',
     loadComponent: () => import('./documents-list/documents-list.component').then((m) => m.DocumentsListComponent),
   },
+  {
+    path: 'scanner',
+    loadComponent: () =>
+      import('../document-scanner/components/document-scanner.component').then((m) => m.DocumentScannerComponent),
+  },
+  {
+    path: 'scanner/all',
+    loadComponent: () =>
+      import('../document-scanner/components/scanner-documents-list.component').then((m) => m.ScannerDocumentsListComponent),
+  },
 ];

@@ -1,8 +1,9 @@
 import 'reflect-metadata';
-import { sequelize, connectDatabase, disconnectDatabase, Organization as OrganizationModel, User as UserModel } from '../config/database.config';
+import { sequelize, connectDatabase, disconnectDatabase } from '../config/database.config';
 import { BillingService } from '../modules/billing/application/services/BillingService';
 import { SequelizeInvoiceRepository } from '../modules/billing/infrastructure/repositories/SequelizeInvoiceRepository';
 import { SequelizeClientRepository } from '../modules/client/infrastructure/repositories/SequelizeClientRepository';
+import { Organization, User } from '../models';
 
 async function reproduce() {
   try {
@@ -13,8 +14,8 @@ async function reproduce() {
     const service = new BillingService(invoiceRepo, clientRepo);
     
     // Find a valid org and admin
-    const org: any = await OrganizationModel.findOne();
-    const admin: any = await UserModel.findOne({ where: { role: 'admin' } }) || await UserModel.findOne();
+    const org: any = await Organization.findOne();
+    const admin: any = await User.findOne({ where: { role: 'admin' } }) || await User.findOne();
 
     if (!org || !admin) {
         console.error('❌ Missing org or admin');
@@ -50,7 +51,7 @@ async function reproduce() {
     console.log(`🚀 Executing createInvoice with org: ${org.id}, admin: ${admin.id}, client: ${clientId}`);
     
     // Enable debug logging for Sequelize
-    sequelize.options.logging = (sql: string) => console.log('SQL:', sql);
+    (sequelize as any).options.logging = (sql: string) => console.log('SQL:', sql);
 
     try {
         const result = await service.createInvoice(org.id, admin.id, payload);
