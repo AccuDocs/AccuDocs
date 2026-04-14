@@ -1,29 +1,46 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, Input, computed, inject, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { merge } from 'rxjs';
+import { Observable, merge } from 'rxjs';
 import { ToastService } from '@core/services/toast.service';
 import { ScannerEditorComponent } from './scanner-editor.component';
 import { DocumentScannerService } from '../services/document-scanner.service';
-import { DocumentType, PreviewResponse, SaveResponse, ScannerDocumentData, ScannerLineItem } from '../models/document-scanner.models';
+import {
+  ClientScannerSaveResponse,
+  DocumentType,
+  PreviewResponse,
+  SaveResponse,
+  ScannerDocumentData,
+  ScannerLineItem,
+} from '../models/document-scanner.models';
 
 @Component({
   selector: 'app-document-scanner',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink, ScannerEditorComponent],
   template: `
-    <div class="scanner-page">
+    <div class="scanner-page" [class.embedded]="embedded">
       <header class="scanner-hero">
         <div>
-          <p class="eyebrow">Document Scanner</p>
-          <h1>Capture receipts, purchase orders, and expense bills in one flow.</h1>
+          <p class="eyebrow">{{ embedded ? 'Scan & Upload Document' : 'Document Scanner' }}</p>
+          <h1>
+            {{
+              embedded
+                ? 'Capture sales, purchases, and expenses directly inside this client workspace.'
+                : 'Capture receipts, purchase orders, and expense bills in one flow.'
+            }}
+          </h1>
           <p class="lead">
-            Choose a document type, upload an image, review the OCR extraction, and save it into the document register.
+            {{
+              embedded
+                ? 'Choose a document type, upload an image, review the OCR extraction, and save it straight into this client record.'
+                : 'Choose a document type, upload an image, review the OCR extraction, and save it into the document register.'
+            }}
           </p>
         </div>
-        <a routerLink="/documents/scanner/all" class="hero-link">View All Documents</a>
+        <a *ngIf="!embedded" routerLink="/documents/scanner/all" class="hero-link">View All Documents</a>
       </header>
 
       <div class="step-tracker">
@@ -164,9 +181,7 @@ import { DocumentType, PreviewResponse, SaveResponse, ScannerDocumentData, Scann
         </div>
         <p class="eyebrow">Step 4</p>
         <h2>Document saved successfully</h2>
-        <p class="success-copy">
-          Document ID #{{ savedDocumentId() }} is now stored with its OCR data, local copy, and S3 metadata.
-        </p>
+        <p class="success-copy">{{ successMessage() }}</p>
 
         <div class="summary-card" *ngIf="savedSummary() as summary">
           <div><span>Type</span><strong>{{ labelForType(summary.doc_type) }}</strong></div>
@@ -177,7 +192,7 @@ import { DocumentType, PreviewResponse, SaveResponse, ScannerDocumentData, Scann
 
         <div class="footer-actions centered">
           <button type="button" class="secondary-btn" (click)="scanAnother()">Scan Another Document</button>
-          <button type="button" class="primary-btn" (click)="viewAllDocuments()">View All Documents</button>
+          <button *ngIf="!embedded" type="button" class="primary-btn" (click)="viewAllDocuments()">View All Documents</button>
         </div>
       </section>
     </div>
@@ -196,6 +211,10 @@ import { DocumentType, PreviewResponse, SaveResponse, ScannerDocumentData, Scann
         display: grid;
         gap: 1.25rem;
         padding: 1.5rem;
+      }
+
+      .scanner-page.embedded {
+        padding: 0;
       }
 
       .scanner-hero,
@@ -610,6 +629,9 @@ import { DocumentType, PreviewResponse, SaveResponse, ScannerDocumentData, Scann
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DocumentScannerComponent {
+  @Input() clientId: string | null = null;
+  @Input() embedded = false;
+
   private fb = inject(FormBuilder);
   private scannerService = inject(DocumentScannerService);
   private toast = inject(ToastService);
@@ -630,6 +652,8 @@ export class DocumentScannerComponent {
   readonly warnings = signal<string[]>([]);
   readonly savedDocument = signal<SaveResponse['data'] | null>(null);
   readonly savedDocumentId = signal<number | null>(null);
+  readonly savedClientRecordId = signal<string | null>(null);
+  readonly savedClientRecordType = signal<DocumentType | null>(null);
   readonly isImageModalOpen = signal(false);
 
   private selectedFile: File | null = null;
@@ -759,17 +783,32 @@ export class DocumentScannerComponent {
     const payload = this.buildPayload();
     this.isSaving.set(true);
 
-    this.scannerService.saveDocument(this.selectedFile, payload)
+    const saveRequest: Observable<SaveResponse | ClientScannerSaveResponse> = this.clientId
+      ? this.scannerService.saveDocumentForClient(this.clientId, this.selectedFile, payload)
+      : this.scannerService.saveDocument(this.selectedFile, payload);
+
+    saveRequest
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response) => {
+        next: (response: SaveResponse | ClientScannerSaveResponse) => {
           this.isSaving.set(false);
           this.savedDocument.set(response.data);
           this.savedDocumentId.set(response.document_id);
+          if ('client_record_id' in response) {
+            this.savedClientRecordId.set(response.client_record_id);
+            this.savedClientRecordType.set(response.client_record_type);
+            this.toast.success(
+              'Document imported',
+              `Saved into ${this.destinationLabelForType(response.client_record_type)} for this client.`,
+            );
+          } else {
+            this.savedClientRecordId.set(null);
+            this.savedClientRecordType.set(null);
+            this.toast.success('Document saved', `Saved as document #${response.document_id}`);
+          }
           this.step.set(4);
-          this.toast.success('Document saved', `Saved as document #${response.document_id}`);
         },
-        error: (error) => {
+        error: (error: any) => {
           this.isSaving.set(false);
           this.toast.error('Save failed', error.message || 'Could not save the scanned document.');
         },
@@ -786,6 +825,32 @@ export class DocumentScannerComponent {
 
   labelForType(type: DocumentType): string {
     return this.typeOptions.find((option) => option.value === type)?.title || type;
+  }
+
+  destinationLabelForType(type: DocumentType): string {
+    switch (type) {
+      case 'sale':
+        return 'Sales';
+      case 'purchase':
+        return 'Purchases';
+      case 'expense':
+        return 'Expenses';
+      default:
+        return type;
+    }
+  }
+
+  successMessage(): string {
+    if (this.savedClientRecordType()) {
+      const destination = this.destinationLabelForType(this.savedClientRecordType()!);
+      const clientRecordId = this.savedClientRecordId();
+      const scannerId = this.savedDocumentId();
+      return clientRecordId
+        ? `Saved into ${destination} for this client as record #${clientRecordId}. OCR source remains stored as scanner document #${scannerId}.`
+        : `Saved into ${destination} for this client. OCR source remains stored as scanner document #${scannerId}.`;
+    }
+
+    return `Document ID #${this.savedDocumentId()} is now stored with its OCR data, local copy, and S3 metadata.`;
   }
 
   formatCurrency(value: number | null | undefined): string {
@@ -969,6 +1034,8 @@ export class DocumentScannerComponent {
     this.clearFileState();
     this.savedDocument.set(null);
     this.savedDocumentId.set(null);
+    this.savedClientRecordId.set(null);
+    this.savedClientRecordType.set(null);
     this.selectedType.set(null);
     sessionStorage.removeItem('scanner-doc-type');
     this.step.set(1);

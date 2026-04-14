@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@environments/environment';
 import {
+  ClientScannerSaveResponse,
   PreviewResponse,
   SaveResponse,
   ScannedDocumentsResponse,
@@ -20,6 +21,7 @@ export class DocumentScannerService {
   private scanBaseUrl = `${this.apiRoot}/api/scan`;
   private documentsBaseUrl = `${this.apiRoot}/api/documents`;
   private exportBaseUrl = `${this.apiRoot}/api/export`;
+  private clientBaseUrl = `${environment.apiUrl}/clients`;
 
   previewDocument(file: File, docType: ScannerDocumentData['doc_type']): Observable<PreviewResponse> {
     const formData = new FormData();
@@ -30,27 +32,18 @@ export class DocumentScannerService {
   }
 
   saveDocument(file: File, payload: ScannerDocumentData): Observable<SaveResponse> {
-    const formData = new FormData();
-    formData.append('document', file);
-    formData.append('doc_type', payload.doc_type);
-    formData.append('document_number', payload.document_number || '');
-    formData.append('date', payload.date || '');
-    formData.append('vendor_or_customer', payload.vendor_or_customer || '');
-    formData.append('gstin', payload.gstin || '');
-    formData.append('subtotal', payload.subtotal?.toString() || '');
-    formData.append('tax_amount', payload.tax_amount?.toString() || '');
-    formData.append('discount', payload.discount?.toString() || '');
-    formData.append('total_amount', payload.total_amount?.toString() || '');
-    formData.append('currency', payload.currency || 'INR');
-    formData.append('payment_mode', payload.payment_mode || '');
-    formData.append('notes', payload.notes || '');
-    formData.append('email', payload.email || '');
-    formData.append('phone', payload.phone || '');
-    formData.append('ocr_confidence', payload.ocr_confidence?.toString() || '');
-    formData.append('raw_ocr_text', payload.raw_ocr_text || '');
-    formData.append('line_items', JSON.stringify(payload.line_items || []));
+    return this.http.post<SaveResponse>(`${this.scanBaseUrl}/save`, this.buildDocumentFormData(file, payload));
+  }
 
-    return this.http.post<SaveResponse>(`${this.scanBaseUrl}/save`, formData);
+  saveDocumentForClient(
+    clientId: string,
+    file: File,
+    payload: ScannerDocumentData,
+  ): Observable<ClientScannerSaveResponse> {
+    return this.http.post<ClientScannerSaveResponse>(
+      `${this.clientBaseUrl}/${clientId}/scanner/import`,
+      this.buildDocumentFormData(file, payload),
+    );
   }
 
   getDocuments(filters: ScannerListFilters = {}): Observable<ScannedDocumentsResponse> {
@@ -99,5 +92,28 @@ export class DocumentScannerService {
 
     const query = params.toString();
     return `${this.exportBaseUrl}/${format}${query ? `?${query}` : ''}`;
+  }
+
+  private buildDocumentFormData(file: File, payload: ScannerDocumentData): FormData {
+    const formData = new FormData();
+    formData.append('document', file);
+    formData.append('doc_type', payload.doc_type);
+    formData.append('document_number', payload.document_number || '');
+    formData.append('date', payload.date || '');
+    formData.append('vendor_or_customer', payload.vendor_or_customer || '');
+    formData.append('gstin', payload.gstin || '');
+    formData.append('subtotal', payload.subtotal?.toString() || '');
+    formData.append('tax_amount', payload.tax_amount?.toString() || '');
+    formData.append('discount', payload.discount?.toString() || '');
+    formData.append('total_amount', payload.total_amount?.toString() || '');
+    formData.append('currency', payload.currency || 'INR');
+    formData.append('payment_mode', payload.payment_mode || '');
+    formData.append('notes', payload.notes || '');
+    formData.append('email', payload.email || '');
+    formData.append('phone', payload.phone || '');
+    formData.append('ocr_confidence', payload.ocr_confidence?.toString() || '');
+    formData.append('raw_ocr_text', payload.raw_ocr_text || '');
+    formData.append('line_items', JSON.stringify(payload.line_items || []));
+    return formData;
   }
 }

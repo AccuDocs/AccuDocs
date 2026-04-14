@@ -13,6 +13,215 @@ import { pool } from '../../config/database.config';
 import { getFinancialYear, getMonthFromDate, splitGST } from '../../utils/gstCalculator';
 import { parseSalesExcel, parsePurchasesExcel, parseExpensesExcel } from '../../utils/excelParser';
 import { logger } from '../../utils/logger';
+import { getScannerUploadFile } from '../scanner/middleware/upload';
+import { buildSavePayload } from '../scanner/middleware/validate';
+import { persistScannedDocument } from '../scanner/application/services/persist-scanned-document';
+import { SaveScannerDocumentInput } from '../scanner/types';
+
+const OCR_IMPORT_PREFIX = 'OCR Imported';
+
+const deriveBaseAmount = (payload: SaveScannerDocumentInput): number => {
+  if (payload.subtotal !== null && payload.subtotal !== undefined) {
+    return Number(payload.subtotal.toFixed(2));
+  }
+
+  const total = payload.total_amount ?? 0;
+  const tax = payload.tax_amount ?? 0;
+  const discount = payload.discount ?? 0;
+  return Number(Math.max(total - tax + discount, 0).toFixed(2));
+};
+
+const deriveGstRate = (baseAmount: number, taxAmount: number): number => {
+  if (baseAmount <= 0 || taxAmount <= 0) {
+    return 0;
+  }
+
+  return Number(((taxAmount / baseAmount) * 100).toFixed(2));
+};
+
+const deriveQuantity = (payload: SaveScannerDocumentInput): number => {
+  const totalQuantity = payload.line_items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+  return totalQuantity > 0 ? Number(totalQuantity.toFixed(3)) : 1;
+};
+
+const deriveRate = (baseAmount: number, quantity: number): number => {
+  if (quantity <= 0) {
+    return baseAmount;
+  }
+
+  return Number((baseAmount / quantity).toFixed(2));
+};
+
+const derivePlaceOfSupply = (gstin: string | null): string | null => {
+  if (!gstin || gstin.length < 2) {
+    return null;
+  }
+
+  return gstin.slice(0, 2);
+};
+
+const deriveDescription = (payload: SaveScannerDocumentInput, fallbackLabel: string): string => {
+  const lineItemDescription = payload.line_items.find((item) => item.description?.trim())?.description?.trim();
+  if (lineItemDescription) {
+    return lineItemDescription;
+  }
+
+  const notes = payload.notes?.trim();
+  if (notes) {
+    return notes;
+  }
+
+  const party = payload.vendor_or_customer?.trim();
+  if (party) {
+    return `${fallbackLabel} - ${party}`;
+  }
+
+  return fallbackLabel;
+};
+
+const buildImportedNotes = (notes: string | null, scannerDocumentId: number): string => {
+  const parts = [`${OCR_IMPORT_PREFIX} (Scanner #${scannerDocumentId})`];
+  if (notes?.trim()) {
+    parts.push(notes.trim());
+  }
+
+  return parts.join('\n');
+};
+
+const buildFallbackReference = (docType: NonNullable<SaveScannerDocumentInput['doc_type']>, date: string | null): string => {
+  const compactDate = (date || new Date().toISOString().slice(0, 10)).replace(/-/g, '');
+  const suffix = Date.now().toString().slice(-6);
+  return `OCR-${docType.toUpperCase()}-${compactDate}-${suffix}`;
+};
+
+const normalizeExpensePaymentMode = (paymentMode: SaveScannerDocumentInput['payment_mode']): string => {
+  switch (paymentMode) {
+    case 'UPI':
+      return 'upi';
+    case 'Card':
+      return 'card';
+    case 'Bank Transfer':
+      return 'bank';
+    case 'Credit':
+      return 'credit';
+    case 'Cash':
+    default:
+      return 'cash';
+  }
+};
+
+const getClientStateCode = async (clientId: string): Promise<string> => {
+  const result = await pool.query('SELECT state_code FROM clients WHERE id = $1', [clientId]);
+  return result.rows[0]?.state_code || '24';
+};
+
+const createClientEntryFromScannedDocument = async (
+  clientId: string,
+  organizationId: string,
+  payload: SaveScannerDocumentInput,
+  scannerDocumentId: number,
+): Promise<{ id: string; entityType: SaveScannerDocumentInput['doc_type'] }> => {
+  const docType = payload.doc_type;
+  if (!docType) {
+    throw new Error('doc_type is required to create a client entry from OCR.');
+  }
+
+  const date = new Date(payload.date || new Date().toISOString());
+  const baseAmount = deriveBaseAmount(payload);
+  const taxAmount = Number((payload.tax_amount ?? 0).toFixed(2));
+  const gstRate = deriveGstRate(baseAmount, taxAmount);
+  const quantity = deriveQuantity(payload);
+  const rate = deriveRate(baseAmount, quantity);
+  const clientStateCode = await getClientStateCode(clientId);
+  const placeOfSupply = derivePlaceOfSupply(payload.gstin);
+  const gstBreakdown = splitGST(baseAmount, gstRate, placeOfSupply, clientStateCode);
+  const notes = buildImportedNotes(payload.notes, scannerDocumentId);
+
+  if (docType === 'sale') {
+    const sale = await ClientSale.create({
+      clientId,
+      organizationId,
+      invoiceNo: payload.document_number || buildFallbackReference(docType, payload.date),
+      invoiceDate: payload.date,
+      customerName: payload.vendor_or_customer || 'OCR Customer',
+      description: deriveDescription(payload, 'OCR sale import'),
+      quantity,
+      rate,
+      baseAmount,
+      gstRate,
+      month: getMonthFromDate(date),
+      financialYear: getFinancialYear(date),
+      gstin: payload.gstin || null,
+      invoiceType: payload.gstin ? 'B2B' : 'B2C',
+      placeOfSupply,
+      cgstAmount: gstBreakdown.cgstAmount,
+      sgstAmount: gstBreakdown.sgstAmount,
+      igstAmount: gstBreakdown.igstAmount,
+      cessAmount: gstBreakdown.cessAmount,
+      isNilRated: taxAmount <= 0,
+      isAdvance: false,
+      status: 'draft',
+      notes,
+    });
+
+    return { id: sale.id, entityType: 'sale' };
+  }
+
+  if (docType === 'purchase') {
+    const purchase = await ClientPurchase.create({
+      clientId,
+      organizationId,
+      billNo: payload.document_number || buildFallbackReference(docType, payload.date),
+      billDate: payload.date,
+      vendorName: payload.vendor_or_customer || 'OCR Vendor',
+      description: deriveDescription(payload, 'OCR purchase import'),
+      quantity,
+      rate,
+      baseAmount,
+      gstRate,
+      month: getMonthFromDate(date),
+      financialYear: getFinancialYear(date),
+      gstin: payload.gstin || null,
+      purchaseType:
+        placeOfSupply && placeOfSupply !== clientStateCode
+          ? 'interstate'
+          : 'local',
+      cgstAmount: gstBreakdown.cgstAmount,
+      sgstAmount: gstBreakdown.sgstAmount,
+      igstAmount: gstBreakdown.igstAmount,
+      itcEligible: taxAmount > 0,
+      rcmApplicable: false,
+      isCapitalGoods: false,
+      status: 'draft',
+      notes,
+    });
+
+    return { id: purchase.id, entityType: docType };
+  }
+
+  const expense = await ClientExpense.create({
+    clientId,
+    organizationId,
+    expenseDate: payload.date,
+    category: 'general',
+    description: deriveDescription(payload, 'OCR expense import'),
+    vendorName: payload.vendor_or_customer || null,
+    amount: Number((payload.total_amount ?? baseAmount).toFixed(2)),
+    paymentMode: normalizeExpensePaymentMode(payload.payment_mode),
+    referenceNo: payload.document_number || buildFallbackReference(docType, payload.date),
+    month: getMonthFromDate(date),
+    financialYear: getFinancialYear(date),
+    gstApplicable: taxAmount > 0,
+    gstRate,
+    gstAmount: taxAmount,
+    itcAllowed: taxAmount > 0,
+    itcBlockedReason: null,
+    status: 'draft',
+    notes,
+  });
+
+  return { id: expense.id, entityType: docType };
+};
 
 // ===================== SALES =====================
 
@@ -535,6 +744,54 @@ export const uploadExpenses = async (req: AuthenticatedRequest, res: Response): 
     }));
   } catch (error: any) {
     logger.error('uploadExpenses error:', error);
+    res.status(500).json(errorResponse('INTERNAL_ERROR', error.message));
+  }
+};
+
+export const importScannedDocument = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { clientId } = req.params;
+    const organizationId = req.user!.organizationId;
+    const file = getScannerUploadFile(req);
+
+    if (!file) {
+      res.status(400).json(errorResponse('BAD_REQUEST', 'No document image uploaded'));
+      return;
+    }
+
+    const payload = buildSavePayload(req, organizationId);
+    const savedDocument = await persistScannedDocument(file, payload);
+    const importedEntry = await createClientEntryFromScannedDocument(
+      clientId,
+      organizationId,
+      payload,
+      savedDocument.id,
+    );
+
+    await ActivityLog.create({
+      clientId,
+      organizationId,
+      userId: req.user!.userId,
+      action: 'OCR_IMPORT_CREATED',
+      entityType: importedEntry.entityType,
+      entityId: importedEntry.id,
+      details: {
+        scannerDocumentId: savedDocument.id,
+        source: 'workspace-scanner',
+        docType: payload.doc_type,
+      },
+    }).catch(() => {});
+
+    res.status(201).json({
+      success: true,
+      client_id: clientId,
+      client_record_id: importedEntry.id,
+      client_record_type: importedEntry.entityType,
+      document_id: savedDocument.id,
+      data: savedDocument,
+    });
+  } catch (error: any) {
+    logger.error('importScannedDocument error:', error);
     res.status(500).json(errorResponse('INTERNAL_ERROR', error.message));
   }
 };

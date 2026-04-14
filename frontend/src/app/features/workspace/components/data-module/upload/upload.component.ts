@@ -9,11 +9,12 @@ import {
 } from '@ng-icons/heroicons/solid';
 import { DataService } from '@core/services/data.service';
 import { ToastService } from '@core/services/toast.service';
+import { DocumentScannerComponent } from '../../../../document-scanner/components/document-scanner.component';
 
 @Component({
   selector: 'app-upload',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgIconComponent],
+  imports: [CommonModule, FormsModule, NgIconComponent, DocumentScannerComponent],
   providers: [provideIcons({ heroArrowUpTraySolid, heroDocumentArrowDownSolid, heroCheckCircleSolid, heroExclamationCircleSolid, heroCloudArrowUpSolid })],
   template: `
     <div class="space-y-6">
@@ -127,6 +128,8 @@ import { ToastService } from '@core/services/toast.service';
           </button>
         </div>
       </div>
+
+      <app-document-scanner [clientId]="clientId" [embedded]="true"></app-document-scanner>
     </div>
   `,
   styles: [`:host{display:block}.sa-card{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.06);transition:all .2s ease}.sa-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);transform:translateY(-1px)}`]

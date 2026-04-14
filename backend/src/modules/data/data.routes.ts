@@ -3,6 +3,7 @@ import multer from 'multer';
 import { authenticate, adminOnly } from '../../middlewares';
 import * as DataController from './DataController';
 import * as DashboardController from './DashboardController';
+import { uploadScannerSaveDocument } from '../scanner/middleware/upload';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB
@@ -30,6 +31,7 @@ router.post('/:clientId/expenses', DataController.createExpense);
 router.put('/:clientId/expenses/:expenseId', DataController.updateExpense);
 router.delete('/:clientId/expenses/:expenseId', DataController.deleteExpense);
 router.post('/:clientId/expenses/upload', upload.single('file'), DataController.uploadExpenses);
+router.post('/:clientId/scanner/import', uploadScannerSaveDocument, DataController.importScannedDocument);
 
 // ===================== GST SUMMARY =====================
 router.get('/:clientId/gst-summary', DataController.getGstSummary);

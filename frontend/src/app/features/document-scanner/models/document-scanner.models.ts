@@ -54,6 +54,15 @@ export interface SaveResponse {
   data: ScannerDocumentData;
 }
 
+export interface ClientScannerSaveResponse {
+  success: boolean;
+  client_id: string;
+  client_record_id: string;
+  client_record_type: DocumentType;
+  document_id: number;
+  data: ScannerDocumentData;
+}
+
 export interface ScannedDocumentsResponse {
   success: boolean;
   page: number;
