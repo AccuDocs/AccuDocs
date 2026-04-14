@@ -129,7 +129,7 @@ import { DocumentScannerComponent } from '../../../../document-scanner/component
         </div>
       </div>
 
-      <app-document-scanner [clientId]="clientId" [embedded]="true"></app-document-scanner>
+      <app-document-scanner [clientId]="clientId" [embedded]="true" [presetType]="scannerDocumentType"></app-document-scanner>
     </div>
   `,
   styles: [`:host{display:block}.sa-card{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.06);transition:all .2s ease}.sa-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);transform:translateY(-1px)}`]
@@ -151,6 +151,18 @@ export class UploadComponent {
     { key: 'purchases' as const, label: 'Purchases' },
     { key: 'expenses' as const, label: 'Expenses' },
   ];
+
+  get scannerDocumentType(): 'sale' | 'purchase' | 'expense' {
+    switch (this.selectedType()) {
+      case 'sales':
+        return 'sale';
+      case 'purchases':
+        return 'purchase';
+      case 'expenses':
+      default:
+        return 'expense';
+    }
+  }
 
   onDragOver(e: DragEvent) {
     e.preventDefault();

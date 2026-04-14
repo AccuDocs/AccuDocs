@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, Input, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, Input, OnChanges, OnInit, SimpleChanges, computed, inject, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -35,7 +35,7 @@ import {
           <p class="lead">
             {{
               embedded
-                ? 'Choose a document type, upload an image, review the OCR extraction, and save it straight into this client record.'
+                ? 'Upload an image, review the OCR extraction, and save it straight into this client record.'
                 : 'Choose a document type, upload an image, review the OCR extraction, and save it into the document register.'
             }}
           </p>
@@ -44,13 +44,12 @@ import {
       </header>
 
       <div class="step-tracker">
-        <div class="step-pill" [class.active]="step() >= 1">1. Type</div>
-        <div class="step-pill" [class.active]="step() >= 2">2. Upload</div>
-        <div class="step-pill" [class.active]="step() >= 3">3. Review</div>
-        <div class="step-pill" [class.active]="step() >= 4">4. Saved</div>
+        <div class="step-pill" *ngFor="let trackerStep of trackerSteps" [class.active]="step() >= trackerStep.step">
+          {{ trackerStep.label }}
+        </div>
       </div>
 
-      <section *ngIf="step() === 1" class="step-card">
+      <section *ngIf="!embedded && step() === 1" class="step-card">
         <div class="section-head">
           <div>
             <p class="eyebrow">Step 1</p>
@@ -88,10 +87,10 @@ import {
       <section *ngIf="step() === 2" class="step-card upload-card">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Step 2</p>
+            <p class="eyebrow">Step {{ embedded ? '1' : '2' }}</p>
             <h2>Upload an image for OCR extraction</h2>
           </div>
-          <button type="button" class="ghost-link" (click)="step.set(1)">← Change type</button>
+          <button *ngIf="!embedded" type="button" class="ghost-link" (click)="step.set(1)">← Change type</button>
         </div>
 
         <div class="upload-layout">
@@ -179,7 +178,7 @@ import {
             <span>✓</span>
           </div>
         </div>
-        <p class="eyebrow">Step 4</p>
+        <p class="eyebrow">Step {{ embedded ? '3' : '4' }}</p>
         <h2>Document saved successfully</h2>
         <p class="success-copy">{{ successMessage() }}</p>
 
@@ -631,6 +630,7 @@ import {
 export class DocumentScannerComponent {
   @Input() clientId: string | null = null;
   @Input() embedded = false;
+  @Input() presetType: DocumentType | null = null;
 
   private fb = inject(FormBuilder);
   private scannerService = inject(DocumentScannerService);
@@ -686,10 +686,6 @@ export class DocumentScannerComponent {
   });
 
   constructor() {
-    if (this.selectedType()) {
-      this.step.set(2);
-    }
-
     merge(
       this.documentForm.get('subtotal')!.valueChanges,
       this.documentForm.get('tax_amount')!.valueChanges,
@@ -699,13 +695,56 @@ export class DocumentScannerComponent {
       .subscribe(() => this.recalculateTotal());
   }
 
+  ngOnInit(): void {
+    if (this.embedded && this.presetType) {
+      this.applyPresetType(this.presetType);
+      return;
+    }
+
+    if (this.selectedType()) {
+      this.step.set(2);
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!this.embedded) {
+      return;
+    }
+
+    if (changes['presetType'] && this.presetType) {
+      this.applyPresetType(this.presetType, !changes['presetType'].firstChange);
+      return;
+    }
+
+    if (changes['embedded'] && this.embedded && this.presetType) {
+      this.applyPresetType(this.presetType);
+    }
+  }
+
   get lineItems(): FormArray<FormGroup> {
     return this.documentForm.get('line_items') as FormArray<FormGroup>;
   }
 
+  get trackerSteps(): Array<{ label: string; step: 1 | 2 | 3 | 4 }> {
+    return this.embedded
+      ? [
+          { label: '1. Upload', step: 2 },
+          { label: '2. Review', step: 3 },
+          { label: '3. Saved', step: 4 },
+        ]
+      : [
+          { label: '1. Type', step: 1 },
+          { label: '2. Upload', step: 2 },
+          { label: '3. Review', step: 3 },
+          { label: '4. Saved', step: 4 },
+        ];
+  }
+
   selectType(docType: DocumentType): void {
     this.selectedType.set(docType);
-    sessionStorage.setItem('scanner-doc-type', docType);
+    if (!this.embedded) {
+      sessionStorage.setItem('scanner-doc-type', docType);
+    }
   }
 
   goToUploadStep(): void {
@@ -1036,6 +1075,12 @@ export class DocumentScannerComponent {
     this.savedDocumentId.set(null);
     this.savedClientRecordId.set(null);
     this.savedClientRecordType.set(null);
+    if (this.embedded && this.presetType) {
+      this.selectedType.set(this.presetType);
+      this.step.set(2);
+      return;
+    }
+
     this.selectedType.set(null);
     sessionStorage.removeItem('scanner-doc-type');
     this.step.set(1);
@@ -1050,5 +1095,22 @@ export class DocumentScannerComponent {
         amount: row['amount'] === null || row['amount'] === '' ? null : Number(row['amount']),
       }))
       .filter((row) => row.description || row.amount !== null);
+  }
+
+  private applyPresetType(docType: DocumentType, resetForTypeChange = false): void {
+    const typeChanged = this.selectedType() !== docType;
+    this.selectedType.set(docType);
+
+    if (resetForTypeChange && typeChanged) {
+      this.clearFileState();
+      this.savedDocument.set(null);
+      this.savedDocumentId.set(null);
+      this.savedClientRecordId.set(null);
+      this.savedClientRecordType.set(null);
+    }
+
+    if (this.step() === 1 || typeChanged) {
+      this.step.set(2);
+    }
   }
 }
