@@ -1,11 +1,12 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavigationService } from '../../core/navigation.service';
+import { IconButtonComponent } from '@ui/atoms/icon-button.component';
 
 @Component({
   selector: 'app-sidebar-collapsed-strip',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconButtonComponent],
   template: `
     <div
       class="sidebar-collapsed w-6 h-screen flex-shrink-0 flex items-center justify-center"
@@ -20,19 +21,13 @@ import { NavigationService } from '../../core/navigation.service';
       (click)="nav.toggleSidebar()"
       title="Expand sidebar"
     >
-      <button
-        style="
-          background: transparent;
-          border: none;
-          color: var(--color-text-sub);
-          font-size: 16px;
-          cursor: pointer;
-          transition: all 0.2s;
-        "
-        class="hover:text-white"
-      >
-        ›
-      </button>
+      <app-icon-button
+        icon="heroChevronRightSolid"
+        ariaLabel="Expand sidebar"
+        title="Expand sidebar"
+        size="sm"
+        tone="secondary"
+      />
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

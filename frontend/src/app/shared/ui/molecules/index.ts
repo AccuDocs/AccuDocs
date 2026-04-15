@@ -7,3 +7,4 @@ export { FormGroupComponent } from './form-group.component';
 export { ToastComponent, type ToastType, type Toast } from './toast.component';
 export { EmptyStateComponent, type EmptyStateSize } from './empty-state.component';
 export { SkeletonComponent, SkeletonCardComponent, SkeletonTableComponent } from './skeleton.component';
+export { NavRowButtonComponent } from './nav-row-button.component';

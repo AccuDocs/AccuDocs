@@ -1,0 +1,181 @@
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { IconComponent, type IconSize, type IconTone } from './icon.component';
+
+export type IconButtonSize = 'sm' | 'md' | 'lg';
+export type IconButtonVariant = 'ghost' | 'soft';
+
+@Component({
+  selector: 'app-icon-button, ui-icon-button',
+  standalone: true,
+  imports: [CommonModule, IconComponent],
+  template: `
+    <button
+      type="button"
+      class="icon-button"
+      [disabled]="disabled()"
+      [class.icon-button--active]="active()"
+      [attr.aria-label]="ariaLabel()"
+      [attr.title]="title() || ariaLabel()"
+      [ngStyle]="buttonVars()"
+      (click)="onClick($event)"
+    >
+      <app-icon
+        [name]="icon()"
+        [size]="iconSize()"
+        tone="current"
+        ariaLabel=""
+      />
+
+      @if (dot()) {
+        <span class="icon-button__dot"></span>
+      } @else if (hasBadge()) {
+        <span class="icon-button__badge">{{ badge() }}</span>
+      }
+    </button>
+  `,
+  styles: [`
+    :host {
+      display: inline-flex;
+    }
+
+    .icon-button {
+      width: var(--icon-button-size);
+      height: var(--icon-button-size);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border: none;
+      border-radius: 9px;
+      background: var(--icon-button-bg);
+      color: var(--icon-button-color);
+      cursor: pointer;
+      transition: background 200ms ease, color 200ms ease, transform 200ms ease;
+    }
+
+    .icon-button:hover:not(:disabled) {
+      background: var(--icon-button-hover-bg);
+      color: var(--icon-button-hover-color);
+      transform: translateY(-1px);
+    }
+
+    .icon-button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .icon-button:focus-visible {
+      outline: 2px solid rgba(59, 130, 246, 0.24);
+      outline-offset: 2px;
+    }
+
+    .icon-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .icon-button__badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: #ef4444;
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 18px;
+      text-align: center;
+      box-shadow: 0 0 0 2px var(--color-surface);
+    }
+
+    .icon-button__dot {
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #ef4444;
+      box-shadow: 0 0 0 2px var(--color-surface);
+    }
+  `],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class IconButtonComponent {
+  icon = input.required<string>();
+  ariaLabel = input.required<string>();
+  title = input<string>('');
+  size = input<IconButtonSize>('md');
+  tone = input<Exclude<IconTone, 'current'>>('secondary');
+  variant = input<IconButtonVariant>('ghost');
+  active = input<boolean>(false);
+  disabled = input<boolean>(false);
+  badge = input<string | number | null>(null);
+  dot = input<boolean>(false);
+
+  clicked = output<MouseEvent>();
+
+  iconSize = computed<IconSize>(() => {
+    const sizeMap: Record<IconButtonSize, IconSize> = {
+      sm: 'sm',
+      md: 'md',
+      lg: 'lg',
+    };
+
+    return sizeMap[this.size()];
+  });
+
+  buttonVars = computed(() => {
+    const sizeMap: Record<IconButtonSize, string> = {
+      sm: '36px',
+      md: '40px',
+      lg: '48px',
+    };
+
+    const toneMap: Record<Exclude<IconTone, 'current'>, string> = {
+      primary: '#3B82F6',
+      secondary: 'var(--color-text-sub)',
+      success: '#10B981',
+      warning: '#F59E0B',
+      danger: '#EF4444',
+      info: '#0EA5E9',
+      muted: 'var(--color-text-dim)',
+    };
+
+    const tone = toneMap[this.tone()];
+    const inactiveColor = this.tone() === 'secondary' || this.tone() === 'muted'
+      ? 'var(--color-text-sub)'
+      : tone;
+    const hoverColor = this.tone() === 'secondary' || this.tone() === 'muted'
+      ? 'var(--color-text)'
+      : tone;
+    const baseBackground = this.variant() === 'soft'
+      ? 'var(--color-bg-raised)'
+      : 'transparent';
+    const hoverBackground = this.variant() === 'soft'
+      ? 'var(--color-border)'
+      : 'var(--color-bg-raised)';
+
+    return {
+      '--icon-button-size': sizeMap[this.size()],
+      '--icon-button-bg': this.active() ? 'var(--color-gold-faint)' : baseBackground,
+      '--icon-button-hover-bg': this.active() ? 'var(--color-gold-faint)' : hoverBackground,
+      '--icon-button-color': this.active() ? 'var(--color-text)' : inactiveColor,
+      '--icon-button-hover-color': this.active() ? 'var(--color-text)' : hoverColor,
+    };
+  });
+
+  hasBadge(): boolean {
+    return this.badge() !== null && this.badge() !== undefined && this.badge() !== '';
+  }
+
+  onClick(event: MouseEvent): void {
+    if (!this.disabled()) {
+      this.clicked.emit(event);
+    }
+  }
+}

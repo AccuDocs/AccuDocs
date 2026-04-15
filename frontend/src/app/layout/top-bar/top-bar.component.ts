@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { NavigationService } from '../../core/navigation.service';
 import { AuthService } from '../../core/services/auth.service';
+import { IconComponent } from '@ui/atoms/icon.component';
+import { IconButtonComponent } from '@ui/atoms/icon-button.component';
 
 @Component({
   selector: 'app-top-bar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, IconComponent, IconButtonComponent],
   template: `
     <header
       class="top-bar"
@@ -60,7 +62,8 @@ import { AuthService } from '../../core/services/auth.service';
         class="hover:border-gold-500"
       >
         <span style="display: flex; align-items: center; gap: 6px;">
-          🔍 Search modules...
+          <app-icon name="heroMagnifyingGlassSolid" size="sm" tone="secondary" />
+          <span>Search modules...</span>
         </span>
         <span
           style="
@@ -103,42 +106,14 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
 
         <!-- Notifications bell -->
-        <button
-          style="
-            background: transparent;
-            border: none;
-            color: var(--color-text);
-            font-size: 18px;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.2s;
-            padding: 4px;
-            border-radius: 9px;
-          "
-          class="hover:bg-gray-900"
+        <app-icon-button
+          icon="heroBellSolid"
+          ariaLabel="Notifications"
           title="Notifications"
-        >
-          🔔
-          <div
-            style="
-              position: absolute;
-              top: 0;
-              right: 0;
-              width: 18px;
-              height: 18px;
-              border-radius: 50%;
-              background: var(--color-red);
-              color: white;
-              font-size: 10px;
-              font-weight: 700;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            "
-          >
-            3
-          </div>
-        </button>
+          size="md"
+          tone="secondary"
+          [badge]="3"
+        />
 
         <!-- User profile container -->
         <div style="position: relative;">
@@ -225,7 +200,8 @@ import { AuthService } from '../../core/services/auth.service';
                   "
                   class="hover:bg-red-50 dark:hover:bg-red-900/20"
                 >
-                  <span>🚪</span> Logout
+                  <app-icon name="heroArrowLeftStartOnRectangleSolid" size="sm" tone="danger" />
+                  <span>Logout</span>
                 </button>
               </div>
             </div>

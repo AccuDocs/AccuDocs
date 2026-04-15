@@ -26,16 +26,16 @@ export class ClientWorkspaceContextService {
   readonly selectedWorkspaceTab = computed(() => this.activeWorkspaceTab());
 
   readonly workspaceTabs: ReadonlyArray<{
-    icon: string;
+    iconName: string;
     label: string;
     tab: ClientWorkspaceShortcutTab;
   }> = [
-    { icon: '📁', label: 'Files', tab: 'files' },
-    { icon: '📋', label: 'Checklists', tab: 'checklists' },
-    { icon: '📅', label: 'Deadlines', tab: 'deadlines' },
-    { icon: '📊', label: 'Data', tab: 'data' },
-    { icon: '🧾', label: 'GST Filing', tab: 'gst' },
-    { icon: '📈', label: 'Dashboard', tab: 'dashboard' },
+    { iconName: 'heroFolderOpenSolid', label: 'Files', tab: 'files' },
+    { iconName: 'heroClipboardDocumentCheckSolid', label: 'Checklists', tab: 'checklists' },
+    { iconName: 'heroCalendarSolid', label: 'Deadlines', tab: 'deadlines' },
+    { iconName: 'heroChartBarSolid', label: 'Data', tab: 'data' },
+    { iconName: 'heroReceiptPercentSolid', label: 'GST Filing', tab: 'gst' },
+    { iconName: 'heroPresentationChartBarSolid', label: 'Dashboard', tab: 'dashboard' },
   ];
 
   constructor() {

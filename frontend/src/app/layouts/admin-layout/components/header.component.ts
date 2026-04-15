@@ -2,21 +2,13 @@ import { Component, inject, signal, ChangeDetectionStrategy, HostListener } from
 import { CommonModule } from '@angular/common';
 import { AuthService } from '@core/services/auth.service';
 import { ThemeService } from '@core/services/theme.service';
-import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import {
-  heroMagnifyingGlassSolid,
-  heroBellSolid,
-  heroMoonSolid,
-  heroSunSolid,
-  heroChevronDownSolid,
-  heroArrowLeftStartOnRectangleSolid,
-  heroUserCircleSolid
-} from '@ng-icons/heroicons/solid';
+import { IconComponent } from '@ui/atoms/icon.component';
+import { IconButtonComponent } from '@ui/atoms/icon-button.component';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, NgIconComponent],
+  imports: [CommonModule, IconComponent, IconButtonComponent],
   template: `
     <header
       class="fixed top-0 right-0 h-20 flex items-center justify-between px-10 z-header transition-all duration-300"
@@ -35,12 +27,12 @@ import {
           >
             <!-- Icon -->
             <div class="pl-[14px] flex items-center">
-              <ng-icon
+              <app-icon
                 name="heroMagnifyingGlassSolid"
-                size="18"
+                size="sm"
+                [tone]="searchFocused ? 'primary' : 'muted'"
                 class="transition-colors duration-200"
-                [style.color]="searchFocused ? '#0074c9' : '#94a3b8'"
-              ></ng-icon>
+              ></app-icon>
             </div>
 
             <!-- Input -->
@@ -77,31 +69,24 @@ import {
       <div class="flex items-center gap-2 ml-auto">
 
         <!-- Notification Bell -->
-        <button
-          class="relative w-10 h-10 flex items-center justify-center rounded-xl text-[#64748b] hover:bg-[#f1f5f9] dark:hover:bg-[#334155] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] transition-all duration-200"
-          aria-label="Notifications"
-        >
-          <ng-icon name="heroBellSolid" size="20"></ng-icon>
-          <!-- Notification dot -->
-          <span
-            class="absolute top-[7px] right-[7px] w-2 h-2 bg-[#dc2626] rounded-full animate-notification-pulse"
-            style="box-shadow: 0 0 0 2px white;"
-          ></span>
-        </button>
+        <app-icon-button
+          icon="heroBellSolid"
+          ariaLabel="Notifications"
+          title="Notifications"
+          size="md"
+          tone="secondary"
+          [dot]="true"
+        />
 
         <!-- Theme Toggle -->
-        <button
-          (click)="themeService.toggleTheme()"
-          class="w-10 h-10 flex items-center justify-center rounded-xl text-[#64748b] hover:bg-[#f1f5f9] dark:hover:bg-[#334155] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] transition-all duration-200"
+        <app-icon-button
+          (clicked)="themeService.toggleTheme()"
+          [icon]="themeService.isDarkMode() ? 'heroSunSolid' : 'heroMoonSolid'"
           [title]="themeService.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
-          aria-label="Toggle theme"
-        >
-          <ng-icon
-            [name]="themeService.isDarkMode() ? 'heroSunSolid' : 'heroMoonSolid'"
-            size="20"
-            class="transition-transform duration-200"
-          ></ng-icon>
-        </button>
+          ariaLabel="Toggle theme"
+          size="md"
+          tone="secondary"
+        />
 
         <!-- Divider -->
         <div class="h-8 w-px mx-2" style="background: var(--border-color);"></div>
@@ -153,7 +138,7 @@ import {
                   role="menuitem"
                 >
                   <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
-                    <ng-icon name="heroUserCircleSolid" size="18" class="text-slate-500 dark:text-slate-400"></ng-icon>
+                    <app-icon name="heroUserCircleSolid" size="sm" tone="muted" />
                   </div>
                   Profile Settings
                 </button>
@@ -165,11 +150,11 @@ import {
                   role="menuitem"
                 >
                   <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
-                    <ng-icon
+                    <app-icon
                       [name]="themeService.isDarkMode() ? 'heroSunSolid' : 'heroMoonSolid'"
-                      size="18"
-                      class="text-slate-500 dark:text-slate-400"
-                    ></ng-icon>
+                      size="sm"
+                      tone="muted"
+                    />
                   </div>
                   {{ themeService.isDarkMode() ? 'Light Mode' : 'Dark Mode' }}
                 </button>
@@ -181,7 +166,7 @@ import {
                   role="menuitem"
                 >
                   <div class="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                    <ng-icon name="heroArrowLeftStartOnRectangleSolid" size="18" class="text-red-500"></ng-icon>
+                    <app-icon name="heroArrowLeftStartOnRectangleSolid" size="sm" tone="danger" />
                   </div>
                   Logout
                 </button>
@@ -209,17 +194,6 @@ import {
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [
-    provideIcons({
-      heroMagnifyingGlassSolid,
-      heroBellSolid,
-      heroMoonSolid,
-      heroSunSolid,
-      heroChevronDownSolid,
-      heroArrowLeftStartOnRectangleSolid,
-      heroUserCircleSolid
-    })
-  ]
 })
 export class HeaderComponent {
   authService = inject(AuthService);

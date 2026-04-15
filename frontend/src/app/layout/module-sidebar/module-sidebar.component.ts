@@ -11,11 +11,12 @@ import {
   getHubModules,
   groupModulesByStatus,
 } from '../../core/module-registry';
+import { NavRowButtonComponent } from '@ui/molecules/nav-row-button.component';
 
 @Component({
   selector: 'app-module-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, NavRowButtonComponent],
   template: `
     <aside
       class="module-sidebar flex flex-col"
@@ -95,50 +96,15 @@ import {
               Ready
             </div>
             @for (module of grouped().live; track module.id) {
-              <button
-                (click)="nav.navigateTo(module.id)"
-                style="
-                  width: 100%;
-                  padding: 10px 16px;
-                  text-align: left;
-                  background: transparent;
-                  border: none;
-                  cursor: pointer;
-                  color: var(--color-text);
-                  font-size: 14px;
-                  display: flex;
-                  align-items: center;
-                  gap: 10px;
-                  transition: all 0.2s;
-                  border-left: 3px solid transparent;
-                "
-                [style.background]="
-                  nav.activeModule() === module.id
-                    ? 'var(--color-gold-faint)'
-                    : 'transparent'
-                "
-                [style.border-left-color]="
-                  nav.activeModule() === module.id ? getHubColor() : 'transparent'
-                "
-                class="hover:bg-gray-900"
-              >
-                <span>{{ module.icon }}</span>
-                <span class="flex-1">{{ module.label }}</span>
-                @if (module.badge && module.badge > 0) {
-                  <span
-                    style="
-                      background: var(--color-red);
-                      color: white;
-                      font-size: 11px;
-                      font-weight: 700;
-                      padding: 2px 6px;
-                      border-radius: 9px;
-                    "
-                  >
-                    {{ module.badge }}
-                  </span>
-                }
-              </button>
+              <app-nav-row-button
+                [glyph]="module.icon"
+                [label]="module.label"
+                [badge]="module.badge || null"
+                [active]="nav.activeModule() === module.id"
+                [accentColor]="getHubColor()"
+                [ariaLabel]="module.label"
+                (clicked)="nav.navigateTo(module.id)"
+              />
               @if (showClientWorkspaceShortcuts(module.id)) {
                 <div
                   style="
@@ -161,44 +127,16 @@ import {
                     Workspace
                   </div>
                   @for (shortcut of clientWorkspaceTabs; track shortcut.tab) {
-                    <button
-                      (click)="openClientWorkspaceTab(shortcut.tab)"
-                      style="
-                        width: 100%;
-                        padding: 10px 16px 10px 28px;
-                        text-align: left;
-                        background: transparent;
-                        border: none;
-                        cursor: pointer;
-                        color: var(--color-text);
-                        font-size: 13px;
-                        font-size: 14px;
-                        display: flex;
-                        align-items: center;
-                        gap: 10px;
-                        border-left: 3px solid transparent;
-                        transition: all 0.2s;
-                      "
-                      [style.background]="
-                        isClientWorkspaceTabActive(shortcut.tab)
-                          ? 'var(--color-gold-faint)'
-                          : 'transparent'
-                      "
-                      [style.border-left-color]="
-                        isClientWorkspaceTabActive(shortcut.tab)
-                          ? getHubColor()
-                          : 'transparent'
-                      "
-                      [style.color]="
-                        isClientWorkspaceTabActive(shortcut.tab)
-                          ? 'var(--color-text)'
-                          : 'var(--color-text-sub)'
-                      "
-                      class="hover:bg-gray-900"
-                    >
-                      <span>{{ shortcut.icon }}</span>
-                      <span class="flex-1">{{ shortcut.label }}</span>
-                    </button>
+                    <app-nav-row-button
+                      [iconName]="shortcut.iconName"
+                      [label]="shortcut.label"
+                      [active]="isClientWorkspaceTabActive(shortcut.tab)"
+                      [accentColor]="getHubColor()"
+                      [paddingLeft]="28"
+                      [muted]="true"
+                      [ariaLabel]="shortcut.label"
+                      (clicked)="openClientWorkspaceTab(shortcut.tab)"
+                    />
                   }
                 </div>
               }
@@ -223,51 +161,16 @@ import {
               Beta
             </div>
             @for (module of grouped().beta; track module.id) {
-              <button
-                (click)="nav.navigateTo(module.id)"
-                style="
-                  width: 100%;
-                  padding: 10px 16px;
-                  text-align: left;
-                  background: transparent;
-                  border: none;
-                  cursor: pointer;
-                  color: var(--color-text);
-                  font-size: 14px;
-                  display: flex;
-                  align-items: center;
-                  gap: 10px;
-                  transition: all 0.2s;
-                  border-left: 3px solid transparent;
-                  opacity: 0.85;
-                "
-                [style.background]="
-                  nav.activeModule() === module.id
-                    ? 'var(--color-gold-faint)'
-                    : 'transparent'
-                "
-                [style.border-left-color]="
-                  nav.activeModule() === module.id ? getHubColor() : 'transparent'
-                "
-                class="hover:bg-gray-900"
-              >
-                <span>{{ module.icon }}</span>
-                <span class="flex-1">{{ module.label }}</span>
-                @if (module.badge && module.badge > 0) {
-                  <span
-                    style="
-                      background: var(--color-red);
-                      color: white;
-                      font-size: 11px;
-                      font-weight: 700;
-                      padding: 2px 6px;
-                      border-radius: 9px;
-                    "
-                  >
-                    {{ module.badge }}
-                  </span>
-                }
-              </button>
+              <app-nav-row-button
+                [glyph]="module.icon"
+                [label]="module.label"
+                [badge]="module.badge || null"
+                [active]="nav.activeModule() === module.id"
+                [accentColor]="getHubColor()"
+                [muted]="true"
+                [ariaLabel]="module.label"
+                (clicked)="nav.navigateTo(module.id)"
+              />
             }
           </div>
         }
