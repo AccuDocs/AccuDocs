@@ -22,18 +22,18 @@ import { AuthService } from '@core/services/auth.service';
   imports: [CommonModule, RouterLink, RouterLinkActive, NgIconComponent],
   template: `
     <aside
-      class="fixed z-sidebar inset-y-0 left-0 w-20 flex flex-col border-r transition-colors duration-300"
-      style="background: rgba(255,255,255,0.7); backdrop-filter: blur(20px) saturate(180%); border-color: var(--border-color);"
+      class="fixed z-sidebar inset-y-0 left-0 flex flex-col border-r transition-colors duration-300"
+      style="width: var(--sidebar-width); background: var(--surface-overlay); backdrop-filter: blur(16px) saturate(160%); border-color: var(--border-color);"
       role="navigation"
       aria-label="Main navigation"
     >
       <!-- Logo -->
-      <div class="h-20 flex items-center justify-center" style="padding-top: 0;">
+      <div class="flex items-center justify-center" style="height: var(--header-height); padding-top: 0;">
         <div
-          class="w-11 h-11 bg-[#0074c9] rounded-[9px] flex items-center justify-center text-white rotate-[4deg] transition-transform duration-500 hover:rotate-0"
-          style="box-shadow: 0 8px 24px -4px rgba(0, 116, 201, 0.3);"
+          class="w-10 h-10 rounded-lg flex items-center justify-center text-white transition-transform duration-300"
+          style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-700) 100%); box-shadow: 0 10px 20px -12px rgba(79, 70, 229, 0.55);"
         >
-          <ng-icon name="heroDocumentTextSolid" size="22" class="-rotate-[4deg]"></ng-icon>
+          <ng-icon name="heroDocumentTextSolid" size="22"></ng-icon>
         </div>
       </div>
 
@@ -45,7 +45,7 @@ import { AuthService } from '@core/services/auth.service';
               [routerLink]="link.path"
               routerLinkActive="sidebar-active"
               [routerLinkActiveOptions]="{ exact: link.exact }"
-              class="group relative flex items-center justify-center w-12 h-12 rounded-[9px] text-[#94a3b8] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] hover:bg-[#f1f5f9] dark:hover:bg-[#334155] transition-all duration-200"
+              class="group relative flex items-center justify-center w-11 h-11 rounded-lg text-[#94a3b8] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] hover:bg-[var(--background-color)] dark:hover:bg-[#334155] transition-all duration-200"
               [attr.aria-label]="link.label"
             >
               <ng-icon
@@ -56,14 +56,14 @@ import { AuthService } from '@core/services/auth.service';
 
               <!-- Active indicator bar -->
               <div
-                class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-[#0074c9] rounded-r-sm opacity-0 transition-opacity duration-200"
+                class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-[var(--primary)] rounded-r-sm opacity-0 transition-opacity duration-200"
                 [class.opacity-100]="false"
               ></div>
 
               <!-- Tooltip -->
               <div
-                class="absolute left-full ml-3 px-3 py-1.5 bg-[#0f172a] dark:bg-slate-700 text-white text-xs font-semibold rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50 whitespace-nowrap"
-                style="box-shadow: 0 8px 24px -4px rgba(0,0,0,0.2);"
+                class="absolute left-full ml-3 px-3 py-1.5 bg-[#0f172a] dark:bg-slate-700 text-white text-xs font-medium rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50 whitespace-nowrap"
+                style="box-shadow: var(--shadow-dropdown);"
                 role="tooltip"
               >
                 {{ link.label }}
@@ -80,7 +80,7 @@ import { AuthService } from '@core/services/auth.service';
         <a
           routerLink="/settings"
           routerLinkActive="sidebar-active"
-          class="group relative flex items-center justify-center w-12 h-12 rounded-[9px] text-[#94a3b8] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] hover:bg-[#f1f5f9] dark:hover:bg-[#334155] transition-all duration-200"
+          class="group relative flex items-center justify-center w-11 h-11 rounded-lg text-[#94a3b8] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] hover:bg-[var(--background-color)] dark:hover:bg-[#334155] transition-all duration-200"
           aria-label="Settings"
         >
           <ng-icon
@@ -91,8 +91,8 @@ import { AuthService } from '@core/services/auth.service';
 
           <!-- Tooltip -->
           <div
-            class="absolute left-full ml-3 px-3 py-1.5 bg-[#0f172a] dark:bg-slate-700 text-white text-xs font-semibold rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50 whitespace-nowrap"
-            style="box-shadow: 0 8px 24px -4px rgba(0,0,0,0.2);"
+            class="absolute left-full ml-3 px-3 py-1.5 bg-[#0f172a] dark:bg-slate-700 text-white text-xs font-medium rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50 whitespace-nowrap"
+            style="box-shadow: var(--shadow-dropdown);"
             role="tooltip"
           >
             Settings
@@ -107,8 +107,8 @@ import { AuthService } from '@core/services/auth.service';
       display: block;
     }
     .sidebar-active {
-      background-color: #eff6ff !important;
-      color: #0074c9 !important;
+      background-color: var(--primary-50) !important;
+      color: var(--primary-700) !important;
     }
     .sidebar-active::before {
       content: '';
@@ -118,15 +118,15 @@ import { AuthService } from '@core/services/auth.service';
       transform: translateY(-50%);
       width: 3px;
       height: 24px;
-      background-color: #0074c9;
-      border-radius: 0 9px 9px 0;
+      background-color: var(--primary);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
     }
     :host-context(.dark) .sidebar-active {
-      background-color: rgba(0, 116, 201, 0.15) !important;
-      color: #60a5fa !important;
+      background-color: rgba(79, 70, 229, 0.2) !important;
+      color: var(--primary-200) !important;
     }
     :host-context(.dark) .sidebar-active::before {
-      background-color: #60a5fa;
+      background-color: var(--primary-300);
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,

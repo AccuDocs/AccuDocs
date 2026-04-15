@@ -47,17 +47,19 @@ export type IconButtonVariant = 'ghost' | 'soft';
       justify-content: center;
       position: relative;
       border: none;
-      border-radius: 9px;
+      border-radius: var(--radius-md);
       background: var(--icon-button-bg);
       color: var(--icon-button-color);
       cursor: pointer;
-      transition: background 200ms ease, color 200ms ease, transform 200ms ease;
+      box-shadow: var(--shadow-xs);
+      transition: background 200ms ease, color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
     }
 
     .icon-button:hover:not(:disabled) {
       background: var(--icon-button-hover-bg);
       color: var(--icon-button-hover-color);
       transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
     }
 
     .icon-button:active:not(:disabled) {
@@ -65,7 +67,7 @@ export type IconButtonVariant = 'ghost' | 'soft';
     }
 
     .icon-button:focus-visible {
-      outline: 2px solid rgba(59, 130, 246, 0.24);
+      outline: 2px solid var(--ring-color);
       outline-offset: 2px;
     }
 
@@ -83,13 +85,13 @@ export type IconButtonVariant = 'ghost' | 'soft';
       height: 18px;
       padding: 0 5px;
       border-radius: 999px;
-      background: #ef4444;
+      background: var(--danger);
       color: white;
       font-size: 10px;
       font-weight: 700;
       line-height: 18px;
       text-align: center;
-      box-shadow: 0 0 0 2px var(--color-surface);
+      box-shadow: 0 0 0 2px var(--surface-color);
     }
 
     .icon-button__dot {
@@ -99,8 +101,8 @@ export type IconButtonVariant = 'ghost' | 'soft';
       width: 8px;
       height: 8px;
       border-radius: 999px;
-      background: #ef4444;
-      box-shadow: 0 0 0 2px var(--color-surface);
+      background: var(--danger);
+      box-shadow: 0 0 0 2px var(--surface-color);
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -131,41 +133,41 @@ export class IconButtonComponent {
 
   buttonVars = computed(() => {
     const sizeMap: Record<IconButtonSize, string> = {
-      sm: '36px',
+      sm: '34px',
       md: '40px',
-      lg: '48px',
+      lg: '44px',
     };
 
     const toneMap: Record<Exclude<IconTone, 'current'>, string> = {
-      primary: '#3B82F6',
-      secondary: 'var(--color-text-sub)',
-      success: '#10B981',
-      warning: '#F59E0B',
-      danger: '#EF4444',
-      info: '#0EA5E9',
-      muted: 'var(--color-text-dim)',
+      primary: 'var(--primary)',
+      secondary: 'var(--text-secondary)',
+      success: 'var(--success)',
+      warning: 'var(--warning)',
+      danger: 'var(--danger)',
+      info: 'var(--info)',
+      muted: 'var(--text-muted)',
     };
 
     const tone = toneMap[this.tone()];
     const inactiveColor = this.tone() === 'secondary' || this.tone() === 'muted'
-      ? 'var(--color-text-sub)'
+      ? 'var(--text-secondary)'
       : tone;
     const hoverColor = this.tone() === 'secondary' || this.tone() === 'muted'
-      ? 'var(--color-text)'
+      ? 'var(--text-primary)'
       : tone;
     const baseBackground = this.variant() === 'soft'
-      ? 'var(--color-bg-raised)'
+      ? 'var(--background-color)'
       : 'transparent';
     const hoverBackground = this.variant() === 'soft'
-      ? 'var(--color-border)'
-      : 'var(--color-bg-raised)';
+      ? 'var(--border-subtle)'
+      : 'var(--background-color)';
 
     return {
       '--icon-button-size': sizeMap[this.size()],
-      '--icon-button-bg': this.active() ? 'var(--color-gold-faint)' : baseBackground,
-      '--icon-button-hover-bg': this.active() ? 'var(--color-gold-faint)' : hoverBackground,
-      '--icon-button-color': this.active() ? 'var(--color-text)' : inactiveColor,
-      '--icon-button-hover-color': this.active() ? 'var(--color-text)' : hoverColor,
+      '--icon-button-bg': this.active() ? 'var(--primary-50)' : baseBackground,
+      '--icon-button-hover-bg': this.active() ? 'var(--primary-100)' : hoverBackground,
+      '--icon-button-color': this.active() ? 'var(--primary-700)' : inactiveColor,
+      '--icon-button-hover-color': this.active() ? 'var(--primary-800)' : hoverColor,
     };
   });
 

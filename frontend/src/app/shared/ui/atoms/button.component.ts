@@ -95,11 +95,11 @@ export class ButtonComponent {
   buttonClasses = computed(() => {
     const baseClasses = [
       'inline-flex items-center justify-center gap-2',
-      'font-semibold',
+      'font-medium',
       'transition-all duration-200 ease-smooth',
       'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
       'disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none',
-      'active:scale-[0.98]',
+      'active:scale-[0.97]',
     ].join(' ');
 
     const variantClasses: Record<ButtonVariant, string> = {
@@ -108,16 +108,16 @@ export class ButtonComponent {
         'hover:bg-primary-700',
         'focus-visible:ring-primary-500',
         'shadow-button hover:shadow-button-hover',
-        'dark:bg-primary-500 dark:hover:bg-primary-600',
+        'dark:bg-primary-500 dark:hover:bg-primary-400',
       ].join(' '),
       secondary: [
-        'bg-white text-secondary-700',
-        'border border-border-color',
-        'hover:bg-secondary-50 hover:border-secondary-300',
-        'focus-visible:ring-secondary-500',
-        'shadow-button hover:shadow-button-hover',
-        'dark:bg-secondary-800 dark:text-secondary-200 dark:border-secondary-600',
-        'dark:hover:bg-secondary-700',
+        'bg-primary-50 text-primary-700',
+        'border border-primary-100',
+        'hover:bg-primary-100 hover:border-primary-200',
+        'focus-visible:ring-primary-500',
+        'shadow-xs',
+        'dark:bg-primary-950/40 dark:text-primary-200 dark:border-primary-900/50',
+        'dark:hover:bg-primary-900/40',
       ].join(' '),
       success: [
         'bg-success-600 text-white',
@@ -139,9 +139,9 @@ export class ButtonComponent {
       ].join(' '),
       ghost: [
         'bg-transparent text-secondary-700',
-        'hover:bg-secondary-100',
-        'focus-visible:ring-secondary-500',
-        'dark:text-secondary-300 dark:hover:bg-secondary-800',
+        'hover:bg-secondary-100 hover:text-text-primary',
+        'focus-visible:ring-primary-500',
+        'dark:text-secondary-300 dark:hover:bg-secondary-800 dark:hover:text-white',
       ].join(' '),
       link: [
         'bg-transparent text-primary-600',
@@ -154,9 +154,9 @@ export class ButtonComponent {
 
     const sizeClasses: Record<ButtonSize, string> = {
       xs: 'px-2.5 py-1 text-xs rounded-sm min-h-[28px]',
-      sm: 'px-3 py-1.5 text-sm rounded-sm min-h-[32px]',
+      sm: 'px-3 py-1.5 text-sm rounded-md min-h-[34px]',
       md: 'px-4 py-2 text-sm rounded-md min-h-[40px]',
-      lg: 'px-6 py-3 text-base rounded-md min-h-[48px]',
+      lg: 'px-5 py-2.5 text-base rounded-md min-h-[44px]',
     };
 
     return [

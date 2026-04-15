@@ -68,13 +68,13 @@ export class IconComponent {
 
   iconColor(): string {
     const toneMap: Record<IconTone, string> = {
-      primary: '#3B82F6',
-      secondary: 'var(--color-text-sub)',
-      success: '#10B981',
-      warning: '#F59E0B',
-      danger: '#EF4444',
-      info: '#0EA5E9',
-      muted: 'var(--color-text-dim)',
+      primary: 'var(--primary)',
+      secondary: 'var(--text-secondary)',
+      success: 'var(--success)',
+      warning: 'var(--warning)',
+      danger: 'var(--danger)',
+      info: 'var(--info)',
+      muted: 'var(--text-muted)',
       current: 'currentColor',
     };
 

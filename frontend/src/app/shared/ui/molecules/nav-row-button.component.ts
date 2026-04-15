@@ -62,7 +62,7 @@ import { IconComponent } from '../atoms/icon.component';
     }
 
     .nav-row-button:focus-visible {
-      outline: 2px solid rgba(59, 130, 246, 0.24);
+      outline: 2px solid var(--ring-color);
       outline-offset: -2px;
     }
 
@@ -92,7 +92,7 @@ import { IconComponent } from '../atoms/icon.component';
       font-size: 11px;
       font-weight: 700;
       padding: 2px 6px;
-      border-radius: 9px;
+      border-radius: var(--radius-full);
       flex-shrink: 0;
     }
   `],

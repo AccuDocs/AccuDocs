@@ -23,12 +23,12 @@ import { ToastContainerComponent } from '@shared/components/toast-container/toas
       <app-header></app-header>
 
       <!-- Main Content Wrapper -->
-      <div class="flex flex-col min-h-screen" style="margin-left: 80px;">
+      <div class="flex flex-col min-h-screen" style="margin-left: var(--sidebar-width);">
         <!-- Content Area — offset for fixed header -->
         <main
           id="main-content"
           class="flex-1 transition-all duration-300"
-          style="padding-top: calc(80px + 24px); padding-left: 24px; padding-right: 24px; padding-bottom: 24px;"
+          style="padding-top: calc(var(--header-height) + 24px); padding-left: 24px; padding-right: 24px; padding-bottom: 24px;"
         >
           <div class="w-full">
             <router-outlet></router-outlet>
@@ -48,7 +48,7 @@ import { ToastContainerComponent } from '@shared/components/toast-container/toas
       :host main {
         padding-left: 16px !important;
         padding-right: 16px !important;
-        padding-top: calc(80px + 16px) !important;
+        padding-top: calc(var(--header-height) + 16px) !important;
         padding-bottom: 16px !important;
       }
     }
@@ -56,7 +56,7 @@ import { ToastContainerComponent } from '@shared/components/toast-container/toas
       :host main {
         padding-left: 12px !important;
         padding-right: 12px !important;
-        padding-top: calc(80px + 12px) !important;
+        padding-top: calc(var(--header-height) + 12px) !important;
         padding-bottom: 12px !important;
       }
     }

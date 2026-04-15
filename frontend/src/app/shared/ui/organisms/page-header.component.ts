@@ -22,7 +22,7 @@ export interface PageAction {
   standalone: true,
   imports: [CommonModule, RouterLink, ButtonComponent, SearchBarComponent],
   template: `
-    <header class="mb-8">
+    <header class="mb-6">
       <!-- Breadcrumbs -->
       @if (breadcrumbs().length) {
         <nav aria-label="Breadcrumb" class="mb-4">
@@ -57,11 +57,11 @@ export interface PageAction {
       <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <!-- Title Section -->
         <div class="min-w-0 flex-1">
-          <h1 class="text-2xl font-bold text-text-primary tracking-tight">
+          <h1 class="text-[22px] leading-7 font-semibold text-text-primary tracking-tight">
             {{ title() }}
           </h1>
           @if (subtitle()) {
-            <p class="mt-1 text-text-secondary">{{ subtitle() }}</p>
+            <p class="mt-1 text-sm text-text-secondary">{{ subtitle() }}</p>
           }
 
           <!-- Stats / Tags -->
@@ -89,7 +89,7 @@ export interface PageAction {
 
       <!-- Filters / Search Row -->
       @if (showFilters() || showSearch()) {
-        <div class="mt-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div class="mt-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <!-- Search -->
           @if (showSearch()) {
             <div class="w-full sm:w-80">

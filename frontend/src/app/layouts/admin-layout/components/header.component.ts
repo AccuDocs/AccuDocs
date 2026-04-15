@@ -11,19 +11,18 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
   imports: [CommonModule, IconComponent, IconButtonComponent],
   template: `
     <header
-      class="fixed top-0 right-0 h-20 flex items-center justify-between px-10 z-header transition-all duration-300"
-      style="left: 80px; background: rgba(255,255,255,0.7); backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid var(--border-color);"
+      class="fixed top-0 right-0 flex items-center justify-between px-6 lg:px-8 z-header transition-all duration-300"
+      style="left: var(--sidebar-width); height: var(--header-height); background: var(--surface-overlay); backdrop-filter: blur(16px) saturate(160%); border-bottom: 1px solid var(--border-color);"
     >
 
       <!-- Search Bar -->
       <div class="flex-1 max-w-[400px] hidden md:block">
         <div class="relative group">
           <div
-            class="relative flex items-center h-[42px] rounded-full transition-all duration-200"
-            [ngClass]="searchFocused ? 'bg-white ring-2' : ''"
-            [style.background]="searchFocused ? '#ffffff' : '#f1f5f9'"
-            [style.border]="searchFocused ? '1px solid #0074c9' : '1px solid transparent'"
-            [style.box-shadow]="searchFocused ? '0 0 0 3px rgba(0, 116, 201, 0.12)' : 'none'"
+            class="relative flex items-center h-10 rounded-md border transition-all duration-200"
+            [style.background]="searchFocused ? 'var(--surface-color)' : 'var(--background-color)'"
+            [style.border-color]="searchFocused ? 'var(--primary)' : 'transparent'"
+            [style.box-shadow]="searchFocused ? '0 0 0 3px var(--ring-color)' : 'var(--shadow-xs)'"
           >
             <!-- Icon -->
             <div class="pl-[14px] flex items-center">
@@ -39,7 +38,7 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
             <input
               type="text"
               placeholder="Search anything..."
-              class="flex-1 h-full pl-3 pr-4 border-none bg-transparent text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none text-sm font-medium"
+              class="flex-1 h-full pl-3 pr-4 border-none bg-transparent text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none text-sm"
               (focus)="searchFocused = true"
               (blur)="searchFocused = false"
               id="global-search-input"
@@ -50,13 +49,13 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
               class="pr-3 flex items-center gap-1 transition-opacity duration-200"
               [style.opacity]="searchFocused ? '0' : '1'"
             >
-              <kbd class="hidden sm:inline-flex items-center text-[11px] font-semibold text-slate-500 rounded-md border border-slate-300/50"
-                style="background: #e2e8f0; font-family: var(--font-mono); padding: 2px 6px;"
+              <kbd class="hidden sm:inline-flex items-center text-[11px] font-medium text-slate-500 rounded-md border border-slate-300/60"
+                style="background: var(--background-color); font-family: var(--font-mono); padding: 2px 6px;"
               >
                 Ctrl
               </kbd>
-              <kbd class="hidden sm:inline-flex items-center text-[11px] font-semibold text-slate-500 rounded-md border border-slate-300/50"
-                style="background: #e2e8f0; font-family: var(--font-mono); padding: 2px 6px;"
+              <kbd class="hidden sm:inline-flex items-center text-[11px] font-medium text-slate-500 rounded-md border border-slate-300/60"
+                style="background: var(--background-color); font-family: var(--font-mono); padding: 2px 6px;"
               >
                 K
               </kbd>
@@ -89,14 +88,14 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
         />
 
         <!-- Divider -->
-        <div class="h-8 w-px mx-2" style="background: var(--border-color);"></div>
+        <div class="h-7 w-px mx-1.5" style="background: var(--border-color);"></div>
 
         <!-- Profile Dropdown -->
         <div class="relative">
           <button
             (click)="userMenuOpen.set(!userMenuOpen())"
-            class="w-12 h-12 rounded-[9px] flex items-center justify-center text-white font-extrabold text-base transition-all duration-200 hover:ring-[3px] hover:ring-[rgba(0,116,201,0.2)]"
-            style="background: linear-gradient(135deg, #0074c9 0%, #005fa3 100%);"
+            class="w-10 h-10 rounded-lg flex items-center justify-center text-white font-semibold text-sm transition-all duration-200"
+            style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-700) 100%); box-shadow: 0 10px 20px -12px rgba(79, 70, 229, 0.55);"
             aria-haspopup="true"
             [attr.aria-expanded]="userMenuOpen()"
           >
@@ -106,8 +105,8 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
           <!-- Dropdown Panel -->
           @if (userMenuOpen()) {
             <div
-              class="absolute top-full right-0 mt-2 w-60 rounded-[9px] border overflow-hidden z-50"
-              style="background: var(--surface-color); border-color: var(--border-color); box-shadow: 0 20px 40px -8px rgba(0,0,0,0.15);"
+              class="absolute top-full right-0 mt-2 w-60 rounded-xl border overflow-hidden z-50"
+              style="background: var(--surface-color); border-color: var(--border-color); box-shadow: var(--shadow-dropdown);"
               role="menu"
             >
               <!-- User Info Header -->
@@ -115,12 +114,12 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
                 <div class="flex items-center gap-3 px-1">
                   <div
                     class="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0"
-                    style="background: linear-gradient(135deg, #0074c9 0%, #005fa3 100%);"
+                    style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-700) 100%);"
                   >
                     {{ authService.currentUser()?.name?.charAt(0) }}
                   </div>
                   <div class="min-w-0">
-                    <p class="text-sm font-bold text-slate-900 dark:text-white truncate leading-tight">
+                    <p class="text-sm font-semibold text-slate-900 dark:text-white truncate leading-tight">
                       {{ authService.currentUser()?.name }}
                     </p>
                     <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-0.5">
@@ -134,7 +133,7 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
               <div class="p-2 space-y-1">
                 <!-- Profile -->
                 <button
-                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-[9px] text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                   role="menuitem"
                 >
                   <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
@@ -146,7 +145,7 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
                 <!-- Theme toggle -->
                 <button
                   (click)="themeService.toggleTheme()"
-                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-[9px] text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                   role="menuitem"
                 >
                   <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
@@ -162,7 +161,7 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
                 <!-- Logout -->
                 <button
                   (click)="authService.logout()"
-                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-[9px] text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   role="menuitem"
                 >
                   <div class="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">

@@ -62,7 +62,7 @@ import { MODULE_REGISTRY } from '../../core/module-registry';
           [style.color]="
             nav.activeModule() === module.id ? getModuleHubColor(module) : 'inherit'
           "
-          class="hover:border-gold-500"
+          class="hover:border-primary-200"
         >
           <span>{{ module.icon }}</span>
           <span style="font-weight: 500;">{{ module.label }}</span>
@@ -105,7 +105,7 @@ import { MODULE_REGISTRY } from '../../core/module-registry';
           white-space: nowrap;
           flex-shrink: 0;
         "
-        class="hover:border-gold-500"
+        class="hover:border-primary-200"
       >
         <span>⊞</span>
         <span style="font-weight: 500;">All Modules ({{ totalModules }})</span>

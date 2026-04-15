@@ -35,20 +35,20 @@ module.exports = {
       // COLOR TOKENS
       // ==========================================
       colors: {
-        // Primary Brand Colors - Professional Blue
+        // Primary Brand Colors - Indigo SaaS
         primary: {
-          50: '#f0f7ff',
-          100: '#e0f0fe',
-          200: '#b9e0fe',
-          300: '#7cc8fd',
-          400: '#36adf9',
-          500: '#0c93eb',
-          600: '#0074c9',
-          700: '#015da3',
-          800: '#064e86',
-          900: '#0b426f',
-          950: '#072a4a',
-          DEFAULT: '#0074c9',
+          50: '#eef2ff',
+          100: '#e0e7ff',
+          200: '#c7d2fe',
+          300: '#a5b4fc',
+          400: '#818cf8',
+          500: '#6366f1',
+          600: '#4f46e5',
+          700: '#4338ca',
+          800: '#3730a3',
+          900: '#312e81',
+          950: '#1e1b4b',
+          DEFAULT: '#4f46e5',
         },
         // Secondary Colors - Neutral Slate
         secondary: {
@@ -92,7 +92,7 @@ module.exports = {
           800: '#92400e',
           900: '#78350f',
           950: '#451a03',
-          DEFAULT: '#d97706',
+          DEFAULT: '#f59e0b',
         },
         danger: {
           50: '#fef2f2',
@@ -145,14 +145,14 @@ module.exports = {
       },
       fontSize: {
         'xs': ['12px', { lineHeight: '16px', letterSpacing: '0.03em' }],
-        'sm': ['14px', { lineHeight: '20px', letterSpacing: '0.01em' }],
-        'base': ['16px', { lineHeight: '24px', letterSpacing: '0' }],
-        'lg': ['18px', { lineHeight: '28px', letterSpacing: '-0.01em' }],
-        'xl': ['20px', { lineHeight: '28px', letterSpacing: '-0.01em' }],
-        '2xl': ['24px', { lineHeight: '32px', letterSpacing: '-0.02em' }],
-        '3xl': ['30px', { lineHeight: '36px', letterSpacing: '-0.02em' }],
+        'sm': ['13px', { lineHeight: '18px', letterSpacing: '0.01em' }],
+        'base': ['14px', { lineHeight: '20px', letterSpacing: '0' }],
+        'lg': ['16px', { lineHeight: '24px', letterSpacing: '0' }],
+        'xl': ['18px', { lineHeight: '26px', letterSpacing: '-0.01em' }],
+        '2xl': ['22px', { lineHeight: '30px', letterSpacing: '-0.02em' }],
+        '3xl': ['28px', { lineHeight: '36px', letterSpacing: '-0.02em' }],
         '4xl': ['36px', { lineHeight: '40px', letterSpacing: '-0.02em' }],
-        '5xl': ['48px', { lineHeight: '1', letterSpacing: '-0.02em' }],
+        '5xl': ['44px', { lineHeight: '48px', letterSpacing: '-0.02em' }],
         'display': ['56px', { lineHeight: '1', letterSpacing: '-0.02em' }],
       },
 
@@ -161,14 +161,14 @@ module.exports = {
       // ==========================================
       borderRadius: {
         'none': '0',
-        'DEFAULT': '9px',
-        'xs': '9px',
-        'sm': '9px',
-        'md': '9px',
-        'lg': '9px',
-        'xl': '9px',
-        '2xl': '9px',
-        '3xl': '9px',
+        'DEFAULT': '10px',
+        'xs': '4px',
+        'sm': '6px',
+        'md': '10px',
+        'lg': '12px',
+        'xl': '16px',
+        '2xl': '20px',
+        '3xl': '24px',
         'full': '9999px',
       },
 
@@ -177,26 +177,26 @@ module.exports = {
       // ==========================================
       boxShadow: {
         'none': 'none',
-        'xs': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-        'sm': '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-        'DEFAULT': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-        'md': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-        'lg': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-        'xl': '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-        '2xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
+        'xs': '0 1px 2px rgba(15, 23, 42, 0.05)',
+        'sm': '0 1px 2px rgba(15, 23, 42, 0.05)',
+        'DEFAULT': '0 4px 12px rgba(15, 23, 42, 0.05)',
+        'md': '0 4px 12px rgba(15, 23, 42, 0.05)',
+        'lg': '0 10px 25px rgba(15, 23, 42, 0.08)',
+        'xl': '0 18px 40px rgba(15, 23, 42, 0.12)',
+        '2xl': '0 24px 56px rgba(15, 23, 42, 0.16)',
         // Component-specific shadows
-        'card': '0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.05)',
-        'card-hover': '0 10px 25px -5px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.05)',
-        'dropdown': '0 10px 40px -8px rgb(0 0 0 / 0.15), 0 4px 16px -4px rgb(0 0 0 / 0.1)',
-        'modal': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
-        'button': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-        'button-hover': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+        'card': '0 4px 12px rgba(15, 23, 42, 0.05)',
+        'card-hover': '0 10px 25px rgba(15, 23, 42, 0.08)',
+        'dropdown': '0 10px 25px rgba(15, 23, 42, 0.08)',
+        'modal': '0 18px 50px rgba(15, 23, 42, 0.18)',
+        'button': '0 1px 2px rgba(15, 23, 42, 0.05)',
+        'button-hover': '0 4px 12px rgba(15, 23, 42, 0.08)',
         'input-focus': '0 0 0 3px var(--ring-color)',
         'inner': 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
         // Primary color shadows for emphasis
-        'primary': '0 4px 14px 0 rgb(0 116 201 / 0.4)',
-        'success': '0 4px 14px 0 rgb(22 163 74 / 0.4)',
-        'danger': '0 4px 14px 0 rgb(220 38 38 / 0.4)',
+        'primary': '0 10px 20px -10px rgba(79, 70, 229, 0.45)',
+        'success': '0 10px 20px -10px rgba(22, 163, 74, 0.4)',
+        'danger': '0 10px 20px -10px rgba(220, 38, 38, 0.4)',
       },
 
       // ==========================================
@@ -329,7 +329,7 @@ module.exports = {
         'modal-xl': '900px',
       },
       minHeight: {
-        'screen-safe': 'calc(100vh - 80px)',
+        'screen-safe': 'calc(100vh - 60px)',
       },
 
       // ==========================================

@@ -133,7 +133,7 @@ export class SearchBarComponent {
       md: 'w-5 h-5',
       lg: 'w-5 h-5',
     };
-    return `${sizeMap[this.size()]} text-secondary-400`;
+    return `${sizeMap[this.size()]} text-text-muted`;
   });
 
   inputClasses = computed(() => {
@@ -141,18 +141,19 @@ export class SearchBarComponent {
       'block w-full',
       'pl-10',
       'border border-border-color',
-      'bg-surface-color',
+      'bg-secondary-50',
       'text-text-primary placeholder:text-text-muted',
+      'shadow-xs',
       'transition-all duration-200',
-      'focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500',
+      'focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-600',
       'disabled:bg-secondary-50 disabled:cursor-not-allowed',
       'dark:bg-secondary-800 dark:border-secondary-700',
     ].join(' ');
 
     const sizeClasses: Record<SearchBarSize, string> = {
-      sm: 'py-1.5 text-sm rounded-md pr-8',
-      md: 'py-2.5 text-sm rounded-lg pr-10',
-      lg: 'py-3 text-base rounded-lg pr-12',
+      sm: 'py-1.5 text-sm rounded-sm pr-8',
+      md: 'py-2 text-sm rounded-sm pr-10',
+      lg: 'py-2.5 text-base rounded-sm pr-12',
     };
 
     return `${baseClasses} ${sizeClasses[this.size()]}`;
@@ -163,12 +164,12 @@ export class SearchBarComponent {
       'shrink-0',
       'px-4 py-2',
       'bg-primary-600 text-white',
-      'rounded-lg',
+      'rounded-md',
       'font-medium text-sm',
       'hover:bg-primary-700',
-      'focus:outline-none focus:ring-2 focus:ring-primary-200',
+      'focus:outline-none focus:ring-2 focus:ring-primary-100',
       'disabled:opacity-50 disabled:cursor-not-allowed',
-      'transition-colors duration-200',
+      'shadow-button hover:shadow-primary transition-all duration-200',
     ].join(' ');
 
     return baseClasses;

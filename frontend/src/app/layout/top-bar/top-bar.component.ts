@@ -14,9 +14,10 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
     <header
       class="top-bar"
       style="
-        height: 52px;
-        background: var(--color-bg-raised);
+        height: var(--header-height);
+        background: var(--surface-overlay);
         border-bottom: 1px solid var(--color-border);
+        backdrop-filter: blur(14px) saturate(160%);
         display: flex;
         align-items: center;
         padding: 0 24px;
@@ -46,9 +47,9 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
           flex: 0.8;
           max-width: 400px;
           min-width: 200px;
-          background: var(--color-surface);
+          background: var(--background-color);
           border: 1px solid var(--color-border);
-          border-radius: 9px;
+          border-radius: var(--radius-sm);
           padding: 8px 12px;
           color: var(--color-text-sub);
           font-size: 13px;
@@ -59,7 +60,7 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
           cursor: pointer;
           transition: all 0.2s;
         "
-        class="hover:border-gold-500"
+        class="hover:border-primary-200"
       >
         <span style="display: flex; align-items: center; gap: 6px;">
           <app-icon name="heroMagnifyingGlassSolid" size="sm" tone="secondary" />
@@ -69,10 +70,10 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
           style="
             background: var(--color-border);
             padding: 2px 6px;
-            border-radius: 9px;
+            border-radius: var(--radius-sm);
             font-size: 11px;
             color: var(--color-text-dim);
-            font-weight: 600;
+            font-weight: 500;
           "
         >
           ⌘K
@@ -88,8 +89,9 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
             align-items: center;
             gap: 6px;
             padding: 4px 12px;
-            border-radius: 9px;
-            background: var(--color-surface);
+            border-radius: var(--radius-full);
+            background: var(--success-bg);
+            border: 1px solid var(--success-border);
             font-size: 12px;
             color: var(--color-text-sub);
           "
@@ -99,7 +101,7 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
               width: 6px;
               height: 6px;
               border-radius: 50%;
-              background: #3D9E6A;
+              background: var(--success);
             "
           ></span>
           WA Connected
@@ -126,20 +128,20 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
               gap: 8px;
               background: transparent;
               border: 1px solid var(--color-border);
-              border-radius: 9px;
+              border-radius: var(--radius-md);
               padding: 2px 12px 2px 2px;
               cursor: pointer;
               transition: all 0.2s;
             "
-            class="hover:border-gold-500"
+            class="hover:border-primary-200"
           >
             <div
               style="
                 width: 28px;
                 height: 28px;
                 border-radius: 50%;
-                background: var(--color-gold);
-                color: var(--color-bg);
+                background: var(--primary);
+                color: white;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -165,8 +167,8 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
                 width: 200px;
                 background: var(--color-surface);
                 border: 1px solid var(--color-border);
-                border-radius: 9px;
-                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+                border-radius: var(--radius-xl);
+                box-shadow: var(--shadow-dropdown);
                 z-index: 50;
                 overflow: hidden;
               "
@@ -192,7 +194,7 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
                     font-size: 13px;
                     font-weight: 500;
                     cursor: pointer;
-                    border-radius: 9px;
+                    border-radius: var(--radius-md);
                     display: flex;
                     align-items: center;
                     gap: 8px;

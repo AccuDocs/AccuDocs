@@ -165,8 +165,9 @@ export class TextareaComponent implements ControlValueAccessor {
   textareaClasses = computed(() => {
     const baseClasses = [
       'block w-full',
-      'rounded-md border',
+      'rounded-sm border bg-surface-color text-text-primary',
       'font-normal',
+      'shadow-xs',
       'transition-all duration-200',
       'placeholder:text-text-muted',
       'focus:outline-none focus:ring-2 focus:ring-offset-0',
@@ -176,13 +177,13 @@ export class TextareaComponent implements ControlValueAccessor {
 
     const sizeClasses: Record<TextareaSize, string> = {
       sm: 'px-3 py-1.5 text-sm',
-      md: 'px-4 py-2.5 text-sm',
-      lg: 'px-4 py-3 text-base',
+      md: 'px-3 py-2 text-sm',
+      lg: 'px-4 py-2.5 text-base',
     };
 
     const stateClasses = this.hasError()
-      ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-200 dark:border-danger-600'
-      : 'border-border-color focus:border-primary-500 focus:ring-primary-200 dark:border-secondary-600';
+      ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-100 dark:border-danger-600'
+      : 'border-border-color hover:border-secondary-300 focus:border-primary-600 focus:ring-primary-100 dark:border-secondary-600 dark:focus:border-primary-400';
 
     const resizeClasses: Record<string, string> = {
       none: 'resize-none',
