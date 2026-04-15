@@ -4,9 +4,12 @@ import { RouterModule } from '@angular/router';
 import { NavigationService } from '../../core/navigation.service';
 import { AuthService } from '../../core/services/auth.service';
 import {
+  ClientWorkspaceContextService,
+  ClientWorkspaceShortcutTab,
+} from '../../core/services/client-workspace-context.service';
+import {
   getHubModules,
   groupModulesByStatus,
-  findHub,
 } from '../../core/module-registry';
 
 @Component({
@@ -136,6 +139,69 @@ import {
                   </span>
                 }
               </button>
+              @if (showClientWorkspaceShortcuts(module.id)) {
+                <div
+                  style="
+                    padding: 6px 0 12px 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                  "
+                >
+                  <div
+                    style="
+                      font-size: 10px;
+                      font-weight: 700;
+                      letter-spacing: 0.08em;
+                      text-transform: uppercase;
+                      color: var(--color-text-dim);
+                      padding: 4px 16px 4px 44px;
+                    "
+                  >
+                    Workspace
+                  </div>
+                  @for (shortcut of clientWorkspaceTabs; track shortcut.tab) {
+                    <button
+                      (click)="openClientWorkspaceTab(shortcut.tab)"
+                      style="
+                        width: 100%;
+                        padding: 10px 16px 10px 28px;
+                        text-align: left;
+                        background: transparent;
+                        border: none;
+                        cursor: pointer;
+                        color: var(--color-text);
+                        font-size: 13px;
+                        font-size: 14px;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        border-left: 3px solid transparent;
+                        transition: all 0.2s;
+                      "
+                      [style.background]="
+                        isClientWorkspaceTabActive(shortcut.tab)
+                          ? 'var(--color-gold-faint)'
+                          : 'transparent'
+                      "
+                      [style.border-left-color]="
+                        isClientWorkspaceTabActive(shortcut.tab)
+                          ? getHubColor()
+                          : 'transparent'
+                      "
+                      [style.color]="
+                        isClientWorkspaceTabActive(shortcut.tab)
+                          ? 'var(--color-text)'
+                          : 'var(--color-text-sub)'
+                      "
+                      class="hover:bg-gray-900"
+                    >
+                      <span>{{ shortcut.icon }}</span>
+                      <span class="flex-1">{{ shortcut.label }}</span>
+                    </button>
+                  }
+                </div>
+              }
             }
           </div>
         }
@@ -304,8 +370,12 @@ import {
 export class ModuleSidebarComponent {
   nav = inject(NavigationService);
   authService = inject(AuthService);
+  private workspaceContext = inject(ClientWorkspaceContextService);
 
   hubData = this.nav.activeHubData;
+  clientWorkspaceTabs = this.workspaceContext.workspaceTabs;
+  hasActiveClientSelection = this.workspaceContext.hasActiveClientSelection;
+  selectedWorkspaceTab = this.workspaceContext.selectedWorkspaceTab;
 
   grouped = computed(() => {
     const modules = getHubModules(this.nav.activeHub());
@@ -314,5 +384,19 @@ export class ModuleSidebarComponent {
 
   getHubColor(): string {
     return this.nav.activeHubData()?.color || '#C9943A';
+  }
+
+  showClientWorkspaceShortcuts(moduleId: string): boolean {
+    return this.nav.activeHub() === 'clients'
+      && moduleId === 'clients_user_client'
+      && this.hasActiveClientSelection();
+  }
+
+  openClientWorkspaceTab(tab: ClientWorkspaceShortcutTab): void {
+    this.workspaceContext.openWorkspaceTab(tab);
+  }
+
+  isClientWorkspaceTabActive(tab: ClientWorkspaceShortcutTab): boolean {
+    return this.selectedWorkspaceTab() === tab;
   }
 }

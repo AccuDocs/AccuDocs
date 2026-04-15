@@ -44,6 +44,7 @@ import { PreviewPaneComponent } from '../../file-explorer/components/preview-pan
 import { ViewPreferenceService } from '../../file-explorer/services/view-preference.service';
 import { FileItem } from '../../file-explorer/models/file-explorer.models';
 import { MatIconModule } from '@angular/material/icon';
+import { ClientWorkspaceContextService } from '@core/services/client-workspace-context.service';
 import { ChecklistsComponent } from '../components/checklists/checklists.component';
 import { ClientDeadlinesComponent } from '../components/client-deadlines/client-deadlines.component';
 import { DataModuleComponent } from '../components/data-module/data-module.component';
@@ -153,7 +154,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
       <!-- Workspace Tabs -->
       <div class="flex items-center gap-6 border-b border-gray-200 dark:border-gray-700 mb-6 px-2">
         <button 
-          (click)="activeTab.set('files')"
+          (click)="setActiveTab('files')"
           class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
           [class]="activeTab() === 'files' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
         >
@@ -161,7 +162,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
           Files
         </button>
         <button 
-          (click)="activeTab.set('checklists')"
+          (click)="setActiveTab('checklists')"
           class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
           [class]="activeTab() === 'checklists' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
         >
@@ -169,7 +170,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
           Checklists
         </button>
         <button 
-          (click)="activeTab.set('deadlines')"
+          (click)="setActiveTab('deadlines')"
           class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
           [class]="activeTab() === 'deadlines' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
         >
@@ -177,7 +178,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
           Deadlines
         </button>
         <button 
-          (click)="activeTab.set('data')"
+          (click)="setActiveTab('data')"
           class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
           [class]="activeTab() === 'data' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
         >
@@ -185,7 +186,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
           Data
         </button>
         <button 
-          (click)="activeTab.set('gst')"
+          (click)="setActiveTab('gst')"
           class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
           [class]="activeTab() === 'gst' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
         >
@@ -193,7 +194,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
           GST Filing
         </button>
         <button 
-          (click)="activeTab.set('dashboard')"
+          (click)="setActiveTab('dashboard')"
           class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
           [class]="activeTab() === 'dashboard' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
         >
@@ -655,6 +656,7 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private workspaceService = inject(WorkspaceService);
+  private workspaceContext = inject(ClientWorkspaceContextService);
   private toast = inject(ToastService);
   private sanitizer = inject(DomSanitizer);
   public viewService = inject(ViewPreferenceService);
@@ -764,12 +766,12 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   }
 
   onFolderNavigationRequested(folderId: string) {
-    this.activeTab.set('files');
+    this.setActiveTab('files');
     this.navigateToFolder(folderId);
   }
 
   onTabChangeRequested(tab: any) {
-    this.activeTab.set(tab as WorkspaceTab);
+    this.setActiveTab(tab as WorkspaceTab);
   }
 
   // State
@@ -803,6 +805,14 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
 
   // Tab state
   activeTab = signal<WorkspaceTab>('files');
+  private readonly workspaceTabs: readonly WorkspaceTab[] = [
+    'files',
+    'checklists',
+    'deadlines',
+    'data',
+    'gst',
+    'dashboard',
+  ];
 
   // Modal states aggregation for overflow control
   private isAnyModalOpen = computed(() =>
@@ -826,10 +836,20 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    const clientId = this.route.snapshot.paramMap.get('clientId');
-    if (clientId) {
-      this.loadWorkspace(clientId);
-    }
+    this.route.paramMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((params) => {
+        const clientId = params.get('clientId');
+        if (clientId) {
+          this.loadWorkspace(clientId);
+        }
+      });
+
+    this.route.queryParamMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((params) => {
+        this.setActiveTab(this.parseTab(params.get('tab')), false);
+      });
   }
 
   ngOnDestroy() {
@@ -846,6 +866,7 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
+          this.workspaceContext.rememberClient(clientId);
           this.workspace.set(response.data);
           this.currentFolder.set(response.data.rootFolder);
           this.breadcrumbs.set([]);
@@ -857,6 +878,28 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
           this.toast.error('Failed to load workspace', error.message);
         }
       });
+  }
+
+  setActiveTab(tab: WorkspaceTab, syncUrl: boolean = true) {
+    this.activeTab.set(tab);
+
+    if (!syncUrl) {
+      return;
+    }
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab: tab === 'files' ? null : tab },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  private parseTab(tab: string | null): WorkspaceTab {
+    if (tab && this.workspaceTabs.includes(tab as WorkspaceTab)) {
+      return tab as WorkspaceTab;
+    }
+
+    return 'files';
   }
 
   refresh() {

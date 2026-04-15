@@ -185,6 +185,12 @@ export class NavigationService {
    * Called when user navigates via URL, back button, etc.
    */
   private syncRouteToState(url: string): void {
+    if (url.startsWith('/workspace/')) {
+      this.activeHub.set('clients');
+      this.activeModule.set('clients_user_client');
+      return;
+    }
+
     // Check if URL matches a module route
     const module = MODULE_REGISTRY.find(m => url.startsWith(m.route));
     if (module) {
