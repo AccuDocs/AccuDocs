@@ -260,6 +260,8 @@ export class InvoiceFormComponent {
     clientId: this.fb.nonNullable.control('', Validators.required),
     invoiceDate: this.fb.nonNullable.control(formatDateInput(new Date()), Validators.required),
     dueDate: this.fb.nonNullable.control(formatDateInput(this.addDays(new Date(), 30)), Validators.required),
+    expiryDate: this.fb.nonNullable.control(''),
+    invoiceType: this.fb.nonNullable.control<'tax_invoice' | 'proforma' | 'quotation'>('tax_invoice'),
     gstType: this.fb.nonNullable.control<GstType>('CGST_SGST'),
     clientGstin: this.fb.nonNullable.control(''),
     notes: this.fb.nonNullable.control(''),
@@ -484,6 +486,8 @@ export class InvoiceFormComponent {
         clientId: invoice.clientId,
         invoiceDate: isoDateFromValue(invoice.invoiceDate),
         dueDate: isoDateFromValue(invoice.dueDate),
+        invoiceType: (invoice as any).invoiceType || 'tax_invoice',
+        expiryDate: (invoice as any).expiryDate ? isoDateFromValue((invoice as any).expiryDate) : '',
         gstType: invoice.gstType,
         clientGstin: invoice.clientGstin ?? '',
         notes: invoice.notes ?? '',
@@ -604,11 +608,14 @@ export class InvoiceFormComponent {
 
   private buildDto(): CreateInvoiceDto {
     const rawValue = this.invoiceForm.getRawValue();
+    const isQuotation = rawValue.invoiceType === 'quotation';
 
     return {
       clientId: rawValue.clientId,
       invoiceDate: rawValue.invoiceDate,
       dueDate: rawValue.dueDate,
+      expiryDate: isQuotation && rawValue.expiryDate ? rawValue.expiryDate : undefined,
+      invoiceType: rawValue.invoiceType,
       notes: rawValue.notes || undefined,
       clientGstin: rawValue.clientGstin || undefined,
       gstType: rawValue.gstType,
@@ -619,7 +626,7 @@ export class InvoiceFormComponent {
         quantity: item.quantity ?? 0,
         unitRate: item.unitRate ?? 0,
       })),
-    };
+    } as any;
   }
 
   private addDays(date: Date, days: number): Date {

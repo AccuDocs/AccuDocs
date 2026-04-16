@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { BillingController } from '../controllers/BillingController';
+import { InvoiceTemplateController } from '../controllers/InvoiceTemplateController';
+import { PaymentLinkController } from '../controllers/PaymentLinkController';
 import { validate } from '../../../../middlewares/validate.middleware';
 import { CreateInvoiceSchema, UpdateInvoiceStatusSchema } from '../validators/billing.validators';
 import { authenticate } from '../../../../middlewares/auth.middleware';
@@ -10,155 +12,36 @@ const router = Router();
  * @openapi
  * tags:
  *   name: Billing
- *   description: Invoices and billing management
+ *   description: Invoices, templates, and payment link management
  */
 
 router.use(authenticate);
 
-/**
- * @openapi
- * /billing/invoices:
- *   post:
- *     tags: [Billing]
- *     summary: Create a new invoice
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *     responses:
- *       201:
- *         description: Invoice created successfully
- */
+// ─── Invoice CRUD ─────────────────────────────────────────────────────────────
 router.post('/invoices', validate(CreateInvoiceSchema), BillingController.createInvoice);
-
-/**
- * @openapi
- * /billing/invoices:
- *   get:
- *     tags: [Billing]
- *     summary: Get all invoices
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of invoices retrieved
- */
 router.get('/invoices', BillingController.getInvoices);
-
-/**
- * @openapi
- * /billing/invoices/{id}:
- *   get:
- *     tags: [Billing]
- *     summary: Get invoice by ID
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Invoice details retrieved
- */
 router.get('/invoices/:id', BillingController.getInvoiceById);
-
-/**
- * @openapi
- * /billing/invoices/{id}/pdf:
- *   get:
- *     tags: [Billing]
- *     summary: Generate and download invoice PDF
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: PDF file generated
- */
-router.get('/invoices/:id/pdf', BillingController.generatePdf);
-
-/**
- * @openapi
- * /billing/invoices/{id}/status:
- *   patch:
- *     tags: [Billing]
- *     summary: Update invoice status
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [status]
- *             properties:
- *               status:
- *                 type: string
- *     responses:
- *       200:
- *         description: Status updated successfully
- */
 router.patch('/invoices/:id/status', validate(UpdateInvoiceStatusSchema), BillingController.updateStatus);
 
-/**
- * @openapi
- * /billing/metrics:
- *   get:
- *     tags: [Billing]
- *     summary: Get billing metrics and statistics
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Metrics retrieved
- */
+// ─── Proforma → Tax Invoice Conversion ───────────────────────────────────────
+router.post('/invoices/:id/convert-to-tax', InvoiceTemplateController.convertToTax);
+
+// ─── PDF Generation (template-aware POST, legacy GET) ────────────────────────
+router.post('/invoices/:id/pdf', InvoiceTemplateController.generatePdf);
+router.get('/invoices/:id/pdf', BillingController.generatePdf);
+
+// ─── Payment Links ────────────────────────────────────────────────────────────
+router.post('/invoices/:id/payment-link', PaymentLinkController.generateLink);
+
+// ─── Invoice Templates ────────────────────────────────────────────────────────
+router.get('/templates', InvoiceTemplateController.getTemplates);
+router.get('/templates/:id', InvoiceTemplateController.getTemplateById);
+router.post('/templates', InvoiceTemplateController.createTemplate);
+router.patch('/templates/:id/set-default', InvoiceTemplateController.setDefault);
+
+// ─── Metrics & Reference Data ─────────────────────────────────────────────────
 router.get('/metrics', BillingController.getMetrics);
-
-/**
- * @openapi
- * /billing/service-templates:
- *   get:
- *     tags: [Billing]
- *     summary: Get available service templates for billing
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Service templates retrieved
- */
 router.get('/service-templates', BillingController.getServiceTemplates);
-
-/**
- * @openapi
- * /billing/recurring-templates:
- *   get:
- *     tags: [Billing]
- *     summary: Get recurring billing templates
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Recurring templates retrieved
- */
 router.get('/recurring-templates', BillingController.getRecurringTemplates);
 
 export default router;

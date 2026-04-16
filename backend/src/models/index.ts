@@ -32,6 +32,10 @@ import { ClientExpense } from './client-expense.model';
 import { GstReturn } from './gst-return.model';
 import { ValidationError } from './validation-error.model';
 import { ActivityLog } from './activity-log.model';
+import { InvoiceTemplate } from './invoice-template.model';
+import { HsnSac } from './hsn-sac.model';
+import { ItcLedger } from './itc-ledger.model';
+import { Gstr2aReconciliation } from './gstr2a-reconciliation.model';
 
 // Set up associations
 Organization.hasMany(User, { foreignKey: 'organizationId', as: 'users' });
@@ -91,6 +95,14 @@ ValidationError.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
 Client.hasMany(ActivityLog, { foreignKey: 'client_id', as: 'activityLogs' });
 ActivityLog.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
 
+// ITC Ledger associations
+Client.hasMany(ItcLedger, { foreignKey: 'client_id', as: 'itcLedgers' });
+ItcLedger.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
+
+// GSTR-2A Reconciliation associations
+Client.hasMany(Gstr2aReconciliation, { foreignKey: 'client_id', as: 'gstr2aReconciliations' });
+Gstr2aReconciliation.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
+
 export {
   Organization,
   User,
@@ -125,5 +137,9 @@ export {
   ClientExpense,
   GstReturn,
   ValidationError,
-  ActivityLog
+  ActivityLog,
+  InvoiceTemplate,
+  HsnSac,
+  ItcLedger,
+  Gstr2aReconciliation,
 };

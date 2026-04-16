@@ -7,14 +7,18 @@ export class Invoice extends Model {
   declare public clientId: string;
   declare public recurringTemplateId: string | null;
   
+  declare public invoiceType: 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
   declare public invoiceNumber: string;
   declare public status: 'draft' | 'issued' | 'partially_paid' | 'paid' | 'overdue' | 'cancelled';
   
   declare public invoiceDate: Date;
   declare public dueDate: Date;
+  declare public expiryDate: Date | null;
   declare public issuedAt: Date | null;
   declare public paidAt: Date | null;
   declare public cancelledAt: Date | null;
+  declare public paymentLinkToken: string | null;
+  declare public paymentLinkExpiresAt: Date | null;
   
   declare public gstType: 'CGST_SGST' | 'IGST';
   declare public placeOfSupply: string;
@@ -61,14 +65,18 @@ Invoice.init({
   clientId: { type: DataTypes.UUID, allowNull: false, field: 'client_id' },
   recurringTemplateId: { type: DataTypes.UUID, allowNull: true, field: 'recurring_template_id' },
   
+  invoiceType: { type: DataTypes.STRING(15), allowNull: false, defaultValue: 'tax_invoice', field: 'invoice_type' },
   invoiceNumber: { type: DataTypes.STRING(30), allowNull: false, field: 'invoice_number' },
   status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'draft' },
   
   invoiceDate: { type: DataTypes.DATEONLY, allowNull: false, field: 'invoice_date' },
   dueDate: { type: DataTypes.DATEONLY, allowNull: false, field: 'due_date' },
+  expiryDate: { type: DataTypes.DATEONLY, allowNull: true, field: 'expiry_date' },
   issuedAt: { type: DataTypes.DATE, allowNull: true, field: 'issued_at' },
   paidAt: { type: DataTypes.DATE, allowNull: true, field: 'paid_at' },
   cancelledAt: { type: DataTypes.DATE, allowNull: true, field: 'cancelled_at' },
+  paymentLinkToken: { type: DataTypes.UUID, allowNull: true, field: 'payment_link_token' },
+  paymentLinkExpiresAt: { type: DataTypes.DATE, allowNull: true, field: 'payment_link_expires_at' },
   
   gstType: { type: DataTypes.STRING(15), allowNull: false, defaultValue: 'CGST_SGST', field: 'gst_type' },
   placeOfSupply: { type: DataTypes.CHAR(2), allowNull: false, defaultValue: '24', field: 'place_of_supply' },

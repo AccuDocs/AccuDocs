@@ -182,6 +182,32 @@ export class InvoiceService {
     return this.http.post<ApiResponse<{ sent: boolean }>>(`${this.base}/invoices/${id}/send-whatsapp`, {});
   }
 
+  /** Convert proforma → tax invoice */
+  convertToTax(id: string): Observable<ApiResponse<{ id: string; invoiceNumber: string }>> {
+    return this.http.post<ApiResponse<{ id: string; invoiceNumber: string }>>(`${this.base}/invoices/${id}/convert-to-tax`, {});
+  }
+
+  /** Generate a shareable payment link for an invoice */
+  generatePaymentLink(id: string): Observable<ApiResponse<{ url: string; expiresAt: string }>> {
+    return this.http.post<ApiResponse<{ url: string; expiresAt: string }>>(`${this.base}/invoices/${id}/payment-link`, {});
+  }
+
+  /** Generate PDF using a specific template (POST) */
+  generatePdfWithTemplate(invoiceId: string, templateId?: string): Observable<Blob> {
+    const url = `${this.base}/invoices/${invoiceId}/pdf${templateId ? `?template_id=${templateId}` : ''}`;
+    return this.http.post(url, {}, { responseType: 'blob' });
+  }
+
+  /** List all invoice templates (system + org-specific) */
+  getTemplates(): Observable<ApiResponse<any[]>> {
+    return this.http.get<ApiResponse<any[]>>(`${this.base}/templates`);
+  }
+
+  /** Set a template as org default */
+  setDefaultTemplate(templateId: string): Observable<ApiResponse<any>> {
+    return this.http.patch<ApiResponse<any>>(`${this.base}/templates/${templateId}/set-default`, {});
+  }
+
   getPdfUrl(id: string): Observable<ApiResponse<{ url: string }>> {
     return this.http.get<ApiResponse<{ url: string }>>(`${this.base}/invoices/${id}/pdf`);
   }

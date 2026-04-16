@@ -26,6 +26,8 @@ export class BillingService {
       throw new AppError('Client not found', 404);
     }
 
+    const invoiceType: string = data.invoiceType || 'tax_invoice';
+    const isQuotation = invoiceType === 'quotation';
     const isIgst = org.stateCode !== client.stateCode;
     const gstType = isIgst ? ('IGST' as const) : ('CGST_SGST' as const);
     const placeOfSupply = client.stateCode;
@@ -37,7 +39,22 @@ export class BillingService {
       return { ...item, amount };
     });
 
-    const taxCalculation = calculateGST(itemsWithAmounts, client.stateCode, org.stateCode);
+    // For quotations, skip GST computation — amounts are zero until converted
+    let cgstAmount = 0;
+    let sgstAmount = 0;
+    let igstAmount = 0;
+    let totalAmount = subtotal;
+    let roundOff = 0;
+
+    if (!isQuotation) {
+      const taxCalculation = calculateGST(itemsWithAmounts, client.stateCode, org.stateCode);
+      cgstAmount = (taxCalculation as any).cgst || 0;
+      sgstAmount = (taxCalculation as any).sgst || 0;
+      igstAmount = (taxCalculation as any).igst || 0;
+      roundOff = taxCalculation.roundOff;
+      totalAmount = (taxCalculation as any).total || 0;
+      subtotal = taxCalculation.subtotal !== undefined ? taxCalculation.subtotal : 0;
+    }
     
     const financialYear = "2024-25";
     const invoiceNumber = await this.invoiceRepo.generateNextInvoiceNumber(organizationId, financialYear);
@@ -53,21 +70,23 @@ export class BillingService {
       organizationId,
       clientId: client.id,
       invoiceNumber,
+      invoiceType,
       status: 'draft' as any,
       invoiceDate: new Date(data.invoiceDate),
       dueDate: new Date(dueDate),
+      expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
       gstType,
       placeOfSupply,
       clientGstin: client.gstin,
       firmGstin: org.gstin,
-      subtotal: taxCalculation.subtotal !== undefined ? taxCalculation.subtotal : 0,
-      cgstAmount: (taxCalculation as any).cgst || 0,
-      sgstAmount: (taxCalculation as any).sgst || 0,
-      igstAmount: (taxCalculation as any).igst || 0,
-      roundOff: taxCalculation.roundOff,
-      totalAmount: (taxCalculation as any).total || 0,
+      subtotal,
+      cgstAmount,
+      sgstAmount,
+      igstAmount,
+      roundOff,
+      totalAmount,
       amountPaid: 0,
-      balanceDue: (taxCalculation as any).total || 0,
+      balanceDue: totalAmount,
       notes: data.notes,
       createdBy: adminId
     };
@@ -183,5 +202,49 @@ export class BillingService {
       defaultGstRate: Number(template.defaultGstRate),
       sortOrder: template.sortOrder
     }));
+  }
+
+  /**
+   * Convert a proforma invoice → tax invoice.
+   * Generates a new tax invoice number and recomputes GST.
+   */
+  async convertToTaxInvoice(organizationId: string, invoiceId: string, adminId: string) {
+    const existing = await this.invoiceRepo.findById(invoiceId, organizationId);
+    if (!existing) throw new AppError('Invoice not found', 404);
+    if ((existing as any).props?.invoiceType !== 'proforma' && (existing as any).invoiceType !== 'proforma') {
+      throw new AppError('Only proforma invoices can be converted to tax invoices', 400);
+    }
+
+    const org = await OrganizationModel.findByPk(organizationId);
+    if (!org) throw new AppError('Organization not found', 404);
+
+    const client = await this.clientRepo.findById((existing as any).clientId);
+    if (!client) throw new AppError('Client not found', 404);
+
+    // Generate a new invoice number under tax_invoice sequence
+    const financialYear = '2024-25';
+    const newInvoiceNumber = await this.invoiceRepo.generateNextInvoiceNumber(organizationId, financialYear);
+
+    // Get raw line items to recompute GST
+    const lineItems = (existing as any).props?.lineItems || [];
+    const itemsForGst = lineItems.map((li: any) => ({
+      quantity: li.quantity,
+      unitRate: li.unitRate,
+      amount: li.amount,
+    }));
+
+    const taxCalc = calculateGST(itemsForGst, client.stateCode, org.stateCode);
+
+    // Update via repository
+    (existing as any).props.invoiceType = 'tax_invoice';
+    (existing as any).props.invoiceNumber = newInvoiceNumber;
+    (existing as any).props.cgstAmount = (taxCalc as any).cgst || 0;
+    (existing as any).props.sgstAmount = (taxCalc as any).sgst || 0;
+    (existing as any).props.igstAmount = (taxCalc as any).igst || 0;
+    (existing as any).props.totalAmount = (taxCalc as any).total || 0;
+    (existing as any).props.balanceDue = (taxCalc as any).total || 0;
+    (existing as any).props.issuedBy = adminId;
+
+    return await this.invoiceRepo.save(existing);
   }
 }
