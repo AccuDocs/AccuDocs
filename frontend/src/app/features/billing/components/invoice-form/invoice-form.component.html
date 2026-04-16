@@ -77,6 +77,21 @@
               </div>
 
               <div>
+                <label class="field-label" for="invoice-type">Document Type *</label>
+                <select
+                  id="invoice-type"
+                  formControlName="invoiceType"
+                  class="form-select-premium"
+                >
+                  <option value="tax_invoice">Tax Invoice</option>
+                  <option value="proforma">Proforma Invoice</option>
+                  <option value="quotation">Quotation</option>
+                  <option value="credit_note">Credit Note</option>
+                  <option value="debit_note">Debit Note</option>
+                </select>
+              </div>
+
+              <div>
                 <label class="field-label">Invoice Number</label>
                 <div class="form-input-premium readonly-display">
                   {{ invoiceNumberControl.value || 'Auto-generated on save' }}
@@ -115,6 +130,19 @@
                 />
                 <p class="hint-text">Default due period is 30 days, which matches most firm workflows.</p>
               </div>
+
+              @if (invoiceForm.controls.invoiceType.value === 'quotation') {
+                <div>
+                  <label class="field-label" for="expiry-date">Expiry Date (Quotation)</label>
+                  <input
+                    id="expiry-date"
+                    type="date"
+                    class="form-input-premium"
+                    formControlName="expiryDate"
+                  />
+                  <p class="hint-text">When this quotation expires.</p>
+                </div>
+              }
             </div>
 
             <div class="mt-6 space-y-3">

@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { rxResource } from '@angular/core/rxjs-interop';
@@ -27,16 +27,18 @@ function currentPeriod(): string {
 
       <!-- Controls -->
       <div class="itc-controls">
-        <div class="itc-control-group">
-          <label class="itc-label" for="itc-client-input">Client ID</label>
-          <input
-            id="itc-client-input"
-            class="itc-input"
-            type="text"
-            [(ngModel)]="clientId"
-            placeholder="Paste client UUID…"
-          />
-        </div>
+        @if (!isEmbedded) {
+          <div class="itc-control-group">
+            <label class="itc-label" for="itc-client-input">Client ID</label>
+            <input
+              id="itc-client-input"
+              class="itc-input"
+              type="text"
+              [(ngModel)]="clientId"
+              placeholder="Paste client UUID…"
+            />
+          </div>
+        }
         <div class="itc-control-group">
           <label class="itc-label" for="itc-period-input">Period (YYYY-MM)</label>
           <input
@@ -262,16 +264,23 @@ function currentPeriod(): string {
     .itc-empty p { font-size: 14px; color: #64748b; margin: 0; text-align: center; }
   `],
 })
-export class ItcTrackerComponent {
+export class ItcTrackerComponent implements OnChanges {
   private gstService = inject(GstExtendedService);
   private toast = inject(HotToastService);
 
-  clientId = '';
+  @Input() clientId = '';
+  @Input() isEmbedded = false;
   period = currentPeriod();
 
   readonly records = signal<ItcLedgerRecord[]>([]);
   readonly isLoading = signal(false);
   readonly isCalculating = signal(false);
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['clientId'] && this.isEmbedded && this.clientId) {
+      this.loadLedger();
+    }
+  }
 
   readonly latestRecord = computed(() => this.records()[0] ?? null);
 

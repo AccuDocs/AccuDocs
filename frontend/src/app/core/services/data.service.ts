@@ -72,6 +72,7 @@ export interface ExpenseEntry {
   expenseDate: string;
   category: string;
   description: string;
+  hsnSacCode?: string;
   vendorName?: string;
   amount: number;
   paymentMode: string;

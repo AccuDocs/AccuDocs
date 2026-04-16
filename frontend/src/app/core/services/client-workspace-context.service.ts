@@ -9,6 +9,7 @@ export type ClientWorkspaceShortcutTab =
   | 'deadlines'
   | 'data'
   | 'gst'
+  | 'billing'
   | 'dashboard';
 
 @Injectable({
@@ -35,6 +36,7 @@ export class ClientWorkspaceContextService {
     { iconName: 'heroCalendarSolid', label: 'Deadlines', tab: 'deadlines' },
     { iconName: 'heroChartBarSolid', label: 'Data', tab: 'data' },
     { iconName: 'heroReceiptPercentSolid', label: 'GST Filing', tab: 'gst' },
+    { iconName: 'heroDocumentTextSolid', label: 'Billing & Invoices', tab: 'billing' },
     { iconName: 'heroPresentationChartBarSolid', label: 'Dashboard', tab: 'dashboard' },
   ];
 
@@ -136,6 +138,7 @@ export class ClientWorkspaceContextService {
       case 'deadlines':
       case 'data':
       case 'gst':
+      case 'billing':
       case 'dashboard':
         return tab;
       case 'files':

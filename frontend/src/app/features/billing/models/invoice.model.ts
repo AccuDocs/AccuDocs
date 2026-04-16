@@ -27,6 +27,8 @@ export interface Invoice {
   client?: InvoiceClient;
   recurringTemplateId?: string;
   invoiceNumber: string;
+  invoiceType?: 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
+  expiryDate?: string;
   status: InvoiceStatus;
   invoiceDate: string;
   dueDate: string;
@@ -80,6 +82,8 @@ export interface CreateInvoiceDto {
   clientId: string;
   invoiceDate: string;
   dueDate: string;
+  invoiceType?: 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
+  expiryDate?: string;
   notes?: string;
   clientGstin?: string;
   gstType?: GstType;
@@ -89,6 +93,8 @@ export interface CreateInvoiceDto {
 export interface UpdateInvoiceDto {
   invoiceDate?: string;
   dueDate?: string;
+  invoiceType?: 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
+  expiryDate?: string;
   notes?: string;
   clientGstin?: string;
   gstType?: GstType;

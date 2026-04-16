@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -68,6 +68,8 @@ type InvoiceFormModel = {
   clientId: FormControl<string>;
   invoiceDate: FormControl<string>;
   dueDate: FormControl<string>;
+  invoiceType: FormControl<'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note'>;
+  expiryDate: FormControl<string>;
   gstType: FormControl<GstType>;
   clientGstin: FormControl<string>;
   notes: FormControl<string>;
@@ -247,8 +249,14 @@ export class InvoiceFormComponent {
   private router = inject(Router);
   private toast = inject(HotToastService);
 
-  readonly isEditMode = signal(Boolean(this.route.snapshot.data['editMode']));
-  readonly invoiceId = signal(this.route.snapshot.paramMap.get('id'));
+  @Input() embeddedClientId: string | null = null;
+  @Input() embeddedInvoiceId: string | null = null;
+  @Input() isEmbedded = false;
+  @Output() saved = new EventEmitter<void>();
+  @Output() canceled = new EventEmitter<void>();
+
+  readonly isEditMode = signal(false);
+  readonly invoiceId = signal<string | null>(null);
   readonly isSubmitting = signal(false);
   readonly readOnlyMode = signal(false);
   private readonly invoicePatched = signal(false);
@@ -261,7 +269,7 @@ export class InvoiceFormComponent {
     invoiceDate: this.fb.nonNullable.control(formatDateInput(new Date()), Validators.required),
     dueDate: this.fb.nonNullable.control(formatDateInput(this.addDays(new Date(), 30)), Validators.required),
     expiryDate: this.fb.nonNullable.control(''),
-    invoiceType: this.fb.nonNullable.control<'tax_invoice' | 'proforma' | 'quotation'>('tax_invoice'),
+    invoiceType: this.fb.nonNullable.control<'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note'>('tax_invoice'),
     gstType: this.fb.nonNullable.control<GstType>('CGST_SGST'),
     clientGstin: this.fb.nonNullable.control(''),
     notes: this.fb.nonNullable.control(''),
@@ -328,6 +336,16 @@ export class InvoiceFormComponent {
   );
   readonly pageTitle = computed(() => (this.isEditMode() ? 'Edit Invoice' : 'Create Invoice'));
   readonly primaryActionLabel = computed(() => (this.isEditMode() ? 'Update Invoice' : 'Save as Draft'));
+
+  ngOnInit() {
+    this.isEditMode.set(this.isEmbedded ? !!this.embeddedInvoiceId : Boolean(this.route.snapshot.data['editMode']));
+    this.invoiceId.set(this.isEmbedded ? this.embeddedInvoiceId : this.route.snapshot.paramMap.get('id'));
+
+    const initialClientId = this.isEmbedded ? this.embeddedClientId : this.route.snapshot.queryParamMap.get('clientId');
+    if (initialClientId && !this.isEditMode()) {
+      this.invoiceForm.controls.clientId.setValue(initialClientId);
+    }
+  }
 
   constructor() {
     this.invoiceForm.controls.clientId.valueChanges
@@ -575,6 +593,13 @@ export class InvoiceFormComponent {
   }
 
   private handlePostSave(id: string, action: 'draft' | 'issue' | 'preview', wasUpdate: boolean): void {
+    if (this.isEmbedded) {
+      this.isSubmitting.set(false);
+      this.toast.success(wasUpdate ? 'Invoice updated' : 'Invoice saved successfully');
+      this.saved.emit();
+      return;
+    }
+
     if (action === 'draft') {
       this.isSubmitting.set(false);
       this.toast.success(wasUpdate ? 'Invoice updated' : 'Draft saved');

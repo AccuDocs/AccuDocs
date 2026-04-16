@@ -52,7 +52,9 @@ import { GstSummaryComponent } from '../components/gst-summary/gst-summary.compo
 import { ClientDashboardComponent } from '../components/client-dashboard/client-dashboard.component';
 import { heroClipboardDocumentCheckSolid, heroCalendarSolid, heroChartBarSolid, heroReceiptPercentSolid, heroPresentationChartBarSolid } from '@ng-icons/heroicons/solid';
 
-export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst' | 'dashboard';
+import { ClientBillingComponent } from '../components/client-billing/client-billing.component';
+
+export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst' | 'billing' | 'dashboard';
 
 @Component({
   selector: 'app-client-workspace',
@@ -75,7 +77,9 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
     ClientDeadlinesComponent,
     DataModuleComponent,
     GstSummaryComponent,
-    ClientDashboardComponent
+    ClientDashboardComponent,
+    ClientBillingComponent,
+    ClientBillingComponent
   ],
   providers: [
     provideIcons({
@@ -223,6 +227,8 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
           [rootFolder]="workspace()?.rootFolder || null"
           (folderNavigationRequested)="onFolderNavigationRequested($event)"
         ></app-gst-summary>
+      } @else if (activeTab() === 'billing') {
+        <app-client-billing [clientId]="workspace()?.clientId || ''"></app-client-billing>
       } @else if (activeTab() === 'dashboard') {
         <app-client-dashboard [clientId]="workspace()?.clientId || ''"></app-client-dashboard>
       } @else {
@@ -811,6 +817,7 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
     'deadlines',
     'data',
     'gst',
+    'billing',
     'dashboard',
   ];
 

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GstExtendedService, Gstr2aEntry, Gstr2aReconciliation } from '@core/services/gst-extended.service';
@@ -27,10 +27,12 @@ function currentPeriod(): string {
       <div class="gr-panel">
         <div class="gr-panel-row">
           <!-- Client ID -->
-          <div class="gr-field">
-            <label class="gr-label" for="gr-client-id">Client ID</label>
-            <input id="gr-client-id" class="gr-input" type="text" [(ngModel)]="clientId" placeholder="Client UUID…" />
-          </div>
+          @if (!isEmbedded) {
+            <div class="gr-field">
+              <label class="gr-label" for="gr-client-id">Client ID</label>
+              <input id="gr-client-id" class="gr-input" type="text" [(ngModel)]="clientId" placeholder="Client UUID…" />
+            </div>
+          }
 
           <!-- Period -->
           <div class="gr-field">
@@ -295,7 +297,8 @@ export class Gstr2aReconcileComponent {
   private gstService = inject(GstExtendedService);
   private toast = inject(HotToastService);
 
-  clientId = '';
+  @Input() clientId = '';
+  @Input() isEmbedded = false;
   period = currentPeriod();
 
   readonly fileName = signal<string | null>(null);

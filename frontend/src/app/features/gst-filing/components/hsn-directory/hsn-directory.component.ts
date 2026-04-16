@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect } from '@angular/core';
+import { Component, inject, signal, computed, effect, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { debounceTime, Subject } from 'rxjs';
@@ -13,19 +13,21 @@ const GST_RATES = [0, 0.25, 1, 1.5, 3, 5, 6, 7.5, 9, 12, 13.8, 14, 18, 28];
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="hd-root">
+    <div class="hd-root" [class.hd-root--picker]="isPicker">
       <!-- Page Header -->
-      <div class="hd-page-header">
-        <div>
-          <h1 class="hd-page-title">HSN / SAC Directory</h1>
-          <p class="hd-page-sub">Search goods and services codes for GST compliance</p>
+      @if (!isPicker) {
+        <div class="hd-page-header">
+          <div>
+            <h1 class="hd-page-title">HSN / SAC Directory</h1>
+            <p class="hd-page-sub">Search goods and services codes for GST compliance</p>
+          </div>
+          <div class="hd-stats">
+            @if (total() > 0) {
+              <span class="hd-stat-badge">{{ total() | number }} codes</span>
+            }
+          </div>
         </div>
-        <div class="hd-stats">
-          @if (total() > 0) {
-            <span class="hd-stat-badge">{{ total() | number }} codes</span>
-          }
-        </div>
-      </div>
+      }
 
       <!-- Search & Filter Bar -->
       <div class="hd-toolbar">
@@ -99,11 +101,16 @@ const GST_RATES = [0, 0.25, 1, 1.5, 3, 5, 6, 7.5, 9, 12, 13.8, 14, 18, 28];
             </thead>
             <tbody>
               @for (code of codes(); track code.id) {
-                <tr class="hd-row">
+                <tr class="hd-row" [class.hd-row--clickable]="isPicker" (click)="onRowClick(code)">
                   <td class="hd-td">
                     <span class="hd-code-badge">{{ code.code }}</span>
                   </td>
-                  <td class="hd-td hd-td--desc">{{ code.description }}</td>
+                  <td class="hd-td hd-td--desc">
+                    {{ code.description }}
+                    @if (isPicker) {
+                      <div class="ts-mobile-select-hint">Click to select</div>
+                    }
+                  </td>
                   <td class="hd-td hd-td--center">
                     <span class="hd-type-pill" [class.hd-type-pill--hsn]="code.type === 'HSN'" [class.hd-type-pill--sac]="code.type === 'SAC'">
                       {{ code.type }}
@@ -145,6 +152,7 @@ const GST_RATES = [0, 0.25, 1, 1.5, 3, 5, 6, 7.5, 9, 12, 13.8, 14, 18, 28];
   `,
   styles: [`
     .hd-root { display: flex; flex-direction: column; gap: 20px; padding: 24px; max-width: 1200px; }
+    .hd-root--picker { padding: 0; gap: 12px; }
 
     .hd-page-header { display: flex; align-items: center; justify-content: space-between; }
     .hd-page-title { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 4px; }
@@ -181,6 +189,8 @@ const GST_RATES = [0, 0.25, 1, 1.5, 3, 5, 6, 7.5, 9, 12, 13.8, 14, 18, 28];
     .hd-th--center { text-align: center; }
     .hd-row { transition: background 0.1s; }
     .hd-row:hover { background: #f8fafc; }
+    .hd-row--clickable { cursor: pointer; }
+    .hd-row--clickable:hover { background: #eff6ff; }
     .hd-td { padding: 11px 14px; font-size: 13px; color: #1e293b; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     .hd-td--desc { color: #374151; font-size: 12.5px; max-width: 400px; }
     .hd-td--center { text-align: center; }
@@ -212,6 +222,9 @@ const GST_RATES = [0, 0.25, 1, 1.5, 3, 5, 6, 7.5, 9, 12, 13.8, 14, 18, 28];
   `],
 })
 export class HsnDirectoryComponent {
+  @Input() isPicker = false;
+  @Output() select = new EventEmitter<HsnSacCode>();
+
   private gstService = inject(GstExtendedService);
   private toast = inject(HotToastService);
 
@@ -272,6 +285,12 @@ export class HsnDirectoryComponent {
     this.selectedRate.set(null);
     this.currentPage.set(1);
     this.loadCodes();
+  }
+
+  onRowClick(code: HsnSacCode) {
+    if (this.isPicker) {
+      this.select.emit(code);
+    }
   }
 
   private loadCodes() {

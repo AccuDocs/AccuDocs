@@ -2,19 +2,21 @@ import { Component, Input, inject, signal, OnInit, OnChanges, SimpleChanges, Tem
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { heroBanknotesSolid, heroPlusSolid, heroPencilSquareSolid, heroTrashSolid, heroXMarkSolid, heroCurrencyRupeeSolid, heroReceiptPercentSolid, heroShieldExclamationSolid } from '@ng-icons/heroicons/solid';
+import { heroBanknotesSolid, heroPlusSolid, heroPencilSquareSolid, heroTrashSolid, heroXMarkSolid, heroCurrencyRupeeSolid, heroReceiptPercentSolid, heroShieldExclamationSolid, heroMagnifyingGlassSolid } from '@ng-icons/heroicons/solid';
 import { DataService, ExpenseEntry } from '@core/services/data.service';
 import { ToastService } from '@core/services/toast.service';
 import { ExcelUtil } from '../../../../../shared/utils/excel.util';
 import { PdfUtil } from '../../../../../shared/utils/pdf.util';
 import { DataTableComponent } from '../../../../../shared/data-table/data-table.component';
 import { TableColumn } from '../../../../../shared/data-table/models';
+import { HsnDirectoryComponent } from '../../../../gst-filing/components/hsn-directory/hsn-directory.component';
+import { HsnSacCode } from '@core/services/gst-extended.service';
 
 @Component({
   selector: 'app-expenses',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgIconComponent, DecimalPipe, DataTableComponent],
-  providers: [provideIcons({ heroBanknotesSolid, heroPlusSolid, heroPencilSquareSolid, heroTrashSolid, heroXMarkSolid, heroCurrencyRupeeSolid, heroReceiptPercentSolid, heroShieldExclamationSolid })],
+  imports: [CommonModule, FormsModule, NgIconComponent, DecimalPipe, DataTableComponent, HsnDirectoryComponent],
+  providers: [provideIcons({ heroBanknotesSolid, heroPlusSolid, heroPencilSquareSolid, heroTrashSolid, heroXMarkSolid, heroCurrencyRupeeSolid, heroReceiptPercentSolid, heroShieldExclamationSolid, heroMagnifyingGlassSolid })],
   template: `
     <div class="space-y-6">
       <!-- Summary Cards -->
@@ -141,9 +143,25 @@ import { TableColumn } from '../../../../../shared/data-table/models';
                   </select>
                 </div>
               </div>
-              <div>
-                <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Description *</label>
-                <input type="text" [(ngModel)]="form.description" class="sa-input" />
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Description *</label>
+                  <input type="text" [(ngModel)]="form.description" class="sa-input" />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">HSN/SAC</label>
+                  <div class="relative group/hsn">
+                    <input type="text" [(ngModel)]="form.hsnSacCode" class="sa-input font-mono !pr-10" />
+                    <button 
+                      type="button"
+                      (click)="showHsnLookup.set(true)"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-all"
+                      title="Search HSN Directory"
+                    >
+                      <ng-icon name="heroMagnifyingGlassSolid" size="16"></ng-icon>
+                    </button>
+                  </div>
+                </div>
               </div>
               <div class="grid grid-cols-3 gap-4">
                 <div>
@@ -210,6 +228,26 @@ import { TableColumn } from '../../../../../shared/data-table/models';
               <button (click)="saveEntry()" [disabled]="!isFormValid()" class="h-10 px-6 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50">{{ editingId ? 'Update' : 'Create' }}</button>
             </div>
           </div>
+
+          <!-- HSN Lookup Nested Modal -->
+          @if (showHsnLookup()) {
+            <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[60] flex items-center justify-center p-4" (click)="showHsnLookup.set(false)">
+              <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col" (click)="$event.stopPropagation()">
+                <div class="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50">
+                  <div>
+                    <h4 class="text-base font-bold text-slate-900">HSN/SAC Lookup</h4>
+                    <p class="text-xs text-slate-500">Pick a code to automatically set HSN and GST rate</p>
+                  </div>
+                  <button (click)="showHsnLookup.set(false)" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-slate-200 transition-all">
+                    <ng-icon name="heroXMarkSolid" size="20"></ng-icon>
+                  </button>
+                </div>
+                <div class="p-2 overflow-y-auto max-h-[70vh]">
+                  <app-hsn-directory [isPicker]="true" (select)="onHsnSelect($event)"></app-hsn-directory>
+                </div>
+              </div>
+            </div>
+          }
         </div>
       }
     </div>
@@ -232,6 +270,7 @@ export class ExpensesComponent implements OnInit, OnChanges {
 
   entries = signal<ExpenseEntry[]>([]);
   showModal = signal(false);
+  showHsnLookup = signal(false);
   editingId: string | null = null;
 
   // Template Signals
@@ -267,7 +306,7 @@ export class ExpensesComponent implements OnInit, OnChanges {
 
   resetForm() {
     return {
-      expenseDate: '', category: 'general', description: '', vendorName: '',
+      expenseDate: '', category: 'general', description: '', hsnSacCode: '', vendorName: '',
       amount: 0, paymentMode: 'cash', referenceNo: '',
       gstApplicable: false, gstRate: 18, gstAmount: 0,
       itcAllowed: false, itcBlockedReason: '', status: 'draft', notes: ''
@@ -300,6 +339,7 @@ export class ExpensesComponent implements OnInit, OnChanges {
     this.editingId = e.id;
     this.form = {
       expenseDate: e.expenseDate, category: e.category, description: e.description,
+      hsnSacCode: e.hsnSacCode || '',
       vendorName: e.vendorName || '', amount: e.amount, paymentMode: e.paymentMode,
       referenceNo: e.referenceNo || '',
       gstApplicable: e.gstApplicable || false, gstRate: e.gstRate || 18,
@@ -326,5 +366,16 @@ export class ExpensesComponent implements OnInit, OnChanges {
     } else if (event.action === 'delete') {
       this.deleteEntry(event.row);
     }
+  }
+
+  onHsnSelect(code: HsnSacCode) {
+    this.form.hsnSacCode = code.code;
+    this.form.gstRate = code.gstRate;
+    this.form.gstApplicable = true; // Suggest GST should be applicable if HSN picked
+    if (code.description && !this.form.description) {
+      this.form.description = code.description;
+    }
+    this.showHsnLookup.set(false);
+    this.toast.success(`Selected HSN ${code.code} (${code.gstRate}%)`);
   }
 }
