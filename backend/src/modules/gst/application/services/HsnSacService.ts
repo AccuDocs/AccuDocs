@@ -95,7 +95,7 @@ export class HsnSacService {
 
   async importExcelFromBuffer(buffer: Buffer) {
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(buffer);
+    await workbook.xlsx.load(buffer as any);
     const worksheet = workbook.worksheets[0]; 
 
     const entries: any[] = [];

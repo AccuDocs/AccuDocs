@@ -61,9 +61,29 @@ const GST_RATES = [0, 0.25, 1, 1.5, 3, 5, 6, 7.5, 9, 12, 13.8, 14, 18, 28];
             [(ngModel)]="searchQuery"
             (ngModelChange)="onSearchChange($event)"
           />
-          @if (searchQuery) {
-            <button class="hd-search-clear" (click)="clearSearch()">✕</button>
-          }
+          <div class="hd-search-actions">
+            @if (searchQuery) {
+              <button class="hd-search-clear" (click)="clearSearch()" title="Clear search">✕</button>
+            }
+            @if (canSearchOnline()) {
+              <button 
+                class="hd-live-sync-btn" 
+                (click)="searchOnline()" 
+                [disabled]="isSearchingOnline()"
+                title="Fetch official data from Sandbox"
+                [class.hd-live-sync-btn--loading]="isSearchingOnline()"
+              >
+                @if (isSearchingOnline()) {
+                  <span class="hd-spinner hd-spinner--xs"></span>
+                } @else {
+                  <svg viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.451a.75.75 0 0 0 0-1.5H4.147a.75.75 0 0 0-.75.75v4.103a.75.75 0 0 0 1.5 0v-2.347l.611.61a7 7 0 0 0 11.74-3.179.75.75 0 0 0-1.946-.442ZM4.688 8.576a5.5 5.5 0 0 1 9.201-2.466l.312.311h-2.451a.75.75 0 0 0 0 1.5h4.103a.75.75 0 0 0 .75-.75V3.068a.75.75 0 0 0-1.5 0v2.347l-.611-.61a7 7 0 0 0-11.74 3.179.75.75 0 1 0 1.946.442Z" clip-rule="evenodd" />
+                  </svg>
+                }
+                <span class="hd-live-sync-label">Fetch Live</span>
+              </button>
+            }
+          </div>
         </div>
 
         <!-- Type filter -->
@@ -196,10 +216,33 @@ const GST_RATES = [0, 0.25, 1, 1.5, 3, 5, 6, 7.5, 9, 12, 13.8, 14, 18, 28];
 
     .hd-search-wrap { position: relative; display: flex; align-items: center; }
     .hd-search-icon { position: absolute; left: 12px; width: 16px; height: 16px; color: #94a3b8; pointer-events: none; }
-    .hd-search-input { width: 100%; padding: 10px 36px 10px 36px; border: 1px solid #e2e8f0; border-radius: 10px;
+    .hd-search-input { width: 100%; padding: 10px 100px 10px 36px; border: 1px solid #e2e8f0; border-radius: 10px;
       font-size: 14px; outline: none; background: #f8fafc; transition: all 0.2s; }
     .hd-search-input:focus { border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
-    .hd-search-clear { position: absolute; right: 12px; background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 13px; }
+    
+    .hd-search-actions { position: absolute; right: 4px; display: flex; align-items: center; gap: 4px; }
+    .hd-search-clear { background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 13px; padding: 4px 8px; }
+    
+    .hd-live-sync-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .hd-live-sync-btn:hover:not(:disabled) { background: #4338ca; }
+    .hd-live-sync-btn:disabled { opacity: 0.7; cursor: wait; }
+    .hd-live-sync-btn svg { width: 14px; height: 14px; }
+    .hd-live-sync-label { display: block; }
+
+    .hd-spinner--xs { width: 12px; height: 12px; border-width: 1.5px; border-top-color: white; }
 
     .hd-filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
     .hd-type-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid #e2e8f0; background: #f8fafc;

@@ -3,6 +3,7 @@ import { HsnSacService } from '../../application/services/HsnSacService';
 import { sendSuccess, sendPaginated } from '../../../../utils/response';
 import { asyncHandler } from '../../../../middlewares';
 import { AuthenticatedRequest } from '../../../../shared/types/auth.types';
+import { AppError } from '../../../../utils/errors';
 
 const hsnSacService = new HsnSacService();
 

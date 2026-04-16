@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { logger } from '../../../utils/logger';
-import { AppError } from '../../../utils/errors';
+import { logger } from '../../../../utils/logger';
+import { AppError } from '../../../../utils/errors';
 
 export class SandboxService {
   private readonly baseUrl = 'https://api.sandbox.co.in';
