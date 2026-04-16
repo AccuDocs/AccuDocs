@@ -81,6 +81,12 @@ export const routes: Routes = [
             canActivate: [roleGuard],
             data: { roles: ['admin', 'accountant', 'client'] },
           },
+          {
+            path: 'hsn-sac',
+            loadComponent: () => import('./features/gst-filing/components/hsn-directory/hsn-directory.component').then(m => m.HsnDirectoryComponent),
+            canActivate: [roleGuard],
+            data: { roles: ['admin', 'accountant'] },
+          },
         ],
       },
 

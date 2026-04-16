@@ -33,4 +33,22 @@ export class HsnSacController {
     const code = await hsnSacService.getById(req.params.id);
     sendSuccess(res, code);
   });
+
+  /** POST /gst/hsn-sac/import */
+  static importExcel = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.file) throw new Error('No file uploaded');
+    const result = await hsnSacService.importExcelFromBuffer(req.file.buffer);
+    sendSuccess(res, result, `Imported ${result.succeeded} codes successfully`);
+  });
+
+  /** POST /gst/hsn-sac/lookup-online */
+  static onlineLookup = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { code } = req.body;
+    if (!code) throw new AppError('HSN/SAC code is required', 400);
+
+    const result = await hsnSacService.lookupOnline(code);
+    if (!result) throw new AppError('Code not found in official records', 404);
+
+    sendSuccess(res, result, 'Live details fetched successfully');
+  });
 }

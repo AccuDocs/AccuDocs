@@ -87,6 +87,16 @@ export class GstExtendedService {
     return this.http.get<ApiResponse<HsnSacCode>>(`${this.base}/hsn-sac/${id}`);
   }
 
+  importHsnSacExcel(file: File): Observable<ApiResponse<any>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<ApiResponse<any>>(`${this.base}/hsn-sac/import`, formData);
+  }
+
+  lookupOnlineHsn(code: string): Observable<ApiResponse<HsnSacCode>> {
+    return this.http.post<ApiResponse<HsnSacCode>>(`${this.base}/hsn-sac/lookup-online`, { code });
+  }
+
   // ─── ITC Tracker ──────────────────────────────────────────────────────────
   getITCLedger(clientId: string, period?: string): Observable<ApiResponse<ItcLedgerRecord[]>> {
     let params = new HttpParams();

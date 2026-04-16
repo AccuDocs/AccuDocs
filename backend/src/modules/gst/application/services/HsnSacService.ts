@@ -2,6 +2,10 @@ import { Op } from 'sequelize';
 import { sequelize } from '../../../../config/database.config';
 import { HsnSac } from '../../../../models/hsn-sac.model';
 import { AppError } from '../../../../utils/errors';
+import ExcelJS from 'exceljs';
+import { SandboxService } from './SandboxService';
+
+const sandboxService = new SandboxService();
 
 export class HsnSacService {
   /**
@@ -87,5 +91,91 @@ export class HsnSacService {
 
     const succeeded = results.filter((r) => r.status === 'fulfilled').length;
     return { succeeded, failed: results.length - succeeded };
+  }
+
+  async importExcelFromBuffer(buffer: Buffer) {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+    const worksheet = workbook.worksheets[0]; 
+
+    const entries: any[] = [];
+    let headers: Record<string, number> = {};
+
+    for (let r = 1; r <= 5; r++) {
+      const row = worksheet.getRow(r);
+      const rowValues = row.values as any[];
+      if (!rowValues) continue;
+
+      const keys = rowValues.map(v => String(v || '').toLowerCase().trim());
+      if (keys.some(k => k.includes('hsn') || k.includes('code') || k.includes('description'))) {
+        keys.forEach((k, i) => { if (k) headers[k] = i; });
+        break;
+      }
+    }
+
+    const getCol = (keywords: string[]) => {
+      for (const [key, index] of Object.entries(headers)) {
+        if (keywords.some(kw => key.includes(kw))) return index;
+      }
+      return -1;
+    };
+
+    const codeCol = getCol(['hsn', 'sac', 'code']);
+    const descCol = getCol(['description', 'item', 'nature']);
+    const rateCol = getCol(['rate', 'gst', 'tax']);
+    const chapterCol = getCol(['chapter', 'group']);
+
+    if (codeCol === -1 || descCol === -1) {
+      throw new AppError('Invalid Excel format: Could not find "Code" or "Description" columns', 400);
+    }
+
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber <= 1) return;
+      const rowValues = row.values as any[];
+      if (!rowValues) return;
+
+      const codeValue = String(rowValues[codeCol] || '').trim();
+      const descValue = String(rowValues[descCol] || '').trim();
+      const rateValue = parseFloat(rowValues[rateCol]) || 18.00;
+      const chapterValue = chapterCol !== -1 ? String(rowValues[chapterCol] || '').trim() : codeValue.substring(0, 2);
+
+      if (codeValue && descValue) {
+        entries.push({
+          code: codeValue.replace(/[^0-9]/g, ''),
+          description: descValue,
+          gstRate: rateValue,
+          type: codeValue.startsWith('99') ? 'SAC' : 'HSN',
+          chapter: chapterValue
+        });
+      }
+    });
+
+    if (entries.length === 0) throw new AppError('No valid data found in Excel', 400);
+    return this.bulkUpsert(entries);
+  }
+
+  /**
+   * Performs an online lookup via Sandbox API for a specific HSN/SAC code.
+   * If found, the result is automatically cached (saved) to the local database.
+   */
+  async lookupOnline(code: string) {
+    // 1. External Fetch
+    const details = await sandboxService.getHsnDetails(code);
+    if (!details) return null;
+
+    // 2. Map Sandbox response to our schema
+    // Sandbox typical data: { hsn_code, description, related_info, ... }
+    const entry = {
+      code: details.hsn_code || code,
+      description: details.description || '',
+      gstRate: 18.0, // Default if not provided by this endpoint
+      type: (details.hsn_code || code).startsWith('99') ? 'SAC' as const : 'HSN' as const,
+      chapter: details.hsn_code ? details.hsn_code.substring(0, 2) : null
+    };
+
+    // 3. Auto-Save to Local DB (so we have it for all clients forever)
+    await this.bulkUpsert([entry]);
+
+    return entry;
   }
 }

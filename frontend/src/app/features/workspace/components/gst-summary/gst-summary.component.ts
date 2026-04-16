@@ -21,20 +21,19 @@ import {
   heroArrowDownTraySolid,
   heroClockSolid,
   heroFolderOpenSolid,
-  heroBoltSolid,
-  heroBookOpenSolid
+  heroBoltSolid
 } from '@ng-icons/heroicons/solid';
-import { HsnDirectoryComponent } from '../../../gst-filing/components/hsn-directory/hsn-directory.component';
+
 
 @Component({
   selector: 'app-gst-summary',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgIconComponent, DecimalPipe, Gstr1FormComponent, Gstr3bFormComponent, ItcTrackerComponent, Gstr2aReconcileComponent, HsnDirectoryComponent],
+  imports: [CommonModule, FormsModule, NgIconComponent, DecimalPipe, Gstr1FormComponent, Gstr3bFormComponent, ItcTrackerComponent, Gstr2aReconcileComponent],
   providers: [provideIcons({ 
     heroReceiptPercentSolid, heroCurrencyRupeeSolid, heroArrowTrendingUpSolid, 
     heroArrowTrendingDownSolid, heroBanknotesSolid, heroChartBarSolid,
     heroDocumentCheckSolid, heroDocumentPlusSolid, heroArrowDownTraySolid, heroClockSolid, heroFolderOpenSolid,
-    heroBoltSolid, heroBookOpenSolid
+    heroBoltSolid
   })],
   template: `
     <div class="space-y-6 animate-in fade-in duration-500">
@@ -59,12 +58,6 @@ import { HsnDirectoryComponent } from '../../../gst-filing/components/hsn-direct
             class="px-4 py-2 text-sm font-semibold rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors flex items-center gap-2"
           >
             <ng-icon name="heroDocumentCheckSolid"></ng-icon> GSTR-2A
-          </button>
-          <button 
-            (click)="activeView.set('hsn')"
-            class="hidden lg:flex px-4 py-2 text-sm font-semibold rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors items-center gap-2"
-          >
-            <ng-icon name="heroBookOpenSolid"></ng-icon> HSN lookup
           </button>
           
           <select
@@ -252,15 +245,6 @@ import { HsnDirectoryComponent } from '../../../gst-filing/components/hsn-direct
           </button>
         </div>
         <app-gstr2a-reconcile [clientId]="clientId" [isEmbedded]="true"></app-gstr2a-reconcile>
-      } @else if (activeView() === 'hsn') {
-        <div class="mb-4">
-          <button (click)="onBackFromForm()" class="text-sm font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1">
-            ← Back to GST Summary
-          </button>
-        </div>
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-2">
-          <app-hsn-directory></app-hsn-directory>
-        </div>
       }
     </div>
   `,

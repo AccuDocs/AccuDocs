@@ -25,6 +25,23 @@ const GST_RATES = [0, 0.25, 1, 1.5, 3, 5, 6, 7.5, 9, 12, 13.8, 14, 18, 28];
             @if (total() > 0) {
               <span class="hd-stat-badge">{{ total() | number }} codes</span>
             }
+            <button 
+              class="hd-import-btn" 
+              (click)="triggerImport()"
+              [disabled]="importing()"
+              title="Import HSN Directory from Government Excel"
+            >
+              @if (importing()) {
+                <span class="hd-spinner"></span>
+                Importing...
+              } @else {
+                <svg class="hd-import-icon" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 3a.75.75 0 0 1 .75.75v6.59l1.95-2.1a.75.75 0 1 1 1.1 1.02l-3.25 3.5a.75.75 0 0 1-1.1 0l-3.25-3.5a.75.75 0 1 1 1.1-1.02l1.95 2.1V3.75A.75.75 0 0 1 10 3ZM3.5 12.75a.75.75 0 0 1 .75.75v.501c0 .59.457 1.079 1.02 1.148l.055.002h9.35c.613 0 1.11-.497 1.11-1.11v-.54a.75.75 0 0 1 1.5 0v.54c0 1.441-1.169 2.61-2.61 2.61H5.325c-1.441 0-2.61-1.169-2.61-2.61v-.501a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
+                </svg>
+                Bulk Import (Excel)
+              }
+            </button>
+            <input #fileInput type="file" (change)="onFileSelected($event)" accept=".xlsx,.xls,.csv" class="hidden" />
           </div>
         </div>
       }
@@ -130,7 +147,22 @@ const GST_RATES = [0, 0.25, 1, 1.5, 3, 5, 6, 7.5, 9, 12, 13.8, 14, 18, 28];
                         <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                       </svg>
                       <p>No codes found for your search</p>
-                      <button class="hd-reset-btn" (click)="reset()">Clear filters</button>
+                      <div class="hd-empty-actions">
+                        <button class="hd-reset-btn" (click)="reset()">Clear filters</button>
+                        @if (canSearchOnline()) {
+                          <button class="hd-online-btn" (click)="searchOnline()" [disabled]="isSearchingOnline()">
+                            @if (isSearchingOnline()) {
+                              <span class="hd-spinner hd-spinner--sm"></span>
+                              Searching records...
+                            } @else {
+                              <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" />
+                              </svg>
+                              Search Online (Sandbox)
+                            }
+                          </button>
+                        }
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -213,6 +245,12 @@ const GST_RATES = [0, 0.25, 1, 1.5, 3, 5, 6, 7.5, 9, 12, 13.8, 14, 18, 28];
     .hd-empty-icon { width: 40px; height: 40px; color: #cbd5e1; }
     .hd-empty p { font-size: 14px; color: #64748b; margin: 0; }
     .hd-reset-btn { font-size: 12px; color: #3b82f6; background: none; border: none; cursor: pointer; }
+    
+    .hd-empty-actions { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+    .hd-online-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .hd-online-btn:hover:not(:disabled) { background: #e0f2fe; border-color: #7dd3fc; }
+    .hd-online-btn:disabled { opacity: 0.6; cursor: wait; }
+    .hd-spinner--sm { width: 14px; height: 14px; border-width: 1.5px; border-top-color: #0369a1; }
 
     .hd-pagination { display: flex; align-items: center; justify-content: center; gap: 12px; }
     .hd-page-btn { padding: 8px 16px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; font-size: 13px; font-weight: 600; color: #374151; cursor: pointer; transition: all 0.15s; }
@@ -238,7 +276,14 @@ export class HsnDirectoryComponent {
   readonly codes = signal<HsnSacCode[]>([]);
   readonly total = signal(0);
   readonly isLoading = signal(false);
+  readonly importing = signal(false);
+  readonly isSearchingOnline = signal(false);
   readonly totalPages = computed(() => Math.ceil(this.total() / 20));
+
+  canSearchOnline = computed(() => {
+    const q = this.searchQuery.trim();
+    return q.length >= 4 && /^\d+$/.test(q); // Only search online for numeric codes 4+ digits
+  });
 
   private searchSubject = new Subject<string>();
 
@@ -276,6 +321,65 @@ export class HsnDirectoryComponent {
 
   goToPage(page: number) {
     this.currentPage.set(page);
+    this.loadData();
+  }
+
+  triggerImport() {
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (input) input.click();
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    this.importing.set(true);
+    const toast = this.toast.loading('Importing HSN Directory...', { duration: 0 });
+
+    this.gstService.importHsnSacExcel(file).subscribe({
+      next: (res: any) => {
+        this.importing.set(false);
+        toast.close();
+        this.toast.success(`Successfully imported ${res.data.succeeded} codes!`);
+        this.loadData();
+        event.target.value = ''; // Reset input
+      },
+      error: (err: any) => {
+        this.importing.set(false);
+        toast.close();
+        this.toast.error('Import failed: ' + (err.error?.message || err.message));
+        event.target.value = ''; // Reset input
+      }
+    });
+  }
+
+  searchOnline() {
+    const code = this.searchQuery.trim();
+    if (!code) return;
+
+    this.isSearchingOnline.set(true);
+    const toast = this.toast.loading('Searching official GST records...', { duration: 0 });
+
+    this.gstService.lookupOnlineHsn(code).subscribe({
+      next: (res: any) => {
+        this.isSearchingOnline.set(false);
+        toast.close();
+        this.toast.success(`Found and saved: ${res.data.description.substring(0, 50)}...`);
+        this.loadCodes(); // Refresh list - should now show the new code
+      },
+      error: (err: any) => {
+        this.isSearchingOnline.set(false);
+        toast.close();
+        this.toast.error(err.error?.message || 'Code not found in official records.');
+      }
+    });
+  }
+
+  loadData() {
+    this.searchQuery = '';
+    this.selectedType.set(null);
+    this.selectedRate.set(null);
+    this.currentPage.set(1);
     this.loadCodes();
   }
 

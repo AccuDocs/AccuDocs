@@ -55,6 +55,7 @@ export const MODULE_REGISTRY: AppModule[] = ([
   // ── COMPLIANCE ──
   { id: 'calendar', hub: 'compliance', label: 'Compliance Calendar', icon: '📅', desc: 'All filing deadlines', status: 'live', badge: 3, route: '/compliance/calendar', pinned: true },
   { id: 'checklists', hub: 'compliance', label: 'Doc Checklists', icon: '📋', desc: 'Pending documents tracker', status: 'live', badge: 23, route: '/compliance/checklists', pinned: true },
+  { id: 'gst_hsn_sac', hub: 'compliance', label: 'HSN/SAC Master', icon: '📖', desc: 'Universal GST code directory', status: 'live', badge: null, route: '/compliance/hsn-sac', pinned: true },
 
   // ── WORK ──
   { id: 'tasks', hub: 'work', label: 'Task Board', icon: '✅', desc: 'Kanban & work tracker', status: 'live', badge: 8, route: '/work/tasks', pinned: true },
