@@ -35,5 +35,26 @@ export const GST_FILING_ROUTES: Routes = [
     path: 'gstr2a-reconcile',
     title: 'GSTR-2A Reconciliation — AccuDocs',
     loadComponent: () => import('./components/gstr2a-reconcile/gstr2a-reconcile.component').then(m => m.Gstr2aReconcileComponent)
-  }
+  },
+  // ─── Phase 2 Routes ──────────────────────────────────────────────────────
+  {
+    path: 'eway-bill',
+    title: 'E-Way Bill — AccuDocs',
+    loadComponent: () => import('./components/eway-bill/eway-bill.component').then(m => m.EwayBillComponent)
+  },
+  {
+    path: 'e-invoice',
+    title: 'E-Invoice (IRN) — AccuDocs',
+    loadComponent: () => import('./components/e-invoice/e-invoice.component').then(m => m.EInvoiceComponent)
+  },
+  {
+    path: 'tds-tcs',
+    title: 'TDS & TCS Management — AccuDocs',
+    loadComponent: () => import('./components/tds-tcs/tds-tcs.component').then(m => m.TdsTcsComponent)
+  },
+  {
+    path: 'gstr9',
+    title: 'GSTR-9 Annual Return — AccuDocs',
+    loadComponent: () => import('./components/gstr9/gstr9.component').then(m => m.Gstr9Component)
+  },
 ];

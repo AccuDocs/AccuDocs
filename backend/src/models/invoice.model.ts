@@ -37,6 +37,9 @@ export class Invoice extends Model {
   declare public amountPaid: number;
   declare public balanceDue: number;
   
+  declare public currency: string;
+  declare public exchangeRate: number;
+  
   declare public notes: string | null;
   declare public cancelReason: string | null;
   declare public internalNotes: string | null;
@@ -100,6 +103,9 @@ Invoice.init({
     type: DataTypes.DECIMAL(12, 2), 
     field: 'balance_due' 
   },
+  
+  currency: { type: DataTypes.STRING(3), allowNull: false, defaultValue: 'INR' },
+  exchangeRate: { type: DataTypes.DECIMAL(12, 6), allowNull: false, defaultValue: 1.000000, field: 'exchange_rate' },
   
   notes: { type: DataTypes.TEXT, allowNull: true },
   cancelReason: { type: DataTypes.TEXT, allowNull: true, field: 'cancel_reason' },

@@ -22,6 +22,9 @@ export class Organization extends Model {
   declare public currentSubscriptionId: string | null;
   declare public isActive: boolean;
   declare public settings: any;
+  declare public turnoverAbove5Cr: boolean;
+  declare public ewayBillUsernameEnc: string | null;
+  declare public ewayBillPasswordEnc: string | null;
   declare public readonly createdAt: Date;
   declare public readonly updatedAt: Date;
   declare public readonly deletedAt: Date | null;
@@ -48,6 +51,9 @@ Organization.init({
   currentSubscriptionId: { type: DataTypes.UUID, allowNull: true, field: 'current_subscription_id' },
   isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true, field: 'is_active' },
   settings: { type: DataTypes.JSONB, allowNull: false, defaultValue: {} },
+  turnoverAbove5Cr: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'turnover_above_5cr' },
+  ewayBillUsernameEnc: { type: DataTypes.TEXT, allowNull: true, field: 'eway_bill_username_enc' },
+  ewayBillPasswordEnc: { type: DataTypes.TEXT, allowNull: true, field: 'eway_bill_password_enc' },
   
   createdAt: { type: DataTypes.DATE, field: 'created_at' },
   updatedAt: { type: DataTypes.DATE, field: 'updated_at' },

@@ -135,4 +135,56 @@ export class GstExtendedService {
       { params }
     );
   }
+
+  // ─── E-Way Bill (Phase 2) ─────────────────────────────────────────────────
+  generateEWayBill(data: {
+    invoiceId: string;
+    transporterId?: string;
+    vehicleNo?: string;
+    distanceKm: number;
+    transportMode: 'road' | 'rail' | 'air' | 'ship';
+  }): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(`${this.base}/eway-bill/generate`, data);
+  }
+
+  cancelEWayBill(ewayBillNo: string, reason: string): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(`${this.base}/eway-bill/${ewayBillNo}/cancel`, { reason });
+  }
+
+  updateEWayBillVehicle(ewayBillNo: string, vehicleNo: string): Observable<ApiResponse<any>> {
+    return this.http.patch<ApiResponse<any>>(`${this.base}/eway-bill/${ewayBillNo}/vehicle`, { vehicleNo });
+  }
+
+  getEWayBillByInvoice(invoiceId: string): Observable<ApiResponse<any[]>> {
+    return this.http.get<ApiResponse<any[]>>(`${this.base}/eway-bill/invoice/${invoiceId}`);
+  }
+
+  checkEWayBillRequired(invoiceId: string): Observable<ApiResponse<{ required: boolean }>> {
+    return this.http.get<ApiResponse<{ required: boolean }>>(`${this.base}/eway-bill/check/${invoiceId}`);
+  }
+
+  // ─── E-Invoice / IRN (Phase 2) ────────────────────────────────────────────
+  generateIRN(invoiceId: string): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(`${this.base}/e-invoice/generate/${invoiceId}`, {});
+  }
+
+  cancelIRN(irn: string, reason: string, remarks: string = ''): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(`${this.base}/e-invoice/${irn}/cancel`, { reason, remarks });
+  }
+
+  getEInvoiceByInvoice(invoiceId: string): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(`${this.base}/e-invoice/invoice/${invoiceId}`);
+  }
+
+  // ─── GSTR-9 Annual Return (Phase 2) ───────────────────────────────────────
+  generateGSTR9(clientId: string, financialYear: string): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(`${this.base}/gstr9/generate`, { clientId, financialYear });
+  }
+
+  downloadGSTR9(clientId: string, financialYear: string): Observable<Blob> {
+    return this.http.get(`${this.base}/gstr9/download`, {
+      params: new HttpParams().set('clientId', clientId).set('financialYear', financialYear),
+      responseType: 'blob',
+    });
+  }
 }

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { ComplianceController } from '../controllers/ComplianceController';
+import { TDSTCSController } from '../controllers/TDSTCSController';
 import { authenticate } from '../../../../middlewares/auth.middleware';
 
 const router = Router();
@@ -8,7 +9,7 @@ const router = Router();
  * @openapi
  * tags:
  *   name: Compliance
- *   description: Tax and legal compliance tracking
+ *   description: Tax and legal compliance tracking, TDS/TCS management
  */
 
 router.use(authenticate);
@@ -107,5 +108,31 @@ router.get('/stats', ComplianceController.getStats);
  *         description: Deadline created successfully
  */
 router.post('/deadlines', ComplianceController.createDeadline);
+
+// ─── TDS Management (Phase 2) ─────────────────────────────────────────────────
+/** GET /compliance/tds/sections — Master list of TDS sections with rates */
+router.get('/tds/sections', TDSTCSController.getSections);
+/** POST /compliance/tds/calculate — Calculate TDS for a given amount & section */
+router.post('/tds/calculate', TDSTCSController.calculateTDS);
+/** POST /compliance/tds — Create a TDS entry */
+router.post('/tds', TDSTCSController.createTDS);
+/** GET /compliance/tds — List TDS entries (filters: clientId, period, section, status) */
+router.get('/tds', TDSTCSController.listTDS);
+/** PATCH /compliance/tds/:id — Update a TDS entry */
+router.patch('/tds/:id', TDSTCSController.updateTDS);
+/** DELETE /compliance/tds/:id — Soft delete a TDS entry */
+router.delete('/tds/:id', TDSTCSController.deleteTDS);
+/** GET /compliance/tds/summary/:clientId — Form 26AS-style summary */
+router.get('/tds/summary/:clientId', TDSTCSController.getForm26ASSummary);
+
+// ─── TCS Management (Phase 2) ─────────────────────────────────────────────────
+/** POST /compliance/tcs — Create a TCS entry */
+router.post('/tcs', TDSTCSController.createTCS);
+/** GET /compliance/tcs — List TCS entries (filters: period, sellerGstin) */
+router.get('/tcs', TDSTCSController.listTCS);
+/** PATCH /compliance/tcs/:id — Update a TCS entry */
+router.patch('/tcs/:id', TDSTCSController.updateTCS);
+/** DELETE /compliance/tcs/:id — Soft delete a TCS entry */
+router.delete('/tcs/:id', TDSTCSController.deleteTCS);
 
 export default router;

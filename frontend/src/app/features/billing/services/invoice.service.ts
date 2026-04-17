@@ -255,6 +255,53 @@ export class InvoiceService {
     return this.http.delete<void>(`${this.base}/recurring-templates/${id}`);
   }
 
+  // ─── Recurring Invoices (Phase 2) ─────────────────────────────────────────
+  createRecurringInvoice(dto: {
+    baseInvoiceId: string;
+    frequency: string;
+    nextRunDate: string;
+    endDate?: string;
+    autoSend: boolean;
+  }): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(`${this.base}/recurring-invoices`, dto);
+  }
+
+  getRecurringInvoices(status?: string): Observable<ApiResponse<any[]>> {
+    let params = new HttpParams();
+    if (status) params = params.set('status', status);
+    return this.http.get<ApiResponse<any[]>>(`${this.base}/recurring-invoices`, { params });
+  }
+
+  pauseRecurringInvoice(id: string): Observable<ApiResponse<any>> {
+    return this.http.patch<ApiResponse<any>>(`${this.base}/recurring-invoices/${id}/pause`, {});
+  }
+
+  resumeRecurringInvoice(id: string): Observable<ApiResponse<any>> {
+    return this.http.patch<ApiResponse<any>>(`${this.base}/recurring-invoices/${id}/resume`, {});
+  }
+
+  // ─── Bulk Invoice Generation (Phase 2) ────────────────────────────────────
+  createBulkJob(dto: {
+    templateId?: string;
+    clientIds: string[];
+    lineItemsTemplate: any[];
+    dueDate: string;
+    period: string;
+  }): Observable<ApiResponse<{ jobId: string; totalCount: number; status: string }>> {
+    return this.http.post<ApiResponse<{ jobId: string; totalCount: number; status: string }>>(
+      `${this.base}/invoices/bulk-generate`, dto
+    );
+  }
+
+  getBulkJobStatus(jobId: string): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(`${this.base}/invoices/bulk-job/${jobId}`);
+  }
+
+  // ─── Currency Rates (Phase 2) ─────────────────────────────────────────────
+  getCurrencyRates(): Observable<ApiResponse<any[]>> {
+    return this.http.get<ApiResponse<any[]>>(`${this.base}/currency-rates`);
+  }
+
   private toHttpParams(params: object): HttpParams {
     let httpParams = new HttpParams();
 

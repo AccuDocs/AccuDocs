@@ -4,15 +4,37 @@ import { logger } from '../utils/logger';
 
 // Load directly through classes for typesafety
 import { RecurringBillingService } from '../modules/billing/application/services/RecurringBillingService';
+import { RecurringInvoiceService } from '../modules/billing/application/services/RecurringInvoiceService';
+import { CurrencyService } from '../modules/billing/application/services/CurrencyService';
 import { IntelligenceService } from '../modules/intelligence/application/services/IntelligenceService';
 import { AuthService } from '../modules/auth/application/services/AuthService';
 
 const runRecurringBilling = async () => {
   try {
+    // Legacy recurring billing (from Phase 1 RecurringInvoiceTemplate)
     const recurringBillingService = container.resolve(RecurringBillingService);
     await recurringBillingService.generateRecurringInvoices();
   } catch (err: any) {
-    logger.error(`⏰ Daily recurring billing cron failed: ${err.message}`);
+    logger.error(`⏰ Daily recurring billing (legacy) cron failed: ${err.message}`);
+  }
+};
+
+const runRecurringInvoices = async () => {
+  try {
+    // Phase 2 recurring invoices
+    const recurringInvoiceService = container.resolve(RecurringInvoiceService);
+    await recurringInvoiceService.processDueRecurringInvoices();
+  } catch (err: any) {
+    logger.error(`⏰ Daily recurring invoices cron failed: ${err.message}`);
+  }
+};
+
+const runCurrencyRateFetch = async () => {
+  try {
+    const currencyService = container.resolve(CurrencyService);
+    await currencyService.fetchLiveRates();
+  } catch (err: any) {
+    logger.error(`⏰ Daily currency rate fetch cron failed: ${err.message}`);
   }
 };
 
@@ -53,16 +75,22 @@ export const scheduler = {
   start(): void {
     logger.info('⏰ Starting scheduler...');
 
-    // 1. Daily 8:00 AM — generate recurring invoices
-    jobs.push(cron.schedule('0 8 * * *', runRecurringBilling, { timezone: 'Asia/Kolkata' }));
+    // 1. Daily 6:00 AM IST — generate recurring invoices (Phase 2)
+    jobs.push(cron.schedule('0 6 * * *', runRecurringInvoices, { timezone: 'Asia/Kolkata' }));
 
-    // 2. Daily 9:00 AM — detect overdue invoices
+    // 2. Daily 6:30 AM IST — legacy recurring billing (Phase 1)
+    jobs.push(cron.schedule('30 6 * * *', runRecurringBilling, { timezone: 'Asia/Kolkata' }));
+
+    // 3. Daily 7:00 AM IST — fetch live currency rates
+    jobs.push(cron.schedule('0 7 * * *', runCurrencyRateFetch, { timezone: 'Asia/Kolkata' }));
+
+    // 4. Daily 9:00 AM — detect overdue invoices
     jobs.push(cron.schedule('0 9 * * *', runOverdueDetection, { timezone: 'Asia/Kolkata' }));
 
-    // 3. Every Sunday midnight — recalculate forecasts
+    // 5. Every Sunday midnight — recalculate forecasts
     jobs.push(cron.schedule('0 0 * * 0', runForecastRecalculation, { timezone: 'Asia/Kolkata' }));
 
-    // 4. Every hour — cleanup expired OTPs
+    // 6. Every hour — cleanup expired OTPs
     jobs.push(cron.schedule('0 * * * *', runOtpCleanup, { timezone: 'Asia/Kolkata' }));
 
     logger.info('⏰ Scheduler started successfully.');

@@ -37,6 +37,15 @@ import { HsnSac } from './hsn-sac.model';
 import { ItcLedger } from './itc-ledger.model';
 import { Gstr2aReconciliation } from './gstr2a-reconciliation.model';
 
+// Phase 2 models
+import { RecurringInvoice } from './recurring-invoice.model';
+import { CurrencyRate } from './currency-rate.model';
+import { EWayBill } from './eway-bill.model';
+import { EInvoice } from './e-invoice.model';
+import { TdsEntry } from './tds-entry.model';
+import { TcsEntry } from './tcs-entry.model';
+import { BulkInvoiceJob } from './bulk-invoice-job.model';
+
 // Set up associations
 Organization.hasMany(User, { foreignKey: 'organizationId', as: 'users' });
 Organization.hasMany(Client, { foreignKey: 'organizationId', as: 'clients' });
@@ -103,6 +112,34 @@ ItcLedger.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
 Client.hasMany(Gstr2aReconciliation, { foreignKey: 'client_id', as: 'gstr2aReconciliations' });
 Gstr2aReconciliation.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
 
+// ─── Phase 2 Associations ─────────────────────────────────────────────────────
+
+// Recurring Invoice associations
+RecurringInvoice.belongsTo(Invoice, { foreignKey: 'base_invoice_id', as: 'baseInvoice' });
+RecurringInvoice.belongsTo(Invoice, { foreignKey: 'last_generated_invoice_id', as: 'lastGeneratedInvoice' });
+RecurringInvoice.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organization' });
+Invoice.hasOne(RecurringInvoice, { foreignKey: 'base_invoice_id', as: 'recurringConfig' });
+
+// E-Way Bill associations
+EWayBill.belongsTo(Invoice, { foreignKey: 'invoice_id', as: 'invoice' });
+EWayBill.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organization' });
+Invoice.hasMany(EWayBill, { foreignKey: 'invoice_id', as: 'ewayBills' });
+
+// E-Invoice associations
+EInvoice.belongsTo(Invoice, { foreignKey: 'invoice_id', as: 'invoice' });
+EInvoice.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organization' });
+Invoice.hasOne(EInvoice, { foreignKey: 'invoice_id', as: 'eInvoice' });
+
+// TDS/TCS associations
+TdsEntry.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
+TdsEntry.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organization' });
+Client.hasMany(TdsEntry, { foreignKey: 'client_id', as: 'tdsEntries' });
+
+TcsEntry.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organization' });
+
+// Bulk Invoice Job associations
+BulkInvoiceJob.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organization' });
+
 export {
   Organization,
   User,
@@ -142,4 +179,12 @@ export {
   HsnSac,
   ItcLedger,
   Gstr2aReconciliation,
+  // Phase 2
+  RecurringInvoice,
+  CurrencyRate,
+  EWayBill,
+  EInvoice,
+  TdsEntry,
+  TcsEntry,
+  BulkInvoiceJob,
 };

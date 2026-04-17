@@ -53,6 +53,15 @@ export const billingRoutes: Routes = [
     canActivate: [roleGuard],
     data: { roles: ['admin', 'finance_manager'] },
   },
+  {
+    path: 'bulk-generate',
+    loadComponent: () =>
+      import('./components/bulk-generate/bulk-generate.component').then(
+        (module) => module.BulkGenerateComponent
+      ),
+    canActivate: [roleGuard],
+    data: { roles: ['admin', 'finance_manager'] },
+  },
 ];
 
 export const BILLING_ROUTES = billingRoutes;
