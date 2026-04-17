@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GstExtendedService } from '@core/services/gst-extended.service';
@@ -9,8 +9,8 @@ import { HotToastService } from '@ngneat/hot-toast';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="ewb-root">
-      <div class="ewb-header">
+    <div class="ewb-root" [class.p-0]="isEmbedded">
+      <div class="ewb-header" *ngIf="!isEmbedded">
         <div>
           <h1 class="ewb-title">E-Way Bill Generation</h1>
           <p class="ewb-sub">Generate, manage, and track e-way bills for goods transport</p>
@@ -21,9 +21,9 @@ import { HotToastService } from '@ngneat/hot-toast';
       <div class="ewb-card">
         <h3 class="ewb-card-title">Generate E-Way Bill</h3>
         <div class="ewb-form-grid">
-          <div class="ewb-field ewb-field--full">
+          <div class="ewb-field ewb-field--full" *ngIf="!isEmbedded">
             <label class="ewb-label">Invoice ID</label>
-            <input id="ewb-invoice-id" class="ewb-input" type="text" [(ngModel)]="invoiceId" placeholder="Paste invoice UUID…" />
+            <input id="ewb-invoice-id" class="ewb-input" type="text" [(ngModel)]="invoiceId" placeholder="Paste invoice UUID…" (change)="loadHistory()" />
           </div>
           <div class="ewb-field">
             <label class="ewb-label">Transporter ID</label>
@@ -87,7 +87,7 @@ import { HotToastService } from '@ngneat/hot-toast';
           }
 
           <!-- Details Grid -->
-          <div class="ewb-details-grid">
+          <div class="ewb-details-grid" [class.grid-cols-2]="isEmbedded" [class.lg:grid-cols-4]="!isEmbedded">
             <div class="ewb-detail">
               <span class="ewb-detail-label">Vehicle</span>
               <span class="ewb-detail-value">{{ ewayBill()!.vehicleNo || '—' }}</span>
@@ -120,36 +120,39 @@ import { HotToastService } from '@ngneat/hot-toast';
       @if (history().length > 0) {
         <div class="ewb-history-card">
           <h3 class="ewb-card-title">E-Way Bill History</h3>
-          <table class="ewb-table">
-            <thead>
-              <tr>
-                <th class="ewb-th">Bill No</th>
-                <th class="ewb-th">Vehicle</th>
-                <th class="ewb-th">Distance</th>
-                <th class="ewb-th">Mode</th>
-                <th class="ewb-th">Status</th>
-                <th class="ewb-th">Generated</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (bill of history(); track bill.id) {
-                <tr class="ewb-tr">
-                  <td class="ewb-td"><span class="ewb-mono">{{ bill.ewayBillNo }}</span></td>
-                  <td class="ewb-td">{{ bill.vehicleNo || '—' }}</td>
-                  <td class="ewb-td">{{ bill.distanceKm }} km</td>
-                  <td class="ewb-td">{{ bill.transportMode | titlecase }}</td>
-                  <td class="ewb-td"><span class="ewb-bill-status ewb-bill-status--sm" [class]="'ewb-bill-status--' + bill.status">{{ bill.status }}</span></td>
-                  <td class="ewb-td">{{ bill.createdAt | date:'shortDate' }}</td>
+          <div class="overflow-x-auto">
+            <table class="ewb-table">
+              <thead>
+                <tr>
+                  <th class="ewb-th">Bill No</th>
+                  <th class="ewb-th">Vehicle</th>
+                  <th class="ewb-th">Distance</th>
+                  <th class="ewb-th">Mode</th>
+                  <th class="ewb-th">Status</th>
+                  <th class="ewb-th">Generated</th>
                 </tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (bill of history(); track bill.id) {
+                  <tr class="ewb-tr">
+                    <td class="ewb-td"><span class="ewb-mono">{{ bill.ewayBillNo }}</span></td>
+                    <td class="ewb-td">{{ bill.vehicleNo || '—' }}</td>
+                    <td class="ewb-td">{{ bill.distanceKm }} km</td>
+                    <td class="ewb-td">{{ bill.transportMode | titlecase }}</td>
+                    <td class="ewb-td"><span class="ewb-bill-status ewb-bill-status--sm" [class]="'ewb-bill-status--' + bill.status">{{ bill.status }}</span></td>
+                    <td class="ewb-td">{{ bill.createdAt | date:'shortDate' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
         </div>
       }
     </div>
   `,
   styles: [`
     .ewb-root { display: flex; flex-direction: column; gap: 20px; padding: 24px; max-width: 920px; }
+    .ewb-root.p-0 { padding: 0; max-width: 100%; }
     .ewb-title { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 4px; }
     .ewb-sub { font-size: 13px; color: #64748b; margin: 0; }
 
@@ -209,9 +212,13 @@ import { HotToastService } from '@ngneat/hot-toast';
     .ewb-mono { font-family: monospace; font-weight: 600; }
   `],
 })
-export class EwayBillComponent {
+export class EwayBillComponent implements OnInit {
   private gstService = inject(GstExtendedService);
   private toast = inject(HotToastService);
+
+  @Input() isEmbedded = false;
+  @Input() clientIdOverride?: string;
+  @Input() initialInvoiceId?: string;
 
   invoiceId = '';
   transporterId = '';
@@ -223,6 +230,18 @@ export class EwayBillComponent {
   readonly ewayBill = signal<any>(null);
   readonly history = signal<any[]>([]);
   readonly requiredCheck = signal<boolean | null>(null);
+
+  ngOnInit() {
+    if (this.clientIdOverride) {
+      // In embedded mode, we don't necessarily set invoiceId from clientId
+      // But we can use it to scope history if needed.
+    }
+    
+    if (this.initialInvoiceId) {
+      this.invoiceId = this.initialInvoiceId;
+      this.loadHistory();
+    }
+  }
 
   hoursRemaining(): number {
     const bill = this.ewayBill();
@@ -291,7 +310,7 @@ export class EwayBillComponent {
     });
   }
 
-  private loadHistory() {
+  loadHistory() {
     if (!this.invoiceId) return;
     this.gstService.getEWayBillByInvoice(this.invoiceId.trim()).subscribe({
       next: (res) => this.history.set(res.data ?? []),

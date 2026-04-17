@@ -414,8 +414,9 @@ export class BillingController {
   });
 
   static getServiceTemplates = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { clientId } = req.query;
     const service = container.resolve(BillingService);
-    const templates = await service.getServiceTemplates(req.user!.organizationId);
+    const templates = await service.getServiceTemplates(req.user!.organizationId, clientId as string);
     sendSuccess(res, templates);
   });
 

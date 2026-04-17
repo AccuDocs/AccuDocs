@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GstExtendedService } from '@core/services/gst-extended.service';
@@ -9,8 +9,8 @@ import { HotToastService } from '@ngneat/hot-toast';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="g9-root">
-      <div class="g9-header">
+    <div class="g9-root" [class.p-0]="isEmbedded">
+      <div class="g9-header" *ngIf="!isEmbedded">
         <div>
           <h1 class="g9-title">GSTR-9 Annual Return</h1>
           <p class="g9-sub">Generate comprehensive annual GST return summary from GSTR-1 & GSTR-3B data</p>
@@ -19,7 +19,7 @@ import { HotToastService } from '@ngneat/hot-toast';
 
       <!-- Controls -->
       <div class="g9-controls">
-        <div class="g9-field">
+        <div class="g9-field" *ngIf="!isEmbedded">
           <label class="g9-label">Client ID</label>
           <input id="gstr9-client-id" class="g9-input" [(ngModel)]="clientId" placeholder="Client UUID" />
         </div>
@@ -59,7 +59,7 @@ import { HotToastService } from '@ngneat/hot-toast';
             <div class="g9-summary-fy">FY {{ data()!.summary.financialYear }}</div>
           </div>
 
-          <div class="g9-metrics-grid">
+          <div class="g9-metrics-grid" [class.grid-cols-2]="isEmbedded" [class.lg:grid-cols-3]="!isEmbedded">
             <div class="g9-metric">
               <span class="g9-metric-label">Total Outward Supplies</span>
               <span class="g9-metric-value">₹{{ data()!.summary.totalOutwardSupplies | number:'1.2-2' }}</span>
@@ -149,15 +149,24 @@ import { HotToastService } from '@ngneat/hot-toast';
     .g9-pre { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; font-size: 12px; font-family: monospace; color: #475569; overflow-x: auto; margin: 0; white-space: pre-wrap; }
   `],
 })
-export class Gstr9Component {
+export class Gstr9Component implements OnInit {
   private gstService = inject(GstExtendedService);
   private toast = inject(HotToastService);
+
+  @Input() isEmbedded = false;
+  @Input() clientIdOverride?: string;
 
   clientId = '';
   financialYear = '2024-25';
   readonly isLoading = signal(false);
   readonly data = signal<any>(null);
   readonly openSections = signal<string[]>([]);
+
+  ngOnInit() {
+    if (this.clientIdOverride) {
+      this.clientId = this.clientIdOverride;
+    }
+  }
 
   tables() {
     const d = this.data();

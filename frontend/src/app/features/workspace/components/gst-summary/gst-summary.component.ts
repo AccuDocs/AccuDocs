@@ -5,7 +5,8 @@ import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   heroReceiptPercentSolid, heroCurrencyRupeeSolid,
   heroArrowTrendingUpSolid, heroArrowTrendingDownSolid,
-  heroBanknotesSolid, heroChartBarSolid
+  heroBanknotesSolid, heroChartBarSolid,
+  heroTruckSolid, heroSparklesSolid, heroVariableSolid, heroCalendarSolid
 } from '@ng-icons/heroicons/solid';
 import { DataService, GstSummaryRow } from '@core/services/data.service';
 import { ToastService } from '@core/services/toast.service';
@@ -14,6 +15,10 @@ import { Gstr1FormComponent } from '../../../gst-filing/components/gstr1-form/gs
 import { Gstr3bFormComponent } from '../../../gst-filing/components/gstr3b-form/gstr3b-form.component';
 import { ItcTrackerComponent } from '../../../gst-filing/components/itc-tracker/itc-tracker.component';
 import { Gstr2aReconcileComponent } from '../../../gst-filing/components/gstr2a-reconcile/gstr2a-reconcile.component';
+import { EwayBillComponent } from '../../../gst-filing/components/eway-bill/eway-bill.component';
+import { EInvoiceComponent } from '../../../gst-filing/components/e-invoice/e-invoice.component';
+import { TdsTcsComponent } from '../../../gst-filing/components/tds-tcs/tds-tcs.component';
+import { Gstr9Component } from '../../../gst-filing/components/gstr9/gstr9.component';
 import { WorkspaceService, FolderNode } from '@core/services/workspace.service';
 import {
   heroDocumentCheckSolid, 
@@ -28,18 +33,60 @@ import {
 @Component({
   selector: 'app-gst-summary',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgIconComponent, DecimalPipe, Gstr1FormComponent, Gstr3bFormComponent, ItcTrackerComponent, Gstr2aReconcileComponent],
+  imports: [
+    CommonModule, FormsModule, NgIconComponent, DecimalPipe, 
+    Gstr1FormComponent, Gstr3bFormComponent, ItcTrackerComponent, Gstr2aReconcileComponent,
+    EwayBillComponent, EInvoiceComponent, TdsTcsComponent, Gstr9Component
+  ],
   providers: [provideIcons({ 
     heroReceiptPercentSolid, heroCurrencyRupeeSolid, heroArrowTrendingUpSolid, 
     heroArrowTrendingDownSolid, heroBanknotesSolid, heroChartBarSolid,
     heroDocumentCheckSolid, heroDocumentPlusSolid, heroArrowDownTraySolid, heroClockSolid, heroFolderOpenSolid,
-    heroBoltSolid
+    heroBoltSolid, heroTruckSolid, heroSparklesSolid, heroVariableSolid, heroCalendarSolid
   })],
   template: `
     <div class="space-y-6 animate-in fade-in duration-500">
+      <!-- Sub-Navigation Tabs -->
+      <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-xl w-fit overflow-x-auto max-w-full no-scrollbar">
+        <button (click)="activeView.set('summary')" 
+                [class]="activeView() === 'summary' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'"
+                class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-1.5 whitespace-nowrap">
+          <ng-icon name="heroChartBarSolid"></ng-icon> Summary
+        </button>
+        <button (click)="activeView.set('itc')" 
+                [class]="activeView() === 'itc' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'"
+                class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-1.5 whitespace-nowrap">
+          <ng-icon name="heroArrowTrendingDownSolid"></ng-icon> ITC Tracker
+        </button>
+        <button (click)="activeView.set('gstr2a')" 
+                [class]="activeView() === 'gstr2a' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'"
+                class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-1.5 whitespace-nowrap">
+          <ng-icon name="heroDocumentCheckSolid"></ng-icon> GSTR-2A
+        </button>
+        <button (click)="activeView.set('eway')" 
+                [class]="activeView() === 'eway' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'"
+                class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-1.5 whitespace-nowrap">
+          <ng-icon name="heroTruckSolid"></ng-icon> E-Way Bill
+        </button>
+        <button (click)="activeView.set('einvoice')" 
+                [class]="activeView() === 'einvoice' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'"
+                class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-1.5 whitespace-nowrap">
+          <ng-icon name="heroSparklesSolid"></ng-icon> E-Invoice
+        </button>
+        <button (click)="activeView.set('tdstcs')" 
+                [class]="activeView() === 'tdstcs' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'"
+                class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-1.5 whitespace-nowrap">
+          <ng-icon name="heroVariableSolid"></ng-icon> TDS/TCS
+        </button>
+        <button (click)="activeView.set('gstr9')" 
+                [class]="activeView() === 'gstr9' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'"
+                class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-1.5 whitespace-nowrap">
+          <ng-icon name="heroCalendarSolid"></ng-icon> GSTR-9
+        </button>
+      </div>
+
       @if (activeView() === 'summary') {
       <!-- Existing Summary View -->
-      <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 class="text-[28px] font-bold text-slate-900 tracking-tight">GST Summary</h1>
@@ -47,19 +94,6 @@ import {
           <div class="w-10 h-[3px] bg-indigo-600 rounded-full mt-2"></div>
         </div>
         <div class="flex items-center gap-3">
-          <button 
-            (click)="activeView.set('itc')"
-            class="px-4 py-2 text-sm font-semibold rounded-xl bg-violet-50 text-violet-700 hover:bg-violet-100 transition-colors flex items-center gap-2"
-          >
-            <ng-icon name="heroChartBarSolid"></ng-icon> ITC Tracker
-          </button>
-          <button 
-            (click)="activeView.set('gstr2a')"
-            class="px-4 py-2 text-sm font-semibold rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors flex items-center gap-2"
-          >
-            <ng-icon name="heroDocumentCheckSolid"></ng-icon> GSTR-2A
-          </button>
-          
           <select
             [(ngModel)]="selectedFY"
             (ngModelChange)="loadData()"
@@ -74,7 +108,6 @@ import {
 
       <!-- Top Summary Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- ... existing cards ... -->
         <div class="sa-card group">
           <div class="flex items-start justify-between">
             <div>
@@ -151,21 +184,15 @@ import {
                   <td class="py-3.5 px-4 text-sm font-bold text-slate-900">{{ getMonthName(row.month) }}</td>
                   <td class="py-3.5 px-4 text-sm text-emerald-700 font-mono font-bold text-right">₹{{ row.total_sales | number:'1.0-0' }}</td>
                   <td class="py-3.5 px-4 text-sm text-indigo-700 font-mono font-bold text-right">₹{{ row.output_gst | number:'1.0-0' }}</td>
-                  <td class="py-3.5 px-4 text-sm text-amber-700 font-mono font-bold text-right">₹{{ row.input_gst | number:'1.0-0' }}</td>
+                  <td class="py-3.5 px-4 text-sm text-amber-700 font-mono font-bold text-right">₹{{ row.total_purchases | number:'1.0-0' }}</td>
                   <td class="py-3.5 px-4 text-sm font-mono font-bold text-right" [class]="row.gst_payable >= 0 ? 'text-rose-700' : 'text-emerald-700'">
                     {{ row.gst_payable >= 0 ? '' : '−' }}₹{{ (row.gst_payable >= 0 ? row.gst_payable : -row.gst_payable) | number:'1.0-0' }}
                   </td>
-                  <!-- Docs Folder -->
                   <td class="py-3.5 px-4 text-center">
-                    <button 
-                      (click)="openGstFolder(row)"
-                      class="text-indigo-400 hover:text-indigo-600 transition-colors"
-                      title="View Document Folder"
-                    >
+                    <button (click)="openGstFolder(row)" class="text-indigo-400 hover:text-indigo-600 transition-colors" title="View Document Folder">
                       <ng-icon name="heroFolderOpenSolid" size="18"></ng-icon>
                     </button>
                   </td>
-                  <!-- GSTR-1 Status/Action -->
                   <td class="py-3.5 px-4 text-center">
                     @let status1 = getReturnStatus(row.month, 'GSTR-1');
                     <div class="flex items-center justify-center gap-2">
@@ -186,7 +213,6 @@ import {
                       }
                     </div>
                   </td>
-                  <!-- GSTR-3B Status/Action -->
                   <td class="py-3.5 px-4 text-center">
                     @let status3 = getReturnStatus(row.month, 'GSTR-3B');
                     <div class="flex items-center justify-center gap-2">
@@ -232,19 +258,25 @@ import {
           (back)="onBackFromForm()">
         </app-gstr3b-form>
       } @else if (activeView() === 'itc') {
-        <div class="mb-4">
-          <button (click)="onBackFromForm()" class="text-sm font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1">
-            ← Back to GST Summary
-          </button>
-        </div>
         <app-itc-tracker [clientId]="clientId" [isEmbedded]="true"></app-itc-tracker>
       } @else if (activeView() === 'gstr2a') {
-        <div class="mb-4">
-          <button (click)="onBackFromForm()" class="text-sm font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1">
-            ← Back to GST Summary
-          </button>
-        </div>
         <app-gstr2a-reconcile [clientId]="clientId" [isEmbedded]="true"></app-gstr2a-reconcile>
+      } @else if (activeView() === 'eway') {
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+          <app-eway-bill [isEmbedded]="true" [clientIdOverride]="clientId"></app-eway-bill>
+        </div>
+      } @else if (activeView() === 'einvoice') {
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+          <app-e-invoice [isEmbedded]="true" [clientIdOverride]="clientId"></app-e-invoice>
+        </div>
+      } @else if (activeView() === 'tdstcs') {
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+          <app-tds-tcs [isEmbedded]="true" [clientIdOverride]="clientId"></app-tds-tcs>
+        </div>
+      } @else if (activeView() === 'gstr9') {
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+          <app-gstr9 [isEmbedded]="true" [clientIdOverride]="clientId"></app-gstr9>
+        </div>
       }
     </div>
   `,
@@ -269,7 +301,7 @@ export class GstSummaryComponent implements OnInit {
   private workspaceService = inject(WorkspaceService);
   private toast = inject(ToastService);
 
-  activeView = signal<'summary' | 'gstr1' | 'gstr3b' | 'itc' | 'gstr2a' | 'hsn'>('summary');
+  activeView = signal<'summary' | 'gstr1' | 'gstr3b' | 'itc' | 'gstr2a' | 'hsn' | 'eway' | 'einvoice' | 'tdstcs' | 'gstr9'>('summary');
   selectedReturn = signal<any>(null);
   selectedMonth = signal<number>(4);
   returnStatuses = signal<any[]>([]);

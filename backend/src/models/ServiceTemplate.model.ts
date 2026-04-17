@@ -4,6 +4,7 @@ import { sequelize } from '../config/database.config';
 export class ServiceTemplate extends Model {
   declare public id: string;
   declare public organizationId: string | null;
+  declare public clientId: string | null;
   declare public name: string;
   declare public description: string | null;
   declare public sacCode: string;
@@ -20,6 +21,7 @@ export class ServiceTemplate extends Model {
 ServiceTemplate.init({
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   organizationId: { type: DataTypes.UUID, allowNull: true, field: 'organization_id' },
+  clientId: { type: DataTypes.UUID, allowNull: true, field: 'client_id' },
   name: { type: DataTypes.STRING(150), allowNull: false },
   description: { type: DataTypes.TEXT, allowNull: true },
   sacCode: { type: DataTypes.STRING(10), allowNull: false, field: 'sac_code' },

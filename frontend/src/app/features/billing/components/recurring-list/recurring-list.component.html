@@ -1,5 +1,5 @@
-<div class="p-6 space-y-6">
-  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+<div class="space-y-6" [class.p-6]="!isEmbedded">
+  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between" *ngIf="!isEmbedded">
     <div>
       <h1 class="text-2xl font-semibold text-gray-900">Recurring Templates</h1>
       <p class="text-sm text-gray-500">Manage repeat billing rules for retainers, periodic filings, and standard work.</p>
@@ -99,8 +99,8 @@
           </td>
         </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        <tr mat-header-row *matHeaderRowDef="columnsToDisplay"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnsToDisplay"></tr>
       </table>
 
       @if (!facade.isLoading() && facade.templates().length === 0) {

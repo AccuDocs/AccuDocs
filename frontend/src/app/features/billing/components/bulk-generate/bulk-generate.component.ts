@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InvoiceService } from '../../services/invoice.service';
@@ -9,9 +9,9 @@ import { HotToastService } from '@ngneat/hot-toast';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="bulk-root">
+    <div class="bulk-root" [class.p-0]="isEmbedded">
       <!-- Header -->
-      <div class="bulk-header">
+      <div class="bulk-header" *ngIf="!isEmbedded">
         <div>
           <h1 class="bulk-title">Bulk Invoice Generation</h1>
           <p class="bulk-sub">Generate invoices for multiple clients at once — max 500 per batch</p>
@@ -22,7 +22,7 @@ import { HotToastService } from '@ngneat/hot-toast';
       <div class="bulk-form-card">
         <div class="bulk-form-grid">
           <!-- Client IDs -->
-          <div class="bulk-field bulk-field--full">
+          <div class="bulk-field bulk-field--full" *ngIf="!isEmbedded">
             <label class="bulk-label">Client IDs (comma-separated UUIDs)</label>
             <textarea
               id="bulk-client-ids"
@@ -132,6 +132,7 @@ import { HotToastService } from '@ngneat/hot-toast';
   `,
   styles: [`
     .bulk-root { display: flex; flex-direction: column; gap: 20px; padding: 24px; max-width: 900px; }
+    .bulk-root.p-0 { padding: 0; max-width: 100%; }
     .bulk-title { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 4px; }
     .bulk-sub { font-size: 13px; color: #64748b; margin: 0; }
 
@@ -191,6 +192,9 @@ export class BulkGenerateComponent {
   private invoiceService = inject(InvoiceService);
   private toast = inject(HotToastService);
 
+  @Input() isEmbedded = false;
+  @Input() clientIdOverride?: string;
+
   clientIdsText = '';
   period = '';
   dueDate = '';
@@ -206,6 +210,12 @@ export class BulkGenerateComponent {
   readonly jobTotal = signal(0);
 
   private pollInterval: any = null;
+
+  ngOnInit() {
+    if (this.clientIdOverride) {
+      this.clientIdsText = this.clientIdOverride;
+    }
+  }
 
   parsedClientCount(): number {
     if (!this.clientIdsText.trim()) return 0;

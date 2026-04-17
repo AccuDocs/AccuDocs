@@ -15,14 +15,13 @@ import { ExcelUtil } from '../../../../../shared/utils/excel.util';
 import { PdfUtil } from '../../../../../shared/utils/pdf.util';
 import { DataTableComponent } from '../../../../../shared/data-table/data-table.component';
 import { TableColumn } from '../../../../../shared/data-table/models';
-import { TemplateSelectorComponent } from '../../../../billing/components/template-selector/template-selector.component';
 import { HsnDirectoryComponent } from '../../../../gst-filing/components/hsn-directory/hsn-directory.component';
 import { HsnSacCode } from '@core/services/gst-extended.service';
 
 @Component({
   selector: 'app-sales',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgIconComponent, DecimalPipe, DataTableComponent, TemplateSelectorComponent, HsnDirectoryComponent],
+  imports: [CommonModule, FormsModule, NgIconComponent, DecimalPipe, DataTableComponent, HsnDirectoryComponent],
   providers: [
     provideIcons({
       heroChartBarSolid, heroPlusSolid, heroPencilSquareSolid,
@@ -286,10 +285,6 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
                 <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Notes</label>
                 <textarea [(ngModel)]="form.notes" class="sa-input !h-auto" rows="2" placeholder="Optional remarks..."></textarea>
               </div>
-              <!-- Row 6: Template Selection -->
-              <div class="pt-4 border-t border-slate-200">
-                <app-template-selector (templateSelected)="form.templateId = $event"></app-template-selector>
-              </div>
             </div>
 
             <div class="flex items-center justify-end gap-3 p-6 border-t border-slate-200">
@@ -443,8 +438,7 @@ export class SalesComponent implements OnInit, OnChanges {
       invoiceNo: '', invoiceDate: '', customerName: '', description: '',
       hsnSacCode: '', baseAmount: 0, gstRate: 18,
       gstin: '', invoiceType: 'B2B', placeOfSupply: '',
-      isNilRated: false, isAdvance: false, status: 'draft', notes: '',
-      templateId: null
+      isNilRated: false, isAdvance: false, status: 'draft', notes: ''
     };
   }
 
@@ -470,8 +464,7 @@ export class SalesComponent implements OnInit, OnChanges {
       isNilRated: entry.isNilRated || false,
       isAdvance: entry.isAdvance || false,
       status: entry.status || 'draft',
-      notes: entry.notes || '',
-      templateId: (entry as any).templateId || null
+      notes: entry.notes || ''
     };
     this.showModal.set(true);
   }

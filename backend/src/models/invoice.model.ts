@@ -53,6 +53,9 @@ export class Invoice extends Model {
   declare public createdBy: string;
   declare public issuedBy: string | null;
   declare public cancelledBy: string | null;
+
+  declare public receiverName: string | null;
+  declare public receiverAddress: string | null;
   
   declare public readonly createdAt: Date;
   declare public readonly updatedAt: Date;
@@ -110,6 +113,9 @@ Invoice.init({
   notes: { type: DataTypes.TEXT, allowNull: true },
   cancelReason: { type: DataTypes.TEXT, allowNull: true, field: 'cancel_reason' },
   internalNotes: { type: DataTypes.TEXT, allowNull: true, field: 'internal_notes' },
+  
+  receiverName: { type: DataTypes.STRING(200), allowNull: true, field: 'receiver_name' },
+  receiverAddress: { type: DataTypes.TEXT, allowNull: true, field: 'receiver_address' },
   
   pdfS3Key: { type: DataTypes.STRING(500), allowNull: true, field: 'pdf_s3_key' },
   pdfGeneratedAt: { type: DataTypes.DATE, allowNull: true, field: 'pdf_generated_at' },

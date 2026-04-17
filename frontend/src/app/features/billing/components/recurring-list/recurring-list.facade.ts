@@ -9,10 +9,12 @@ export class RecurringListFacade {
 
   searchQuery = signal('');
   activeFilter = signal<boolean | null>(null);
+  clientId = signal<string | null>(null);
 
   private queryParams = computed(() => ({
     search: this.searchQuery() || undefined,
     isActive: this.activeFilter(),
+    clientId: this.clientId() || undefined,
   }));
 
   templatesResource = rxResource({

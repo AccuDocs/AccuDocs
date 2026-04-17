@@ -30,6 +30,26 @@ import { InvoiceService } from '../../services/invoice.service';
 import { InrCurrencyPipe } from '../../pipes/inr-currency.pipe';
 import { GstCalculation, calculateGST, lineItemAmount } from './gst-calculator.util';
 
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { 
+  heroSquares2x2, 
+  heroXMark, 
+  heroPlus, 
+  heroCheckCircle, 
+  heroMagnifyingGlass, 
+  heroUser, 
+  heroDocumentText, 
+  heroQueueList, 
+  heroTrash, 
+  heroArrowTrendingUp, 
+  heroBolt, 
+  heroBuildingOffice, 
+  heroShieldCheck,
+  heroClipboardDocumentCheck,
+  heroPaperAirplane,
+  heroBookmark
+} from '@ng-icons/heroicons/outline';
+
 interface BillingOrganization {
   name: string;
   gstin: string;
@@ -50,6 +70,9 @@ interface BillingClient {
   gstin?: string;
   mobile?: string;
   stateCode: string;
+  address?: string;
+  city?: string;
+  pincode?: string;
   user?: {
     name?: string;
     mobile?: string;
@@ -72,8 +95,13 @@ type InvoiceFormModel = {
   expiryDate: FormControl<string>;
   gstType: FormControl<GstType>;
   clientGstin: FormControl<string>;
+  customerName: FormControl<string>;
+  customerAddress: FormControl<string>;
   notes: FormControl<string>;
   lineItems: FormArray<FormGroup<LineItemFormModel>>;
+  isRecurring: FormControl<boolean>;
+  recurringFrequency: FormControl<'weekly' | 'monthly' | 'quarterly' | 'yearly'>;
+  recurringAutoSend: FormControl<boolean>;
 };
 
 const DEFAULT_ORGANIZATION: BillingOrganization = {
@@ -112,132 +140,88 @@ function isoDateFromValue(value: string | Date | undefined): string {
     ReactiveFormsModule,
     MatProgressBarModule,
     InrCurrencyPipe,
+    NgIconComponent
+  ],
+  providers: [
+    provideIcons({
+      heroSquares2x2,
+      heroXMark,
+      heroPlus,
+      heroCheckCircle,
+      heroMagnifyingGlass,
+      heroUser,
+      heroDocumentText,
+      heroQueueList,
+      heroTrash,
+      heroArrowTrendingUp,
+      heroBolt,
+      heroBuildingOffice,
+      heroShieldCheck,
+      heroClipboardDocumentCheck,
+      heroPaperAirplane,
+      heroBookmark
+    })
   ],
   templateUrl: './invoice-form.component.html',
-  styles: [
-    `
-      :host {
-        display: block;
-      }
+  styles: [`
+    :host { 
+      display: block; 
+      --studio-primary: #6366f1; 
+      --studio-primary-rgb: 99, 102, 241;
+      --studio-primary-light: #eef2ff;
+      --studio-primary-glow: rgba(99, 102, 241, 0.2);
+    }
 
-      .panel-card {
-        @apply rounded-2xl border border-slate-200/80 bg-white shadow-card dark:border-slate-700/50 dark:bg-slate-800;
-      }
+    .billing-studio-container.mode-client {
+      --studio-primary: #10b981; 
+      --studio-primary-rgb: 16, 185, 129;
+      --studio-primary-light: #ecfdf5;
+      --studio-primary-glow: rgba(16, 185, 129, 0.2);
+    }
+    
+    .billing-studio-container { max-width: 1400px; margin: 0 auto; min-height: 100vh; }
+    .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-      .panel-header {
-        @apply flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5 dark:border-slate-700/50;
-      }
+    .studio-badge { @apply inline-flex items-center gap-2 px-3 py-1 bg-[var(--studio-primary-light)] text-[var(--studio-primary)] rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-[var(--studio-primary-light)]; }
+    
+    .glass-card { @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm transition-all; }
+    .glass-card-primary { 
+      background: linear-gradient(135deg, var(--studio-primary), #1e1b4b);
+      @apply rounded-3xl border transition-all; 
+      border-color: rgba(var(--studio-primary-rgb), 0.3);
+    }
+    .glass-card-float { @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl; }
 
-      .panel-body {
-        @apply p-6;
-      }
+    .section-icon { @apply w-10 h-10 rounded-2xl flex items-center justify-center bg-slate-50 dark:bg-slate-800 text-slate-500 shadow-sm border border-slate-100 dark:border-slate-700; opacity: 0.8; }
+    
+    .studio-label { @apply block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1; }
+    .studio-input { @apply w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-[var(--studio-primary)] focus:border-[var(--studio-primary)] transition-all text-slate-900 dark:text-white placeholder:text-slate-300; }
+    .studio-select { @apply w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-[var(--studio-primary)] focus:border-[var(--studio-primary)] transition-all appearance-none text-slate-900 dark:text-white; }
+    .studio-input-minimal { @apply w-full bg-transparent border-none focus:ring-0 px-0 py-0 text-sm focus:outline-none; }
 
-      .field-label {
-        @apply mb-2 block text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400;
-      }
+    .btn-studio-primary { 
+      background-color: var(--studio-primary);
+      @apply flex items-center gap-2 hover:brightness-110 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98];
+      box-shadow: 0 10px 15px -3px var(--studio-primary-glow);
+    }
+    .btn-studio-secondary { @apply flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold py-3 px-6 rounded-2xl transition-all; }
+    .btn-studio-text { color: var(--studio-primary); @apply flex items-center gap-2 font-black text-xs uppercase tracking-widest hover:opacity-70 transition-opacity; }
 
-      .form-input-premium,
-      .form-select-premium,
-      .form-textarea-premium {
-        @apply w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-primary-400 focus:bg-white focus:ring-2 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-900/60 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-primary-400 dark:focus:bg-slate-900;
-      }
+    .radio-tile { @apply relative p-4 rounded-2xl border-2 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 cursor-pointer transition-all; }
+    .radio-tile:hover { border-color: rgba(var(--studio-primary-rgb), 0.3); }
+    .radio-tile.active { border-color: var(--studio-primary); background-color: var(--studio-primary-light); }
 
-      .form-select-premium {
-        @apply cursor-pointer appearance-none;
-        background-image:
-          linear-gradient(45deg, transparent 50%, #64748b 50%),
-          linear-gradient(135deg, #64748b 50%, transparent 50%);
-        background-position:
-          calc(100% - 18px) calc(50% - 2px),
-          calc(100% - 12px) calc(50% - 2px);
-        background-size: 6px 6px, 6px 6px;
-        background-repeat: no-repeat;
-      }
+    .template-tile { @apply flex items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-[var(--studio-primary)] hover:bg-[var(--studio-primary-light)] transition-all text-left w-full h-auto; }
+    
+    .dropdown-item { @apply flex items-center px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors; }
 
-      .form-textarea-premium {
-        @apply min-h-[120px] resize-y;
-      }
+    .loader-sm { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.1); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .loader-lg { width: 40px; height: 40px; border: 4px solid rgba(0,0,0,0.1); border-top-color: var(--studio-primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-      .form-input-premium.readonly-display {
-        @apply bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300;
-      }
-
-      .form-input-premium.error,
-      .form-select-premium.error,
-      .form-textarea-premium.error {
-        @apply border-danger-300 bg-danger-50 text-danger-900 focus:border-danger-400 focus:ring-danger-500/10 dark:border-danger-800 dark:bg-danger-950/20 dark:text-danger-100;
-      }
-
-      .hint-text {
-        @apply mt-2 text-xs text-slate-400 dark:text-slate-500;
-      }
-
-      .error-text {
-        @apply mt-2 text-xs font-semibold text-danger-600 dark:text-danger-400;
-      }
-
-      .radio-tile {
-        @apply flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 transition-all duration-200 hover:border-primary-300 hover:bg-white dark:border-slate-700 dark:bg-slate-900/50 dark:hover:border-primary-500 dark:hover:bg-slate-900;
-      }
-
-      .radio-tile.active {
-        @apply border-primary-300 bg-primary-50 shadow-sm dark:border-primary-500/60 dark:bg-primary-950/20;
-      }
-
-      .radio-dot {
-        @apply mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-slate-300 bg-white transition-all dark:border-slate-600 dark:bg-slate-900;
-      }
-
-      .radio-tile.active .radio-dot {
-        @apply border-primary-500;
-      }
-
-      .radio-dot::after {
-        content: '';
-        @apply h-3 w-3 rounded-full bg-primary-500 opacity-0 transition-opacity;
-      }
-
-      .radio-tile.active .radio-dot::after {
-        @apply opacity-100;
-      }
-
-      .line-item-table {
-        @apply min-w-full border-separate border-spacing-y-3;
-      }
-
-      .line-item-head {
-        @apply px-3 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400;
-      }
-
-      .line-item-cell {
-        @apply px-2 align-top;
-      }
-
-      .line-item-output {
-        @apply rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-sm font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-white;
-      }
-
-      .template-card {
-        @apply w-full rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-300 hover:shadow-card dark:border-slate-700/60 dark:bg-slate-900/50 dark:hover:border-primary-500/50;
-      }
-
-      .sticky-action-bar {
-        @apply sticky bottom-4 z-10 rounded-[9px] border border-slate-200/80 bg-white/95 p-4 shadow-2xl backdrop-blur dark:border-slate-700/60 dark:bg-slate-900/90;
-      }
-
-      .btn-primary-premium {
-        @apply inline-flex items-center justify-center rounded-2xl bg-primary-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50;
-      }
-
-      .btn-secondary-premium {
-        @apply inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700;
-      }
-
-      .btn-danger-ghost {
-        @apply inline-flex items-center justify-center rounded-2xl border border-danger-200 bg-danger-50 px-4 py-3 text-sm font-bold text-danger-700 transition-all duration-200 hover:bg-danger-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-danger-800/60 dark:bg-danger-950/20 dark:text-danger-300;
-      }
-    `,
-  ],
+    .shadow-text { text-shadow: 0 4px 12px var(--studio-primary-glow); }
+  `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InvoiceFormComponent {
@@ -259,7 +243,10 @@ export class InvoiceFormComponent {
   readonly invoiceId = signal<string | null>(null);
   readonly isSubmitting = signal(false);
   readonly readOnlyMode = signal(false);
-  private readonly invoicePatched = signal(false);
+  protected readonly invoicePatched = signal(false);
+
+  // Studio Context: 'firm' (CA Firm billing Client) or 'client' (Client billing Guest/Customer)
+  readonly viewMode = computed(() => this.isEmbedded ? 'client' : 'firm');
 
   readonly invoiceNumberControl = new FormControl({ value: '', disabled: true }, { nonNullable: true });
   readonly clientSearchControl = new FormControl('', { nonNullable: true });
@@ -272,8 +259,13 @@ export class InvoiceFormComponent {
     invoiceType: this.fb.nonNullable.control<'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note'>('tax_invoice'),
     gstType: this.fb.nonNullable.control<GstType>('CGST_SGST'),
     clientGstin: this.fb.nonNullable.control(''),
+    customerName: this.fb.nonNullable.control(''),
+    customerAddress: this.fb.nonNullable.control(''),
     notes: this.fb.nonNullable.control(''),
     lineItems: this.fb.array<FormGroup<LineItemFormModel>>([this.createLineItemGroup()]),
+    isRecurring: this.fb.nonNullable.control(false),
+    recurringFrequency: this.fb.nonNullable.control<'weekly' | 'monthly' | 'quarterly' | 'yearly'>('monthly'),
+    recurringAutoSend: this.fb.nonNullable.control(false),
   });
 
   readonly clientsResource = rxResource({
@@ -285,7 +277,8 @@ export class InvoiceFormComponent {
   });
 
   readonly serviceTemplatesResource = rxResource({
-    loader: () => this.invoiceService.getServiceTemplates(),
+    request: () => this.viewMode() === 'client' ? this.embeddedClientId : null,
+    loader: ({ request }) => this.invoiceService.getServiceTemplates(request),
   });
 
   readonly invoiceResource = rxResource({
@@ -295,9 +288,20 @@ export class InvoiceFormComponent {
 
   readonly clients = computed(() => this.clientsResource.value()?.data ?? []);
   readonly filteredClients = computed(() => this.clients());
-  readonly serviceTemplates = computed(() => (this.serviceTemplatesResource.value()?.data ?? []).slice(0, 12));
+  readonly serviceTemplates = computed(() => (this.serviceTemplatesResource.value()?.data ?? []).slice(0, 15));
   readonly organization = computed(() => {
     const user = this.authService.currentUser() as BillingUser | null;
+    if (this.viewMode() === 'client' && this.selectedClient()) {
+      const client = this.selectedClient()!;
+      return {
+        name: client.name || client.user?.name || 'Company Name',
+        gstin: client.gstin || 'No GSTIN',
+        pan: '', // Client PAN not always available but could be added
+        addressLine1: client.address || 'Address Line 1',
+        addressLine2: `${client.city || ''} ${client.pincode || ''}`,
+        stateCode: client.stateCode || '24',
+      };
+    }
     return {
       ...DEFAULT_ORGANIZATION,
       ...user?.organization,
@@ -334,8 +338,8 @@ export class InvoiceFormComponent {
       this.serviceTemplatesResource.isLoading() ||
       this.invoiceResource.isLoading()
   );
-  readonly pageTitle = computed(() => (this.isEditMode() ? 'Edit Invoice' : 'Create Invoice'));
-  readonly primaryActionLabel = computed(() => (this.isEditMode() ? 'Update Invoice' : 'Save as Draft'));
+  readonly pageTitle = computed(() => this.viewMode() === 'client' ? 'Client Sales Studio' : 'CA Billing Studio');
+  readonly primaryActionLabel = computed(() => (this.isEditMode() ? 'Update Document' : 'Generate Draft'));
 
   ngOnInit() {
     this.isEditMode.set(this.isEmbedded ? !!this.embeddedInvoiceId : Boolean(this.route.snapshot.data['editMode']));
@@ -405,7 +409,7 @@ export class InvoiceFormComponent {
     this.lineItemsArray.removeAt(index);
   }
 
-  addTemplate(template: ServiceTemplate): void {
+  applyTemplate(template: ServiceTemplate): void {
     this.addLineItem({
       description: template.name,
       sacCode: template.sacCode,
@@ -419,6 +423,19 @@ export class InvoiceFormComponent {
     const group = this.lineItemsArray.at(index);
     const rawValue = group.getRawValue();
     return lineItemAmount(rawValue.quantity ?? 0, rawValue.unitRate ?? 0);
+  }
+
+  onSubmit(): void {
+    this.persistInvoice('draft');
+  }
+
+  onSelectClient(clientId: string): void {
+    this.invoiceForm.controls.clientId.setValue(clientId);
+    this.clientSearchControl.setValue('', { emitEvent: false });
+  }
+
+  onCancel(): void {
+    this.canceled.emit();
   }
 
   displayClientName(client: BillingClient): string {
@@ -593,42 +610,71 @@ export class InvoiceFormComponent {
   }
 
   private handlePostSave(id: string, action: 'draft' | 'issue' | 'preview', wasUpdate: boolean): void {
-    if (this.isEmbedded) {
-      this.isSubmitting.set(false);
-      this.toast.success(wasUpdate ? 'Invoice updated' : 'Invoice saved successfully');
-      this.saved.emit();
-      return;
-    }
+    const rawValue = this.invoiceForm.getRawValue();
 
-    if (action === 'draft') {
-      this.isSubmitting.set(false);
-      this.toast.success(wasUpdate ? 'Invoice updated' : 'Draft saved');
-
-      if (!wasUpdate) {
-        void this.router.navigate(['/billing/invoices', id, 'edit']);
+    const finishSave = () => {
+      if (this.isEmbedded) {
+        this.isSubmitting.set(false);
+        this.toast.success(wasUpdate ? 'Invoice updated' : 'Invoice saved successfully');
+        this.saved.emit();
+        return;
       }
 
-      return;
-    }
-
-    if (action === 'preview') {
-      this.isSubmitting.set(false);
-      this.toast.success(wasUpdate ? 'Invoice updated' : 'Invoice saved');
-      void this.router.navigate(['/billing/invoices', id]);
-      return;
-    }
-
-    this.invoiceService.issueInvoice(id).subscribe({
-      next: () => {
+      if (action === 'draft') {
         this.isSubmitting.set(false);
-        this.toast.success('Invoice saved and issued');
+        this.toast.success(wasUpdate ? 'Invoice updated' : 'Draft saved');
+
+        if (!wasUpdate) {
+          void this.router.navigate(['/billing/invoices', id, 'edit']);
+        }
+        return;
+      }
+
+      if (action === 'preview') {
+        this.isSubmitting.set(false);
+        this.toast.success(wasUpdate ? 'Invoice updated' : 'Invoice saved');
         void this.router.navigate(['/billing/invoices', id]);
-      },
-      error: () => {
-        this.isSubmitting.set(false);
-        this.toast.error('Invoice saved, but issuing failed');
-      },
-    });
+        return;
+      }
+
+      this.invoiceService.issueInvoice(id).subscribe({
+        next: () => {
+          this.isSubmitting.set(false);
+          this.toast.success('Invoice saved and issued');
+          void this.router.navigate(['/billing/invoices', id]);
+        },
+        error: () => {
+          this.isSubmitting.set(false);
+          this.toast.error('Invoice saved, but issuing failed');
+        },
+      });
+    };
+
+    if (rawValue.isRecurring && !wasUpdate) { // Only create recurring on initial creation
+      let nextRun = new Date(rawValue.invoiceDate);
+      if (rawValue.recurringFrequency === 'weekly') nextRun.setDate(nextRun.getDate() + 7);
+      else if (rawValue.recurringFrequency === 'monthly') nextRun.setMonth(nextRun.getMonth() + 1);
+      else if (rawValue.recurringFrequency === 'quarterly') nextRun.setMonth(nextRun.getMonth() + 3);
+      else if (rawValue.recurringFrequency === 'yearly') nextRun.setFullYear(nextRun.getFullYear() + 1);
+
+      this.invoiceService.createRecurringInvoice({
+        baseInvoiceId: id,
+        frequency: rawValue.recurringFrequency,
+        nextRunDate: nextRun.toISOString().split('T')[0],
+        autoSend: rawValue.recurringAutoSend
+      }).subscribe({
+        next: () => {
+          this.toast.success('Recurring schedule created');
+          finishSave();
+        },
+        error: () => {
+          this.toast.error('Invoice saved, but failed to setup recurring schedule');
+          finishSave();
+        }
+      });
+    } else {
+      finishSave();
+    }
   }
 
   private buildDto(): CreateInvoiceDto {
@@ -642,6 +688,8 @@ export class InvoiceFormComponent {
       expiryDate: isQuotation && rawValue.expiryDate ? rawValue.expiryDate : undefined,
       invoiceType: rawValue.invoiceType,
       notes: rawValue.notes || undefined,
+      customerName: rawValue.customerName || undefined,
+      customerAddress: rawValue.customerAddress || undefined,
       clientGstin: rawValue.clientGstin || undefined,
       gstType: rawValue.gstType,
       lineItems: rawValue.lineItems.map((item) => ({

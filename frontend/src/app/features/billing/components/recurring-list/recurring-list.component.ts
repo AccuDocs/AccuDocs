@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, Input, OnInit, computed, inject } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormArray,
@@ -82,11 +82,24 @@ export class RecurringListComponent {
   private dialog = inject(MatDialog);
   private toast = inject(HotToastService);
 
+  @Input() isEmbedded = false;
+  @Input() clientIdOverride?: string;
+
   readonly displayedColumns = ['templateName', 'client', 'frequency', 'nextRun', 'generated', 'status', 'actions'];
+  readonly columnsToDisplay = computed(() => 
+    this.isEmbedded ? this.displayedColumns.filter(c => c !== 'client') : this.displayedColumns
+  );
+
   readonly filtersForm = this.fb.group({
     search: this.fb.nonNullable.control(''),
     active: this.fb.nonNullable.control<'all' | 'active' | 'inactive'>('all'),
   });
+
+  ngOnInit() {
+    if (this.clientIdOverride) {
+      this.facade.clientId.set(this.clientIdOverride);
+    }
+  }
 
   constructor() {
     this.filtersForm.controls.search.valueChanges
@@ -202,7 +215,7 @@ export class RecurringListComponent {
         width: '720px',
         maxWidth: '95vw',
         position: { right: '0' },
-        data: null,
+        data: { clientId: this.clientIdOverride },
       })
       .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -252,12 +265,12 @@ export class RecurringListComponent {
 
       <form [formGroup]="templateForm" class="space-y-5">
         <div class="grid gap-4 md:grid-cols-2">
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" *ngIf="!data?.clientId">
             <mat-label>Search client</mat-label>
             <input matInput [formControl]="clientSearchControl" placeholder="Name, code, GSTIN" />
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" *ngIf="!data?.clientId">
             <mat-label>Client *</mat-label>
             <mat-select formControlName="clientId">
               @for (client of clients(); track client.id) {
@@ -416,6 +429,14 @@ export class RecurringTemplateDialogComponent {
     defaultNotes: this.fb.nonNullable.control(''),
     lineItems: this.fb.array<FormGroup<LineItemFormModel>>([this.createLineItemGroup()]),
   });
+
+  ngOnInit() {
+    if (this.data?.clientId) {
+      this.templateForm.patchValue({ clientId: this.data.clientId });
+      this.templateForm.controls.clientId.disable();
+      this.clientSearchControl.disable();
+    }
+  }
 
   get lineItemsArray(): FormArray<FormGroup<LineItemFormModel>> {
     return this.templateForm.controls.lineItems;

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GstExtendedService } from '@core/services/gst-extended.service';
@@ -9,8 +9,8 @@ import { HotToastService } from '@ngneat/hot-toast';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="einv-root">
-      <div class="einv-header">
+    <div class="einv-root" [class.p-0]="isEmbedded">
+      <div class="einv-header" *ngIf="!isEmbedded">
         <div>
           <h1 class="einv-title">E-Invoice (IRN) Generation</h1>
           <p class="einv-sub">Generate Invoice Reference Numbers via IRP — applicable for turnover above ₹5 Crore</p>
@@ -21,7 +21,7 @@ import { HotToastService } from '@ngneat/hot-toast';
       <div class="einv-card">
         <h3 class="einv-card-title">Generate IRN</h3>
         <div class="einv-form-row">
-          <div class="einv-field einv-field--grow">
+          <div class="einv-field einv-field--grow" *ngIf="!isEmbedded">
             <label class="einv-label">Invoice ID</label>
             <input id="einv-invoice-id" class="einv-input" type="text" [(ngModel)]="invoiceId" placeholder="Paste invoice UUID…" />
           </div>
@@ -61,7 +61,7 @@ import { HotToastService } from '@ngneat/hot-toast';
           </div>
 
           <!-- Details Grid -->
-          <div class="einv-details-grid">
+          <div class="einv-details-grid" [class.grid-cols-2]="isEmbedded" [class.lg:grid-cols-3]="!isEmbedded">
             <div class="einv-detail">
               <span class="einv-detail-label">Ack Number</span>
               <span class="einv-detail-value">{{ eInvoice()!.ackNo || '—' }}</span>
@@ -164,18 +164,30 @@ import { HotToastService } from '@ngneat/hot-toast';
     .einv-error { background: #fef2f2; color: #991b1b; font-size: 13px; padding: 12px 16px; border-radius: 10px; border: 1px solid #fecaca; }
 
     .einv-notice { display: flex; gap: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 14px; padding: 16px; }
-    .einv-notice-icon { width: 20px; height: 20px; color: #3b82f6; flex-shrink: 0; margin-top: 2px; }
-    .einv-notice strong { font-size: 13px; color: #1e40af; display: block; }
-    .einv-notice p { font-size: 12px; color: #1e40af; margin: 4px 0 0; }
+    .einv-root { display: flex; flex-direction: column; gap: 20px; padding: 24px; max-width: 920px; }
+    .einv-root.p-0 { padding: 0; max-width: 100%; }
+    .einv-title { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 4px; }
+    .einv-sub { font-size: 13px; color: #64748b; margin: 0; }
   `],
 })
-export class EInvoiceComponent {
+export class EInvoiceComponent implements OnInit {
   private gstService = inject(GstExtendedService);
   private toast = inject(HotToastService);
+
+  @Input() isEmbedded = false;
+  @Input() clientIdOverride?: string;
+  @Input() initialInvoiceId?: string;
 
   invoiceId = '';
   readonly isGenerating = signal(false);
   readonly eInvoice = signal<any>(null);
+
+  ngOnInit() {
+    if (this.initialInvoiceId) {
+      this.invoiceId = this.initialInvoiceId;
+      this.lookupInvoice();
+    }
+  }
 
   generateIRN() {
     if (!this.invoiceId) return;

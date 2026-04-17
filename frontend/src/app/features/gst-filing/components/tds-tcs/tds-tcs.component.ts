@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, Input, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ComplianceExtendedService } from '@core/services/compliance-extended.service';
@@ -9,8 +9,8 @@ import { HotToastService } from '@ngneat/hot-toast';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="tds-root">
-      <div class="tds-header">
+    <div class="tds-root" [class.p-0]="isEmbedded">
+      <div class="tds-header" *ngIf="!isEmbedded">
         <div>
           <h1 class="tds-title">TDS & TCS Management</h1>
           <p class="tds-sub">Track Tax Deducted at Source and Tax Collected at Source entries</p>
@@ -28,8 +28,8 @@ import { HotToastService } from '@ngneat/hot-toast';
         <!-- TDS Entry Form -->
         <div class="tds-card">
           <h3 class="tds-card-title">{{ editingTdsId() ? 'Edit' : 'New' }} TDS Entry</h3>
-          <div class="tds-form-grid">
-            <div class="tds-field">
+          <div class="tds-form-grid" [class.grid-cols-2]="isEmbedded" [class.lg:grid-cols-3]="!isEmbedded">
+            <div class="tds-field" *ngIf="!isEmbedded">
               <label class="tds-label">Client ID</label>
               <input class="tds-input" [(ngModel)]="tdsForm.clientId" placeholder="Client UUID" />
             </div>
@@ -100,41 +100,43 @@ import { HotToastService } from '@ngneat/hot-toast';
         <!-- TDS Table -->
         @if (tdsEntries().length > 0) {
           <div class="tds-table-card">
-            <table class="tds-table">
-              <thead>
-                <tr>
-                  <th class="tds-th">Deductor</th>
-                  <th class="tds-th">PAN</th>
-                  <th class="tds-th">Section</th>
-                  <th class="tds-th tds-th--right">Amount</th>
-                  <th class="tds-th tds-th--right">Rate</th>
-                  <th class="tds-th tds-th--right">TDS</th>
-                  <th class="tds-th">Period</th>
-                  <th class="tds-th">Status</th>
-                  <th class="tds-th">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (entry of tdsEntries(); track entry.id) {
-                  <tr class="tds-tr">
-                    <td class="tds-td">{{ entry.deductor }}</td>
-                    <td class="tds-td"><span class="tds-mono">{{ entry.pan }}</span></td>
-                    <td class="tds-td"><span class="tds-section-badge">{{ entry.section }}</span></td>
-                    <td class="tds-td tds-td--right tds-td--num">₹{{ entry.amount | number:'1.2-2' }}</td>
-                    <td class="tds-td tds-td--right">{{ entry.tdsRate }}%</td>
-                    <td class="tds-td tds-td--right tds-td--num"><strong>₹{{ entry.tdsAmount | number:'1.2-2' }}</strong></td>
-                    <td class="tds-td"><span class="tds-period-tag">{{ entry.period }}</span></td>
-                    <td class="tds-td"><span class="tds-status-badge" [class]="'tds-status--' + entry.status">{{ entry.status }}</span></td>
-                    <td class="tds-td">
-                      <div class="tds-action-row">
-                        <button class="tds-action-btn" (click)="editTDS(entry)">✏️</button>
-                        <button class="tds-action-btn tds-action-btn--del" (click)="deleteTDS(entry.id)">🗑️</button>
-                      </div>
-                    </td>
+            <div class="overflow-x-auto">
+              <table class="tds-table">
+                <thead>
+                  <tr>
+                    <th class="tds-th">Deductor</th>
+                    <th class="tds-th">PAN</th>
+                    <th class="tds-th">Section</th>
+                    <th class="tds-th tds-th--right">Amount</th>
+                    <th class="tds-th tds-th--right">Rate</th>
+                    <th class="tds-th tds-th--right">TDS</th>
+                    <th class="tds-th">Period</th>
+                    <th class="tds-th">Status</th>
+                    <th class="tds-th">Actions</th>
                   </tr>
-                }
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  @for (entry of tdsEntries(); track entry.id) {
+                    <tr class="tds-tr">
+                      <td class="tds-td">{{ entry.deductor }}</td>
+                      <td class="tds-td"><span class="tds-mono">{{ entry.pan }}</span></td>
+                      <td class="tds-td"><span class="tds-section-badge">{{ entry.section }}</span></td>
+                      <td class="tds-td tds-td--right tds-td--num">₹{{ entry.amount | number:'1.2-2' }}</td>
+                      <td class="tds-td tds-td--right">{{ entry.tdsRate }}%</td>
+                      <td class="tds-td tds-td--right tds-td--num"><strong>₹{{ entry.tdsAmount | number:'1.2-2' }}</strong></td>
+                      <td class="tds-td"><span class="tds-period-tag">{{ entry.period }}</span></td>
+                      <td class="tds-td"><span class="tds-status-badge" [class]="'tds-status--' + entry.status">{{ entry.status }}</span></td>
+                      <td class="tds-td">
+                        <div class="tds-action-row">
+                          <button class="tds-action-btn" (click)="editTDS(entry)">✏️</button>
+                          <button class="tds-action-btn tds-action-btn--del" (click)="deleteTDS(entry.id)">🗑️</button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
           </div>
         }
       }
@@ -279,9 +281,12 @@ import { HotToastService } from '@ngneat/hot-toast';
     .tds-action-btn--del:hover { background: #fef2f2; border-color: #fecaca; }
   `],
 })
-export class TdsTcsComponent {
+export class TdsTcsComponent implements OnInit {
   private complianceService = inject(ComplianceExtendedService);
   private toast = inject(HotToastService);
+
+  @Input() isEmbedded = false;
+  @Input() clientIdOverride?: string;
 
   readonly activeTab = signal<'tds' | 'tcs'>('tds');
   readonly sections = signal<any[]>([]);
@@ -308,9 +313,16 @@ export class TdsTcsComponent {
   }
 
   ngOnInit() {
+    if (this.clientIdOverride) {
+      this.tdsForm.clientId = this.clientIdOverride;
+    }
+
     this.complianceService.getTDSSections().subscribe({
       next: (res) => this.sections.set(res.data ?? []),
     });
+
+    this.loadTDS();
+    this.loadTCS();
   }
 
   onSectionChange() {
@@ -326,7 +338,11 @@ export class TdsTcsComponent {
   }
 
   loadTDS() {
-    this.complianceService.listTDS({ period: this.tdsFilterPeriod || undefined }).subscribe({
+    const filters: any = { period: this.tdsFilterPeriod || undefined };
+    if (this.clientIdOverride) {
+      filters.clientId = this.clientIdOverride;
+    }
+    this.complianceService.listTDS(filters).subscribe({
       next: (res) => this.tdsEntries.set(res.data ?? []),
       error: () => this.toast.error('Failed to load TDS entries'),
     });
@@ -363,7 +379,11 @@ export class TdsTcsComponent {
 
   resetTdsForm() {
     this.editingTdsId.set(null);
-    this.tdsForm = { clientId: '', deductor: '', pan: '', section: '', amount: 0, tdsRate: 0, tdsAmount: 0, period: '', challanNo: '', status: 'pending' };
+    this.tdsForm = { 
+      clientId: this.clientIdOverride || '', 
+      deductor: '', pan: '', section: '', amount: 0, 
+      tdsRate: 0, tdsAmount: 0, period: '', challanNo: '', status: 'pending' 
+    };
   }
 
   loadTCS() {

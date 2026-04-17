@@ -216,8 +216,11 @@ export class InvoiceService {
     return this.http.get<ApiResponse<BillingMetrics>>(`${this.base}/metrics`);
   }
 
-  getServiceTemplates(): Observable<ApiResponse<ServiceTemplate[]>> {
-    return this.rawHttp.get<ApiResponse<ServiceTemplate[]>>(`${this.base}/service-templates`).pipe(
+  getServiceTemplates(clientId?: string | null): Observable<ApiResponse<ServiceTemplate[]>> {
+    let params = new HttpParams();
+    if (clientId) params = params.set('clientId', clientId);
+
+    return this.rawHttp.get<ApiResponse<ServiceTemplate[]>>(`${this.base}/service-templates`, { params }).pipe(
       catchError(() =>
         of({
           success: true,

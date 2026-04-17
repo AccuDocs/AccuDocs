@@ -4,9 +4,9 @@ import { IInvoiceRepository } from "../../domain/repositories/IInvoiceRepository
 import { IClientRepository } from "../../../client/domain/repositories/IClientRepository";
 import { Invoice } from "../../domain/entities/Invoice";
 import { InvoiceLineItem } from "../../domain/entities/InvoiceLineItem";
-import { Organization as OrganizationModel, ServiceTemplate as ServiceTemplateModel } from "../../../../models";
+import { Organization as OrganizationModel, ServiceTemplate as ServiceTemplateModel, ClientSale } from "../../../../models";
 import { calculateGST } from "../../../../shared/utils/gst.util";
-// Hard-coded or stubbed financialYear string
+import { getFinancialYear, getMonthFromDate } from "../../../../utils/gstCalculator";
 import { AppError } from "../../../../utils/errors";
 import { pdfService } from "../../../../services/pdf.service";
 
@@ -22,15 +22,15 @@ export class BillingService {
     if (!org) throw new AppError('Organization not found', 404);
 
     const client = await this.clientRepo.findById(data.clientId);
-    if (!client || client.organizationId !== organizationId) {
+    if (!client || (client as any).organizationId !== organizationId) {
       throw new AppError('Client not found', 404);
     }
 
     const invoiceType: string = data.invoiceType || 'tax_invoice';
     const isQuotation = invoiceType === 'quotation';
-    const isIgst = org.stateCode !== client.stateCode;
+    const isIgst = org.stateCode !== (client as any).stateCode;
     const gstType = isIgst ? ('IGST' as const) : ('CGST_SGST' as const);
-    const placeOfSupply = client.stateCode;
+    const placeOfSupply = (client as any).stateCode;
 
     let subtotal = 0;
     const itemsWithAmounts = data.lineItems.map((item: any) => {
@@ -47,7 +47,7 @@ export class BillingService {
     let roundOff = 0;
 
     if (!isQuotation) {
-      const taxCalculation = calculateGST(itemsWithAmounts, client.stateCode, org.stateCode);
+      const taxCalculation = calculateGST(itemsWithAmounts, (client as any).stateCode, org.stateCode);
       cgstAmount = (taxCalculation as any).cgst || 0;
       sgstAmount = (taxCalculation as any).sgst || 0;
       igstAmount = (taxCalculation as any).igst || 0;
@@ -56,7 +56,7 @@ export class BillingService {
       subtotal = taxCalculation.subtotal !== undefined ? taxCalculation.subtotal : 0;
     }
     
-    const financialYear = "2024-25";
+    const financialYear = getFinancialYear(new Date(data.invoiceDate));
     const invoiceNumber = await this.invoiceRepo.generateNextInvoiceNumber(organizationId, financialYear);
 
     let dueDate = data.dueDate;
@@ -71,13 +71,13 @@ export class BillingService {
       clientId: client.id,
       invoiceNumber,
       invoiceType,
-      status: 'draft' as any,
+      status: (data.status || 'draft') as any,
       invoiceDate: new Date(data.invoiceDate),
       dueDate: new Date(dueDate),
       expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
       gstType,
       placeOfSupply,
-      clientGstin: client.gstin,
+      clientGstin: (client as any).gstin,
       firmGstin: org.gstin,
       subtotal,
       cgstAmount,
@@ -88,6 +88,8 @@ export class BillingService {
       amountPaid: 0,
       balanceDue: totalAmount,
       notes: data.notes,
+      receiverName: data.customerName,
+      receiverAddress: data.customerAddress,
       createdBy: adminId
     };
 
@@ -111,7 +113,13 @@ export class BillingService {
     });
 
     (invoice as any).props.lineItems = lineItemEntities;
-    return await this.invoiceRepo.save(invoice);
+    const saved = await this.invoiceRepo.save(invoice);
+
+    if (saved.status === 'issued' || saved.status === 'paid') {
+      await this.syncToSalesRegister(saved.id, organizationId);
+    }
+
+    return saved;
   }
 
   async getInvoices(organizationId: string, filters: any, pagination: any) {
@@ -143,6 +151,8 @@ export class BillingService {
     const invoice = await this.invoiceRepo.findById(id, organizationId);
     if (!invoice) throw new AppError('Invoice not found', 404);
 
+    const oldStatus = invoice.status;
+
     if (data.status === 'issued') {
       (invoice as any).props.status = 'issued';
       (invoice as any).props.issuedAt = new Date();
@@ -159,7 +169,79 @@ export class BillingService {
       (invoice as any).props.cancelReason = data.cancelReason;
     }
 
-    return await this.invoiceRepo.save(invoice);
+    const saved = await this.invoiceRepo.save(invoice);
+
+    if (saved.status === 'issued' || saved.status === 'paid') {
+      await this.syncToSalesRegister(saved.id, organizationId);
+    } else if (saved.status === 'cancelled' && (oldStatus === 'issued' || oldStatus === 'paid')) {
+      // Remove from sales register if cancelled after being issued/paid
+      await ClientSale.destroy({ where: { invoiceNo: saved.invoiceNumber, organizationId } });
+    }
+
+    return saved;
+  }
+
+  /**
+   * Synchronize an Invoice (Tax Invoice) to the Compliance Sales Register (ClientSale).
+   * This ensures that billing data flows automatically into GST computations.
+   */
+  private async syncToSalesRegister(invoiceId: string, organizationId: string) {
+    const invoice = await this.invoiceRepo.findById(invoiceId, organizationId);
+    if (!invoice || invoice.status === 'draft') return;
+
+    const client = await this.clientRepo.findById(invoice.clientId);
+    if (!client) return;
+
+    // 1. Clear existing entries for this invoice to prevent duplicates
+    await ClientSale.destroy({ 
+      where: { 
+        invoiceNo: invoice.invoiceNumber, 
+        organizationId,
+        clientId: invoice.clientId
+      } 
+    });
+
+    const isB2B = !!invoice.clientGstin;
+    const invDate = new Date(invoice.invoiceDate);
+
+    // 2. Map line items to ClientSale entries
+    const salesProfiles = invoice.lineItems.map(item => {
+      // Basic split of tax for the line item (pro-rata based on amount)
+      const ratio = item.amount / (invoice.subtotal || 1);
+      
+      return {
+        clientId: invoice.clientId,
+        organizationId,
+        invoiceNo: invoice.invoiceNumber,
+        invoiceDate: invoice.invoiceDate,
+        customerName: (client as any).name || (client as any).businessName || 'Client',
+        description: item.description,
+        hsnSacCode: item.sacCode,
+        quantity: item.quantity,
+        rate: item.unitRate,
+        baseAmount: item.amount,
+        gstRate: invoice.subtotal > 0 ? Number(((invoice.cgstAmount + invoice.sgstAmount + invoice.igstAmount) / invoice.subtotal * 100).toFixed(2)) : 18,
+        gstAmount: (invoice.cgstAmount + invoice.sgstAmount + invoice.igstAmount) * ratio,
+        totalAmount: item.amount + ((invoice.cgstAmount + invoice.sgstAmount + invoice.igstAmount) * ratio),
+        month: getMonthFromDate(invDate),
+        financialYear: getFinancialYear(invDate),
+        gstin: invoice.clientGstin,
+        invoiceType: isB2B ? 'B2B' : 'B2C',
+        placeOfSupply: invoice.placeOfSupply,
+        cgstAmount: invoice.cgstAmount * ratio,
+        sgstAmount: invoice.sgstAmount * ratio,
+        igstAmount: invoice.igstAmount * ratio,
+        cessAmount: 0,
+        isNilRated: (invoice.cgstAmount + invoice.sgstAmount + invoice.igstAmount) <= 0,
+        isAdvance: false,
+        status: 'validated', // Automatic sync from issued invoice is considered validated
+        notes: `Auto-synced from Invoice ${invoice.invoiceNumber}`
+      };
+    });
+
+    if (salesProfiles.length > 0) {
+      await ClientSale.bulkCreate(salesProfiles);
+    }
   }
 
   async getMetrics(organizationId: string) {
@@ -176,16 +258,22 @@ export class BillingService {
     };
   }
 
-  async getServiceTemplates(organizationId: string) {
+  async getServiceTemplates(organizationId: string, clientId?: string) {
+    const where: any = {
+      isActive: true,
+      [Op.or]: [
+        { organizationId },
+        { organizationId: null },
+        { isSystem: true }
+      ]
+    };
+
+    if (clientId) {
+      where[Op.or].push({ clientId });
+    }
+
     const templates = await ServiceTemplateModel.findAll({
-      where: {
-        isActive: true,
-        [Op.or]: [
-          { organizationId },
-          { organizationId: null },
-          { isSystem: true }
-        ]
-      },
+      where,
       order: [
         ['sortOrder', 'ASC'],
         ['name', 'ASC']
@@ -202,6 +290,11 @@ export class BillingService {
       defaultGstRate: Number(template.defaultGstRate),
       sortOrder: template.sortOrder
     }));
+  }
+
+  async getRecurringTemplates(organizationId: string) {
+    // Stub or implementation for recurring templates
+    return [];
   }
 
   /**
@@ -222,18 +315,18 @@ export class BillingService {
     if (!client) throw new AppError('Client not found', 404);
 
     // Generate a new invoice number under tax_invoice sequence
-    const financialYear = '2024-25';
+    const financialYear = getFinancialYear(new Date());
     const newInvoiceNumber = await this.invoiceRepo.generateNextInvoiceNumber(organizationId, financialYear);
 
     // Get raw line items to recompute GST
-    const lineItems = (existing as any).props?.lineItems || [];
+    const lineItems = (existing as any).lineItems || [];
     const itemsForGst = lineItems.map((li: any) => ({
       quantity: li.quantity,
       unitRate: li.unitRate,
       amount: li.amount,
     }));
 
-    const taxCalc = calculateGST(itemsForGst, client.stateCode, org.stateCode);
+    const taxCalc = calculateGST(itemsForGst, (client as any).stateCode, org.stateCode);
 
     // Update via repository
     (existing as any).props.invoiceType = 'tax_invoice';
@@ -244,7 +337,14 @@ export class BillingService {
     (existing as any).props.totalAmount = (taxCalc as any).total || 0;
     (existing as any).props.balanceDue = (taxCalc as any).total || 0;
     (existing as any).props.issuedBy = adminId;
+    (existing as any).props.status = 'issued';
+    (existing as any).props.issuedAt = new Date();
 
-    return await this.invoiceRepo.save(existing);
+    const saved = await this.invoiceRepo.save(existing);
+    
+    // Sync to sales register
+    await this.syncToSalesRegister(saved.id, organizationId);
+
+    return saved;
   }
 }
