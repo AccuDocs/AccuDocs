@@ -53,8 +53,9 @@ import { ClientDashboardComponent } from '../components/client-dashboard/client-
 import { heroClipboardDocumentCheckSolid, heroCalendarSolid, heroChartBarSolid, heroReceiptPercentSolid, heroPresentationChartBarSolid } from '@ng-icons/heroicons/solid';
 
 import { ClientBillingComponent } from '../components/client-billing/client-billing.component';
+import { InventoryDashboardComponent } from '../../inventory/inventory-dashboard/inventory-dashboard.component';
 
-export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst' | 'billing' | 'dashboard';
+export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst' | 'billing' | 'dashboard' | 'inventory';
 
 @Component({
   selector: 'app-client-workspace',
@@ -79,7 +80,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
     GstSummaryComponent,
     ClientDashboardComponent,
     ClientBillingComponent,
-    ClientBillingComponent
+    InventoryDashboardComponent
   ],
   providers: [
     provideIcons({
@@ -205,6 +206,14 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
           <ng-icon name="heroPresentationChartBarSolid" size="18"></ng-icon>
           Dashboard
         </button>
+        <button 
+          (click)="setActiveTab('inventory')"
+          class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
+          [class]="activeTab() === 'inventory' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
+        >
+          <ng-icon name="heroArchiveBoxSolid" size="18"></ng-icon>
+          Inventory & Stock
+        </button>
       </div>
 
       @if (activeTab() === 'checklists') {
@@ -229,6 +238,8 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
         ></app-gst-summary>
       } @else if (activeTab() === 'billing') {
         <app-client-billing [clientId]="workspace()?.clientId || ''"></app-client-billing>
+      } @else if (activeTab() === 'inventory') {
+        <app-inventory-dashboard></app-inventory-dashboard>
       } @else if (activeTab() === 'dashboard') {
         <app-client-dashboard [clientId]="workspace()?.clientId || ''"></app-client-dashboard>
       } @else {

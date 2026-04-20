@@ -186,6 +186,11 @@ export const routes: Routes = [
       {
         path: 'billing',
         loadChildren: () => import('./features/billing/billing.routes').then((m) => m.BILLING_ROUTES),
+      },
+      // INVENTORY
+      {
+        path: 'inventory',
+        loadChildren: () => import('./features/inventory/inventory.routes').then((m) => m.INVENTORY_ROUTES),
       }
     ]
   },
