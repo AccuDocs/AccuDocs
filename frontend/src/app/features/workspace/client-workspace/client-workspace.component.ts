@@ -53,7 +53,7 @@ import { ClientDashboardComponent } from '../components/client-dashboard/client-
 import { heroClipboardDocumentCheckSolid, heroCalendarSolid, heroChartBarSolid, heroReceiptPercentSolid, heroPresentationChartBarSolid } from '@ng-icons/heroicons/solid';
 
 import { ClientBillingComponent } from '../components/client-billing/client-billing.component';
-import { InventoryDashboardComponent } from '../../inventory/inventory-dashboard/inventory-dashboard.component';
+import { ClientInventoryComponent } from '../components/client-inventory/client-inventory.component';
 
 export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst' | 'billing' | 'dashboard' | 'inventory';
 
@@ -80,7 +80,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
     GstSummaryComponent,
     ClientDashboardComponent,
     ClientBillingComponent,
-    InventoryDashboardComponent
+    ClientInventoryComponent
   ],
   providers: [
     provideIcons({
@@ -239,7 +239,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
       } @else if (activeTab() === 'billing') {
         <app-client-billing [clientId]="workspace()?.clientId || ''"></app-client-billing>
       } @else if (activeTab() === 'inventory') {
-        <app-inventory-dashboard></app-inventory-dashboard>
+        <app-client-inventory [clientId]="workspace()?.clientId || ''"></app-client-inventory>
       } @else if (activeTab() === 'dashboard') {
         <app-client-dashboard [clientId]="workspace()?.clientId || ''"></app-client-dashboard>
       } @else {

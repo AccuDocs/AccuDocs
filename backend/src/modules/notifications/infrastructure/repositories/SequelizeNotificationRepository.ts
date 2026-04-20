@@ -1,7 +1,7 @@
 import { injectable } from "tsyringe";
 import { INotificationRepository } from "../../domain/repositories/INotificationRepository";
 import { Notification } from "../../domain/entities/Notification";
-import { Notification as NotificationModel } from "../../../../models";
+import { NotificationModel } from "../../../../models";
 import { NotificationMapper } from "../mappers/NotificationMapper";
 
 @injectable()

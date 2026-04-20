@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
@@ -13,7 +13,9 @@ import { ClientService } from '@core/services/client.service';
   template: `
     <div class="min-h-screen bg-slate-950 text-white p-6">
       <div class="flex items-center gap-3 mb-8">
-        <a routerLink="/inventory/purchase-orders" class="text-slate-400 hover:text-white"><mat-icon>arrow_back</mat-icon></a>
+        @if(!inlineMode) {
+          <a routerLink="/inventory/purchase-orders" class="text-slate-400 hover:text-white"><mat-icon>arrow_back</mat-icon></a>
+        }
         <h1 class="text-xl font-bold">New Purchase Order</h1>
       </div>
 
@@ -152,18 +154,25 @@ import { ClientService } from '@core/services/client.service';
                   class="flex-1 py-3 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all disabled:opacity-60">
             {{ saving() ? 'Creating…' : 'Create Purchase Order' }}
           </button>
-          <a routerLink="/inventory/purchase-orders"
-             class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl transition-all">
-            Cancel
-          </a>
+          @if(inlineMode) {
+            <button type="button" (click)="cancelled.emit()"
+               class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl transition-all">
+              Cancel
+            </button>
+          } @else {
+            <a routerLink="/inventory/purchase-orders"
+               class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl transition-all">
+              Cancel
+            </a>
+          }
         </div>
       </form>
     </div>
   `,
   styles: [`
-    .label-sm { @apply block text-xs text-slate-400 mb-1.5 font-semibold uppercase tracking-wide; }
-    .input-field { @apply w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500; }
-    .input-sm { @apply w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500; }
+    .label-sm { @apply block text-xs text-slate-400 mb-2 font-semibold uppercase tracking-wide; }
+    .input-field { @apply w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500; }
+    .input-sm { @apply w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500; }
   `],
 })
 export class PoFormComponent implements OnInit {
@@ -174,6 +183,12 @@ export class PoFormComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   saving = signal(false);
+  
+  @Input() inlineMode = false;
+  @Input() inlineId: string | null = null;
+  @Output() saved = new EventEmitter<any>();
+  @Output() cancelled = new EventEmitter<void>();
+  
   clients = signal<any[]>([]);
   warehouses = signal<any[]>([]);
   items = signal<any[]>([]);
@@ -196,8 +211,8 @@ export class PoFormComponent implements OnInit {
     this.service.getWarehouses().subscribe((res: any) => this.warehouses.set(res.data ?? []));
     this.service.getItems({ limit: 500 }).subscribe((res: any) => this.items.set(res.data ?? []));
 
-    const itemId = this.route.snapshot.queryParamMap.get('itemId');
-    const qty    = this.route.snapshot.queryParamMap.get('qty');
+    const itemId = this.inlineMode ? null : this.route.snapshot.queryParamMap.get('itemId');
+    const qty    = this.inlineMode ? null : this.route.snapshot.queryParamMap.get('qty');
     if (itemId) { this.addLine(itemId, Number(qty) || 1); }
   }
 
@@ -262,7 +277,13 @@ export class PoFormComponent implements OnInit {
     if (this.form.invalid || this.lineItems.length === 0) { this.form.markAllAsTouched(); return; }
     this.saving.set(true);
     this.service.createPurchaseOrder(this.form.value).subscribe({
-      next: () => this.router.navigate(['/inventory/purchase-orders']),
+      next: (res) => {
+        if (this.inlineMode) {
+          this.saved.emit(res);
+        } else {
+          this.router.navigate(['/inventory/purchase-orders']);
+        }
+      },
       error: () => this.saving.set(false),
     });
   }

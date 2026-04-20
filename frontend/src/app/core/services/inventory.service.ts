@@ -224,4 +224,109 @@ export class InventoryService {
   receiveTransfer(id: string, receivedQtys?: Record<string, number>): Observable<any> {
     return this.http.patch(`${this.base}/transfers/${id}/receive`, { receivedQtys });
   }
+
+  // ─── Additional Methods for Complete Feature Set ──────────────────────────────
+
+  recordStockAdjustment(dto: {
+    warehouseId: string;
+    itemId: string;
+    variantId?: string;
+    adjustedQty: number;
+    reason?: string;
+    notes?: string;
+    clientId?: string;
+  }): Observable<any> {
+    return this.http.post(`${this.base}/stock/adjustment`, dto);
+  }
+
+  autoCreatePOsForLowStock(clientId: string): Observable<any> {
+    return this.http.post(`${this.base}/purchase-orders/auto-create/${clientId}`, {});
+  }
+
+  downloadPOPdf(poId: string): Observable<Blob> {
+    return this.http.get(`${this.base}/purchase-orders/${poId}/pdf`, { responseType: 'blob' });
+  }
+
+  sendPurchaseOrderViaWhatsApp(poId: string): Observable<any> {
+    return this.http.post(`${this.base}/purchase-orders/${poId}/send-whatsapp`, {});
+  }
+
+  getClientStockLedger(clientId: string, filters: {
+    warehouseId?: string;
+    itemId?: string;
+    transactionType?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    limit?: number;
+  } = {}): Observable<any> {
+    let params = new HttpParams();
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') params = params.set(k, String(v));
+    });
+    return this.http.get(`${this.base}/stock/client-ledger/${clientId}`, { params });
+  }
+
+  getClientStockValuation(clientId: string, filters: {
+    warehouseId?: string;
+    method?: 'FIFO' | 'weighted_avg';
+  } = {}): Observable<any> {
+    let params = new HttpParams();
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') params = params.set(k, String(v));
+    });
+    return this.http.get(`${this.base}/stock/client-valuation/${clientId}`, { params });
+  }
+
+  getStockTransfersForClient(clientId: string, filters: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  } = {}): Observable<any> {
+    let params = new HttpParams();
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') params = params.set(k, String(v));
+    });
+    return this.http.get(`${this.base}/transfers/client/${clientId}`, { params });
+  }
+
+  createStockTransferForClient(clientId: string, dto: CreateTransferDto): Observable<any> {
+    return this.http.post(`${this.base}/transfers/client/${clientId}`, dto);
+  }
+
+  updateClientPrice(id: string, dto: Partial<SetClientPriceDto>): Observable<any> {
+    return this.http.put(`${this.base}/client-pricing/${id}`, dto);
+  }
+
+  deleteClientPrice(id: string): Observable<any> {
+    return this.http.delete(`${this.base}/client-pricing/${id}`);
+  }
+
+  getLowStockAlertsForClient(clientId: string): Observable<any> {
+    return this.http.get(`${this.base}/stock/low-stock-alerts/client/${clientId}`);
+  }
+
+  // ─── Standalone Inventory Methods ──────────────────────────────────────────
+
+  getInventoryDashboardMetrics(): Observable<any> {
+    return this.http.get(`${this.base}/dashboard/metrics`);
+  }
+
+  getInventoryDashboardCharts(): Observable<any> {
+    return this.http.get(`${this.base}/dashboard/charts`);
+  }
+
+  getCategories(): Observable<any> {
+    return this.http.get(`${this.base}/categories`);
+  }
+
+  getItemsWithLowStock(): Observable<any> {
+    return this.http.get(`${this.base}/items/low-stock`);
+  }
+
+  searchItems(query: string): Observable<any> {
+    return this.http.get(`${this.base}/items/search`, {
+      params: new HttpParams().set('q', query)
+    });
+  }
 }

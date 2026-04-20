@@ -23,7 +23,7 @@ import { DocumentScannerComponent } from '../../../../document-scanner/component
         @for (type of types; track type.key) {
           <button
             (click)="selectedType.set(type.key)"
-            class="flex-1 py-2.5 px-4 rounded-lg text-sm font-bold transition-all text-center"
+            class="flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all text-center"
             [class]="selectedType() === type.key
               ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
               : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'"

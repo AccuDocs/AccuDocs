@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormArray, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -12,7 +12,9 @@ import { InventoryService } from '@core/services/inventory.service';
   template: `
     <div class="min-h-screen bg-slate-950 text-white p-6">
       <div class="flex items-center gap-3 mb-8">
-        <a routerLink="/inventory/transfers" class="text-slate-400 hover:text-white"><mat-icon>arrow_back</mat-icon></a>
+        @if(!inlineMode) {
+          <a routerLink="/inventory/transfers" class="text-slate-400 hover:text-white"><mat-icon>arrow_back</mat-icon></a>
+        }
         <h1 class="text-xl font-bold">New Stock Transfer</h1>
       </div>
 
@@ -93,15 +95,22 @@ import { InventoryService } from '@core/services/inventory.service';
                   class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all disabled:opacity-60">
             {{ saving() ? 'Creating…' : 'Create Transfer' }}
           </button>
-          <a routerLink="/inventory/transfers" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl">Cancel</a>
+          @if(inlineMode) {
+            <button type="button" (click)="cancelled.emit()"
+               class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl">
+              Cancel
+            </button>
+          } @else {
+            <a routerLink="/inventory/transfers" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl">Cancel</a>
+          }
         </div>
       </form>
     </div>
   `,
   styles: [`
-    .label-sm { @apply block text-xs text-slate-400 mb-1.5 font-semibold uppercase tracking-wide; }
-    .input-field { @apply w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500; }
-    .input-sm { @apply w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500; }
+    .label-sm { @apply block text-xs text-slate-400 mb-2 font-semibold uppercase tracking-wide; }
+    .input-field { @apply w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500; }
+    .input-sm { @apply w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500; }
   `],
 })
 export class TransferFormComponent implements OnInit {
@@ -110,6 +119,12 @@ export class TransferFormComponent implements OnInit {
   private router = inject(Router);
 
   saving = signal(false);
+  
+  @Input() inlineMode = false;
+  @Input() inlineId: string | null = null;
+  @Output() saved = new EventEmitter<any>();
+  @Output() cancelled = new EventEmitter<void>();
+  
   warehouses = signal<any[]>([]);
   items = signal<any[]>([]);
   private stockMap = new Map<string, number>();
@@ -170,7 +185,13 @@ export class TransferFormComponent implements OnInit {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving.set(true);
     this.service.createTransfer(this.form.value as any).subscribe({
-      next: () => this.router.navigate(['/inventory/transfers']),
+      next: (res) => {
+        if (this.inlineMode) {
+          this.saved.emit(res);
+        } else {
+          this.router.navigate(['/inventory/transfers']);
+        }
+      },
       error: () => this.saving.set(false),
     });
   }

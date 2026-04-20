@@ -7,7 +7,7 @@
 CREATE TABLE IF NOT EXISTS warehouses (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id           UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-  branch_id        UUID REFERENCES branches(id) ON DELETE SET NULL,
+  branch_id        UUID,
   name             VARCHAR(150) NOT NULL,
   code             VARCHAR(20)  NOT NULL,
   address          TEXT,
@@ -153,7 +153,7 @@ CREATE INDEX IF NOT EXISTS idx_stock_summary_item_id      ON stock_summary(item_
 CREATE TABLE IF NOT EXISTS purchase_orders (
   id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id                  UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-  branch_id               UUID         REFERENCES branches(id)      ON DELETE SET NULL,
+  branch_id               UUID,
   supplier_client_id      UUID NOT NULL REFERENCES clients(id)      ON DELETE RESTRICT,
   po_number               VARCHAR(50) NOT NULL UNIQUE,
   po_date                 DATE NOT NULL DEFAULT CURRENT_DATE,

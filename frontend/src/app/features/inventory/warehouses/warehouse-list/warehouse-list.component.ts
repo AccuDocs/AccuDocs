@@ -114,7 +114,7 @@ import type { Warehouse } from '../../models/inventory.models';
       }
     </div>
   `,
-  styles: [`.input-field { @apply w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500; }`],
+  styles: [`.input-field { @apply w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500; }`],
 })
 export class WarehouseListComponent implements OnInit {
   private service = inject(InventoryService);

@@ -161,15 +161,15 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
               <!-- Row 1: Invoice basics -->
               <div class="grid grid-cols-3 gap-4">
                 <div>
-                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Invoice No *</label>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Invoice No *</label>
                   <input type="text" [(ngModel)]="form.invoiceNo" class="sa-input" placeholder="INV-001" />
                 </div>
                 <div>
-                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Invoice Date *</label>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Invoice Date *</label>
                   <input type="date" [(ngModel)]="form.invoiceDate" class="sa-input" />
                 </div>
                 <div>
-                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Invoice Type</label>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Invoice Type</label>
                   <select [(ngModel)]="form.invoiceType" class="sa-input cursor-pointer">
                     <option value="B2B">B2B</option>
                     <option value="B2C">B2C</option>
@@ -184,11 +184,11 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
               <!-- Row 2: Customer + GSTIN -->
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Customer Name *</label>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Customer Name *</label>
                   <input type="text" [(ngModel)]="form.customerName" class="sa-input" placeholder="Customer name" />
                 </div>
                 <div>
-                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Customer GSTIN</label>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Customer GSTIN</label>
                   <input type="text" [(ngModel)]="form.gstin" class="sa-input font-mono" placeholder="22ABCDE1234F1Z5" maxlength="15" />
                 </div>
               </div>
@@ -196,7 +196,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
               <!-- Row 3: HSN, POS, Description -->
               <div class="grid grid-cols-3 gap-4">
                 <div>
-                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">HSN/SAC</label>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">HSN/SAC</label>
                   <div class="relative group/hsn">
                     <input type="text" [(ngModel)]="form.hsnSacCode" class="sa-input font-mono !pr-10" placeholder="9988" />
                     <button 
@@ -210,7 +210,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
                   </div>
                 </div>
                 <div>
-                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Place of Supply</label>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Place of Supply</label>
                   <select [(ngModel)]="form.placeOfSupply" class="sa-input cursor-pointer">
                     <option value="">-- Select --</option>
                     @for (s of stateList; track s.code) {
@@ -219,7 +219,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
                   </select>
                 </div>
                 <div>
-                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Description</label>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Description</label>
                   <input type="text" [(ngModel)]="form.description" class="sa-input" placeholder="Item/service" />
                 </div>
               </div>
@@ -227,11 +227,11 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
               <!-- Row 4: Amount + GST Rate -->
               <div class="grid grid-cols-3 gap-4">
                 <div>
-                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Base Amount (₹) *</label>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Base Amount (₹) *</label>
                   <input type="number" [(ngModel)]="form.baseAmount" step="0.01" class="sa-input font-mono" placeholder="0.00" />
                 </div>
                 <div>
-                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">GST Rate *</label>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">GST Rate *</label>
                   <select [(ngModel)]="form.gstRate" class="sa-input cursor-pointer">
                     <option [value]="0">0%</option>
                     <option [value]="5">5%</option>
@@ -241,7 +241,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
                   </select>
                 </div>
                 <div>
-                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Status</label>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Status</label>
                   <select [(ngModel)]="form.status" class="sa-input cursor-pointer">
                     <option value="draft">Draft</option>
                     <option value="validated">Validated</option>
@@ -282,7 +282,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
 
               <!-- Notes -->
               <div>
-                <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Notes</label>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Notes</label>
                 <textarea [(ngModel)]="form.notes" class="sa-input !h-auto" rows="2" placeholder="Optional remarks..."></textarea>
               </div>
             </div>
