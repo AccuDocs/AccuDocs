@@ -109,6 +109,20 @@
 - ⭐ Favorites bar for pinned quick-access modules
 - 🔍 Generic data table component with sort, filter, paginate, bulk actions
 
+### 10. Inventory & Stock Management *(Phase 3 — New)*
+
+- 🏭 **Multi-Warehouse**: Create and manage multiple warehouses (default, branch-specific, GSTIN-aware)
+- 📦 **Item Catalog**: Goods & services with SKU, barcode, HSN/SAC, GST rate, UOM, variants
+- 🏷️ **Client-Specific Pricing**: Per-client price overrides and discount percentages with date-range validity
+- 📒 **Append-Only Stock Ledger**: FIFO/Weighted-Average valuation; immutable movement log
+- 🔄 **Purchase Orders**: Supplier is a client record — PO lifecycle (draft → sent → partial → received)
+- 📤 **Inter-Warehouse Transfers**: Dispatch from source, receive at destination with qty reconciliation
+- 📊 **Real-Time Stock Summary**: Materialised `qty_on_hand / qty_reserved / qty_available` per warehouse
+- ⚠️ **Low-Stock Alerts**: Configurable reorder point triggers with severity (low_stock / out_of_stock)
+- 💰 **Stock Valuation Report**: Avg cost vs. selling price per item across all warehouses
+- 🔗 **GST Integration**: Sale invoice → auto `stock_ledger(type='sale', client_id=buyer)`, Purchase bill → `stock_ledger(type='purchase', client_id=supplier)`
+- 👤 **Client Workspace Tab**: Aggregate all stock movements (purchases + sales) linked to any client
+
 ---
 
 ## 🛠️ Technology Stack
@@ -439,6 +453,7 @@ module/
 | **intelligence** | Predictive alerts, revenue forecasting | `PredictiveAlertService`, `ForecastService` |
 | **super-admin** | Platform-wide org management, impersonation | `SuperAdminService` |
 | **common** | Cross-module shared services | Dashboard aggregation |
+| **inventory** *(Phase 3)* | Warehouses, items, stock ledger, POs, transfers | `ItemService`, `StockService`, `PurchaseOrderService`, `WarehouseService`, `StockTransferService` |
 
 ### Frontend Architecture
 
@@ -687,6 +702,37 @@ PUT    /api/v1/tasks/:id/status        # Update task status
 GET    /api/v1/compliance/deadlines    # List upcoming deadlines
 GET    /api/v1/compliance/calendar     # Calendar view data
 GET    /api/v1/checklists              # List checklists
+
+# ── Inventory (Phase 3) ──
+POST   /api/v1/inventory/items                           # Create item
+GET    /api/v1/inventory/items                           # List items (+ search, filter)
+GET    /api/v1/inventory/items/barcode/:barcode          # Barcode lookup
+GET    /api/v1/inventory/items/:id                       # Get item
+PUT    /api/v1/inventory/items/:id                       # Update item
+POST   /api/v1/inventory/items/:id/variants              # Add variant
+GET    /api/v1/inventory/items/:id/client-price/:cId     # Effective price for client
+POST   /api/v1/inventory/items/client-pricing            # Set client price override
+
+POST   /api/v1/inventory/warehouses                      # Create warehouse
+GET    /api/v1/inventory/warehouses                      # List warehouses
+GET    /api/v1/inventory/warehouses/:id/stock-summary    # Stock summary for warehouse
+
+GET    /api/v1/inventory/stock/ledger                    # Full stock ledger
+POST   /api/v1/inventory/stock/opening                   # Set opening stock
+POST   /api/v1/inventory/stock/adjust                    # Manual adjustment
+GET    /api/v1/inventory/stock/valuation                 # Stock valuation report
+GET    /api/v1/inventory/stock/low-stock-alerts          # Reorder alerts
+GET    /api/v1/inventory/stock/client-summary/:clientId  # Client workspace stock tab
+
+POST   /api/v1/inventory/purchase-orders                 # Create PO
+GET    /api/v1/inventory/purchase-orders                 # List POs
+PATCH  /api/v1/inventory/purchase-orders/:id/send        # Send PO
+POST   /api/v1/inventory/purchase-orders/:id/receive     # Receive items → auto stock movement
+GET    /api/v1/inventory/purchase-orders/client/:cId     # All POs for a supplier client
+
+POST   /api/v1/inventory/transfers                       # Create stock transfer
+PATCH  /api/v1/inventory/transfers/:id/dispatch          # Dispatch → deduct source
+PATCH  /api/v1/inventory/transfers/:id/receive           # Receive → add destination
 ```
 
 Full interactive documentation: [Swagger UI](https://accudocs.onrender.com/api-docs)
@@ -839,6 +885,6 @@ This project is licensed under the **MIT License** — see LICENSE file for deta
 
 ---
 
-**Last Updated**: April 16, 2026
+**Last Updated**: April 20, 2026
 
 Made with ❤️ by Siddharth

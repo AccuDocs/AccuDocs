@@ -10,9 +10,13 @@ import { logger } from './utils/logger';
 import scannerScanRoutes from './modules/scanner/presentation/routes/scan.routes';
 import scannerDocumentRoutes from './modules/scanner/presentation/routes/documents.routes';
 import scannerExportRoutes from './modules/scanner/presentation/routes/export.routes';
+import { registerInventoryDependencies } from './modules/inventory/inventory.di';
 
 
 export const createApp = (): Application => {
+  // ─── Module DI Registrations ───────────────────────────────────────────────
+  registerInventoryDependencies();
+
   const app = express();
 
   // Trust proxy for rate limiting and IP detection

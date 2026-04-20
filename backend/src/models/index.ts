@@ -14,11 +14,11 @@ import { Payment } from './payment.model';
 import { RevenueForecast } from './RevenueForecast.model';
 import { ClientRiskScore } from './ClientRiskScore.model';
 import { Task } from './task.model';
-import { Notification } from './Notification.model';
+import { Notification as NotificationModel } from './notification.model';
 import { AuditLog } from './AuditLog.model';
 import { SuperAdmin } from './SuperAdmin.model';
-import { Subscription } from './Subscription.model';
-import { StaffPermission } from './StaffPermission.model';
+import { Subscription } from './subscription.model';
+import { StaffPermission as StaffPermissionModel } from './StaffPermission.model';
 import { DocumentVersion } from './DocumentVersion.model';
 import { ClientAccessToken } from './ClientAccessToken.model';
 import { WhatsAppMessageLog } from './WhatsAppMessageLog.model';
@@ -37,6 +37,19 @@ import { HsnSac } from './hsn-sac.model';
 import { ItcLedger } from './itc-ledger.model';
 import { Gstr2aReconciliation } from './gstr2a-reconciliation.model';
 
+// Phase 3 — Inventory module
+import { Warehouse } from './warehouse.model';
+import { ItemCategory } from './item-category.model';
+import { Item } from './item.model';
+import { ItemVariant } from './item-variant.model';
+import { ClientItemPricing } from './client-item-pricing.model';
+import { StockLedger } from './stock-ledger.model';
+import { StockSummary } from './stock-summary.model';
+import { PurchaseOrder } from './purchase-order.model';
+import { PurchaseOrderItem } from './purchase-order-item.model';
+import { StockTransfer } from './stock-transfer.model';
+import { StockTransferItem } from './stock-transfer-item.model';
+
 // Phase 2 models
 import { RecurringInvoice } from './recurring-invoice.model';
 import { CurrencyRate } from './currency-rate.model';
@@ -50,11 +63,11 @@ import { BulkInvoiceJob } from './bulk-invoice-job.model';
 Organization.hasMany(User, { foreignKey: 'organizationId', as: 'users' });
 Organization.hasMany(Client, { foreignKey: 'organizationId', as: 'clients' });
 Organization.hasMany(Subscription, { foreignKey: 'organizationId', as: 'subscriptions' });
-Organization.hasMany(StaffPermission, { foreignKey: 'organizationId', as: 'permissions' });
+Organization.hasMany(StaffPermissionModel, { foreignKey: 'organizationId', as: 'permissions' });
 Organization.hasMany(WhatsAppMessageLog, { foreignKey: 'organizationId', as: 'whatsappLogs' });
 
 User.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
-User.hasMany(StaffPermission, { foreignKey: 'userId', as: 'staffPermissions' });
+User.hasMany(StaffPermissionModel, { foreignKey: 'userId', as: 'staffPermissions' });
 
 Client.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
 Client.belongsTo(User, { foreignKey: 'userId', as: 'user' });
@@ -140,6 +153,65 @@ TcsEntry.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organizat
 // Bulk Invoice Job associations
 BulkInvoiceJob.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organization' });
 
+// ─── Phase 3: Inventory Associations ─────────────────────────────────────────
+
+// Warehouse
+Organization.hasMany(Warehouse, { foreignKey: 'org_id', as: 'warehouses' });
+Warehouse.belongsTo(Organization, { foreignKey: 'org_id', as: 'organization' });
+
+// ItemCategory (self-referencing)
+ItemCategory.hasMany(ItemCategory, { foreignKey: 'parent_id', as: 'children' });
+ItemCategory.belongsTo(ItemCategory, { foreignKey: 'parent_id', as: 'parent' });
+
+// Item
+Organization.hasMany(Item, { foreignKey: 'org_id', as: 'items' });
+Item.belongsTo(Organization, { foreignKey: 'org_id', as: 'organization' });
+Item.belongsTo(ItemCategory, { foreignKey: 'category_id', as: 'category' });
+ItemCategory.hasMany(Item, { foreignKey: 'category_id', as: 'items' });
+
+// ItemVariant
+Item.hasMany(ItemVariant, { foreignKey: 'item_id', as: 'variants' });
+ItemVariant.belongsTo(Item, { foreignKey: 'item_id', as: 'item' });
+
+// ClientItemPricing
+Client.hasMany(ClientItemPricing, { foreignKey: 'client_id', as: 'itemPricings' });
+ClientItemPricing.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
+Item.hasMany(ClientItemPricing, { foreignKey: 'item_id', as: 'clientPricings' });
+ClientItemPricing.belongsTo(Item, { foreignKey: 'item_id', as: 'item' });
+ClientItemPricing.belongsTo(ItemVariant, { foreignKey: 'variant_id', as: 'variant' });
+
+// StockLedger
+StockLedger.belongsTo(Warehouse, { foreignKey: 'warehouse_id', as: 'warehouse' });
+StockLedger.belongsTo(Item,      { foreignKey: 'item_id',      as: 'item' });
+StockLedger.belongsTo(ItemVariant, { foreignKey: 'variant_id', as: 'variant' });
+StockLedger.belongsTo(Client,    { foreignKey: 'client_id',    as: 'client' });
+Client.hasMany(StockLedger, { foreignKey: 'client_id', as: 'stockMovements' });
+Warehouse.hasMany(StockLedger, { foreignKey: 'warehouse_id', as: 'ledgerEntries' });
+
+// StockSummary
+StockSummary.belongsTo(Warehouse,   { foreignKey: 'warehouse_id', as: 'warehouse' });
+StockSummary.belongsTo(Item,        { foreignKey: 'item_id',      as: 'item' });
+StockSummary.belongsTo(ItemVariant, { foreignKey: 'variant_id',   as: 'variant' });
+Warehouse.hasMany(StockSummary, { foreignKey: 'warehouse_id', as: 'stockSummaries' });
+Item.hasMany(StockSummary,      { foreignKey: 'item_id',      as: 'stockSummaries' });
+
+// PurchaseOrder — supplier is a Client
+Client.hasMany(PurchaseOrder, { foreignKey: 'supplier_client_id', as: 'supplierPurchaseOrders' });
+PurchaseOrder.belongsTo(Client,    { foreignKey: 'supplier_client_id', as: 'supplier' });
+PurchaseOrder.belongsTo(Warehouse, { foreignKey: 'warehouse_id',      as: 'warehouse' });
+PurchaseOrder.hasMany(PurchaseOrderItem, { foreignKey: 'po_id', as: 'items' });
+PurchaseOrderItem.belongsTo(PurchaseOrder, { foreignKey: 'po_id', as: 'purchaseOrder' });
+PurchaseOrderItem.belongsTo(Item,          { foreignKey: 'item_id', as: 'item' });
+PurchaseOrderItem.belongsTo(ItemVariant,   { foreignKey: 'variant_id', as: 'variant' });
+
+// StockTransfer
+StockTransfer.belongsTo(Warehouse, { foreignKey: 'from_warehouse_id', as: 'fromWarehouse' });
+StockTransfer.belongsTo(Warehouse, { foreignKey: 'to_warehouse_id',   as: 'toWarehouse' });
+StockTransfer.hasMany(StockTransferItem, { foreignKey: 'transfer_id', as: 'transferItems' });
+StockTransferItem.belongsTo(StockTransfer, { foreignKey: 'transfer_id', as: 'transfer' });
+StockTransferItem.belongsTo(Item,          { foreignKey: 'item_id',     as: 'item' });
+StockTransferItem.belongsTo(ItemVariant,   { foreignKey: 'variant_id',  as: 'variant' });
+
 export {
   Organization,
   User,
@@ -157,11 +229,11 @@ export {
   RevenueForecast,
   ClientRiskScore,
   Task,
-  Notification,
+  NotificationModel,
   AuditLog,
   SuperAdmin,
   Subscription,
-  StaffPermission,
+  StaffPermissionModel,
   DocumentVersion,
   ClientAccessToken,
   WhatsAppMessageLog,
@@ -187,4 +259,16 @@ export {
   TdsEntry,
   TcsEntry,
   BulkInvoiceJob,
+  // Phase 3 — Inventory
+  Warehouse,
+  ItemCategory,
+  Item,
+  ItemVariant,
+  ClientItemPricing,
+  StockLedger,
+  StockSummary,
+  PurchaseOrder,
+  PurchaseOrderItem,
+  StockTransfer,
+  StockTransferItem,
 };
