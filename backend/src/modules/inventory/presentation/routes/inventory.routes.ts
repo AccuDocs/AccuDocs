@@ -3,6 +3,7 @@ import { authenticate } from '../../../../middlewares/auth.middleware';
 import { validate } from '../../../../middlewares/validate.middleware';
 
 import { ItemController } from '../controllers/ItemController';
+import { CategoryController } from '../controllers/CategoryController';
 import { WarehouseController } from '../controllers/WarehouseController';
 import { StockController } from '../controllers/StockController';
 import { PurchaseOrderController } from '../controllers/PurchaseOrderController';
@@ -24,6 +25,20 @@ import {
 
 const router = Router();
 router.use(authenticate);
+
+// ─── Categories (Hierarchical Tree) ───────────────────────────────────────────
+router.get('/categories/tree', CategoryController.getTree);
+router.get('/categories/groups', CategoryController.getGroups);
+router.post('/categories', CategoryController.createCategory);
+router.get('/categories/:id', CategoryController.getCategoryById);
+router.get('/categories/:id/children', CategoryController.getChildren);
+router.get('/categories/:id/breadcrumb', CategoryController.getBreadcrumb);
+router.get('/categories/:id/descendants', CategoryController.getDescendants);
+router.get('/categories/:id/item-count', CategoryController.getItemCount);
+router.get('/categories/:id/stock-value', CategoryController.getStockValue);
+router.patch('/categories/:id', CategoryController.updateCategory);
+router.patch('/categories/:id/move', CategoryController.moveCategory);
+router.delete('/categories/:id', CategoryController.deleteCategory);
 
 // ─── Items ────────────────────────────────────────────────────────────────────
 router.post('/items',                          validate(CreateItemSchema),              ItemController.createItem);

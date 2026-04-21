@@ -830,6 +830,7 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
     'gst',
     'billing',
     'dashboard',
+    'inventory',
   ];
 
   // Modal states aggregation for overflow control

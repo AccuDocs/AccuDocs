@@ -289,6 +289,7 @@ export interface CreateItemDto {
   categoryId?: string | null;
   isActive: boolean;
   description?: string | null;
+  status?: string;
 }
 
 export interface CreateWarehouseDto {

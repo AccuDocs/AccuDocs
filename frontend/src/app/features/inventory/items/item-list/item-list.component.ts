@@ -11,145 +11,190 @@ import type { Item } from '../../models/inventory.models';
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule, MatIconModule],
   template: `
-    <div class="min-h-screen bg-slate-950 text-white p-6">
-      <!-- Header -->
-      <div class="flex items-center justify-between mb-6">
-        <div class="flex items-center gap-3">
-          <a routerLink="/inventory" class="text-slate-400 hover:text-white transition-colors">
-            <mat-icon>arrow_back</mat-icon>
-          </a>
-          <h1 class="text-xl font-bold">Item Catalog</h1>
-          <span class="bg-indigo-600/30 text-indigo-300 text-xs px-2 py-0.5 rounded-full font-mono">
-            {{ total() }} items
-          </span>
+    <div class="animate-in fade-in slide-in-from-bottom-4 p-6 duration-500 bg-[#f8fafd] min-h-screen">
+      <div class="space-y-6">
+        <!-- Tally Header -->
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b-2 border-[#0f2540] pb-4">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-2 rounded bg-[#0f2540] px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#7ec8f0]">
+              Inventory Master
+            </div>
+            <h1 class="text-2xl font-black tracking-tight text-[#0f2540] uppercase">Item Master</h1>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <button (click)="resetFilters()"
+                    class="inline-flex items-center gap-2 rounded border border-[#0f2540] px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0f2540] hover:bg-[#dde8f2] transition-all">
+              Reset Filters
+            </button>
+            <button routerLink="/inventory/items/new"
+                    type="button"
+                    class="inline-flex items-center gap-2 rounded bg-[#1a3a5c] px-6 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-md transition-all hover:bg-[#0f2540] active:scale-[0.97]">
+              <mat-icon class="text-[16px] w-4 h-4">add</mat-icon> [F2] Add Item
+            </button>
+          </div>
         </div>
-        <a routerLink="/inventory/items/new"
-           class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-semibold transition-all">
-          <mat-icon class="text-[16px] w-4 h-4">add</mat-icon> New Item
-        </a>
-      </div>
 
-      <!-- Filters -->
-      <div class="flex flex-wrap gap-3 mb-6 bg-slate-900/60 border border-slate-800 rounded-xl p-4">
-        <input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()"
-               placeholder="Search name, SKU, barcode…"
-               class="flex-1 min-w-[200px] bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"/>
+        <!-- Filter Bar - Accounting Style -->
+        <form class="flex flex-wrap items-center gap-4 rounded border border-[#d0dde8] bg-[#dde8f2] p-3 shadow-sm">
+          <div class="relative min-w-[200px] flex-1">
+            <input
+              type="text"
+              [(ngModel)]="search"
+              (ngModelChange)="onSearch()"
+              name="search"
+              placeholder="Search (SKU, Name, Barcode)..."
+              class="w-full rounded border border-[#b8c9d9] bg-white px-3 py-1.5 text-xs font-bold text-[#0f2540] outline-none placeholder:text-slate-400 focus:border-[#1a3a5c]"
+            />
+          </div>
 
-        <select [(ngModel)]="filterType" (ngModelChange)="load()"
-                class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white min-w-[120px] focus:outline-none focus:border-indigo-500">
-          <option value="">All Types</option>
-          <option value="goods">Goods</option>
-          <option value="service">Services</option>
-        </select>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold uppercase text-[#5a7a9a]">Type:</span>
+            <select [(ngModel)]="filterType" (ngModelChange)="load()" name="type"
+                    class="rounded border border-[#b8c9d9] bg-white px-2 py-1.5 text-xs font-bold text-[#0f2540] outline-none focus:border-[#1a3a5c]">
+              <option value="">All</option>
+              <option value="goods">Goods</option>
+              <option value="service">Services</option>
+            </select>
+          </div>
 
-        <select [(ngModel)]="filterActive" (ngModelChange)="load()"
-                class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white min-w-[120px] focus:outline-none focus:border-indigo-500">
-          <option value="">All Status</option>
-          <option value="true">Active</option>
-          <option value="false">Inactive</option>
-        </select>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold uppercase text-[#5a7a9a]">Status:</span>
+            <select [(ngModel)]="filterActive" (ngModelChange)="load()" name="active"
+                    class="rounded border border-[#b8c9d9] bg-white px-2 py-1.5 text-xs font-bold text-[#0f2540] outline-none focus:border-[#1a3a5c]">
+              <option value="">All</option>
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+        </form>
 
-        <button (click)="resetFilters()"
-                class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm transition-all">
-          Reset
-        </button>
-      </div>
-
-      <!-- Table -->
-      <div class="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-800/80 text-slate-400 text-xs uppercase tracking-wider">
-              <tr>
-                <th class="px-4 py-3 text-left">SKU</th>
-                <th class="px-4 py-3 text-left">Name</th>
-                <th class="px-4 py-3 text-left">HSN/SAC</th>
-                <th class="px-4 py-3 text-left">Unit</th>
-                <th class="px-4 py-3 text-left">Type</th>
-                <th class="px-4 py-3 text-right">Purchase ₹</th>
-                <th class="px-4 py-3 text-right">Selling ₹</th>
-                <th class="px-4 py-3 text-center">GST %</th>
-                <th class="px-4 py-3 text-center">Status</th>
-                <th class="px-4 py-3 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800/60">
-              @if (loading()) {
-                @for (i of [1,2,3,4,5,6,7]; track i) {
-                  <tr>
-                    <td colspan="10" class="px-4 py-3">
-                      <div class="h-5 bg-slate-800 rounded animate-pulse"></div>
-                    </td>
-                  </tr>
-                }
-              } @else if (items().length === 0) {
-                <tr>
-                  <td colspan="10" class="py-16 text-center text-slate-500">
-                    <p class="text-4xl mb-3">📦</p>
-                    <p class="font-semibold">No items found</p>
-                    <a routerLink="/inventory/items/new" class="text-indigo-400 hover:text-indigo-300 text-sm mt-1 inline-block">
-                      Create your first item →
-                    </a>
-                  </td>
+        <!-- Table Container - Professional Accounting Style -->
+        <div class="overflow-hidden rounded border border-[#d0dde8] bg-white shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[1200px] text-left border-collapse">
+              <thead>
+                <tr class="bg-[#2a5a84] text-white">
+                  <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-r border-white/10 w-12">#</th>
+                  <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-r border-white/10 w-40">SKU / Code</th>
+                  <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-r border-white/10">Item Name</th>
+                  <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-r border-white/10 w-32">HSN/SAC</th>
+                  <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-r border-white/10 w-20">Unit</th>
+                  <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-r border-white/10 w-32 text-right">Purchase ₹</th>
+                  <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-r border-white/10 w-32 text-right text-[#9be49b]">Selling ₹</th>
+                  <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-r border-white/10 w-20 text-center">GST %</th>
+                  <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest w-24 text-center">Status</th>
                 </tr>
-              } @else {
-                @for (item of items(); track item.id) {
-                  <tr class="hover:bg-slate-800/40 transition-colors group">
-                    <td class="px-4 py-3 font-mono text-[11px] text-indigo-300">{{ item.sku || '—' }}</td>
-                    <td class="px-4 py-3">
-                      <div class="font-semibold text-white">{{ item.name }}</div>
-                      @if (item.barcode) {
-                        <div class="text-[10px] text-slate-500 font-mono">{{ item.barcode }}</div>
-                      }
-                    </td>
-                    <td class="px-4 py-3 font-mono text-slate-400 text-[11px]">{{ item.hsnSacCode || '—' }}</td>
-                    <td class="px-4 py-3 text-slate-300">{{ item.unitOfMeasure }}</td>
-                    <td class="px-4 py-3">
-                      <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
-                            [class]="item.itemType === 'goods' ? 'bg-blue-500/20 text-blue-300' : 'bg-purple-500/20 text-purple-300'">
-                        {{ item.itemType }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-3 text-right font-mono text-slate-300">₹{{ item.purchasePrice | number:'1.2-2' }}</td>
-                    <td class="px-4 py-3 text-right font-mono text-emerald-400 font-semibold">₹{{ item.sellingPrice | number:'1.2-2' }}</td>
-                    <td class="px-4 py-3 text-center text-slate-400">{{ item.gstRate }}%</td>
-                    <td class="px-4 py-3 text-center">
-                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                            [class]="item.isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'">
-                        {{ item.isActive ? 'Active' : 'Inactive' }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <div class="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <a [routerLink]="['/inventory/items', item.id, 'edit']"
-                           class="p-1 hover:bg-indigo-600/30 rounded text-indigo-400 hover:text-indigo-300 transition-all" title="Edit">
-                          <mat-icon class="text-[16px] w-4 h-4">edit</mat-icon>
-                        </a>
-                        <button (click)="deactivate(item)"
-                                class="p-1 hover:bg-rose-600/30 rounded text-rose-400 hover:text-rose-300 transition-all" title="Deactivate">
-                          <mat-icon class="text-[16px] w-4 h-4">block</mat-icon>
-                        </button>
-                      </div>
+              </thead>
+              <tbody class="divide-y divide-[#eef3f9]">
+                @if (loading()) {
+                  @for (i of [1,2,3,4,5,6,7]; track i) {
+                    <tr>
+                      <td colspan="9" class="px-4 py-3">
+                        <div class="h-5 bg-slate-200 rounded animate-pulse"></div>
+                      </td>
+                    </tr>
+                  }
+                } @else if (items().length === 0) {
+                  <tr>
+                    <td colspan="9" class="py-16 text-center text-slate-500">
+                      <p class="text-4xl mb-3">📦</p>
+                      <p class="font-semibold text-[#0f2540]">No items found</p>
+                      <a routerLink="/inventory/items/new" class="text-[#1a3a5c] hover:underline text-sm mt-1 inline-block font-bold">
+                        Create your first item →
+                      </a>
                     </td>
                   </tr>
+                } @else {
+                  @for (item of items(); track item.id; let idx = $index) {
+                    <tr class="group cursor-pointer hover:bg-[#e8f4fd] transition-colors" [class.bg-[#fcfdff]]="true">
+                      <td class="px-4 py-3 text-[11px] font-bold text-slate-400 border-r border-[#eef3f9]">{{ (page() - 1) * pageSize + idx + 1 }}</td>
+                      <td class="px-4 py-3 border-r border-[#eef3f9]">
+                        <div class="font-mono text-xs font-black text-[#1a3a5c]">{{ item.sku || '—' }}</div>
+                        @if (item.barcode) {
+                          <div class="text-[9px] font-bold text-slate-400 uppercase leading-none mt-0.5">{{ item.barcode }}</div>
+                        }
+                      </td>
+                      <td class="px-4 py-3 border-r border-[#eef3f9]">
+                        <div class="font-bold text-[#0f2540] text-xs">{{ item.name }}</div>
+                        <div class="text-[9px] font-bold text-slate-400 uppercase leading-none mt-0.5">
+                          {{ item.itemType === 'goods' ? 'Goods' : 'Service' }}
+                        </div>
+                      </td>
+                      <td class="px-4 py-3 font-mono text-[#0f2540] text-[11px] font-bold border-r border-[#eef3f9]">{{ item.hsnSacCode || '—' }}</td>
+                      <td class="px-4 py-3 text-[#0f2540] text-[11px] font-bold border-r border-[#eef3f9]">{{ item.unitOfMeasure }}</td>
+                      <td class="px-4 py-3 text-right border-r border-[#eef3f9] font-mono font-bold text-xs text-[#0f2540]">₹{{ item.purchasePrice | number:'1.2-2' }}</td>
+                      <td class="px-4 py-3 text-right border-r border-[#eef3f9] font-mono font-bold text-xs text-[#1a6e1a]">₹{{ item.sellingPrice | number:'1.2-2' }}</td>
+                      <td class="px-4 py-3 text-center text-[#0f2540] font-bold text-xs border-r border-[#eef3f9]">{{ item.gstRate }}%</td>
+                      <td class="px-4 py-3 text-center">
+                        <span class="inline-block px-2 py-0.5 text-[9px] font-black uppercase rounded border"
+                              [class]="item.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'">
+                          {{ item.isActive ? 'Active' : 'Inactive' }}
+                        </span>
+                      </td>
+                      <td class="px-4 py-3 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div class="flex items-center justify-center gap-1">
+                          <a [routerLink]="['/inventory/items', item.id, 'edit']"
+                             class="p-1 hover:bg-[#1a3a5c] rounded text-[#0f2540] hover:text-white transition-all" title="Edit">
+                            <mat-icon class="text-[16px] w-4 h-4">edit</mat-icon>
+                          </a>
+                          <button (click)="deactivate(item)"
+                                  class="p-1 hover:bg-rose-600 rounded text-[#0f2540] hover:text-white transition-all" title="Deactivate">
+                            <mat-icon class="text-[16px] w-4 h-4">block</mat-icon>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
                 }
-              }
-            </tbody>
-          </table>
+              </tbody>
+              <!-- Sticky Footer Totals -->
+              <tfoot class="sticky bottom-0 bg-[#dde8f2] border-t-2 border-[#1a3a5c]">
+                <tr>
+                  <td colspan="7" class="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#1a3a5c] text-right">Page Totals:</td>
+                  <td class="px-4 py-2 text-right font-mono font-black text-xs text-[#0f2540]">{{ total() }}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
 
-        <!-- Pagination -->
+        <!-- Pagination - Accounting Style -->
         @if (total() > pageSize) {
-          <div class="flex items-center justify-between px-4 py-3 border-t border-slate-800 text-xs text-slate-400">
-            <span>Showing {{ (page() - 1) * pageSize + 1 }}–{{ min(page() * pageSize, total()) }} of {{ total() }}</span>
+          <div class="flex items-center justify-between px-4 py-3 rounded border border-[#d0dde8] bg-[#dde8f2] text-xs text-[#0f2540] font-bold">
+            <span>Showing {{ (page() - 1) * pageSize + 1 }}–{{ min(page() * pageSize, total()) }} of {{ total() }} items</span>
             <div class="flex gap-2">
               <button (click)="prevPage()" [disabled]="page() === 1"
-                      class="px-3 py-1.5 bg-slate-800 rounded hover:bg-slate-700 disabled:opacity-40 transition-all">← Prev</button>
+                      class="px-3 py-1.5 rounded bg-[#1a3a5c] text-white hover:bg-[#0f2540] disabled:opacity-40 transition-all text-[10px] font-bold uppercase">← Prev</button>
               <button (click)="nextPage()" [disabled]="page() * pageSize >= total()"
-                      class="px-3 py-1.5 bg-slate-800 rounded hover:bg-slate-700 disabled:opacity-40 transition-all">Next →</button>
+                      class="px-3 py-1.5 rounded bg-[#1a3a5c] text-white hover:bg-[#0f2540] disabled:opacity-40 transition-all text-[10px] font-bold uppercase">Next →</button>
             </div>
           </div>
         }
+
+        <!-- Right Sidebar Summary -->
+        <div class="w-full xl:w-72 space-y-6">
+          <div class="rounded border border-[#d0dde8] bg-white overflow-hidden shadow-sm">
+            <div class="bg-[#1a3a5c] px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white">
+              Master Summary
+            </div>
+            <div class="p-4 space-y-4">
+              <div>
+                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Total Items</p>
+                <p class="font-mono font-black text-lg text-[#0f2540]">{{ total() }}</p>
+              </div>
+              <div class="pt-3 border-t border-[#eef3f9]">
+                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Active Items</p>
+                <p class="font-mono font-black text-lg text-[#1a6e1a]">{{ activeCount() }}</p>
+              </div>
+              <div class="pt-3 border-t-2 border-[#1a3a5c]">
+                <p class="text-[9px] font-bold text-[#b91c1c] uppercase tracking-widest">Inactive</p>
+                <p class="font-mono font-black text-xl text-[#b91c1c]">{{ inactiveCount() }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   `,
@@ -168,6 +213,10 @@ export class ItemListComponent implements OnInit {
   filterActive = '';
 
   private searchTimer: any;
+
+  // Computed signals for sidebar summary
+  activeCount = () => this.items().filter(i => i.isActive).length;
+  inactiveCount = () => this.items().filter(i => !i.isActive).length;
 
   ngOnInit() { this.load(); }
 

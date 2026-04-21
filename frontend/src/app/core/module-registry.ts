@@ -51,7 +51,7 @@ export const MODULE_REGISTRY: AppModule[] = ([
 
   // ── BILLING ──
   { id: 'billing_invoices', hub: 'billing', label: 'Revenue & Invoices', icon: '🧾', desc: 'CA Invoicing & prediction', status: 'live', badge: 12, route: '/billing/invoices', pinned: true },
-  { id: 'inventory_dashboard', hub: 'billing', label: 'Inventory & Stock', icon: '📦', desc: 'Manage catalog, warehouses, and POs', status: 'live', badge: null, route: '/inventory', pinned: true },
+
 
   // ── COMPLIANCE ──
   { id: 'calendar', hub: 'compliance', label: 'Compliance Calendar', icon: '📅', desc: 'All filing deadlines', status: 'live', badge: 3, route: '/compliance/calendar', pinned: true },

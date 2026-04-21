@@ -13,6 +13,7 @@ import { SequelizeStockTransferRepository }  from './infrastructure/repositories
 import { SequelizeClientItemPricingRepository } from './infrastructure/repositories/SequelizeClientItemPricingRepository';
 
 import { ItemService }           from './application/services/ItemService';
+import { CategoryService } from './application/services/CategoryService';
 import { WarehouseService }      from './application/services/WarehouseService';
 import { StockService }          from './application/services/StockService';
 import { PurchaseOrderService }  from './application/services/PurchaseOrderService';
@@ -29,6 +30,7 @@ export function registerInventoryDependencies(): void {
 
   // Service bindings (injectable, but tsyringe resolves them automatically via @injectable)
   container.registerSingleton(ItemService);
+  container.registerSingleton(CategoryService);
   container.registerSingleton(WarehouseService);
   container.registerSingleton(StockService);
   container.registerSingleton(PurchaseOrderService);

@@ -14,19 +14,21 @@ import { InventoryService } from '@core/services/inventory.service';
 import { ItemFormComponent } from '../../../inventory/items/item-form/item-form.component';
 import { PoFormComponent } from '../../../inventory/purchase-orders/po-form/po-form.component';
 import { TransferFormComponent } from '../../../inventory/stock-transfers/transfer-form/transfer-form.component';
-type InventoryView = 'overview' | 'items' | 'warehouses' | 'purchase-orders' | 'transfers' | 'ledger' | 'low-stock';
+import { CategoryManagerComponent } from '../../../inventory/categories/category-manager.component';
+import { heroTagSolid } from '@ng-icons/heroicons/solid';
+type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purchase-orders' | 'transfers' | 'ledger' | 'low-stock';
 
 @Component({
   selector: 'app-client-inventory',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgIconComponent, DecimalPipe, DatePipe, ItemFormComponent, PoFormComponent, TransferFormComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgIconComponent, DecimalPipe, DatePipe, ItemFormComponent, PoFormComponent, TransferFormComponent, CategoryManagerComponent],
   providers: [provideIcons({
     heroArchiveBoxSolid, heroPlusSolid, heroArrowPathSolid,
     heroTruckSolid, heroDocumentTextSolid,
     heroArrowTrendingUpSolid, heroArrowTrendingDownSolid,
     heroExclamationTriangleSolid, heroMagnifyingGlassSolid,
     heroCurrencyRupeeSolid, heroArrowLeftSolid,
-    heroChevronRightSolid, heroCheckCircleSolid
+    heroChevronRightSolid, heroCheckCircleSolid, heroTagSolid
   })],
   template: `
     <div class="space-y-6 animate-in fade-in duration-500">
@@ -41,6 +43,11 @@ type InventoryView = 'overview' | 'items' | 'warehouses' | 'purchase-orders' | '
                 [class]="activeView() === 'items' ? 'bg-white shadow-sm text-primary-600' : 'text-slate-500 hover:text-slate-700'"
                 class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-1.5 whitespace-nowrap">
           <ng-icon name="heroDocumentTextSolid"></ng-icon> Items
+        </button>
+        <button (click)="activeView.set('categories')"
+                [class]="activeView() === 'categories' ? 'bg-white shadow-sm text-primary-600' : 'text-slate-500 hover:text-slate-700'"
+                class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-1.5 whitespace-nowrap">
+          <ng-icon name="heroTagSolid"></ng-icon> Categories
         </button>
         <button (click)="activeView.set('warehouses')"
                 [class]="activeView() === 'warehouses' ? 'bg-white shadow-sm text-primary-600' : 'text-slate-500 hover:text-slate-700'"
@@ -314,6 +321,10 @@ type InventoryView = 'overview' | 'items' | 'warehouses' | 'purchase-orders' | '
             }
           </div>
         }
+
+      <!-- ═══ CATEGORIES TAB ═══ -->
+      } @else if (activeView() === 'categories') {
+        <app-category-manager></app-category-manager>
 
       <!-- ═══ WAREHOUSES TAB ═══ -->
       } @else if (activeView() === 'warehouses') {
