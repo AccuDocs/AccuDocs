@@ -156,7 +156,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
         </nav>
       </section>
 
-         
+
 
       @if (activeTab() === 'checklists') {
         <app-checklists [clientId]="workspace()?.clientId || ''"></app-checklists>

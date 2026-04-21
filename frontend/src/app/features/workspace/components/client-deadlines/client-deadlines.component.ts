@@ -19,7 +19,7 @@ import { WorkspaceTab } from '../../client-workspace/client-workspace.component'
   standalone: true,
   imports: [CommonModule, FormsModule, NgIconComponent],
   template: `
-    <div class="p-6 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div class=" space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>

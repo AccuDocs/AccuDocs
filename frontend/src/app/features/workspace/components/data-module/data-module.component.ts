@@ -24,7 +24,7 @@ import { WorkspaceTab } from '../../client-workspace/client-workspace.component'
   standalone: true,
   imports: [
     CommonModule, FormsModule, NgIconComponent,
-    SalesComponent, PurchasesComponent, ExpensesComponent, UploadComponent, GstSummaryComponent
+    SalesComponent, PurchasesComponent, ExpensesComponent, UploadComponent
   ],
   providers: [
     provideIcons({
@@ -68,16 +68,16 @@ import { WorkspaceTab } from '../../client-workspace/client-workspace.component'
       </div>
 
       <!-- Sub-tab Navigation -->
-      <div class="bg-white p-1 rounded-xl border border-slate-200 shadow-sm flex gap-1">
+      <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-xl w-fit overflow-x-auto max-w-full no-scrollbar">
         @for (tab of tabs; track tab.key) {
           <button
             (click)="activeSubTab.set(tab.key)"
-            class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-bold transition-all"
+            class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-2.5 whitespace-nowrap"
             [class]="activeSubTab() === tab.key
-              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'"
+              ? 'bg-white shadow-sm text-indigo-600'
+              : 'text-slate-500 hover:text-slate-700'"
           >
-            <ng-icon [name]="tab.icon" size="18"></ng-icon>
+            <ng-icon [name]="tab.icon"></ng-icon>
             {{ tab.label }}
           </button>
         }
@@ -109,13 +109,6 @@ import { WorkspaceTab } from '../../client-workspace/client-workspace.component'
         @case ('upload') {
           <app-upload [clientId]="clientId"></app-upload>
         }
-        @case ('gst-returns') {
-          <app-gst-summary 
-            [clientId]="clientId"
-            [rootFolder]="rootFolder"
-            (folderNavigationRequested)="folderNavigationRequested.emit($event)"
-          ></app-gst-summary>
-        }
       }
     </div>
   `,
@@ -141,7 +134,7 @@ export class DataModuleComponent implements OnInit {
   @Output() tabChangeRequested = new EventEmitter<WorkspaceTab>();
   @Output() folderNavigationRequested = new EventEmitter<string>();
 
-  activeSubTab = signal<'sales' | 'purchases' | 'expenses' | 'upload' | 'gst-returns'>('sales');
+  activeSubTab = signal<'sales' | 'purchases' | 'expenses' | 'upload'>('sales');
 
   selectedFY = '';
   selectedMonth = 0;
@@ -151,7 +144,6 @@ export class DataModuleComponent implements OnInit {
     { key: 'purchases' as const, label: 'Purchases', icon: 'heroShoppingCartSolid' },
     { key: 'expenses' as const, label: 'Expenses', icon: 'heroBanknotesSolid' },
     { key: 'upload' as const, label: 'Upload', icon: 'heroArrowUpTraySolid' },
-    { key: 'gst-returns' as const, label: 'GST Filing', icon: 'heroClipboardDocumentCheckSolid' },
   ];
 
   months = [
