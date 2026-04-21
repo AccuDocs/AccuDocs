@@ -34,7 +34,7 @@ import { ChecklistDetailComponent } from '../checklist-detail/checklist-detail.c
         </div>
         <button 
           (click)="openCreateModal()"
-          class="flex items-center gap-2 px-4 py-2 bg-[#0074c9] text-white rounded-xl font-semibold hover:bg-blue-600 transition-colors shadow-lg shadow-blue-900/20"
+          class="flex items-center gap-2 px-4 py-2 bg-[#0074c9] text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors shadow-lg shadow-blue-900/20"
         >
           <ng-icon name="heroPlusSolid" size="18"></ng-icon>
           New Checklist
@@ -43,7 +43,7 @@ import { ChecklistDetailComponent } from '../checklist-detail/checklist-detail.c
 
       <!-- Stats Overview -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-bold uppercase text-slate-500 tracking-wider">Total Checklists</span>
             <div class="p-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg">
@@ -52,7 +52,7 @@ import { ChecklistDetailComponent } from '../checklist-detail/checklist-detail.c
           </div>
           <p class="text-2xl font-black text-slate-900 dark:text-white">{{ stats().total }}</p>
         </div>
-        <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-bold uppercase text-blue-500 tracking-wider">Active</span>
             <div class="p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -61,7 +61,7 @@ import { ChecklistDetailComponent } from '../checklist-detail/checklist-detail.c
           </div>
           <p class="text-2xl font-black text-slate-900 dark:text-white">{{ stats().active }}</p>
         </div>
-        <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-bold uppercase text-green-500 tracking-wider">Completed</span>
             <div class="p-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg">
@@ -89,7 +89,7 @@ import { ChecklistDetailComponent } from '../checklist-detail/checklist-detail.c
             <p class="text-slate-500 font-medium">Loading checklists...</p>
           </div>
         } @else if (checklists().length === 0) {
-          <div class="flex flex-col items-center justify-center py-16 bg-white dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+          <div class="flex flex-col items-center justify-center py-16 bg-white dark:bg-slate-800/50 rounded-lg border border-dashed border-slate-300 dark:border-slate-700">
             <div class="p-4 bg-slate-50 dark:bg-slate-800 rounded-full mb-4">
               <ng-icon name="heroArchiveBoxSolid" size="32" class="text-slate-400"></ng-icon>
             </div>
@@ -104,7 +104,7 @@ import { ChecklistDetailComponent } from '../checklist-detail/checklist-detail.c
           </div>
         } @else {
           @for (checklist of checklists(); track checklist.id) {
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-900 transition-all cursor-pointer group relative overflow-hidden"
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-900 transition-all cursor-pointer group relative overflow-hidden"
                  (click)="selectChecklist(checklist)">
               
               <!-- Completion Background -->
@@ -175,7 +175,7 @@ import { ChecklistDetailComponent } from '../checklist-detail/checklist-detail.c
           class="modal-panel-premium w-full max-w-lg flex flex-col"
           (click)="$event.stopPropagation()"
         >
-          <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800 rounded-t-[24px]">
+          <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800 rounded-t-lg">
             <h3 class="text-lg font-bold text-slate-900 dark:text-white">Create New Checklist</h3>
             <button (click)="showCreateModal = false" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
               <ng-icon name="heroExclamationCircleSolid" class="rotate-45" size="24"></ng-icon>
@@ -237,7 +237,7 @@ import { ChecklistDetailComponent } from '../checklist-detail/checklist-detail.c
               </div>
           </div>
 
-          <div class="p-6 pt-4 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-b-[24px]">
+          <div class="p-6 pt-4 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-b-lg">
             <button (click)="showCreateModal = false" class="px-5 py-2.5 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">Cancel</button>
             <button (click)="createChecklist()" 
                     [disabled]="!creationData.name"

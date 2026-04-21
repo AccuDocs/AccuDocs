@@ -41,7 +41,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
               <h3 class="text-2xl font-bold text-slate-900">₹{{ totalSales() | number:'1.0-0' }}</h3>
               <p class="text-xs font-bold text-emerald-600 mt-2">{{ entries().length }} entries</p>
             </div>
-            <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform duration-300">
+            <div class="w-11 h-11 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform duration-300">
               <ng-icon name="heroCurrencyRupeeSolid" size="22"></ng-icon>
             </div>
           </div>
@@ -53,7 +53,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
               <h3 class="text-2xl font-bold text-indigo-700">₹{{ totalGST() | number:'1.0-0' }}</h3>
               <p class="text-xs font-bold text-indigo-500 mt-2">CGST + SGST / IGST</p>
             </div>
-            <div class="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform duration-300">
+            <div class="w-11 h-11 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform duration-300">
               <ng-icon name="heroReceiptPercentSolid" size="22"></ng-icon>
             </div>
           </div>
@@ -65,7 +65,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
               <h3 class="text-2xl font-bold text-slate-900">{{ b2bCount() }}</h3>
               <p class="text-xs font-bold text-sky-600 mt-2">₹{{ b2bValue() | number:'1.0-0' }}</p>
             </div>
-            <div class="w-11 h-11 rounded-xl bg-sky-50 flex items-center justify-center text-sky-600 group-hover:scale-110 transition-transform duration-300">
+            <div class="w-11 h-11 rounded-lg bg-sky-50 flex items-center justify-center text-sky-600 group-hover:scale-110 transition-transform duration-300">
               <ng-icon name="heroChartBarSolid" size="22"></ng-icon>
             </div>
           </div>
@@ -77,7 +77,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
               <h3 class="text-2xl font-bold text-slate-900">₹{{ totalWithGST() | number:'1.0-0' }}</h3>
               <p class="text-xs font-bold text-amber-600 mt-2">Invoice value</p>
             </div>
-            <div class="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform duration-300">
+            <div class="w-11 h-11 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform duration-300">
               <ng-icon name="heroArrowTrendingUpSolid" size="22"></ng-icon>
             </div>
           </div>
@@ -133,7 +133,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
 
       <ng-template #actionsTpl let-row>
         <button (click)="handleRowAction({action: 'download', row})" title="Download Invoice"
-          class="w-8 h-8 flex items-center justify-center rounded-xl text-indigo-500 hover:bg-indigo-50 hover:text-indigo-700 transition-colors">
+          class="w-8 h-8 flex items-center justify-center rounded-lg text-indigo-500 hover:bg-indigo-50 hover:text-indigo-700 transition-colors">
           <ng-icon name="heroDocumentTextSolid" size="18"></ng-icon>
         </button>
         <button (click)="handleRowAction({action: 'edit', row})" title="Edit Sale"
@@ -149,7 +149,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
       <!-- Add/Edit Modal -->
       @if (showModal()) {
         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" (click)="closeModal()">
-          <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-200" (click)="$event.stopPropagation()">
+          <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-200" (click)="$event.stopPropagation()">
             <div class="flex items-center justify-between p-6 border-b border-slate-200">
               <h3 class="text-lg font-bold text-slate-900">{{ editingEntry() ? 'Edit' : 'Add' }} Sale Entry</h3>
               <button (click)="closeModal()" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all">
@@ -298,7 +298,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
           <!-- HSN Lookup Nested Modal -->
           @if (showHsnLookup()) {
             <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[60] flex items-center justify-center p-4" (click)="showHsnLookup.set(false)">
-              <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col" (click)="$event.stopPropagation()">
+              <div class="bg-white rounded-lg shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col" (click)="$event.stopPropagation()">
                 <div class="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50">
                   <div>
                     <h4 class="text-base font-bold text-slate-900">HSN/SAC Lookup</h4>

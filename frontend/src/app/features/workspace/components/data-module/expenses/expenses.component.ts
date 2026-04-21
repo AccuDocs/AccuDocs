@@ -28,7 +28,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
               <h3 class="text-2xl font-bold text-slate-900">₹{{ totalExpenses() | number:'1.0-0' }}</h3>
               <p class="text-xs font-bold text-rose-600 mt-2">{{ entries().length }} entries</p>
             </div>
-            <div class="w-11 h-11 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 group-hover:scale-110 transition-transform duration-300">
+            <div class="w-11 h-11 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600 group-hover:scale-110 transition-transform duration-300">
               <ng-icon name="heroCurrencyRupeeSolid" size="22"></ng-icon>
             </div>
           </div>
@@ -40,7 +40,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
               <h3 class="text-2xl font-bold text-indigo-700">₹{{ expenseGST() | number:'1.0-0' }}</h3>
               <p class="text-xs font-bold text-indigo-500 mt-2">{{ gstApplicableCount() }} with GST</p>
             </div>
-            <div class="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform duration-300">
+            <div class="w-11 h-11 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform duration-300">
               <ng-icon name="heroReceiptPercentSolid" size="22"></ng-icon>
             </div>
           </div>
@@ -52,7 +52,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
               <h3 class="text-2xl font-bold text-emerald-700">₹{{ itcClaimable() | number:'1.0-0' }}</h3>
               <p class="text-xs font-bold text-emerald-500 mt-2">Eligible credit</p>
             </div>
-            <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform duration-300">
+            <div class="w-11 h-11 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform duration-300">
               <ng-icon name="heroBanknotesSolid" size="22"></ng-icon>
             </div>
           </div>
@@ -64,7 +64,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
               <h3 class="text-xl font-bold text-slate-900 capitalize">{{ topCategory() || '—' }}</h3>
               <p class="text-xs font-bold text-amber-600 mt-2">Most frequent</p>
             </div>
-            <div class="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform duration-300">
+            <div class="w-11 h-11 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform duration-300">
               <ng-icon name="heroShieldExclamationSolid" size="22"></ng-icon>
             </div>
           </div>
@@ -117,7 +117,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
       <!-- Modal -->
       @if (showModal()) {
         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" (click)="closeModal()">
-          <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-200" (click)="$event.stopPropagation()">
+          <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-200" (click)="$event.stopPropagation()">
             <div class="flex items-center justify-between p-6 border-b border-slate-200">
               <h3 class="text-lg font-bold text-slate-900">{{ editingId ? 'Edit' : 'Add' }} Expense</h3>
               <button (click)="closeModal()" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"><ng-icon name="heroXMarkSolid" size="20"></ng-icon></button>
@@ -232,7 +232,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
           <!-- HSN Lookup Nested Modal -->
           @if (showHsnLookup()) {
             <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[60] flex items-center justify-center p-4" (click)="showHsnLookup.set(false)">
-              <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col" (click)="$event.stopPropagation()">
+              <div class="bg-white rounded-lg shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col" (click)="$event.stopPropagation()">
                 <div class="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50">
                   <div>
                     <h4 class="text-base font-bold text-slate-900">HSN/SAC Lookup</h4>

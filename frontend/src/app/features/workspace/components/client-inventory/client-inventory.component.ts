@@ -33,7 +33,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
   template: `
     <div class="space-y-6 animate-in fade-in duration-500">
       <!-- Sub-Navigation Tabs -->
-      <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-xl w-fit overflow-x-auto max-w-full no-scrollbar">
+      <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-lg w-fit overflow-x-auto max-w-full no-scrollbar">
         <button (click)="activeView.set('overview')"
                 [class]="activeView() === 'overview' ? 'bg-white shadow-sm text-primary-600' : 'text-slate-500 hover:text-slate-700'"
                 class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-1.5 whitespace-nowrap">
@@ -84,7 +84,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
             <p class="text-sm text-slate-500 font-medium">Real-time stock overview, valuation, and movement tracking.</p>
             <div class="w-10 h-[3px] bg-primary-600 rounded-full mt-2"></div>
           </div>
-          <button (click)="refresh()" class="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-bold hover:bg-primary-700 transition-colors shadow-sm">
+          <button (click)="refresh()" class="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-bold hover:bg-primary-700 transition-colors shadow-sm">
             <ng-icon name="heroArrowPathSolid" size="16"></ng-icon> Refresh Data
           </button>
         </div>
@@ -98,7 +98,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
                 @if (isLoading()) { <div class="h-8 w-20 bg-slate-100 rounded animate-pulse"></div> }
                 @else { <h3 class="text-2xl font-bold text-slate-900">{{ totalItems() }}</h3> }
               </div>
-              <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform duration-300">
+              <div class="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform duration-300">
                 <ng-icon name="heroArchiveBoxSolid" size="24"></ng-icon>
               </div>
             </div>
@@ -110,7 +110,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
                 @if (isLoading()) { <div class="h-8 w-28 bg-slate-100 rounded animate-pulse"></div> }
                 @else { <h3 class="text-2xl font-bold text-emerald-700">₹{{ stockValue() | number:'1.0-0' }}</h3> }
               </div>
-              <div class="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform duration-300">
+              <div class="w-12 h-12 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform duration-300">
                 <ng-icon name="heroCurrencyRupeeSolid" size="24"></ng-icon>
               </div>
             </div>
@@ -127,7 +127,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
                   }
                 }
               </div>
-              <div class="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform duration-300">
+              <div class="w-12 h-12 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform duration-300">
                 <ng-icon name="heroExclamationTriangleSolid" size="24"></ng-icon>
               </div>
             </div>
@@ -139,7 +139,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
                 @if (isLoading()) { <div class="h-8 w-16 bg-slate-100 rounded animate-pulse"></div> }
                 @else { <h3 class="text-2xl font-bold text-indigo-700">{{ pendingPOs() }}</h3> }
               </div>
-              <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform duration-300">
+              <div class="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform duration-300">
                 <ng-icon name="heroTruckSolid" size="24"></ng-icon>
               </div>
             </div>
@@ -149,7 +149,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
         <!-- Top 10 Valuation + Recent Movements -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <!-- Top 10 by Value -->
-          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
             <div class="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
               <h3 class="font-semibold text-slate-800">Top 10 by Value</h3>
               <button (click)="activeView.set('items')" class="text-xs font-bold text-primary-600 hover:underline">View All →</button>
@@ -329,7 +329,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
       <!-- ═══ WAREHOUSES TAB ═══ -->
       } @else if (activeView() === 'warehouses') {
         @if(showWarehouseForm) {
-          <div class="bg-slate-900/80 border border-indigo-500/30 rounded-xl p-6 mb-6">
+          <div class="bg-slate-900/80 border border-indigo-500/30 rounded-lg p-6 mb-6">
             <h2 class="text-sm font-bold text-indigo-300 uppercase tracking-wider mb-4">New Warehouse</h2>
             <form [formGroup]="whForm" (ngSubmit)="createWarehouse()" class="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div class="col-span-2">

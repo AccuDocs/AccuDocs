@@ -94,7 +94,7 @@ Chart.register(...registerables);
         </div>
 
         <!-- Tax Split Bar -->
-        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
           <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Tax Split (Net Payable)</p>
           <div class="grid grid-cols-3 gap-4">
             <div class="text-center p-3 bg-blue-50 rounded-lg">
@@ -115,13 +115,13 @@ Chart.register(...registerables);
 
       <!-- Charts Row -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
           <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Monthly Revenue & GST</p>
           <div class="h-[280px]">
             <canvas id="revenueChart"></canvas>
           </div>
         </div>
-        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
           <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">GST Payable Trend</p>
           <div class="h-[280px]">
             <canvas id="gstPayableChart"></canvas>
@@ -133,7 +133,7 @@ Chart.register(...registerables);
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Sales Type Breakdown -->
         @if (summary()) {
-          <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+          <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Sales Breakdown</p>
             <div class="space-y-3">
               <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
@@ -162,7 +162,7 @@ Chart.register(...registerables);
         }
 
         <!-- GSTR Return Status -->
-        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
           <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">GSTR Filing Status</p>
           <div class="space-y-2 max-h-[200px] overflow-y-auto">
             @for (r of returns(); track r.id) {
@@ -197,7 +197,7 @@ Chart.register(...registerables);
 
       <!-- Validation Alerts -->
       @if (alerts().length > 0) {
-        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
           <div class="flex items-center justify-between mb-4">
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Validation Alerts</p>
             <div class="flex items-center gap-2">

@@ -30,7 +30,7 @@ import { WorkspaceTab } from '../../client-workspace/client-workspace.component'
 
       <!-- Stats Overview -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-bold uppercase text-slate-500 tracking-wider">Total</span>
             <div class="p-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg">
@@ -39,7 +39,7 @@ import { WorkspaceTab } from '../../client-workspace/client-workspace.component'
           </div>
           <p class="text-2xl font-black text-slate-900 dark:text-white">{{ deadlines().length }}</p>
         </div>
-        <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-bold uppercase text-blue-500 tracking-wider">Pending</span>
             <div class="p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -48,7 +48,7 @@ import { WorkspaceTab } from '../../client-workspace/client-workspace.component'
           </div>
           <p class="text-2xl font-black text-slate-900 dark:text-white">{{ getCountByStatus('pending') }}</p>
         </div>
-        <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-bold uppercase text-green-500 tracking-wider">Filed</span>
             <div class="p-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg">
@@ -57,7 +57,7 @@ import { WorkspaceTab } from '../../client-workspace/client-workspace.component'
           </div>
           <p class="text-2xl font-black text-slate-900 dark:text-white">{{ getCountByStatus('filed') }}</p>
         </div>
-        <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-bold uppercase text-red-500 tracking-wider">Overdue</span>
             <div class="p-1.5 bg-red-50 dark:bg-red-900/20 rounded-lg">
@@ -76,7 +76,7 @@ import { WorkspaceTab } from '../../client-workspace/client-workspace.component'
             <p class="text-slate-500 font-medium">Loading deadlines...</p>
           </div>
         } @else if (deadlines().length === 0) {
-          <div class="flex flex-col items-center justify-center py-16 bg-white dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+          <div class="flex flex-col items-center justify-center py-16 bg-white dark:bg-slate-800/50 rounded-lg border border-dashed border-slate-300 dark:border-slate-700">
             <div class="p-4 bg-slate-50 dark:bg-slate-800 rounded-full mb-4">
               <ng-icon name="heroCalendarSolid" size="32" class="text-slate-400"></ng-icon>
             </div>
@@ -85,7 +85,7 @@ import { WorkspaceTab } from '../../client-workspace/client-workspace.component'
           </div>
         } @else {
           @for (dl of deadlines(); track dl.id) {
-            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 hover:shadow-lg transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-lg border border-slate-200 dark:border-slate-700 hover:shadow-lg transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
               
               <div class="flex items-start gap-4">
                 <div class="text-3xl mt-1">{{ getTypeEmoji(dl.deadline?.type || '') }}</div>
