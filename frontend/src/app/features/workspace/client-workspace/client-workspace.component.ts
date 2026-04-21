@@ -156,65 +156,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
         </nav>
       </section>
 
-      <!-- Workspace Tabs -->
-      <div class="flex items-center gap-6 border-b border-gray-200 dark:border-gray-700 mb-6 px-2">
-        <button 
-          (click)="setActiveTab('files')"
-          class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
-          [class]="activeTab() === 'files' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
-        >
-          <ng-icon name="heroFolderOpenSolid" size="18"></ng-icon>
-          Files
-        </button>
-        <button 
-          (click)="setActiveTab('checklists')"
-          class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
-          [class]="activeTab() === 'checklists' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
-        >
-          <ng-icon name="heroClipboardDocumentCheckSolid" size="18"></ng-icon>
-          Checklists
-        </button>
-        <button 
-          (click)="setActiveTab('deadlines')"
-          class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
-          [class]="activeTab() === 'deadlines' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
-        >
-          <ng-icon name="heroCalendarSolid" size="18"></ng-icon>
-          Deadlines
-        </button>
-        <button 
-          (click)="setActiveTab('data')"
-          class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
-          [class]="activeTab() === 'data' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
-        >
-          <ng-icon name="heroChartBarSolid" size="18"></ng-icon>
-          Data
-        </button>
-        <button 
-          (click)="setActiveTab('gst')"
-          class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
-          [class]="activeTab() === 'gst' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
-        >
-          <ng-icon name="heroReceiptPercentSolid" size="18"></ng-icon>
-          GST Filing
-        </button>
-        <button 
-          (click)="setActiveTab('dashboard')"
-          class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
-          [class]="activeTab() === 'dashboard' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
-        >
-          <ng-icon name="heroPresentationChartBarSolid" size="18"></ng-icon>
-          Dashboard
-        </button>
-        <button 
-          (click)="setActiveTab('inventory')"
-          class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
-          [class]="activeTab() === 'inventory' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
-        >
-          <ng-icon name="heroArchiveBoxSolid" size="18"></ng-icon>
-          Inventory & Stock
-        </button>
-      </div>
+         
 
       @if (activeTab() === 'checklists') {
         <app-checklists [clientId]="workspace()?.clientId || ''"></app-checklists>
@@ -822,6 +764,16 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
 
   // Tab state
   activeTab = signal<WorkspaceTab>('files');
+  
+  // Active tab metadata for header
+  activeTabData = computed(() => {
+    const tab = this.activeTab();
+    return this.workspaceContext.workspaceTabs.find(t => t.tab === (tab as any)) || { 
+      label: 'Files', 
+      iconName: 'heroFolderOpenSolid' 
+    };
+  });
+
   private readonly workspaceTabs: readonly WorkspaceTab[] = [
     'files',
     'checklists',
