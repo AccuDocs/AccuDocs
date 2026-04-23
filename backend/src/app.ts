@@ -42,13 +42,8 @@ export const createApp = (): Application => {
       if (isAllowed || config.nodeEnv === 'development') {
         callback(null, true);
       } else {
-        // Fallback for GitHub Pages and common subdomains
-        if (origin.includes('github.io') || origin.includes('onrender.com')) {
-          callback(null, true);
-        } else {
-          logger.warn(`CORS blocked for origin: ${origin}`);
-          callback(null, false);
-        }
+        logger.warn(`CORS blocked for origin: ${origin}`);
+        callback(new Error('CORS policy: Origin not allowed'), false);
       }
     },
     credentials: true,
@@ -96,10 +91,8 @@ export const createApp = (): Application => {
     next();
   });
 
-  // Rate limiting (Skipped in development for easier testing)
-  if (config.nodeEnv !== 'development') {
-    app.use(`/api/${config.apiVersion}`, apiLimiter);
-  }
+  // Rate limiting (always applied, even in development, for security consistency)
+  app.use(`/api/${config.apiVersion}`, apiLimiter);
 
   // Swagger documentation
   const swaggerOptions = {

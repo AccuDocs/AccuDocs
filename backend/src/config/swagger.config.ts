@@ -49,8 +49,32 @@ const caFirmOptions: swaggerJsdoc.Options = {
   },
   apis: [
     config.nodeEnv === 'production' ? './dist/routes/*.js' : './src/routes/*.ts',
-    // Exclude super-admin from CA Firm docs
-    config.nodeEnv === 'production' ? './dist/modules/!(super-admin)/**/*.js' : './src/modules/!(super-admin)/**/*.{ts,js}',
+    // Auth module
+    config.nodeEnv === 'production' ? './dist/modules/auth/**/*.js' : './src/modules/auth/**/*.{ts,js}',
+    // Billing module
+    config.nodeEnv === 'production' ? './dist/modules/billing/**/*.js' : './src/modules/billing/**/*.{ts,js}',
+    // Client module
+    config.nodeEnv === 'production' ? './dist/modules/client/**/*.js' : './src/modules/client/**/*.{ts,js}',
+    // Compliance module
+    config.nodeEnv === 'production' ? './dist/modules/compliance/**/*.js' : './src/modules/compliance/**/*.{ts,js}',
+    // Documents & Workspace module
+    config.nodeEnv === 'production' ? './dist/modules/documents/**/*.js' : './src/modules/documents/**/*.{ts,js}',
+    // GST module
+    config.nodeEnv === 'production' ? './dist/modules/gst/**/*.js' : './src/modules/gst/**/*.{ts,js}',
+    // Intelligence module
+    config.nodeEnv === 'production' ? './dist/modules/intelligence/**/*.js' : './src/modules/intelligence/**/*.{ts,js}',
+    // Inventory module
+    config.nodeEnv === 'production' ? './dist/modules/inventory/**/*.js' : './src/modules/inventory/**/*.{ts,js}',
+    // Notifications & WhatsApp module
+    config.nodeEnv === 'production' ? './dist/modules/notifications/**/*.js' : './src/modules/notifications/**/*.{ts,js}',
+    // Scanner module
+    config.nodeEnv === 'production' ? './dist/modules/scanner/**/*.js' : './src/modules/scanner/**/*.{ts,js}',
+    // Tasks module
+    config.nodeEnv === 'production' ? './dist/modules/tasks/**/*.js' : './src/modules/tasks/**/*.{ts,js}',
+    // Checklist module
+    config.nodeEnv === 'production' ? './dist/modules/checklist/**/*.js' : './src/modules/checklist/**/*.{ts,js}',
+    // Data module
+    config.nodeEnv === 'production' ? './dist/modules/data/**/*.js' : './src/modules/data/**/*.{ts,js}',
   ],
 };
 

@@ -153,7 +153,6 @@ router.post('/:id/activate', controller.activate);
  *       200:
  *         description: Organization deleted
  */
-router.post('/:id/activate', controller.activate);
 router.delete('/:id', validate(deleteSchema), controller.delete);
 
 /**
