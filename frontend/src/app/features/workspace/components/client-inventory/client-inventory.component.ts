@@ -297,30 +297,109 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
         }
       } @else if (activeView() === 'items') {
         @if (showItemForm) {
-          <div class="bg-slate-900 rounded-xl overflow-hidden shadow-xl border border-slate-800">
-             <app-item-form [inlineMode]="true" (saved)="showItemForm = false; searchItems()" (cancelled)="showItemForm = false"></app-item-form>
+          <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+             <app-item-form
+               [inlineMode]="true"
+               [inlineId]="editingItemId()"
+               (saved)="finishItemForm()"
+               (cancelled)="cancelItemForm()">
+             </app-item-form>
           </div>
         } @else {
-          <div class="flex items-center justify-between mb-6">
-            <div>
-              <h2 class="text-xl font-bold text-slate-900">Item Catalog</h2>
-              <p class="text-sm text-slate-500 mt-1">View and manage your product catalog.</p>
-            </div>
-            <div class="flex gap-3">
-              <div class="relative">
-                <ng-icon name="heroMagnifyingGlassSolid" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size="16"></ng-icon>
-                <input type="text" [(ngModel)]="itemSearch" (ngModelChange)="searchItems()" placeholder="Search items..."
-                       class="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all w-64" />
+          <section class="space-y-5">
+            <div class="rounded-3xl border border-primary-200 bg-gradient-to-br from-white via-primary-50/40 to-white p-5 shadow-sm">
+              <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                <div>
+                  <div class="inline-flex items-center gap-2 rounded-full bg-primary-100 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-primary-700">
+                    <ng-icon name="heroArchiveBoxSolid" size="14"></ng-icon>
+                    Product catalog
+                  </div>
+                  <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-950">Item Catalog</h2>
+                  <p class="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
+                    Manage products, stock visibility, pricing, margins, categories, and barcode-ready SKU records for this client workspace.
+                  </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                  <button type="button"
+                          (click)="reloadItemCatalog()"
+                          class="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                          [disabled]="isLoadingItems()">
+                    <ng-icon name="heroArrowPathSolid" size="17" [class]="isLoadingItems() ? 'animate-spin' : ''"></ng-icon>
+                    Refresh
+                  </button>
+                  <button (click)="openNewItemForm()" class="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 text-sm font-black text-white shadow-sm transition hover:bg-primary-700">
+                    <ng-icon name="heroPlusSolid" size="18"></ng-icon> New Item
+                  </button>
+                </div>
               </div>
-              <button (click)="showItemForm = true" class="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-lg transition-all shadow-sm">
-                <ng-icon name="heroPlusSolid" size="16"></ng-icon> New Item
-              </button>
             </div>
-          </div>
 
-          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="p-4 border-b border-slate-200 bg-slate-50">
-              <h3 class="font-semibold text-slate-800">All Items</h3>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Catalog Items</p>
+                <p class="mt-4 text-3xl font-black text-slate-950">{{ itemCatalogStats().total }}</p>
+                <p class="mt-1 text-xs font-semibold text-slate-500">{{ filteredItems().length }} visible after filters</p>
+              </article>
+              <article class="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-5 shadow-sm">
+                <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-600">Stock Value</p>
+                <p class="mt-4 text-3xl font-black text-emerald-700">₹{{ itemCatalogStats().stockValue | number:'1.0-0' }}</p>
+                <p class="mt-1 text-xs font-semibold text-emerald-700/70">{{ itemCatalogStats().stocked }} stock-tracked item(s)</p>
+              </article>
+              <article class="rounded-2xl border border-amber-100 bg-amber-50/60 p-5 shadow-sm">
+                <p class="text-xs font-black uppercase tracking-[0.18em] text-amber-600">Low Stock</p>
+                <p class="mt-4 text-3xl font-black text-amber-700">{{ itemCatalogStats().lowStock }}</p>
+                <p class="mt-1 text-xs font-semibold text-amber-700/70">{{ itemCatalogStats().outOfStock }} out of stock</p>
+              </article>
+              <article class="rounded-2xl border border-primary-100 bg-primary-50/50 p-5 shadow-sm">
+                <p class="text-xs font-black uppercase tracking-[0.18em] text-primary-600">Avg Margin</p>
+                <p class="mt-4 text-3xl font-black text-primary-700">{{ itemCatalogStats().avgMargin | number:'1.0-1' }}%</p>
+                <p class="mt-1 text-xs font-semibold text-primary-700/70">Selling price vs purchase price</p>
+              </article>
+            </div>
+
+          <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-200">
+              <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                <div>
+                  <h3 class="text-base font-black text-slate-900">All Items</h3>
+                  <p class="mt-1 text-sm text-slate-500">Search by item, SKU, barcode, category, stock status, or warehouse.</p>
+                </div>
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+                  <label class="relative block lg:w-72">
+                    <ng-icon name="heroMagnifyingGlassSolid" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size="16"></ng-icon>
+                    <input type="search" [(ngModel)]="itemSearch" (ngModelChange)="searchItems()" placeholder="Search item, SKU, barcode..."
+                           class="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-primary-400 focus:bg-white focus:ring-4 focus:ring-primary-100" />
+                  </label>
+                  <select [ngModel]="itemCategoryFilter()" (ngModelChange)="itemCategoryFilter.set($event)"
+                          class="h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-700 outline-none transition focus:border-primary-400 focus:bg-white focus:ring-4 focus:ring-primary-100">
+                    <option value="">All categories</option>
+                    @for (category of itemCategoryOptions(); track category.id) {
+                      <option [value]="category.id">{{ category.name }}</option>
+                    }
+                  </select>
+                  <select [ngModel]="itemStockFilter()" (ngModelChange)="itemStockFilter.set($event)"
+                          class="h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-700 outline-none transition focus:border-primary-400 focus:bg-white focus:ring-4 focus:ring-primary-100">
+                    <option value="">All stock</option>
+                    <option value="in_stock">In stock</option>
+                    <option value="low_stock">Low stock</option>
+                    <option value="out_of_stock">Out of stock</option>
+                    <option value="not_tracked">Not tracked</option>
+                  </select>
+                  <select [ngModel]="itemWarehouseFilter()" (ngModelChange)="itemWarehouseFilter.set($event); loadCatalogValuation()"
+                          class="h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-700 outline-none transition focus:border-primary-400 focus:bg-white focus:ring-4 focus:ring-primary-100">
+                    <option value="">All warehouses</option>
+                    @for (warehouse of warehouses(); track warehouse.id) {
+                      <option [value]="warehouse.id">{{ warehouse.name }}</option>
+                    }
+                  </select>
+                  @if (hasItemFilters()) {
+                    <button type="button" (click)="clearItemFilters()"
+                            class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 px-3 text-sm font-bold text-slate-500 transition hover:bg-slate-50 hover:text-slate-800">
+                      Clear
+                    </button>
+                  }
+                </div>
+              </div>
             </div>
             @if (isLoadingItems()) {
               <div class="p-12 text-center text-slate-500">
@@ -335,39 +414,67 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
                 <h3 class="text-lg font-bold text-slate-700">No items yet</h3>
                 <p class="text-slate-500 max-w-sm mx-auto mt-2">Your product catalog is empty. Items will appear here once created.</p>
               </div>
+            } @else if (filteredItems().length === 0) {
+              <div class="p-12 text-center">
+                <h3 class="text-lg font-bold text-slate-700">No matching items</h3>
+                <p class="text-slate-500 max-w-sm mx-auto mt-2">Try clearing filters or searching a different product, SKU, or barcode.</p>
+              </div>
             } @else {
               <div class="overflow-x-auto no-scrollbar">
-                <table class="w-full text-left border-collapse">
+                <table class="min-w-[1180px] w-full text-left border-collapse">
                   <thead>
-                    <tr class="bg-white border-b border-slate-100">
-                      <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Name</th>
-                      <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">SKU</th>
-                      <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Type</th>
-                      <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Purchase Price</th>
-                      <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Selling Price</th>
-                      <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Status</th>
+                    <tr class="bg-slate-50 border-b border-slate-200">
+                      <th class="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.18em]">Item</th>
+                      <th class="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.18em]">Category</th>
+                      <th class="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.18em]">SKU / Barcode</th>
+                      <th class="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.18em] text-right">Available</th>
+                      <th class="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.18em] text-right">Purchase</th>
+                      <th class="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.18em] text-right">Selling</th>
+                      <th class="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.18em] text-right">Margin</th>
+                      <th class="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.18em] text-center">Status</th>
+                      <th class="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.18em] text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100">
-                    @for (item of items(); track item.id) {
-                      <tr class="hover:bg-slate-50/70 transition-colors group">
+                    @for (item of filteredItems(); track item.id) {
+                      <tr class="hover:bg-slate-50/70 transition-colors group cursor-pointer" (click)="selectCatalogItem(item)">
                         <td class="py-3 px-4">
                           <div class="font-bold text-slate-900 text-sm">{{ item.name }}</div>
                           @if (item.barcode) { <div class="text-[11px] text-slate-400 font-mono mt-0.5">{{ item.barcode }}</div> }
                         </td>
-                        <td class="py-3 px-4 text-sm text-slate-600 font-mono">{{ item.sku || '—' }}</td>
                         <td class="py-3 px-4">
-                          <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600">
-                            {{ item.itemType }}
+                          <span class="inline-flex max-w-[180px] items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
+                            <span class="truncate">{{ itemCategoryName(item) }}</span>
+                          </span>
+                        </td>
+                        <td class="py-3 px-4 text-sm text-slate-600 font-mono">{{ item.sku || '—' }}</td>
+                        <td class="py-3 px-4 text-right">
+                          <div class="font-mono text-sm font-black" [ngClass]="stockTextClass(item)">{{ itemStockAvailable(item) | number:'1.0-2' }}</div>
+                          <span class="inline-flex mt-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider" [ngClass]="stockBadgeClass(item)">
+                            {{ stockStatusLabel(item) }}
                           </span>
                         </td>
                         <td class="py-3 px-4 text-right text-sm font-mono font-bold text-slate-700">₹{{ item.purchasePrice | number:'1.2-2' }}</td>
                         <td class="py-3 px-4 text-right text-sm font-mono font-bold text-emerald-700">₹{{ item.sellingPrice | number:'1.2-2' }}</td>
+                        <td class="py-3 px-4 text-right">
+                          <div class="font-mono text-sm font-black" [ngClass]="itemMarginAmount(item) >= 0 ? 'text-emerald-700' : 'text-rose-700'">
+                            ₹{{ itemMarginAmount(item) | number:'1.0-0' }}
+                          </div>
+                          <div class="text-[10px] font-bold text-slate-400">{{ itemMarginPct(item) | number:'1.0-1' }}%</div>
+                        </td>
                         <td class="py-3 px-4 text-center">
                           <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold"
                                 [ngClass]="{'bg-emerald-100 text-emerald-700': item.isActive, 'bg-slate-100 text-slate-500': !item.isActive}">
                             {{ item.isActive ? 'Active' : 'Inactive' }}
                           </span>
+                        </td>
+                        <td class="py-3 px-4 text-right" (click)="$event.stopPropagation()">
+                          <div class="flex justify-end gap-2">
+                            <button type="button" (click)="selectCatalogItem(item)" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:bg-slate-50">View</button>
+                            <button type="button" (click)="editCatalogItem(item)" class="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-black text-emerald-700 transition hover:bg-emerald-100">Edit</button>
+                            <button type="button" (click)="openItemLedger(item)" class="rounded-lg border border-primary-100 bg-primary-50 px-3 py-1.5 text-xs font-black text-primary-700 transition hover:bg-primary-100">Ledger</button>
+                            <button type="button" (click)="printBarcode(item)" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:bg-slate-50">Barcode</button>
+                          </div>
                         </td>
                       </tr>
                     }
@@ -376,6 +483,74 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
               </div>
             }
           </div>
+
+          @if (selectedCatalogItem()) {
+            <div class="fixed inset-0 z-40 bg-slate-950/20 backdrop-blur-[1px]" (click)="selectedCatalogItem.set(null)"></div>
+            <aside class="fixed right-0 top-0 z-50 flex h-screen w-full max-w-md flex-col overflow-hidden border-l border-slate-200 bg-white shadow-2xl" (click)="$event.stopPropagation()">
+              <div class="border-b border-slate-200 p-5">
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <p class="text-xs font-black uppercase tracking-[0.18em] text-primary-600">Item details</p>
+                    <h3 class="mt-2 text-2xl font-black text-slate-950">{{ selectedCatalogItem()!.name }}</h3>
+                    <p class="mt-1 font-mono text-xs font-bold text-slate-400">{{ selectedCatalogItem()!.sku || 'No SKU' }}</p>
+                  </div>
+                  <button type="button" (click)="selectedCatalogItem.set(null)" class="rounded-xl bg-slate-100 px-3 py-2 text-sm font-black text-slate-600 hover:bg-slate-200">Close</button>
+                </div>
+              </div>
+
+              <div class="no-scrollbar flex-1 overflow-y-auto p-5">
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="rounded-2xl bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Available</p>
+                    <p class="mt-2 font-mono text-2xl font-black" [ngClass]="stockTextClass(selectedCatalogItem()!)">{{ itemStockAvailable(selectedCatalogItem()!) | number:'1.0-2' }}</p>
+                  </div>
+                  <div class="rounded-2xl bg-emerald-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-600">Selling</p>
+                    <p class="mt-2 font-mono text-2xl font-black text-emerald-700">₹{{ selectedCatalogItem()!.sellingPrice | number:'1.0-0' }}</p>
+                  </div>
+                  <div class="rounded-2xl bg-primary-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.18em] text-primary-600">Margin</p>
+                    <p class="mt-2 font-mono text-2xl font-black text-primary-700">{{ itemMarginPct(selectedCatalogItem()!) | number:'1.0-1' }}%</p>
+                  </div>
+                  <div class="rounded-2xl bg-amber-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.18em] text-amber-600">GST</p>
+                    <p class="mt-2 font-mono text-2xl font-black text-amber-700">{{ selectedCatalogItem()!.gstRate || 0 }}%</p>
+                  </div>
+                </div>
+
+                <div class="mt-5 space-y-3 rounded-2xl border border-slate-200 p-4">
+                  <div class="flex justify-between gap-4 text-sm">
+                    <span class="font-bold text-slate-500">Category</span>
+                    <span class="font-black text-slate-900">{{ itemCategoryName(selectedCatalogItem()!) }}</span>
+                  </div>
+                  <div class="flex justify-between gap-4 text-sm">
+                    <span class="font-bold text-slate-500">Barcode</span>
+                    <span class="font-mono font-black text-slate-900">{{ selectedCatalogItem()!.barcode || '-' }}</span>
+                  </div>
+                  <div class="flex justify-between gap-4 text-sm">
+                    <span class="font-bold text-slate-500">Purchase price</span>
+                    <span class="font-mono font-black text-slate-900">₹{{ selectedCatalogItem()!.purchasePrice | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="flex justify-between gap-4 text-sm">
+                    <span class="font-bold text-slate-500">Reorder point</span>
+                    <span class="font-mono font-black text-slate-900">{{ selectedCatalogItem()!.reorderPoint || 0 }}</span>
+                  </div>
+                  <div class="flex justify-between gap-4 text-sm">
+                    <span class="font-bold text-slate-500">Tracking</span>
+                    <span class="font-black" [ngClass]="selectedCatalogItem()!.trackInventory ? 'text-emerald-700' : 'text-slate-500'">{{ selectedCatalogItem()!.trackInventory ? 'Inventory tracked' : 'Not tracked' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="border-t border-slate-200 p-5">
+                <div class="flex gap-3">
+                  <button type="button" (click)="editCatalogItem(selectedCatalogItem()!)" class="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white transition hover:bg-emerald-700">Edit Item</button>
+                  <button type="button" (click)="openItemLedger(selectedCatalogItem()!)" class="flex-1 rounded-xl bg-primary-600 px-4 py-3 text-sm font-black text-white transition hover:bg-primary-700">View Ledger</button>
+                </div>
+              </div>
+            </aside>
+          }
+          </section>
         }
 
       <!-- ═══ CATEGORIES TAB ═══ -->
@@ -856,6 +1031,7 @@ export class ClientInventoryComponent implements OnInit, OnChanges {
   private inventoryService = inject(InventoryService);
 
   showItemForm = false;
+  editingItemId = signal<string | null>(null);
   showPOForm = false;
   showTransferForm = false;
 
@@ -997,6 +1173,75 @@ export class ClientInventoryComponent implements OnInit, OnChanges {
   items = signal<any[]>([]);
   isLoadingItems = signal(false);
   itemSearch = '';
+  itemCategoryFilter = signal('');
+  itemStockFilter = signal('');
+  itemWarehouseFilter = signal('');
+  catalogValuationRows = signal<any[]>([]);
+  selectedCatalogItem = signal<any | null>(null);
+
+  itemStockIndex = computed(() => {
+    const index = new Map<string, any>();
+    for (const row of this.catalogValuationRows()) {
+      if (row?.itemId) index.set(row.itemId, row);
+    }
+    return index;
+  });
+
+  lowStockItemIds = computed(() => {
+    const ids = new Set<string>();
+    for (const alert of this.lowStockAlerts()) {
+      const id = alert.itemId ?? alert.item_id;
+      if (id) ids.add(id);
+    }
+    return ids;
+  });
+
+  itemCategoryOptions = computed(() => {
+    const categories = new Map<string, string>();
+    for (const item of this.items()) {
+      const id = item.categoryId ?? item.category_id ?? item.category?.id;
+      const name = item.category?.name ?? item.categoryName ?? item.category_name;
+      if (id && name) categories.set(id, name);
+    }
+    return [...categories.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  });
+
+  filteredItems = computed(() => {
+    const categoryId = this.itemCategoryFilter();
+    const stockFilter = this.itemStockFilter();
+
+    return this.items().filter((item) => {
+      if (categoryId) {
+        const itemCategoryId = item.categoryId ?? item.category_id ?? item.category?.id;
+        if (itemCategoryId !== categoryId) return false;
+      }
+
+      if (stockFilter) {
+        const status = this.itemStockStatus(item);
+        if (status !== stockFilter) return false;
+      }
+
+      return true;
+    });
+  });
+
+  itemCatalogStats = computed(() => {
+    const rows = this.catalogValuationRows();
+    const stockValue = rows.reduce((sum, row) => sum + Number(row.stockValue ?? 0), 0);
+    const activeItems = this.items().filter((item) => item.isActive !== false);
+    const marginTotal = activeItems.reduce((sum, item) => sum + this.itemMarginPct(item), 0);
+
+    return {
+      total: this.items().length,
+      stocked: rows.filter((row) => Number(row.qtyOnHand ?? 0) > 0).length,
+      stockValue,
+      lowStock: this.lowStockItemIds().size,
+      outOfStock: this.items().filter((item) => this.itemStockStatus(item) === 'out_of_stock').length,
+      avgMargin: activeItems.length ? marginTotal / activeItems.length : 0,
+    };
+  });
 
   // Warehouses
   showWarehouseForm = false;
@@ -1213,19 +1458,155 @@ export class ClientInventoryComponent implements OnInit, OnChanges {
     return value.toFixed(0);
   }
 
+  itemInitials(name: string): string {
+    return (name || 'IT')
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('') || 'IT';
+  }
+
+  itemCategoryName(item: any): string {
+    return item.category?.name ?? item.categoryName ?? item.category_name ?? 'Uncategorized';
+  }
+
+  itemStockRow(item: any): any {
+    return this.itemStockIndex().get(item.id) ?? null;
+  }
+
+  itemStockAvailable(item: any): number {
+    if (!item?.trackInventory) return 0;
+    const row = this.itemStockRow(item);
+    return Number(row?.qtyAvailable ?? row?.qty_available ?? row?.qtyOnHand ?? row?.qty_on_hand ?? 0);
+  }
+
+  itemStockStatus(item: any): 'in_stock' | 'low_stock' | 'out_of_stock' | 'not_tracked' {
+    if (!item?.trackInventory) return 'not_tracked';
+    const available = this.itemStockAvailable(item);
+    if (available <= 0) return 'out_of_stock';
+    if (this.lowStockItemIds().has(item.id)) return 'low_stock';
+    return 'in_stock';
+  }
+
+  stockStatusLabel(item: any): string {
+    const labels = {
+      in_stock: 'In stock',
+      low_stock: 'Low',
+      out_of_stock: 'Out',
+      not_tracked: 'No track',
+    } as const;
+    return labels[this.itemStockStatus(item)];
+  }
+
+  stockBadgeClass(item: any): string {
+    const classes = {
+      in_stock: 'bg-emerald-100 text-emerald-700',
+      low_stock: 'bg-amber-100 text-amber-700',
+      out_of_stock: 'bg-rose-100 text-rose-700',
+      not_tracked: 'bg-slate-100 text-slate-500',
+    } as const;
+    return classes[this.itemStockStatus(item)];
+  }
+
+  stockTextClass(item: any): string {
+    const classes = {
+      in_stock: 'text-emerald-700',
+      low_stock: 'text-amber-700',
+      out_of_stock: 'text-rose-700',
+      not_tracked: 'text-slate-400',
+    } as const;
+    return classes[this.itemStockStatus(item)];
+  }
+
+  itemMarginAmount(item: any): number {
+    return Number(item?.sellingPrice ?? 0) - Number(item?.purchasePrice ?? 0);
+  }
+
+  itemMarginPct(item: any): number {
+    const purchase = Number(item?.purchasePrice ?? 0);
+    if (purchase <= 0) return 0;
+    return (this.itemMarginAmount(item) / purchase) * 100;
+  }
+
+  hasItemFilters(): boolean {
+    return Boolean(this.itemSearch || this.itemCategoryFilter() || this.itemStockFilter() || this.itemWarehouseFilter());
+  }
+
+  clearItemFilters(): void {
+    this.itemSearch = '';
+    this.itemCategoryFilter.set('');
+    this.itemStockFilter.set('');
+    this.itemWarehouseFilter.set('');
+    this.loadItems();
+  }
+
+  selectCatalogItem(item: any): void {
+    this.selectedCatalogItem.set(item);
+  }
+
+  openNewItemForm(): void {
+    this.selectedCatalogItem.set(null);
+    this.editingItemId.set(null);
+    this.showItemForm = true;
+  }
+
+  editCatalogItem(item: any): void {
+    this.selectedCatalogItem.set(null);
+    this.editingItemId.set(item?.id ?? null);
+    this.showItemForm = true;
+  }
+
+  finishItemForm(): void {
+    this.showItemForm = false;
+    this.editingItemId.set(null);
+    this.searchItems();
+  }
+
+  cancelItemForm(): void {
+    this.showItemForm = false;
+    this.editingItemId.set(null);
+  }
+
+  openItemLedger(item: any): void {
+    this.selectedCatalogItem.set(null);
+    this.activeView.set('ledger');
+    this.loadLedger(item.id);
+  }
+
+  printBarcode(item: any): void {
+    const code = item?.barcode || item?.sku || item?.name || 'ITEM';
+    window.alert(`Barcode ready: ${code}`);
+  }
+
+  reloadItemCatalog(): void {
+    this.loadItems();
+  }
+
+  loadCatalogValuation(): void {
+    this.inventoryService.getStockValuation(this.itemWarehouseFilter() || undefined).subscribe({
+      next: (res: any) => {
+        const report = res?.data ?? res ?? {};
+        this.catalogValuationRows.set(report.rows ?? []);
+      },
+      error: () => this.catalogValuationRows.set([]),
+    });
+  }
+
   // Items
   searchItems() {
     this.isLoadingItems.set(true);
     this.inventoryService.getItems({ search: this.itemSearch, limit: 50 }).subscribe({
-      next: (res: any) => { this.items.set(res.data ?? []); this.isLoadingItems.set(false); },
+      next: (res: any) => { this.items.set(res.data ?? []); this.isLoadingItems.set(false); this.loadCatalogValuation(); },
       error: () => this.isLoadingItems.set(false)
     });
   }
 
   loadItems() {
     this.isLoadingItems.set(true);
+    if (this.warehouses().length === 0) this.loadWarehouses();
     this.inventoryService.getItems({ limit: 50 }).subscribe({
-      next: (res: any) => { this.items.set(res.data ?? []); this.isLoadingItems.set(false); },
+      next: (res: any) => { this.items.set(res.data ?? []); this.isLoadingItems.set(false); this.loadCatalogValuation(); },
       error: () => this.isLoadingItems.set(false)
     });
   }
@@ -1276,10 +1657,10 @@ export class ClientInventoryComponent implements OnInit, OnChanges {
   }
 
   // Ledger
-  loadLedger() {
+  loadLedger(itemId?: string) {
     this.isLoadingLedger.set(true);
     const clientId = this.scopedClientId;
-    const filters = { transactionType: this.ledgerTypeFilter || undefined, limit: 100 };
+    const filters = { itemId: itemId || undefined, transactionType: this.ledgerTypeFilter || undefined, limit: 100 };
     const request = clientId
       ? this.inventoryService.getClientStockLedger(clientId, filters)
       : this.inventoryService.getStockLedger(filters);

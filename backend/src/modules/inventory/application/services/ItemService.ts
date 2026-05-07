@@ -77,7 +77,7 @@ export class ItemService {
     (existing as any).props.allowNegativeStock = data.allowNegativeStock ?? existing.allowNegativeStock;
     (existing as any).props.reorderPoint = data.reorderPoint ?? existing.reorderPoint;
     (existing as any).props.reorderQty = data.reorderQty ?? existing.reorderQty;
-    (existing as any).props.categoryId = data.categoryId ?? existing.categoryId;
+    (existing as any).props.categoryId = Object.prototype.hasOwnProperty.call(data, 'categoryId') ? data.categoryId : existing.categoryId;
     (existing as any).props.isActive = data.isActive ?? existing.isActive;
     (existing as any).props.description = data.description ?? existing.description;
 

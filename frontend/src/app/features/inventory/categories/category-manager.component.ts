@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { MatIconModule } from '@angular/material/icon';
 import { ToastService } from '../../../core/services/toast.service';
 import { CategoryService } from '../../../core/services/category.service';
+import { InventoryService } from '../../../core/services/inventory.service';
 import { CategoryTreeComponent, CategoryTreeNode } from '../../../shared/components/category-tree.component';
 import { CategoryBreadcrumbComponent, BreadcrumbItem } from '../../../shared/components/category-breadcrumb.component';
 
@@ -145,6 +146,70 @@ interface CategoryDetailsResponse {
                     <p class="mt-2 truncate text-sm font-bold text-slate-900">
                       {{ selectedNode()?.parent_id ? parentName() : selectedNode()?.name }}
                     </p>
+                  </div>
+                </div>
+
+                <div class="assignment-card">
+                  <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <h4>Assign items to this group</h4>
+                      <p>
+                        Move existing SKUs into <strong>{{ selectedNode()?.name }}</strong> so the item catalog,
+                        valuation, and category reports stay connected.
+                      </p>
+                    </div>
+                    <span class="assignment-count">{{ selectedCategoryItems().length }} assigned</span>
+                  </div>
+
+                  @if (selectedNode()?.allow_items === false) {
+                    <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
+                      This group is marked as a container only. Enable "Allow items directly" before assigning SKUs here.
+                    </div>
+                  } @else {
+                    <div class="assign-row mt-4">
+                      <select
+                        [value]="assignItemId()"
+                        (change)="assignItemId.set($any($event.target).value)"
+                        [disabled]="itemsLoading() || assigningItem()"
+                      >
+                        <option value="">{{ itemsLoading() ? 'Loading items...' : 'Select item to add to group...' }}</option>
+                        @for (item of assignableItems(); track item.id) {
+                          <option [value]="item.id">
+                            {{ item.name }}{{ item.sku ? ' - ' + item.sku : '' }}
+                          </option>
+                        }
+                      </select>
+                      <button type="button" class="sa-btn primary" (click)="assignSelectedItemToCategory()" [disabled]="!assignItemId() || assigningItem()">
+                        <mat-icon class="icon-sm">playlist_add_check</mat-icon>
+                        {{ assigningItem() ? 'Assigning...' : 'Assign Item' }}
+                      </button>
+                    </div>
+                  }
+
+                  <div class="assigned-list mt-4">
+                    @for (item of selectedCategoryItems(); track item.id) {
+                      <div class="assigned-item">
+                        <span class="item-dot"></span>
+                        <span class="min-w-0">
+                          <strong>{{ item.name }}</strong>
+                          <small>{{ item.sku || item.barcode || 'No SKU' }}</small>
+                        </span>
+                        <button
+                          type="button"
+                          class="unassign-btn"
+                          (click)="removeItemFromCategory(item)"
+                          [disabled]="removingItemId() === item.id"
+                          title="Remove from this group"
+                        >
+                          <mat-icon class="icon-sm">{{ removingItemId() === item.id ? 'hourglass_empty' : 'link_off' }}</mat-icon>
+                          <span>{{ removingItemId() === item.id ? 'Removing' : 'Remove' }}</span>
+                        </button>
+                      </div>
+                    } @empty {
+                      <div class="empty-items">
+                        No items assigned to this group yet.
+                      </div>
+                    }
                   </div>
                 </div>
               }
@@ -410,10 +475,161 @@ interface CategoryDetailsResponse {
       font-weight: 500;
       margin-top: 0.25rem;
     }
+
+    .assignment-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #dbe4ee;
+      border-radius: 1rem;
+      padding: 1rem;
+    }
+
+    .assignment-card h4 {
+      color: #0f172a;
+      font-size: 0.95rem;
+      font-weight: 900;
+      margin: 0;
+    }
+
+    .assignment-card p {
+      color: #64748b;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      line-height: 1.5;
+      margin: 0.25rem 0 0;
+      max-width: 42rem;
+    }
+
+    .assignment-count {
+      background: #eef2ff;
+      border-radius: 999px;
+      color: #4338ca;
+      flex: 0 0 auto;
+      font-size: 0.72rem;
+      font-weight: 900;
+      padding: 0.35rem 0.65rem;
+      text-transform: uppercase;
+    }
+
+    .assign-row {
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .assign-row select {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.75rem;
+      color: #0f172a;
+      font-size: 0.875rem;
+      font-weight: 700;
+      min-height: 2.5rem;
+      padding: 0.55rem 0.75rem;
+      width: 100%;
+    }
+
+    .assign-row select:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+      outline: none;
+    }
+
+    .assigned-list {
+      display: grid;
+      gap: 0.6rem;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .assigned-item {
+      align-items: center;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.85rem;
+      display: flex;
+      gap: 0.65rem;
+      justify-content: space-between;
+      min-width: 0;
+      padding: 0.7rem;
+    }
+
+    .assigned-item strong,
+    .assigned-item small {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .assigned-item strong {
+      color: #0f172a;
+      font-size: 0.8125rem;
+      font-weight: 900;
+    }
+
+    .assigned-item small {
+      color: #94a3b8;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.68rem;
+      font-weight: 800;
+      margin-top: 0.1rem;
+    }
+
+    .item-dot {
+      background: #10b981;
+      border-radius: 999px;
+      box-shadow: 0 0 0 4px #ecfdf5;
+      flex: 0 0 auto;
+      height: 0.55rem;
+      width: 0.55rem;
+    }
+
+    .unassign-btn {
+      align-items: center;
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      border-radius: 999px;
+      color: #be123c;
+      display: inline-flex;
+      flex: 0 0 auto;
+      font-size: 0.7rem;
+      font-weight: 900;
+      gap: 0.3rem;
+      min-height: 1.75rem;
+      padding: 0.3rem 0.55rem;
+      transition: all 160ms ease;
+    }
+
+    .unassign-btn:hover:not(:disabled) {
+      background: #ffe4e6;
+      border-color: #fda4af;
+    }
+
+    .unassign-btn:disabled {
+      cursor: wait;
+      opacity: 0.65;
+    }
+
+    .empty-items {
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 0.85rem;
+      color: #64748b;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      padding: 0.9rem;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      .assign-row {
+        grid-template-columns: 1fr;
+      }
+    }
   `],
 })
 export class CategoryManagerComponent implements OnInit {
   private categoryService = inject(CategoryService);
+  private inventoryService = inject(InventoryService);
   private fb = inject(FormBuilder);
   private toast = inject(ToastService);
 
@@ -427,6 +643,11 @@ export class CategoryManagerComponent implements OnInit {
   deleting = signal(false);
   loading = signal(false);
   isCreating = signal(false);
+  items = signal<any[]>([]);
+  itemsLoading = signal(false);
+  assigningItem = signal(false);
+  removingItemId = signal<string | null>(null);
+  assignItemId = signal('');
 
   form: FormGroup;
 
@@ -459,6 +680,21 @@ export class CategoryManagerComponent implements OnInit {
     return allParents;
   });
 
+  selectedCategoryItems = computed(() => {
+    const node = this.selectedNode();
+    if (!node) return [];
+    return this.items().filter((item) => this.itemCategoryId(item) === node.id);
+  });
+
+  assignableItems = computed(() => {
+    const node = this.selectedNode();
+    if (!node) return [];
+    return this.items()
+      .filter((item) => item?.isActive !== false)
+      .filter((item) => this.itemCategoryId(item) !== node.id)
+      .sort((a, b) => String(a.name ?? '').localeCompare(String(b.name ?? '')));
+  });
+
   constructor() {
     this.form = this.fb.group({
       name: ['', Validators.required],
@@ -476,6 +712,7 @@ export class CategoryManagerComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadTree();
+    this.loadItems();
   }
 
   loadTree(): void {
@@ -497,6 +734,7 @@ export class CategoryManagerComponent implements OnInit {
   }
 
   loadCategoryDetails(categoryId: string): void {
+    this.assignItemId.set('');
     this.categoryService.getCategoryById(categoryId).subscribe({
       next: (data) => {
         this.selectedNode.set(data as CategoryDetailsResponse);
@@ -541,6 +779,65 @@ export class CategoryManagerComponent implements OnInit {
     this.categoryService.getStockValue(categoryId).subscribe({
       next: (data) => this.stockValue.set(Number(data.stock_value ?? 0)),
       error: () => this.stockValue.set(0),
+    });
+  }
+
+  loadItems(): void {
+    this.itemsLoading.set(true);
+    this.inventoryService.getItems({ limit: 500 }).subscribe({
+      next: (res: any) => this.items.set(res?.data ?? []),
+      error: (err) => {
+        this.items.set([]);
+        console.error(err);
+      },
+      complete: () => this.itemsLoading.set(false),
+    });
+  }
+
+  assignSelectedItemToCategory(): void {
+    const node = this.selectedNode();
+    const itemId = this.assignItemId();
+    if (!node || !itemId) return;
+
+    if (node.allow_items === false) {
+      this.toast.error('Enable "Allow items directly" before assigning items to this group');
+      return;
+    }
+
+    this.assigningItem.set(true);
+    this.inventoryService.updateItem(itemId, { categoryId: node.id }).subscribe({
+      next: () => {
+        this.toast.success('Item assigned to group');
+        this.assignItemId.set('');
+        this.loadItems();
+        this.loadItemCount(node.id);
+        this.loadStockValue(node.id);
+        this.loadTree();
+      },
+      error: (err) => {
+        this.toast.error(err.error?.message || 'Failed to assign item');
+      },
+      complete: () => this.assigningItem.set(false),
+    });
+  }
+
+  removeItemFromCategory(item: any): void {
+    const node = this.selectedNode();
+    if (!node || !item?.id) return;
+
+    this.removingItemId.set(item.id);
+    this.inventoryService.updateItem(item.id, { categoryId: null }).subscribe({
+      next: () => {
+        this.toast.success('Item removed from group');
+        this.loadItems();
+        this.loadItemCount(node.id);
+        this.loadStockValue(node.id);
+        this.loadTree();
+      },
+      error: (err) => {
+        this.toast.error(err.error?.message || 'Failed to remove item from group');
+      },
+      complete: () => this.removingItemId.set(null),
     });
   }
 
@@ -618,6 +915,7 @@ export class CategoryManagerComponent implements OnInit {
     this.selectedNode.set(null);
     this.selectedId.set(null);
     this.isCreating.set(false);
+    this.assignItemId.set('');
   }
 
   onBreadcrumbNavigate(item: BreadcrumbItem): void {
@@ -649,5 +947,9 @@ export class CategoryManagerComponent implements OnInit {
       }
     }
     return '';
+  }
+
+  private itemCategoryId(item: any): string | null {
+    return item?.categoryId ?? item?.category_id ?? item?.category?.id ?? null;
   }
 }
