@@ -14,7 +14,6 @@ import {
   heroArrowsUpDownSolid,
   heroSquares2x2Solid
 } from '@ng-icons/heroicons/solid';
-import { ButtonComponent } from '@ui/atoms/button.component';
 import { ViewPreferenceService } from '../../services/view-preference.service';
 import { VIEW_MODES, ViewMode } from '../../models/file-explorer.models';
 
@@ -27,8 +26,7 @@ import { VIEW_MODES, ViewMode } from '../../models/file-explorer.models';
     MatIconModule,
     MatMenuModule,
     MatTooltipModule,
-    NgIconComponent,
-    ButtonComponent
+    NgIconComponent
   ],
   providers: [
     provideIcons({

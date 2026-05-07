@@ -112,7 +112,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
     })
   ],
   template: `
-    <div class="p-6 h-full flex flex-col animate-in fade-in duration-500">
+    <div class="px-6 pt-3 pb-6 h-full flex flex-col animate-in fade-in duration-500">
       <input
         #fileInput
         type="file"
@@ -128,8 +128,8 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
         </div>
       } @else if (workspace()) {
       <!-- Workspace Path Breadcrumbs -->
-      <section class="mb-6">
-        <nav class="flex items-center gap-1 py-1 text-sm">
+      <section class="mb-2 shrink-0">
+        <nav class="flex items-center gap-1 text-sm">
           <button
             class="flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold text-text-secondary hover:text-primary-600 transition-all duration-200 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-800"
             (click)="navigateToRoot()"
@@ -188,29 +188,38 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
         <app-client-dashboard [clientId]="workspace()?.clientId || ''"></app-client-dashboard>
       } @else {
       <!-- Main Content Grid -->
-      <div class="flex-1 grid grid-cols-12 gap-6 items-stretch min-h-0">
+      <section class="files-module flex min-h-0 flex-1 flex-col gap-5">
+        <div class="flex-1 grid grid-cols-12 gap-5 items-stretch min-h-0">
           <!-- Folder Tree Sidebar -->
           <aside class="col-span-12 lg:col-span-3 flex flex-col min-h-0">
-            <app-card [padding]="false" [fullHeight]="true" class="flex-1 flex flex-col min-h-0">
-              <div class="shrink-0 p-4 border-b border-border-color bg-gray-50/50">
-                <h3 class="font-semibold text-text-primary flex items-center gap-2">
-                  <ng-icon name="heroFolderSolid" size="18" class="text-primary-600"></ng-icon>
-                  Folder Structure
-                </h3>
+            <section class="files-tree-card flex-1 flex flex-col min-h-0">
+              <div class="files-tree-header">
+                <div>
+                  <span class="files-panel-label">Folder tree</span>
+                  <h3>
+                    <ng-icon name="heroFolderSolid" size="18"></ng-icon>
+                    Workspace Structure
+                  </h3>
+                </div>
+                <span class="files-count-pill">{{ workspace()?.rootFolder?.children?.length || 0 }}</span>
               </div>
-              <div class="flex-1 p-2 overflow-y-auto custom-scrollbar">
+              <div class="files-tree-meta">
+                <span>{{ workspace()?.clientCode || 'Client' }}</span>
+                <span>{{ formatTotalSize(workspace()?.rootFolder?.totalSize || 0) }}</span>
+              </div>
+              <div class="flex-1 overflow-y-auto no-scrollbar p-3">
                 @if (workspace()?.rootFolder) {
                   <ng-container *ngTemplateOutlet="folderTree; context: { folder: workspace()!.rootFolder, level: 0 }"></ng-container>
                 }
               </div>
-            </app-card>
+            </section>
           </aside>
 
           <!-- File Explorer Main Area -->
           <main [class]="(viewState$ | async)?.showPreview || (viewState$ | async)?.showDetails ? 'col-span-12 lg:col-span-6' : 'col-span-12 lg:col-span-9'" class="flex flex-col min-h-0">
-            <app-card [padding]="false" [fullHeight]="true" class="flex-1 flex flex-col min-h-0">
+            <section class="files-browser-card flex-1 flex flex-col min-h-0">
               <!-- Toolbar Integration -->
-              <div class="border-b border-border-color">
+              <div class="files-browser-toolbar">
                 <app-file-view-toolbar 
                   [canGoBack]="breadcrumbs().length > 0"
                   (refreshClicked)="refresh()"
@@ -220,34 +229,50 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
                 </app-file-view-toolbar>
               </div>
 
-              <!-- Folder Header -->
-              <div class="p-4 border-b border-border-color bg-gradient-to-r from-primary-50 to-transparent dark:from-primary-900/20">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <div class="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
-                      <ng-icon name="heroFolderOpenSolid" size="24" class="text-primary-600"></ng-icon>
-                    </div>
-                    <div>
-                      <h2 class="text-xl font-bold text-text-primary">{{ currentFolder()?.name || 'Root' }}</h2>
-                      <p class="text-sm text-text-secondary">
-                        {{ currentFolder()?.fileCount || 0 }} files
-                        @if (currentFolder()?.folderCount || currentFolder()?.children?.length) {
-                          · {{ currentFolder()?.folderCount || currentFolder()?.children?.length }} folders
-                        }
-                      </p>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm text-text-secondary">
-                      {{ formatTotalSize(currentFolder()?.totalSize || 0) }}
-                    </span>
-                  </div>
+              <!-- Explorer Address Bar -->
+              <div class="explorer-address-row">
+                <div class="explorer-address-bar">
+                  <button type="button" class="address-segment" (click)="navigateToRoot()">
+                    <ng-icon name="heroHomeSolid" size="15"></ng-icon>
+                    <span>{{ workspace()?.rootFolder?.name || workspace()?.clientCode || 'Workspace' }}</span>
+                  </button>
+                  @for (crumb of breadcrumbs(); track crumb.id; let last = $last) {
+                    <ng-icon name="heroChevronRightSolid" size="12" class="address-chevron"></ng-icon>
+                    <button
+                      type="button"
+                      class="address-segment"
+                      [class.is-current]="last"
+                      (click)="!last && navigateToFolder(crumb.id)"
+                    >
+                      {{ crumb.name }}
+                    </button>
+                  }
                 </div>
+                <div class="explorer-search-box">
+                  <mat-icon>search</mat-icon>
+                  <span>Search {{ currentFolder()?.name || 'workspace' }}</span>
+                </div>
+              </div>
+
+              <div class="explorer-info-strip">
+                <div class="min-w-0">
+                  <h2 class="truncate">{{ currentFolder()?.name || 'Root' }}</h2>
+                  <p>
+                    {{ fileItems().length }} items
+                    @if (currentFolder()?.folderCount || currentFolder()?.children?.length) {
+                      &middot; {{ currentFolder()?.folderCount || currentFolder()?.children?.length }} folders
+                    }
+                    @if (currentFolder()?.fileCount) {
+                      &middot; {{ currentFolder()?.fileCount }} files
+                    }
+                  </p>
+                </div>
+                <span>{{ formatTotalSize(currentFolder()?.totalSize || 0) }}</span>
               </div>
 
               <!-- Upload Progress -->
               @if (uploadProgress() > 0 && uploadProgress() < 100) {
-                <div class="p-4 bg-primary-50 dark:bg-primary-900/20 border-b border-border-color">
+                <div class="files-upload-progress">
                   <div class="flex items-center gap-3">
                     <div class="flex-1">
                       <div class="flex justify-between text-sm mb-1">
@@ -266,7 +291,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
               }
 
               <!-- View Content Area -->
-              <div class="flex-1 overflow-auto bg-white/50 dark:bg-gray-800/50" [ngSwitch]="(viewState$ | async)?.viewMode">
+              <div class="files-content flex-1 overflow-auto no-scrollbar" [ngSwitch]="(viewState$ | async)?.viewMode">
                 @if (fileItems().length > 0) {
                   <!-- Grid Views (Extra Large, Large, Medium, Small) -->
                   <app-file-grid
@@ -355,10 +380,12 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
                   ></app-file-grid>
                 } @else {
                   <!-- Empty State -->
-                  <div class="h-full flex flex-col items-center justify-center text-center p-8 opacity-60">
-                    <mat-icon class="text-6xl h-24 w-24 mb-4 text-gray-300">folder_open</mat-icon>
-                    <h3 class="text-xl font-medium mb-2">This folder is empty</h3>
-                    <p class="text-sm max-w-xs text-text-secondary mb-6">
+                  <div class="files-empty-state">
+                    <div class="files-empty-icon">
+                      <mat-icon>folder_open</mat-icon>
+                    </div>
+                    <h3>This folder is empty</h3>
+                    <p>
                       Drag and drop files here to upload or use the upload button above.
                     </p>
                     <app-button variant="primary" size="md" (clicked)="triggerUpload()">
@@ -370,7 +397,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
               </div>
 
               <!-- Status Bar -->
-              <footer class="px-4 py-2 bg-gray-50 border-t border-border-color flex items-center justify-between text-xs text-text-secondary select-none">
+              <footer class="files-status-bar">
                 <div class="flex items-center gap-4">
                   <span>{{ fileItems().length }} items</span>
                   @if (selectedFile()) {
@@ -390,7 +417,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
                   </button>
                 </div>
               </footer>
-            </app-card>
+            </section>
           </main>
 
           <!-- Side Panes -->
@@ -410,6 +437,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
             </aside>
           }
         </div>
+      </section>
       }
       }
 
@@ -558,40 +586,42 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
 
       <!-- Folder Tree Template -->
       <ng-template #folderTree let-folder="folder" let-level="level">
-        <div [style.paddingLeft.px]="level * 12">
+        <div class="folder-tree-node" [style.paddingLeft.px]="level * 12">
           <button
-            class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all group/folder"
-            [class]="currentFolder()?.id === folder.id ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-text-primary'"
+            class="folder-tree-row group/folder"
+            [class.is-active]="currentFolder()?.id === folder.id"
             (click)="navigateToFolder(folder.id)"
           >
-            <ng-icon
-              [name]="currentFolder()?.id === folder.id ? 'heroFolderOpenSolid' : 'heroFolderSolid'"
-              size="16"
-              [class]="folder.type === 'year' ? 'text-blue-500' : folder.type === 'documents' ? 'text-green-500' : folder.type === 'years' ? 'text-purple-500' : 'text-amber-500'"
-            ></ng-icon>
-            <span class="truncate flex-1 text-left">{{ folder.name }}</span>
+            <span class="folder-icon-wrap">
+              <ng-icon
+                [name]="currentFolder()?.id === folder.id ? 'heroFolderOpenSolid' : 'heroFolderSolid'"
+                size="16"
+                class="text-amber-500"
+              ></ng-icon>
+            </span>
+            <span class="folder-title truncate">{{ folder.name }}</span>
             @if (folder.fileCount > 0) {
-              <span class="text-xs bg-gray-200 dark:bg-gray-700 text-text-secondary px-1.5 py-0.5 rounded">
+              <span class="folder-count">
                 {{ folder.fileCount }}
               </span>
             } @else if (folder.children?.length) {
-              <span class="text-xs bg-gray-100 dark:bg-gray-800 text-text-secondary/70 px-1.5 py-0.5 rounded border border-border-color">
+              <span class="folder-count folder-count-muted">
                 {{ folder.children.length }}
               </span>
             }
 
             <!-- Inline Folder Actions -->
             @if (!['root', 'documents', 'years', 'year'].includes(folder.type)) {
-              <div class="flex items-center opacity-0 group-hover/folder:opacity-100 transition-opacity ml-1">
+              <div class="folder-row-actions">
                 <button 
-                  class="p-1 hover:text-primary-600 transition-colors" 
+                  class="folder-row-action" 
                   (click)="triggerFolderRename(folder); $event.stopPropagation()"
                   title="Rename"
                 >
                   <ng-icon name="heroPencilSquareSolid" size="12"></ng-icon>
                 </button>
                 <button 
-                  class="p-1 hover:text-red-500 transition-colors" 
+                  class="folder-row-action folder-row-action-danger" 
                   (click)="triggerFolderDelete(folder); $event.stopPropagation()"
                   title="Delete"
                 >
@@ -609,6 +639,403 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
       </ng-template>
     </div>
   `,
+  styles: [`
+    :host {
+      display: contents;
+    }
+
+    .files-module {
+      --files-primary: #2563eb;
+      --files-ink: #0f172a;
+      --files-muted: #64748b;
+      --files-border: #d7dce5;
+      --files-soft: #f5f6f8;
+    }
+
+    .files-panel-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--files-primary);
+    }
+
+    .files-tree-card,
+    .files-browser-card {
+      overflow: hidden;
+      border: 1px solid var(--files-border);
+      border-radius: 0.75rem;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .files-tree-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.8rem 0.9rem;
+      border-bottom: 1px solid #e5e7eb;
+      background: #f7f8fa;
+    }
+
+    .files-tree-header h3 {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.15rem 0 0;
+      color: var(--files-ink);
+      font-size: 0.9rem;
+      font-weight: 800;
+    }
+
+    .files-count-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2rem;
+      height: 2rem;
+      padding: 0 0.55rem;
+      border-radius: 0.55rem;
+      color: #334155;
+      background: #ffffff;
+      box-shadow: inset 0 0 0 1px #e5e7eb;
+      font-weight: 800;
+      font-size: 0.78rem;
+    }
+
+    .files-tree-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.55rem 0.9rem;
+      border-bottom: 1px solid #e5e7eb;
+      color: #667085;
+      background: #ffffff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .files-browser-toolbar {
+      border-bottom: 1px solid #e5e7eb;
+      background: #f7f8fa;
+    }
+
+    .explorer-address-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem);
+      gap: 0.65rem;
+      padding: 0.65rem 0.8rem;
+      border-bottom: 1px solid #e5e7eb;
+      background: #ffffff;
+    }
+
+    .explorer-address-bar,
+    .explorer-search-box {
+      display: flex;
+      align-items: center;
+      min-height: 2.25rem;
+      border: 1px solid #d7dce5;
+      border-radius: 0.45rem;
+      background: #ffffff;
+    }
+
+    .explorer-address-bar {
+      gap: 0.25rem;
+      overflow: hidden;
+      padding: 0 0.45rem;
+    }
+
+    .address-segment {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.38rem;
+      min-width: 0;
+      height: 1.75rem;
+      padding: 0 0.5rem;
+      border-radius: 0.35rem;
+      color: #1f2937;
+      font-size: 0.8rem;
+      font-weight: 650;
+      white-space: nowrap;
+      transition: background 140ms ease, color 140ms ease;
+    }
+
+    .address-segment:hover {
+      color: var(--files-primary);
+      background: #eef6ff;
+    }
+
+    .address-segment.is-current {
+      color: #111827;
+      background: #f3f4f6;
+      cursor: default;
+    }
+
+    .address-chevron {
+      color: #98a2b3;
+      flex: 0 0 auto;
+    }
+
+    .explorer-search-box {
+      gap: 0.5rem;
+      padding: 0 0.7rem;
+      color: #98a2b3;
+      font-size: 0.78rem;
+      font-weight: 650;
+    }
+
+    .explorer-search-box mat-icon {
+      width: 1.1rem;
+      height: 1.1rem;
+      font-size: 1.1rem;
+    }
+
+    .explorer-info-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      background: #fbfbfc;
+    }
+
+    .explorer-info-strip h2 {
+      margin: 0;
+      color: var(--files-ink);
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .explorer-info-strip p,
+    .explorer-info-strip span {
+      margin: 0.18rem 0 0;
+      color: #667085;
+      font-size: 0.78rem;
+      font-weight: 650;
+    }
+
+    .files-upload-progress {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid #e5e7eb;
+      background: #eff6ff;
+    }
+
+    .files-content {
+      min-height: 26rem;
+      background: #ffffff;
+    }
+
+    .files-empty-state {
+      display: flex;
+      min-height: 26rem;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      text-align: center;
+      color: var(--files-muted);
+    }
+
+    .files-empty-icon {
+      display: grid;
+      place-items: center;
+      width: 5.5rem;
+      height: 5.5rem;
+      margin-bottom: 1rem;
+      border-radius: 1.5rem;
+      color: var(--files-primary);
+      background: #eef2ff;
+      box-shadow: inset 0 0 0 1px #dbe3ff;
+    }
+
+    .files-empty-icon mat-icon {
+      width: 3rem;
+      height: 3rem;
+      font-size: 3rem;
+    }
+
+    .files-empty-state h3 {
+      margin: 0;
+      color: var(--files-ink);
+      font-size: 1.15rem;
+      font-weight: 900;
+    }
+
+    .files-empty-state p {
+      max-width: 24rem;
+      margin: 0.5rem 0 1.25rem;
+      font-size: 0.86rem;
+      line-height: 1.55;
+    }
+
+    .files-status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.7rem 1rem;
+      border-top: 1px solid #e2e8f0;
+      color: #64748b;
+      background: #fbfdff;
+      font-size: 0.75rem;
+      font-weight: 750;
+      user-select: none;
+    }
+
+    .files-status-bar button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.8rem;
+      height: 1.8rem;
+      border-radius: 0.55rem;
+      color: #475569;
+      transition: background 160ms ease, color 160ms ease;
+    }
+
+    .files-status-bar button:hover {
+      color: var(--files-primary);
+      background: #eef2ff;
+    }
+
+    .folder-tree-node {
+      margin-bottom: 0.25rem;
+    }
+
+    .folder-tree-row {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      gap: 0.55rem;
+      min-height: 2.25rem;
+      padding: 0.32rem 0.45rem;
+      border: 1px solid transparent;
+      border-radius: 0.42rem;
+      color: #334155;
+      background: transparent;
+      font-size: 0.81rem;
+      font-weight: 600;
+      transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+    }
+
+    .folder-tree-row:hover {
+      color: #111827;
+      border-color: #dbeafe;
+      background: #eef6ff;
+    }
+
+    .folder-tree-row.is-active {
+      color: #111827;
+      border-color: #7eb7f3;
+      background: #cfe8ff;
+      box-shadow: none;
+    }
+
+    .folder-icon-wrap {
+      display: inline-grid;
+      place-items: center;
+      width: 1.45rem;
+      height: 1.45rem;
+      border-radius: 0.28rem;
+      background: transparent;
+      box-shadow: none;
+      flex: 0 0 auto;
+    }
+
+    .folder-tree-row.is-active .folder-icon-wrap {
+      box-shadow: none;
+    }
+
+    .folder-title {
+      min-width: 0;
+      flex: 1;
+      text-align: left;
+    }
+
+    .folder-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.45rem;
+      height: 1.45rem;
+      padding: 0 0.38rem;
+      border-radius: 0.35rem;
+      color: #475569;
+      background: #edf2f7;
+      font-size: 0.68rem;
+      font-weight: 800;
+      flex: 0 0 auto;
+    }
+
+    .folder-count-muted {
+      color: #718198;
+      background: #f1f5f9;
+      box-shadow: inset 0 0 0 1px #e2e8f0;
+    }
+
+    .folder-row-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+      margin-left: 0.2rem;
+      opacity: 0;
+      transition: opacity 150ms ease;
+      flex: 0 0 auto;
+    }
+
+    .folder-tree-row:hover .folder-row-actions,
+    .folder-tree-row:focus-visible .folder-row-actions {
+      opacity: 1;
+    }
+
+    .folder-row-action {
+      display: inline-grid;
+      place-items: center;
+      width: 1.45rem;
+      height: 1.45rem;
+      border-radius: 0.35rem;
+      color: #64748b;
+      background: #ffffff;
+      box-shadow: inset 0 0 0 1px #e2e8f0;
+      transition: color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+    }
+
+    .folder-row-action:hover {
+      color: var(--files-primary);
+      background: #eef2ff;
+      box-shadow: inset 0 0 0 1px #c7d2fe;
+    }
+
+    .folder-row-action-danger:hover {
+      color: #dc2626;
+      background: #fff1f2;
+      box-shadow: inset 0 0 0 1px #fecdd3;
+    }
+
+    .no-scrollbar {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .explorer-address-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ClientWorkspaceComponent implements OnInit, OnDestroy {

@@ -1,21 +1,39 @@
-<div
-  class="flex items-center justify-between px-4 py-2 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex-wrap gap-2 shadow-sm"
-  *ngIf="viewState$ | async as state">
+<div class="windows-command-bar" *ngIf="viewState$ | async as state">
 
-  <div class="flex items-center gap-1">
+  <div class="command-group">
     <!-- Back Button with hover-expand text -->
-    <button class="go-back-btn" [disabled]="!canGoBack()" (click)="onBack()" matTooltip="Go back to previous folder">
+    <button class="command-icon-button go-back-btn" [disabled]="!canGoBack()" (click)="onBack()" matTooltip="Go back to previous folder">
       <ng-icon name="heroArrowLeftSolid" size="18"></ng-icon>
-      <span class="go-back-text">Go back</span>
     </button>
 
-    <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
+    <div class="command-divider"></div>
+
+    <!-- New Folder Button -->
+    <button *ngIf="showNewFolder()" class="command-button" type="button" (click)="onNewFolder()"
+      matTooltip="Create new folder">
+      <ng-icon name="heroFolderPlusSolid" size="16"></ng-icon>
+      <span>New</span>
+    </button>
+
+    <!-- Upload Button -->
+    <button *ngIf="showUpload()" class="command-button" type="button" (click)="onUpload()" matTooltip="Upload files">
+      <ng-icon name="heroArrowUpTraySolid" size="16"></ng-icon>
+      <span>Upload</span>
+    </button>
+
+    <!-- Refresh Button -->
+    <button class="command-button" type="button" (click)="onRefresh()" matTooltip="Refresh contents">
+      <ng-icon name="heroArrowPathSolid" size="16"></ng-icon>
+      <span>Refresh</span>
+    </button>
+
+    <div class="command-divider"></div>
 
     <!-- View Options Dropdown -->
-    <button mat-button [matMenuTriggerFor]="viewMenu" class="toolbar-dropdown-btn">
-      <ng-icon name="heroSquares2x2Solid" class="mr-1.5" size="18"></ng-icon>
-      <span class="text-sm font-medium">View</span>
-      <ng-icon name="heroChevronDownSolid" size="14" class="ml-1 opacity-50"></ng-icon>
+    <button mat-button [matMenuTriggerFor]="viewMenu" class="toolbar-dropdown-btn command-button">
+      <ng-icon name="heroSquares2x2Solid" size="16"></ng-icon>
+      <span>View</span>
+      <ng-icon name="heroChevronDownSolid" size="13" class="chevron-icon"></ng-icon>
     </button>
     <mat-menu #viewMenu="matMenu" class="file-explorer-menu">
       <div class="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Layout</div>
@@ -39,10 +57,10 @@
     </mat-menu>
 
     <!-- Sort Dropdown -->
-    <button mat-button [matMenuTriggerFor]="sortMenu" class="toolbar-dropdown-btn">
-      <ng-icon name="heroArrowsUpDownSolid" class="mr-1.5" size="18"></ng-icon>
-      <span class="text-sm font-medium">Sort</span>
-      <ng-icon name="heroChevronDownSolid" size="14" class="ml-1 opacity-50"></ng-icon>
+    <button mat-button [matMenuTriggerFor]="sortMenu" class="toolbar-dropdown-btn command-button">
+      <ng-icon name="heroArrowsUpDownSolid" size="16"></ng-icon>
+      <span>Sort</span>
+      <ng-icon name="heroChevronDownSolid" size="13" class="chevron-icon"></ng-icon>
     </button>
     <mat-menu #sortMenu="matMenu" class="file-explorer-menu">
       <button mat-menu-item (click)="sort('name')">Name</button>
@@ -50,26 +68,5 @@
       <button mat-menu-item (click)="sort('type')">Type</button>
       <button mat-menu-item (click)="sort('size')">Size</button>
     </mat-menu>
-  </div>
-
-  <div class="flex items-center gap-3">
-    <!-- Refresh Button -->
-    <app-button variant="secondary" size="sm" (clicked)="onRefresh()" matTooltip="Refresh contents">
-      <ng-icon name="heroArrowPathSolid" class="md:mr-2" size="16" icon-left></ng-icon>
-      <span class="hidden md:inline">Refresh</span>
-    </app-button>
-
-    <!-- New Folder Button -->
-    <app-button *ngIf="showNewFolder()" variant="secondary" size="sm" (clicked)="onNewFolder()"
-      matTooltip="Create new folder">
-      <ng-icon name="heroFolderPlusSolid" class="md:mr-2" size="16" icon-left></ng-icon>
-      <span class="hidden md:inline">New Folder</span>
-    </app-button>
-
-    <!-- Upload Button -->
-    <app-button *ngIf="showUpload()" variant="primary" size="sm" (clicked)="onUpload()" matTooltip="Upload files">
-      <ng-icon name="heroArrowUpTraySolid" class="md:mr-2" size="16" icon-left></ng-icon>
-      <span class="hidden md:inline">Upload</span>
-    </app-button>
   </div>
 </div>

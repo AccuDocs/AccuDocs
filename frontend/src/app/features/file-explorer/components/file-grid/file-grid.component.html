@@ -15,7 +15,8 @@
 <div class="grid-container" [ngClass]="viewMode">
   <div class="file-card" *ngFor="let file of files; trackBy: trackById" (click)="handleFileClick(file, $event)"
     (dblclick)="onFileDoubleClick(file)" [class.active]="file === activeFile" [class.selected]="isSelected(file)"
-    [class.editing]="editingFileId === file.id" (contextmenu)="onContextMenu($event, file)">
+    [class.editing]="editingFileId === file.id" [class.folder-item]="file.type === 'folder'"
+    [class.document-item]="file.type !== 'folder'" (contextmenu)="onContextMenu($event, file)">
 
     <!-- Selection Checkbox (visible in multi-select mode or on hover) -->
     <div class="selection-checkbox" [class.visible]="isMultiSelectMode || isSelected(file)"
