@@ -13,12 +13,20 @@ export class InvoiceTemplateService {
       },
       attributes: ['id', 'name', 'thumbnailUrl', 'isDefault', 'orgId', 'isSystem', 'createdAt'],
       order: [
-        ['isSystem', 'DESC'],
         ['isDefault', 'DESC'],
+        ['isSystem', 'ASC'],
         ['name', 'ASC'],
       ],
     });
-    return templates;
+
+    const orgDefault = templates.find((template) => !template.isSystem && template.orgId === orgId && template.isDefault);
+    return templates.map((template) => {
+      const plain = template.get({ plain: true }) as any;
+      return {
+        ...plain,
+        isDefault: orgDefault ? plain.id === orgDefault.id : plain.isDefault,
+      };
+    });
   }
 
   /**
@@ -57,7 +65,7 @@ export class InvoiceTemplateService {
     // Verify the template exists and is accessible
     await this.getTemplateById(templateId, orgId);
 
-    // Clear existing org default
+    // Clear existing org default. System templates remain immutable; org-level copies carry the active default.
     await InvoiceTemplate.update(
       { isDefault: false } as any,
       { where: { orgId, isDefault: true } }
@@ -68,7 +76,24 @@ export class InvoiceTemplateService {
     if (!tpl) throw new AppError('Template not found', 404);
 
     if (tpl.isSystem) {
-      // Create a thin org-level record flagged as default
+      const existingCopy = await InvoiceTemplate.findOne({
+        where: {
+          orgId,
+          isSystem: false,
+          name: tpl.name,
+        },
+      });
+
+      if (existingCopy) {
+        await existingCopy.update({
+          htmlContent: tpl.htmlContent,
+          thumbnailUrl: tpl.thumbnailUrl,
+          isDefault: true,
+        } as any);
+        return existingCopy.reload();
+      }
+
+      // Create a thin org-level record flagged as default.
       const orgCopy = await InvoiceTemplate.create({
         name: tpl.name,
         htmlContent: tpl.htmlContent,

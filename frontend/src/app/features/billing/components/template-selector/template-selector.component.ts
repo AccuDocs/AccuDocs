@@ -1,4 +1,4 @@
-import { Component, inject, signal, output, input } from '@angular/core';
+import { Component, computed, effect, inject, signal, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { InvoiceService } from '../../services/invoice.service';
@@ -54,11 +54,23 @@ export interface InvoiceTemplate {
                 @if (tpl.thumbnailUrl) {
                   <img [src]="tpl.thumbnailUrl" [alt]="tpl.name" class="ts-thumb-img" />
                 } @else {
-                  <div class="ts-thumb-placeholder">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="ts-thumb-icon">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                    </svg>
-                    <span class="ts-template-preview-name">{{ tpl.name }}</span>
+                  <div class="ts-mini-preview" [ngClass]="previewClass(tpl)">
+                    <div class="ts-preview-header">
+                      <span></span>
+                      <strong>INV</strong>
+                    </div>
+                    <div class="ts-preview-title">{{ previewTitle(tpl) }}</div>
+                    <div class="ts-preview-cards">
+                      <span></span>
+                      <span></span>
+                    </div>
+                    <div class="ts-preview-table">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                    <div class="ts-preview-total"></div>
                   </div>
                 }
                 <!-- Selected checkmark -->
@@ -100,6 +112,27 @@ export interface InvoiceTemplate {
             </div>
           }
         </div>
+
+        @if (selectedTemplate()) {
+          <div class="ts-large-preview">
+            <div>
+              <p class="ts-preview-kicker">Active PDF design</p>
+              <h4>{{ selectedTemplate()!.name }}</h4>
+              <p>Download PDF and Print use this default template for generated invoices.</p>
+            </div>
+            <div class="ts-large-sheet" [ngClass]="previewClass(selectedTemplate()!)">
+              <div class="ts-large-hero">
+                <span>{{ previewTitle(selectedTemplate()!) }}</span>
+                <strong>INV-2026-001</strong>
+              </div>
+              <div class="ts-large-blocks"><span></span><span></span></div>
+              <div class="ts-large-lines">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              <div class="ts-large-total"></div>
+            </div>
+          </div>
+        }
       }
     </div>
   `,
@@ -117,7 +150,7 @@ export interface InvoiceTemplate {
       background-size: 200% 100%; animation: shimmer 1.4s infinite linear; }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-    .ts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+    .ts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
 
     .ts-card { position: relative; display: flex; flex-direction: column; gap: 0; border-radius: 12px; border: 2px solid #e2e8f0;
       background: #fff; transition: all 0.18s ease; padding: 0; overflow: hidden; text-align: left; }
@@ -127,9 +160,21 @@ export interface InvoiceTemplate {
 
     .ts-thumb { position: relative; width: 100%; aspect-ratio: 3/4; background: #f8fafc; overflow: hidden; border: 0; padding: 0; cursor: pointer; }
     .ts-thumb-img { width: 100%; height: 100%; object-fit: cover; }
-    .ts-thumb-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 8px; padding: 12px; }
-    .ts-thumb-icon { width: 32px; height: 32px; color: #94a3b8; }
-    .ts-template-preview-name { font-size: 10px; color: #94a3b8; text-align: center; }
+    .ts-mini-preview { height: 100%; padding: 14px; background: #fff; color: #0f172a; }
+    .ts-preview-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .ts-preview-header span { width: 42%; height: 9px; border-radius: 999px; background: currentColor; opacity: .15; }
+    .ts-preview-header strong { font-size: 10px; letter-spacing: .12em; }
+    .ts-preview-title { margin-top: 13px; height: 22px; border-radius: 8px; display: flex; align-items: center; padding-inline: 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; background: currentColor; color: #fff; }
+    .ts-preview-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .ts-preview-cards span { height: 34px; border-radius: 8px; background: currentColor; opacity: .08; }
+    .ts-preview-table { display: grid; gap: 6px; margin-top: 13px; }
+    .ts-preview-table span { height: 8px; border-radius: 999px; background: currentColor; opacity: .14; }
+    .ts-preview-total { width: 46%; height: 24px; margin-left: auto; margin-top: 12px; border-radius: 10px; background: currentColor; opacity: .22; }
+    .preview-modern { color: #059669; background: linear-gradient(145deg, #ffffff, #ecfdf5); }
+    .preview-compact { color: #111827; background: linear-gradient(145deg, #ffffff, #f8fafc); }
+    .preview-premium { color: #0f766e; background: linear-gradient(145deg, #f8fafc, #e0f2fe); }
+    .preview-premium .ts-preview-title { background: linear-gradient(135deg, #0f766e, #172554); }
+    .preview-compact .ts-preview-title { background: #111827; }
 
     .ts-check-badge { position: absolute; top: 6px; right: 6px; background: #3b82f6; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
     .ts-check-icon { width: 14px; height: 14px; color: #fff; }
@@ -144,6 +189,22 @@ export interface InvoiceTemplate {
     .ts-default-action:disabled { cursor: default; opacity: .65; color: #64748b; background: #f1f5f9; border-color: #e2e8f0; }
 
     .ts-empty { grid-column: 1 / -1; text-align: center; color: #94a3b8; font-size: 13px; padding: 24px; }
+    .ts-large-preview { margin-top: 18px; display: grid; grid-template-columns: minmax(0, .8fr) minmax(280px, 1.2fr); gap: 18px; align-items: stretch; border: 1px solid #e2e8f0; border-radius: 18px; padding: 16px; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .ts-preview-kicker { margin: 0 0 8px; font-size: 10px; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; color: #64748b; }
+    .ts-large-preview h4 { margin: 0; font-size: 18px; font-weight: 900; color: #0f172a; }
+    .ts-large-preview p { margin: 8px 0 0; color: #64748b; font-size: 13px; line-height: 1.6; }
+    .ts-large-sheet { min-height: 230px; border-radius: 16px; padding: 18px; box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .08); }
+    .ts-large-hero { display: flex; justify-content: space-between; align-items: center; border-radius: 14px; padding: 16px; background: currentColor; color: #fff; }
+    .ts-large-hero span { font-size: 17px; font-weight: 900; text-transform: uppercase; }
+    .ts-large-hero strong { font-size: 12px; }
+    .ts-large-blocks { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+    .ts-large-blocks span { height: 54px; border-radius: 12px; background: currentColor; opacity: .08; }
+    .ts-large-lines { display: grid; gap: 8px; margin-top: 16px; }
+    .ts-large-lines span { height: 10px; border-radius: 999px; background: currentColor; opacity: .14; }
+    .ts-large-total { width: 35%; height: 34px; margin-left: auto; margin-top: 14px; border-radius: 12px; background: currentColor; opacity: .25; }
+    @media (max-width: 720px) {
+      .ts-large-preview { grid-template-columns: 1fr; }
+    }
 
     :host-context(.dark) .ts-card { background: #1e293b; border-color: #334155; }
     :host-context(.dark) .ts-thumb { background: #0f172a; }
@@ -166,10 +227,22 @@ export class TemplateSelectorComponent {
   });
 
   readonly templates = () => (this.templatesResource.value()?.data ?? []) as InvoiceTemplate[];
+  readonly selectedTemplate = computed(() => this.templates().find((tpl) => tpl.id === this.selectedId()) ?? this.templates().find((tpl) => tpl.isDefault) ?? null);
+
+  constructor() {
+    effect(() => {
+      const currentDefault = this.templates().find((tpl) => tpl.isDefault);
+      if (currentDefault && this.selectedId() !== currentDefault.id && !this.settingDefaultId()) {
+        this.selectedId.set(currentDefault.id);
+        this.templateSelected.emit(currentDefault.id);
+      }
+    });
+  }
 
   selectTemplate(tpl: InvoiceTemplate): void {
     this.selectedId.set(tpl.id);
     this.templateSelected.emit(tpl.id);
+    this.setDefault(tpl);
   }
 
   clearSelection(): void {
@@ -186,7 +259,7 @@ export class TemplateSelectorComponent {
     this.invoiceService.setDefaultTemplate(tpl.id).subscribe({
       next: () => {
         this.settingDefaultId.set(null);
-        this.toast.success('Default invoice template updated');
+        this.toast.success('Invoice template applied');
         this.templatesResource.reload();
       },
       error: () => {
@@ -194,5 +267,19 @@ export class TemplateSelectorComponent {
         this.toast.error('Could not update default template');
       },
     });
+  }
+
+  previewClass(tpl: InvoiceTemplate): string {
+    const name = tpl.name.toLowerCase();
+    if (name.includes('compact')) return 'preview-compact';
+    if (name.includes('premium') || name.includes('electronics')) return 'preview-premium';
+    return 'preview-modern';
+  }
+
+  previewTitle(tpl: InvoiceTemplate): string {
+    const name = tpl.name.toLowerCase();
+    if (name.includes('compact')) return 'Compact GST';
+    if (name.includes('premium') || name.includes('electronics')) return 'Premium';
+    return 'Retail Sales';
   }
 }
