@@ -5,6 +5,18 @@ const { sequelize } = require('../config/database.config');
 
 const statements = [
   {
+    label: 'organizations.turnover_above_5cr',
+    sql: 'alter table organizations add column if not exists turnover_above_5cr boolean not null default false',
+  },
+  {
+    label: 'organizations.eway_bill_username_enc',
+    sql: 'alter table organizations add column if not exists eway_bill_username_enc text null',
+  },
+  {
+    label: 'organizations.eway_bill_password_enc',
+    sql: 'alter table organizations add column if not exists eway_bill_password_enc text null',
+  },
+  {
     label: 'invoices.currency',
     sql: "alter table invoices add column if not exists currency varchar(3) not null default 'INR'",
   },

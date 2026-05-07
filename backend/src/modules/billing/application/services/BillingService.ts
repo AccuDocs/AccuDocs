@@ -349,8 +349,6 @@ export class BillingService {
         rate: item.unitRate,
         baseAmount: item.amount,
         gstRate: invoice.subtotal > 0 ? Number(((invoice.cgstAmount + invoice.sgstAmount + invoice.igstAmount) / invoice.subtotal * 100).toFixed(2)) : 18,
-        gstAmount: (invoice.cgstAmount + invoice.sgstAmount + invoice.igstAmount) * ratio,
-        totalAmount: item.amount + ((invoice.cgstAmount + invoice.sgstAmount + invoice.igstAmount) * ratio),
         month: getMonthFromDate(invDate),
         financialYear: getFinancialYear(invDate),
         gstin: invoice.clientGstin,
