@@ -37,7 +37,7 @@ const GST_RATES = [0, 0.25, 1, 1.5, 3, 5, 6, 7.5, 9, 12, 13.8, 14, 18, 28];
               type="button"
               [class.hd-action--live-on]="liveMode()"
               (click)="toggleLiveMode()"
-              title="When enabled, numeric HSN/SAC searches refresh from the configured live GST provider first"
+              title="When enabled, numeric HSN/SAC searches refresh from the public directory cache first"
             >
               {{ liveMode() ? 'Live auto on' : 'Live auto off' }}
             </button>
@@ -46,7 +46,7 @@ const GST_RATES = [0, 0.25, 1, 1.5, 3, 5, 6, 7.5, 9, 12, 13.8, 14, 18, 28];
               type="button"
               (click)="syncVisibleLive()"
               [disabled]="liveSyncing() || codes().length === 0"
-              title="Refresh visible codes from live GST provider"
+              title="Refresh visible codes from the public HSN/SAC directory"
             >
               @if (liveSyncing()) {
                 <span class="hd-spinner hd-spinner--light"></span>
@@ -123,7 +123,7 @@ const GST_RATES = [0, 0.25, 1, 1.5, 3, 5, 6, 7.5, 9, 12, 13.8, 14, 18, 28];
                       type="button"
                       (click)="searchOnline()"
                       [disabled]="isSearchingOnline()"
-                      title="Fetch official data from configured GST provider"
+                      title="Fetch from the public HSN/SAC directory"
                     >
                       @if (isSearchingOnline()) {
                         <span class="hd-spinner hd-spinner--xs"></span>
@@ -256,7 +256,7 @@ const GST_RATES = [0, 0.25, 1, 1.5, 3, 5, 6, 7.5, 9, 12, 13.8, 14, 18, 28];
                           <div class="hd-empty-inner">
                             <div class="hd-empty-icon">HSN</div>
                             <h3>No codes found</h3>
-                            <p>Try clearing filters, searching a shorter keyword, or fetching a numeric code live.</p>
+                            <p>Try clearing filters, searching a shorter keyword, or fetching a numeric code from the public directory.</p>
                             <div class="hd-empty-actions">
                               <button class="hd-action hd-action--ghost" type="button" (click)="reset()">Clear filters</button>
                               @if (canSearchOnline()) {
@@ -321,13 +321,13 @@ const GST_RATES = [0, 0.25, 1, 1.5, 3, 5, 6, 7.5, 9, 12, 13.8, 14, 18, 28];
               <span class="hd-card-label">Live directory status</span>
               <h3>{{ liveMode() ? 'Auto live refresh enabled' : 'Local cache mode' }}</h3>
               <p>
-                Numeric code searches can refresh from the configured GST/Sandbox provider before results are shown.
+                Numeric code searches can refresh from the free public directory before results are shown.
                 Use visible sync to refresh the current page.
               </p>
               <div class="hd-live-status-grid">
                 <div>
                   <span>Provider</span>
-                  <strong>Sandbox/GSTN</strong>
+                  <strong>Public directory cache</strong>
                 </div>
                 <div>
                   <span>Last sync</span>
@@ -1424,7 +1424,7 @@ export class HsnDirectoryComponent {
     if (!code) return;
 
     this.isSearchingOnline.set(true);
-    const toast = this.toast.loading('Searching official GST records...', { duration: 0 });
+    const toast = this.toast.loading('Searching public HSN/SAC directory...', { duration: 0 });
 
     this.gstService.lookupOnlineHsn(code).subscribe({
       next: (res: any) => {
@@ -1438,7 +1438,7 @@ export class HsnDirectoryComponent {
       error: (err: any) => {
         this.isSearchingOnline.set(false);
         toast.close();
-        this.toast.error(err.error?.message || 'Code not found in official records.');
+        this.toast.error(err.error?.message || 'Code not found in public directory.');
       }
     });
   }

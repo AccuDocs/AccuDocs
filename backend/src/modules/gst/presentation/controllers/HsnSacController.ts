@@ -50,9 +50,9 @@ export class HsnSacController {
     if (!code) throw new AppError('HSN/SAC code is required', 400);
 
     const result = await hsnSacService.lookupOnline(code);
-    if (!result) throw new AppError('Code not found in official records', 404);
+    if (!result) throw new AppError('Code not found in public HSN/SAC directory', 404);
 
-    sendSuccess(res, result, 'Live details fetched successfully');
+    sendSuccess(res, result, 'Public directory details fetched successfully');
   });
 
   /** POST /gst/hsn-sac/sync-live */
@@ -63,6 +63,6 @@ export class HsnSacController {
     }
 
     const result = await hsnSacService.syncLiveCodes(codes);
-    sendSuccess(res, result, `Live sync completed: ${result.succeeded} updated`);
+    sendSuccess(res, result, `Public directory sync completed: ${result.succeeded} updated`);
   });
 }

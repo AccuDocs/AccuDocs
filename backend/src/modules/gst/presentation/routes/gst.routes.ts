@@ -295,7 +295,7 @@ router.post('/hsn-sac/import', authenticate, upload.single('file'), HsnSacContro
  * /gst/hsn-sac/lookup-online:
  *   post:
  *     tags: [GST]
- *     summary: Online HSN/SAC lookup via GSTN
+ *     summary: Online HSN/SAC lookup via public directory cache
  *     security:
  *       - bearerAuth: []
  *     requestBody:

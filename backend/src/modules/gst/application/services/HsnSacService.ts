@@ -3,9 +3,9 @@ import { sequelize } from '../../../../config/database.config';
 import { HsnSac } from '../../../../models/hsn-sac.model';
 import { AppError } from '../../../../utils/errors';
 import ExcelJS from 'exceljs';
-import { SandboxService } from './SandboxService';
+import { PublicHsnSacDirectoryService, PublicHsnSacEntry } from './PublicHsnSacDirectoryService';
 
-const sandboxService = new SandboxService();
+const publicDirectoryService = new PublicHsnSacDirectoryService();
 
 export class HsnSacService {
   /**
@@ -71,7 +71,7 @@ export class HsnSacService {
   /**
    * Bulk upsert — used by the data import module or admin seeding.
    */
-  async bulkUpsert(entries: Array<{ code: string; description: string; gstRate: number; type: 'HSN' | 'SAC'; chapter?: string }>) {
+  async bulkUpsert(entries: Array<{ code: string; description: string; gstRate: number; type: 'HSN' | 'SAC'; chapter?: string | null }>) {
     const results = await Promise.allSettled(
       entries.map((entry) =>
         sequelize.query(
@@ -160,28 +160,16 @@ export class HsnSacService {
   }
 
   /**
-   * Performs an online lookup via Sandbox API for a specific HSN/SAC code.
-   * If found, the result is automatically cached (saved) to the local database.
+   * Performs a public-directory lookup and caches the result locally.
+   * The free source provides HSN/SAC code and description data, not authoritative
+   * tax rates. Existing DB rates are preserved; new rows are marked at 0% until
+   * reviewed/imported by the firm.
    */
-  async lookupOnline(code: string) {
-    // 1. External Fetch
-    const details = await sandboxService.getHsnDetails(code);
-    if (!details) return null;
+  async lookupOnline(query: string) {
+    const publicEntry = await publicDirectoryService.lookup(query);
+    if (!publicEntry) return null;
 
-    // 2. Map Sandbox response to our schema
-    // Sandbox typical data: { hsn_code, description, related_info, ... }
-    const entry = {
-      code: details.hsn_code || code,
-      description: details.description || '',
-      gstRate: 18.0, // Default if not provided by this endpoint
-      type: (details.hsn_code || code).startsWith('99') ? 'SAC' as const : 'HSN' as const,
-      chapter: details.hsn_code ? details.hsn_code.substring(0, 2) : null
-    };
-
-    // 3. Auto-Save to Local DB (so we have it for all clients forever)
-    await this.bulkUpsert([entry]);
-
-    return entry;
+    return this.savePublicEntry(publicEntry);
   }
 
   /**
@@ -196,22 +184,34 @@ export class HsnSacService {
         .filter((code) => /^\d{4,8}$/.test(code))
     )].slice(0, 50);
 
-    const results = await Promise.all(
-      uniqueCodes.map(async (code) => {
-        try {
-          const refreshed = await this.lookupOnline(code);
-          return refreshed
-            ? { code, status: 'updated' as const, description: refreshed.description }
-            : { code, status: 'not_found' as const, message: 'Code not found in live records' };
-        } catch (error: any) {
-          return {
-            code,
-            status: 'failed' as const,
-            message: error?.message || 'Live lookup failed',
-          };
+    const lookups = await publicDirectoryService.lookupMany(uniqueCodes);
+    const results = [];
+
+    for (const lookup of lookups) {
+      try {
+        if (!lookup.entry) {
+          results.push({
+            code: lookup.code,
+            status: 'not_found' as const,
+            message: 'Code not found in public HSN/SAC directory',
+          });
+          continue;
         }
-      })
-    );
+
+        const refreshed = await this.savePublicEntry(lookup.entry);
+        results.push({
+          code: lookup.code,
+          status: 'updated' as const,
+          description: refreshed.description,
+        });
+      } catch (error: any) {
+        results.push({
+          code: lookup.code,
+          status: 'failed' as const,
+          message: error?.message || 'Public directory sync failed',
+        });
+      }
+    }
 
     return {
       requested: codes.length,
@@ -228,7 +228,27 @@ export class HsnSacService {
     try {
       await this.lookupOnline(code);
     } catch {
-      // Search must remain usable even when live-provider credentials are missing or down.
+      // Search must remain usable even when the public directory is unreachable.
     }
+  }
+
+  private async savePublicEntry(publicEntry: PublicHsnSacEntry) {
+    const existing = await HsnSac.findOne({
+      where: {
+        code: publicEntry.code,
+        type: publicEntry.type,
+      },
+    });
+
+    const entry = {
+      code: publicEntry.code,
+      description: publicEntry.description,
+      gstRate: existing ? Number(existing.gstRate) : 0,
+      type: publicEntry.type,
+      chapter: publicEntry.chapter,
+    };
+
+    await this.bulkUpsert([entry]);
+    return entry;
   }
 }
