@@ -37,470 +37,380 @@ interface CategoryDetailsResponse {
     CategoryBreadcrumbComponent,
   ],
   template: `
-    <div class="layout">
-      <!-- LEFT PANEL: Tree -->
-      <div class="panel left-panel">
-        <div class="panel-head">
-          <span class="panel-title">Category tree</span>
-          <button class="btn primary" (click)="openCreateForm(null)">+ Add group</button>
+    <div class="space-y-6">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Category Master</h2>
+          <p class="mt-1 text-sm font-medium text-slate-500">
+            Organize inventory groups, GST defaults, HSN rules, and item placement.
+          </p>
         </div>
-        <app-category-tree 
-          [nodes]="tree()"
-          [selectedId]="selectedId"
-          (nodeSelected)="onNodeSelected($event)"
-          (addChildRequested)="openCreateForm($event)"
-        ></app-category-tree>
+
+        <div class="flex items-center gap-3">
+          <button type="button" class="sa-btn secondary" (click)="loadTree()" [disabled]="loading()">
+            <mat-icon class="icon-sm">refresh</mat-icon>
+            {{ loading() ? 'Refreshing...' : 'Refresh' }}
+          </button>
+          <button type="button" class="sa-btn primary" (click)="openCreateForm(null)">
+            <mat-icon class="icon-sm">add</mat-icon>
+            Add Group
+          </button>
+        </div>
       </div>
 
-      <!-- RIGHT PANEL: Edit Form / View -->
-      <div class="panel right-panel">
-        <div class="panel-head" *ngIf="selectedNode() || isCreating()">
-          <span class="panel-title">
-            {{ isCreating() ? (form.get('parent_id')?.value ? 'Create Sub-category' : 'Create Group') : 'Editing — ' + selectedNode()?.name }}
-            <span class="badge" [class]="getLevelBadgeClass()" *ngIf="selectedNode()">{{ getLevelLabel() }}</span>
-          </span>
-          <div class="action-row">
-            <button class="btn danger" (click)="deleteCategory()" [disabled]="deleting()" *ngIf="selectedNode()">
-              {{ deleting() ? 'Deleting...' : 'Delete' }}
-            </button>
-            <button class="btn" (click)="cancelEdit()">Cancel</button>
-            <button class="btn primary" (click)="saveCategory()" [disabled]="saving()">
-              {{ saving() ? 'Saving...' : 'Save' }}
-            </button>
-          </div>
-        </div>
-
-        <div *ngIf="selectedNode() || isCreating()" class="form-area">
-          <!-- Breadcrumb -->
-          <app-category-breadcrumb 
-            [items]="breadcrumb()"
-            (itemNavigated)="onBreadcrumbNavigate($event)"
-          ></app-category-breadcrumb>
-
-          <!-- Info Box -->
-          <div class="info-box" *ngIf="selectedNode()">
-            <div class="info-label">Node info</div>
-            <div class="info-row">
-              <span>Level</span>
-              <span class="info-val">
-                <span [class]="getLevelBadgeClass()">{{ getLevelLabel() }}</span>
-              </span>
+      <div class="grid grid-cols-1 gap-6 xl:grid-cols-[360px,minmax(0,1fr)]">
+        <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900">Category Tree</h3>
+              <p class="mt-0.5 text-xs font-medium text-slate-500">{{ tree().length }} top-level groups</p>
             </div>
-            <div class="info-row">
-              <span>Items in this node</span>
-              <span class="info-val">{{ itemCount() }} SKUs</span>
-            </div>
-            <div class="info-row">
-              <span>Stock value</span>
-              <span class="info-val">₹{{ stockValue() | number: '1.0-0' }}</span>
-            </div>
-            <div class="info-row" *ngIf="selectedNode()?.parent_id">
-              <span>Parent</span>
-              <span class="info-val">
-                <span class="badge badge-teal">{{ parentName() }}</span>
-              </span>
-            </div>
-            <div class="info-row" *ngIf="(selectedNode()?.level ?? 0) > 1">
-              <span>Group</span>
-              <span class="info-val">
-                <span class="badge badge-purple">{{ groupName() }}</span>
-              </span>
-            </div>
+            <span class="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700">
+              {{ selectedNode()?.code || selectedNode()?.name || 'Browse' }}
+            </span>
           </div>
 
-          <!-- Form -->
-          <form [formGroup]="form" (ngSubmit)="saveCategory()">
-            <div class="field">
-              <label>Name *</label>
-              <input 
-                type="text" 
-                formControlName="name"
-                placeholder="Category name"
-              >
+          @if (loading()) {
+            <div class="space-y-3 p-4">
+              @for (i of [1,2,3,4,5]; track i) {
+                <div class="h-10 rounded-lg bg-slate-100 animate-pulse"></div>
+              }
             </div>
+          } @else {
+            <app-category-tree
+              [nodes]="tree()"
+              [selectedId]="selectedId"
+              (nodeSelected)="onNodeSelected($event)"
+              (addChildRequested)="openCreateForm($event)"
+            ></app-category-tree>
+          }
+        </section>
 
-            <div class="two">
-              <div class="field">
-                <label>Code / slug</label>
-                <input 
-                  type="text" 
-                  formControlName="code"
-                  placeholder="Short code"
-                >
+        <section class="min-h-[520px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          @if (selectedNode() || isCreating()) {
+            <div class="flex flex-col gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  {{ isCreating() ? 'New Category' : 'Category Details' }}
+                </p>
+                <div class="mt-1 flex flex-wrap items-center gap-2">
+                  <h3 class="text-lg font-bold text-slate-900">
+                    {{ isCreating() ? (form.get('parent_id')?.value ? 'Create Sub-category' : 'Create Group') : selectedNode()?.name }}
+                  </h3>
+                  @if (selectedNode()) {
+                    <span [class]="getLevelBadgeClass()">{{ getLevelLabel() }}</span>
+                  }
+                </div>
               </div>
-              <div class="field">
-                <label>Sort order</label>
-                <input 
-                  type="number" 
-                  formControlName="sort_order"
-                  placeholder="0"
-                >
-              </div>
-            </div>
 
-            <div class="field" *ngIf="selectedNode()?.level && selectedNode()!.level > 1">
-              <label>Move to different parent</label>
-              <select formControlName="parent_id">
-                <option [value]="null" disabled>Select parent...</option>
-                <option *ngFor="let group of availableParents()" [value]="group.id">
-                  {{ group.name }}
-                </option>
-              </select>
-              <div class="note">Moving a node also moves all its items — their category_id stays the same, the full path updates automatically.</div>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="field">
-              <label>Default HSN code for items in this category</label>
-              <input 
-                type="text" 
-                formControlName="default_hsn"
-                placeholder="HSN/SAC code"
-              >
-              <div class="note">Items inherit this HSN if left blank on their own form. Can be overridden per item.</div>
-            </div>
-
-            <div class="field">
-              <label>Default GST rate for items in this category</label>
-              <div class="gst-row">
-                <button 
-                  type="button"
-                  class="gst-chip"
-                  [class.active]="form.get('default_gst_rate')?.value === 0"
-                  (click)="form.patchValue({ default_gst_rate: 0 })"
-                >
-                  0%
-                </button>
-                <button 
-                  type="button"
-                  class="gst-chip"
-                  [class.active]="form.get('default_gst_rate')?.value === 5"
-                  (click)="form.patchValue({ default_gst_rate: 5 })"
-                >
-                  5%
-                </button>
-                <button 
-                  type="button"
-                  class="gst-chip"
-                  [class.active]="form.get('default_gst_rate')?.value === 12"
-                  (click)="form.patchValue({ default_gst_rate: 12 })"
-                >
-                  12%
-                </button>
-                <button 
-                  type="button"
-                  class="gst-chip"
-                  [class.active]="form.get('default_gst_rate')?.value === 18"
-                  (click)="form.patchValue({ default_gst_rate: 18 })"
-                >
-                  18%
-                </button>
-                <button 
-                  type="button"
-                  class="gst-chip"
-                  [class.active]="form.get('default_gst_rate')?.value === 28"
-                  (click)="form.patchValue({ default_gst_rate: 28 })"
-                >
-                  28%
-                </button>
-                <button 
-                  type="button"
-                  class="gst-chip"
-                  [class.active]="form.get('default_gst_rate')?.value === null"
-                  (click)="form.patchValue({ default_gst_rate: null })"
-                >
-                  None
+              <div class="flex flex-wrap items-center gap-2">
+                @if (selectedNode()) {
+                  <button type="button" class="sa-btn danger" (click)="deleteCategory()" [disabled]="deleting()">
+                    <mat-icon class="icon-sm">delete</mat-icon>
+                    {{ deleting() ? 'Deleting...' : 'Delete' }}
+                  </button>
+                }
+                <button type="button" class="sa-btn secondary" (click)="cancelEdit()">Cancel</button>
+                <button type="button" class="sa-btn primary" (click)="saveCategory()" [disabled]="saving()">
+                  <mat-icon class="icon-sm">save</mat-icon>
+                  {{ saving() ? 'Saving...' : 'Save' }}
                 </button>
               </div>
-              <div class="note">Applied to all new items created under this category. Existing items are not changed.</div>
             </div>
 
-            <div class="field">
-              <label>Default unit of measure</label>
-              <select formControlName="default_uom">
-                <option value="">Select UOM...</option>
-                <option value="Pieces">Pieces</option>
-                <option value="Kg">Kg</option>
-                <option value="Metres">Metres</option>
-                <option value="Litre">Litre</option>
-                <option value="Box">Box</option>
-                <option value="Pack">Pack</option>
-              </select>
+            <div class="space-y-5 p-5">
+              <app-category-breadcrumb
+                [items]="breadcrumb()"
+                (itemNavigated)="onBreadcrumbNavigate($event)"
+              ></app-category-breadcrumb>
+
+              @if (selectedNode()) {
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Level</p>
+                    <p class="mt-2 text-sm font-bold text-slate-900">{{ getLevelLabel() }}</p>
+                  </div>
+                  <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Items</p>
+                    <p class="mt-2 text-sm font-bold text-slate-900">{{ itemCount() }} SKUs</p>
+                  </div>
+                  <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Stock Value</p>
+                    <p class="mt-2 text-sm font-bold text-emerald-700">Rs. {{ stockValue() | number: '1.0-0' }}</p>
+                  </div>
+                  <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                      {{ selectedNode()?.parent_id ? 'Parent' : 'Group' }}
+                    </p>
+                    <p class="mt-2 truncate text-sm font-bold text-slate-900">
+                      {{ selectedNode()?.parent_id ? parentName() : selectedNode()?.name }}
+                    </p>
+                  </div>
+                </div>
+              }
+
+              <form [formGroup]="form" (ngSubmit)="saveCategory()" class="space-y-5">
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <div class="field lg:col-span-2">
+                    <label>Name *</label>
+                    <input type="text" formControlName="name" placeholder="Category name">
+                  </div>
+
+                  <div class="field">
+                    <label>Code / slug</label>
+                    <input type="text" formControlName="code" placeholder="Short code">
+                  </div>
+
+                  <div class="field">
+                    <label>Sort order</label>
+                    <input type="number" formControlName="sort_order" placeholder="0">
+                  </div>
+                </div>
+
+                @if (selectedNode()?.level && selectedNode()!.level > 1) {
+                  <div class="field">
+                    <label>Move to different parent</label>
+                    <select formControlName="parent_id">
+                      <option [ngValue]="null" disabled>Select parent...</option>
+                      <option *ngFor="let group of availableParents()" [ngValue]="group.id">{{ group.name }}</option>
+                    </select>
+                    <p class="note">Moving a node preserves item category IDs and updates the category path.</p>
+                  </div>
+                }
+
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <h4 class="mb-4 text-xs font-bold uppercase tracking-widest text-slate-500">Defaults for new items</h4>
+                  <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <div class="field">
+                      <label>Default HSN code</label>
+                      <input type="text" formControlName="default_hsn" placeholder="HSN/SAC code">
+                      <p class="note">Items inherit this HSN when their own HSN is blank.</p>
+                    </div>
+
+                    <div class="field">
+                      <label>Default unit of measure</label>
+                      <select formControlName="default_uom">
+                        <option value="">Select UOM...</option>
+                        <option value="PCS">PCS</option>
+                        <option value="Pieces">Pieces</option>
+                        <option value="Kg">Kg</option>
+                        <option value="Metres">Metres</option>
+                        <option value="Litre">Litre</option>
+                        <option value="Box">Box</option>
+                        <option value="Pack">Pack</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="field mt-4">
+                    <label>Default GST rate</label>
+                    <div class="gst-row">
+                      @for (rate of [0, 5, 12, 18, 28]; track rate) {
+                        <button
+                          type="button"
+                          class="gst-chip"
+                          [class.active]="form.get('default_gst_rate')?.value === rate"
+                          (click)="form.patchValue({ default_gst_rate: rate })"
+                        >
+                          {{ rate }}%
+                        </button>
+                      }
+                      <button
+                        type="button"
+                        class="gst-chip"
+                        [class.active]="form.get('default_gst_rate')?.value === null"
+                        (click)="form.patchValue({ default_gst_rate: null })"
+                      >
+                        None
+                      </button>
+                    </div>
+                    <p class="note">Applied to newly-created items only. Existing item tax rates stay unchanged.</p>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <div class="field lg:col-span-2">
+                    <label>Description / notes</label>
+                    <textarea formControlName="description" placeholder="Internal notes about this category"></textarea>
+                  </div>
+
+                  <div class="field">
+                    <label>Status</label>
+                    <select formControlName="is_active">
+                      <option [ngValue]="true">Active</option>
+                      <option [ngValue]="false">Inactive</option>
+                    </select>
+                  </div>
+
+                  <div class="field">
+                    <label>Allow items directly?</label>
+                    <select formControlName="allow_items">
+                      <option [ngValue]="true">Yes, items can be in this node</option>
+                      <option [ngValue]="false">No, container only</option>
+                    </select>
+                  </div>
+                </div>
+              </form>
             </div>
-
-            <div class="divider"></div>
-
-            <div class="field">
-              <label>Description / notes</label>
-              <textarea formControlName="description"></textarea>
-            </div>
-
-            <div class="two">
-              <div class="field">
-                <label>Status</label>
-                <select formControlName="is_active">
-                  <option [value]="true">Active</option>
-                  <option [value]="false">Inactive</option>
-                </select>
+          } @else {
+            <div class="flex h-full min-h-[520px] items-center justify-center p-12 text-center">
+              <div class="max-w-sm">
+                <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                  <mat-icon class="!h-8 !w-8 !text-[32px]">account_tree</mat-icon>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800">Select a category to edit</h3>
+                <p class="mt-2 text-sm font-medium text-slate-500">
+                  Choose a category from the tree, or create a new group to start organizing inventory.
+                </p>
+                <button type="button" class="sa-btn primary mt-5" (click)="openCreateForm(null)">
+                  <mat-icon class="icon-sm">add</mat-icon>
+                  Add Group
+                </button>
               </div>
-              <div class="field">
-                <label>Allow items directly?</label>
-                <select formControlName="allow_items">
-                  <option [value]="true">Yes — items can be in this node</option>
-                  <option [value]="false">No — container only</option>
-                </select>
-              </div>
             </div>
-          </form>
-        </div>
-
-        <div class="empty-state" *ngIf="!selectedNode() && !isCreating()">
-          <p class="text-sm text-slate-500">Select a category to edit</p>
-        </div>
+          }
+        </section>
       </div>
     </div>
   `,
   styles: [`
-    .layout {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 12px;
-      padding: 16px;
-      height: calc(100vh - 100px);
-    }
+    :host { display: block; }
 
-    .panel {
-      border: 0.5px solid var(--color-border-tertiary);
-      border-radius: var(--border-radius-lg);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .left-panel {
-      background: var(--color-background-primary);
-    }
-
-    .right-panel {
-      background: var(--color-background-primary);
-    }
-
-    .panel-head {
-      background: var(--color-background-secondary);
-      padding: 12px;
-      border-bottom: 0.5px solid var(--color-border-tertiary);
-      display: flex;
+    .sa-btn {
       align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .panel-title {
-      font-size: 13px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .form-area {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-    }
-
-    .empty-state {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      color: var(--color-text-tertiary);
-    }
-
-    .btn {
-      padding: 6px 12px;
-      border-radius: var(--border-radius-md);
-      font-size: 12px;
-      border: 0.5px solid var(--color-border-secondary);
-      background: var(--color-background-primary);
-      cursor: pointer;
-      color: var(--color-text-primary);
-      transition: all 0.2s ease;
-    }
-
-    .btn:hover:not(:disabled) {
-      background: var(--color-background-secondary);
-    }
-
-    .btn.primary {
-      background: #1D9E75;
-      color: white;
-      border-color: #1D9E75;
-    }
-
-    .btn.primary:hover:not(:disabled) {
-      background: #0F6E56;
-    }
-
-    .btn.danger {
-      color: #A32D2D;
-      border-color: #F7C1C1;
-    }
-
-    .btn.danger:hover:not(:disabled) {
-      background: #FEF0F0;
-    }
-
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .action-row {
-      display: flex;
-      gap: 8px;
-    }
-
-    .badge {
+      border: 1px solid transparent;
+      border-radius: 0.5rem;
       display: inline-flex;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 500;
-      margin-left: 8px;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      gap: 0.4rem;
+      justify-content: center;
+      min-height: 2.25rem;
+      padding: 0.5rem 0.9rem;
+      transition: all 160ms ease;
     }
 
-    .badge-purple {
-      background: #EEEDFE;
-      color: #534AB7;
+    .sa-btn.primary {
+      background: #4f46e5;
+      border-color: #4f46e5;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+      color: #fff;
     }
 
-    .badge-teal {
-      background: #E1F5EE;
-      color: #0F6E56;
+    .sa-btn.primary:hover:not(:disabled) {
+      background: #4338ca;
+      border-color: #4338ca;
     }
 
-    .badge-blue {
-      background: #E6F1FB;
-      color: #185FA5;
+    .sa-btn.secondary {
+      background: #fff;
+      border-color: #cbd5e1;
+      color: #475569;
     }
 
-    .info-box {
-      background: var(--color-background-secondary);
-      border-radius: var(--border-radius-md);
-      padding: 12px;
-      margin-bottom: 16px;
+    .sa-btn.secondary:hover:not(:disabled) {
+      background: #f8fafc;
+      color: #0f172a;
     }
 
-    .info-label {
-      font-size: 11px;
-      color: var(--color-text-tertiary);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 8px;
+    .sa-btn.danger {
+      background: #fff;
+      border-color: #fecdd3;
+      color: #be123c;
     }
 
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      margin-bottom: 4px;
+    .sa-btn.danger:hover:not(:disabled) {
+      background: #fff1f2;
     }
 
-    .info-val {
-      font-weight: 500;
+    .sa-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .icon-sm {
+      font-size: 1rem;
+      height: 1rem;
+      width: 1rem;
     }
 
     .field {
-      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
     }
 
     .field label {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--color-text-secondary);
-      display: block;
-      margin-bottom: 4px;
+      color: #475569;
+      font-size: 0.75rem;
+      font-weight: 700;
     }
 
     .field input,
     .field select,
     .field textarea {
-      width: 100%;
-      padding: 8px 10px;
-      font-size: 12px;
-      border: 0.5px solid var(--color-border-secondary);
-      border-radius: var(--border-radius-md);
-      background: var(--color-background-primary);
-      color: var(--color-text-primary);
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.5rem;
+      color: #0f172a;
       font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.6rem 0.75rem;
+      transition: all 160ms ease;
+      width: 100%;
     }
 
     .field textarea {
-      resize: none;
-      height: 60px;
+      min-height: 5rem;
+      resize: vertical;
     }
 
     .field input:focus,
     .field select:focus,
     .field textarea:focus {
+      background: #fff;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
       outline: none;
-      border-color: #1D9E75;
-      box-shadow: 0 0 0 2px rgba(29, 158, 117, 0.1);
-    }
-
-    .two {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .divider {
-      height: 0.5px;
-      background: var(--color-border-tertiary);
-      margin: 16px 0;
     }
 
     .gst-row {
       display: flex;
-      gap: 8px;
       flex-wrap: wrap;
-      margin-bottom: 8px;
+      gap: 0.5rem;
     }
 
     .gst-chip {
-      padding: 4px 10px;
-      border-radius: 8px;
-      font-size: 12px;
-      border: 0.5px solid var(--color-border-secondary);
-      background: var(--color-background-primary);
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      color: #475569;
       cursor: pointer;
-      color: var(--color-text-secondary);
-      transition: all 0.2s ease;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 0.4rem 0.75rem;
+      transition: all 160ms ease;
     }
 
     .gst-chip:hover {
-      border-color: #1D9E75;
-      background: var(--color-background-secondary);
+      border-color: #818cf8;
+      color: #3730a3;
     }
 
     .gst-chip.active {
-      background: #E1F5EE;
-      color: #0F6E56;
-      border-color: #9FE1CB;
+      background: #eef2ff;
+      border-color: #818cf8;
+      color: #4338ca;
     }
 
     .note {
-      font-size: 11px;
-      color: var(--color-text-secondary);
-      padding: 6px 10px;
-      background: var(--color-background-secondary);
-      border-radius: var(--border-radius-md);
-      margin-top: 4px;
+      color: #64748b;
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin-top: 0.25rem;
     }
-  `]
+  `],
 })
 export class CategoryManagerComponent implements OnInit {
   private categoryService = inject(CategoryService);
@@ -523,7 +433,6 @@ export class CategoryManagerComponent implements OnInit {
   parentName = computed(() => {
     const node = this.selectedNode();
     if (!node?.parent_id) return '';
-    // Get parent name from tree traversal
     return this.findNodeName(this.tree(), node.parent_id);
   });
 
@@ -536,9 +445,8 @@ export class CategoryManagerComponent implements OnInit {
   availableParents = computed(() => {
     const node = this.selectedNode();
     if (!node || node.level === 1) return [];
-    
-    // Return all groups + categories, excluding current node and its descendants
-    const allParents: any[] = [];
+
+    const allParents: CategoryTreeNode[] = [];
     const collect = (nodes: CategoryTreeNode[]) => {
       for (const n of nodes) {
         if (n.id !== node.id && n.level < node.level) {
@@ -598,7 +506,7 @@ export class CategoryManagerComponent implements OnInit {
           sort_order: data.sort_order,
           parent_id: data.parent_id,
           default_hsn: data.default_hsn,
-          default_gst_rate: data.default_gst_rate,
+          default_gst_rate: data.default_gst_rate == null ? null : Number(data.default_gst_rate),
           default_uom: data.default_uom,
           description: data.description,
           is_active: data.is_active,
@@ -631,7 +539,7 @@ export class CategoryManagerComponent implements OnInit {
 
   loadStockValue(categoryId: string): void {
     this.categoryService.getStockValue(categoryId).subscribe({
-      next: (data) => this.stockValue.set(data.stock_value),
+      next: (data) => this.stockValue.set(Number(data.stock_value ?? 0)),
       error: () => this.stockValue.set(0),
     });
   }
@@ -639,12 +547,21 @@ export class CategoryManagerComponent implements OnInit {
   openCreateForm(parentNode: CategoryTreeNode | null): void {
     this.selectedNode.set(null);
     this.selectedId.set(null);
+    this.breadcrumb.set([]);
+    this.itemCount.set(0);
+    this.stockValue.set(0);
     this.isCreating.set(true);
-    this.form.reset({ 
+    this.form.reset({
       name: '',
+      code: '',
+      sort_order: 0,
       parent_id: parentNode?.id || null,
+      default_hsn: '',
+      default_gst_rate: null,
+      default_uom: 'PCS',
       description: '',
-      is_active: true
+      is_active: true,
+      allow_items: true,
     });
   }
 
@@ -666,6 +583,7 @@ export class CategoryManagerComponent implements OnInit {
         this.toast.success(node ? 'Category updated' : 'Category created');
         this.loadTree();
         this.selectedNode.set(null);
+        this.selectedId.set(null);
         this.isCreating.set(false);
       },
       error: (err) => {
@@ -687,6 +605,7 @@ export class CategoryManagerComponent implements OnInit {
         this.toast.success('Category deleted');
         this.loadTree();
         this.selectedNode.set(null);
+        this.selectedId.set(null);
       },
       error: (err) => {
         this.toast.error(err.error?.message || 'Failed to delete category');
@@ -702,21 +621,23 @@ export class CategoryManagerComponent implements OnInit {
   }
 
   onBreadcrumbNavigate(item: BreadcrumbItem): void {
+    this.selectedId.set(item.id);
     this.loadCategoryDetails(item.id);
   }
 
   getLevelLabel(): string {
     const level = this.selectedNode()?.level || 1;
-    if (level === 1) return 'Group (level 1)';
-    if (level === 2) return 'Category (level 2)';
-    return `Sub-category (level ${level})`;
+    if (level === 1) return 'Group (Level 1)';
+    if (level === 2) return 'Category (Level 2)';
+    return `Sub-category (Level ${level})`;
   }
 
   getLevelBadgeClass(): string {
+    const base = 'inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold';
     const level = this.selectedNode()?.level || 1;
-    if (level === 1) return 'badge badge-purple';
-    if (level === 2) return 'badge badge-teal';
-    return 'badge badge-blue';
+    if (level === 1) return `${base} bg-indigo-50 text-indigo-700`;
+    if (level === 2) return `${base} bg-emerald-50 text-emerald-700`;
+    return `${base} bg-blue-50 text-blue-700`;
   }
 
   private findNodeName(nodes: CategoryTreeNode[], targetId: string): string {

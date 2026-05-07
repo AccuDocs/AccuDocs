@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal, computed, forwardRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, forwardRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
@@ -18,213 +18,242 @@ export interface CategoryTreeNode {
   stock_value?: number;
 }
 
-/**
- * Recursive node component (declared first so the parent can reference it)
- */
 @Component({
   selector: 'app-category-tree-node',
   standalone: true,
   imports: [CommonModule, MatIconModule, forwardRef(() => CategoryTreeNodeComponent)],
   template: `
     <div class="node-container">
-      <div 
-        class="node-row"
+      <button
+        type="button"
+        class="node-row group"
         [class.selected]="selectedId === node.id"
         (click)="selectNode()"
-        (mouseenter)="showActions = true"
-        (mouseleave)="showActions = false"
       >
-        <!-- Toggle expand/collapse -->
-        <button 
+        <span
           class="toggle-btn"
           (click)="toggleExpand($event)"
           *ngIf="(node.children?.length || 0) > 0"
         >
           <mat-icon class="toggle-icon">{{ isExpanded ? 'expand_more' : 'chevron_right' }}</mat-icon>
-        </button>
-        <div class="toggle-btn" *ngIf="!(node.children && node.children.length > 0)"></div>
+        </span>
+        <span class="toggle-btn placeholder" *ngIf="!(node.children && node.children.length > 0)"></span>
 
-        <!-- Level dot (color-coded) -->
-        <div [class]="'dot ' + getDotClass()"></div>
+        <span [class]="'dot ' + getDotClass()"></span>
 
-        <!-- Node label -->
-        <span class="node-label">{{ node.name }}</span>
-        <span class="node-code" *ngIf="node.code">({{ node.code }})</span>
-
-        <!-- Item count -->
-        <span class="item-count" *ngIf="(node.item_count || 0) > 0">
-          {{ node.item_count }} items
+        <span class="node-copy">
+          <span class="node-line">
+            <span class="node-label">{{ node.name }}</span>
+            <span class="node-code" *ngIf="node.code">{{ node.code }}</span>
+          </span>
+          <span class="node-meta">
+            Level {{ node.level }}
+            <span *ngIf="node.default_hsn">HSN {{ node.default_hsn }}</span>
+            <span *ngIf="node.default_gst_rate">{{ node.default_gst_rate }}% GST</span>
+          </span>
         </span>
 
-        <!-- Action buttons (on hover) -->
-        <div class="actions" *ngIf="showActions">
-          <button 
-            class="action-btn edit"
-            title="Edit"
-            (click)="onEdit($event)"
-          >
-            <mat-icon>edit</mat-icon>
-          </button>
-          <button 
-            class="action-btn add"
-            title="Add child"
-            (click)="onAddChild($event)"
-          >
-            <mat-icon>add</mat-icon>
-          </button>
-          <button 
-            class="action-btn delete"
-            title="Delete"
-            (click)="onDelete($event)"
-          >
-            <mat-icon>delete</mat-icon>
-          </button>
-        </div>
-      </div>
+        <span class="item-count" *ngIf="(node.item_count || 0) > 0">
+          {{ node.item_count }}
+        </span>
 
-      <!-- Children (recursive) -->
+        <span
+          class="add-child"
+          title="Add child"
+          (click)="onAddChild($event)"
+        >
+          <mat-icon>add</mat-icon>
+        </span>
+      </button>
+
       <div class="children" *ngIf="isExpanded && (node.children?.length || 0) > 0">
-        <div *ngFor="let child of node.children">
-          <app-category-tree-node 
-            [node]="child"
-            [selectedId]="selectedId"
-            (nodeSelect)="nodeSelect.emit($event)"
-            (nodeExpand)="nodeExpand.emit($event)"
-            (addChild)="addChild.emit($event)"
-          ></app-category-tree-node>
-        </div>
+        <app-category-tree-node
+          *ngFor="let child of node.children"
+          [node]="child"
+          [selectedId]="selectedId"
+          (nodeSelect)="nodeSelect.emit($event)"
+          (nodeExpand)="nodeExpand.emit($event)"
+          (addChild)="addChild.emit($event)"
+        ></app-category-tree-node>
       </div>
     </div>
   `,
   styles: [`
     .node-container {
-      margin-bottom: 2px;
+      margin-bottom: 0.35rem;
     }
 
     .node-row {
-      display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 8px;
-      border-radius: var(--border-radius-md);
+      background: #fff;
+      border: 1px solid transparent;
+      border-radius: 0.75rem;
+      color: #334155;
       cursor: pointer;
-      border: 0.5px solid transparent;
-      transition: all 0.2s ease;
+      display: flex;
+      gap: 0.55rem;
+      padding: 0.65rem 0.75rem;
+      text-align: left;
+      transition: all 160ms ease;
+      width: 100%;
     }
 
     .node-row:hover {
-      background: var(--color-background-secondary);
+      background: #f8fafc;
+      border-color: #e2e8f0;
+      transform: translateY(-1px);
     }
 
     .node-row.selected {
-      background: #E1F5EE;
-      border-color: #9FE1CB;
+      background: #eef2ff;
+      border-color: #a5b4fc;
+      box-shadow: 0 8px 24px rgba(79, 70, 229, 0.08);
     }
 
     .toggle-btn {
-      width: 20px;
-      height: 20px;
-      display: flex;
       align-items: center;
+      border-radius: 999px;
+      color: #94a3b8;
+      display: inline-flex;
+      flex: 0 0 auto;
+      height: 1.25rem;
       justify-content: center;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      color: var(--color-text-tertiary);
+      width: 1.25rem;
+    }
+
+    .toggle-btn:not(.placeholder):hover {
+      background: #e2e8f0;
+      color: #475569;
     }
 
     .toggle-icon {
-      font-size: 16px;
-      width: 16px;
-      height: 16px;
+      font-size: 1rem;
+      height: 1rem;
+      width: 1rem;
     }
 
     .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
+      border-radius: 999px;
+      flex: 0 0 auto;
+      height: 0.55rem;
+      width: 0.55rem;
     }
 
     .dot.group {
-      background: #7F77DD;
+      background: #6366f1;
+      box-shadow: 0 0 0 4px #eef2ff;
     }
 
     .dot.category {
-      background: #1D9E75;
+      background: #10b981;
+      box-shadow: 0 0 0 4px #ecfdf5;
     }
 
     .dot.subcategory {
-      background: #378ADD;
+      background: #0ea5e9;
+      box-shadow: 0 0 0 4px #e0f2fe;
+    }
+
+    .node-copy {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 0.15rem;
+      min-width: 0;
+    }
+
+    .node-line {
+      align-items: center;
+      display: flex;
+      gap: 0.4rem;
+      min-width: 0;
     }
 
     .node-label {
-      font-size: 12px;
-      flex: 1;
-      font-weight: 500;
+      color: #0f172a;
+      font-size: 0.875rem;
+      font-weight: 800;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .node-code {
-      font-size: 11px;
-      color: var(--color-text-tertiary);
-      margin-left: 4px;
+      background: #f1f5f9;
+      border-radius: 999px;
+      color: #64748b;
+      flex: 0 0 auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 0.12rem 0.4rem;
+    }
+
+    .node-meta {
+      align-items: center;
+      color: #94a3b8;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      font-size: 0.6875rem;
+      font-weight: 700;
     }
 
     .item-count {
-      font-size: 10px;
-      color: var(--color-text-tertiary);
-      background: var(--color-background-secondary);
-      padding: 1px 6px;
-      border-radius: 8px;
-    }
-
-    .actions {
-      display: flex;
-      gap: 2px;
-    }
-
-    .action-btn {
-      width: 24px;
-      height: 24px;
-      display: flex;
       align-items: center;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 999px;
+      color: #475569;
+      display: inline-flex;
+      flex: 0 0 auto;
+      font-size: 0.6875rem;
+      font-weight: 900;
+      height: 1.45rem;
       justify-content: center;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      color: var(--color-text-tertiary);
-      transition: all 0.2s ease;
-      padding: 0;
+      min-width: 1.45rem;
+      padding: 0 0.35rem;
     }
 
-    .action-btn mat-icon {
-      font-size: 14px;
-      width: 14px;
-      height: 14px;
+    .add-child {
+      align-items: center;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      color: #64748b;
+      display: inline-flex;
+      flex: 0 0 auto;
+      height: 1.7rem;
+      justify-content: center;
+      opacity: 0;
+      transition: all 160ms ease;
+      width: 1.7rem;
     }
 
-    .action-btn:hover {
-      color: white;
-      border-radius: 4px;
+    .node-row:hover .add-child,
+    .node-row.selected .add-child {
+      opacity: 1;
     }
 
-    .action-btn.edit:hover {
-      background: #378ADD;
+    .add-child:hover {
+      background: #4f46e5;
+      border-color: #4f46e5;
+      color: #fff;
     }
 
-    .action-btn.add:hover {
-      background: #1D9E75;
-    }
-
-    .action-btn.delete:hover {
-      background: #E74C3C;
+    .add-child mat-icon {
+      font-size: 1rem;
+      height: 1rem;
+      width: 1rem;
     }
 
     .children {
-      padding-left: 18px;
+      border-left: 1px dashed #cbd5e1;
+      margin-left: 1.35rem;
+      margin-top: 0.35rem;
+      padding-left: 0.75rem;
     }
-  `]
+  `],
 })
 export class CategoryTreeNodeComponent {
   @Input() node!: CategoryTreeNode;
@@ -234,7 +263,6 @@ export class CategoryTreeNodeComponent {
   @Output() addChild = new EventEmitter<CategoryTreeNode>();
 
   isExpanded = false;
-  showActions = false;
 
   selectNode(): void {
     this.nodeSelect.emit(this.node);
@@ -246,19 +274,9 @@ export class CategoryTreeNodeComponent {
     this.nodeExpand.emit(this.node.id);
   }
 
-  onEdit(event: MouseEvent): void {
-    event.stopPropagation();
-    // Parent component will handle edit
-  }
-
   onAddChild(event: MouseEvent): void {
     event.stopPropagation();
     this.addChild.emit(this.node);
-  }
-
-  onDelete(event: MouseEvent): void {
-    event.stopPropagation();
-    // Parent component will handle delete
   }
 
   getDotClass(): string {
@@ -275,28 +293,34 @@ export class CategoryTreeNodeComponent {
   template: `
     <div class="tree-container">
       <div class="tree-search">
-        <input 
-          type="text" 
-          placeholder="🔍 Search categories..."
-          [(ngModel)]="searchQuery"
-          class="search-input"
-        >
-      </div>
-      
-      <div class="tree" *ngIf="filteredTree().length > 0">
-        <div *ngFor="let node of filteredTree()">
-          <app-category-tree-node 
-            [node]="node"
-            [selectedId]="selectedId()"
-            (nodeSelect)="onNodeSelect($event)"
-            (nodeExpand)="onNodeExpand($event)"
-            (addChild)="onAddChild($event)"
-          ></app-category-tree-node>
+        <div class="search-wrap">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            placeholder="Search categories..."
+            [(ngModel)]="searchQuery"
+            class="search-input"
+          >
         </div>
       </div>
 
+      <div class="tree" *ngIf="filteredTree().length > 0">
+        <app-category-tree-node
+          *ngFor="let node of filteredTree(); trackBy: trackNode"
+          [node]="node"
+          [selectedId]="selectedId()"
+          (nodeSelect)="onNodeSelect($event)"
+          (nodeExpand)="onNodeExpand($event)"
+          (addChild)="onAddChild($event)"
+        ></app-category-tree-node>
+      </div>
+
       <div class="empty-state" *ngIf="filteredTree().length === 0">
-        <p class="text-sm text-slate-500">No categories found</p>
+        <div class="empty-icon">
+          <mat-icon>inventory_2</mat-icon>
+        </div>
+        <p class="empty-title">No categories found</p>
+        <p class="empty-copy">Try a different search term or add a new category group.</p>
       </div>
     </div>
   `,
@@ -304,44 +328,102 @@ export class CategoryTreeNodeComponent {
     .tree-container {
       display: flex;
       flex-direction: column;
-      height: 100%;
+      min-height: 31rem;
     }
 
     .tree-search {
-      padding: 8px;
-      border-bottom: 0.5px solid var(--color-border-tertiary);
+      border-bottom: 1px solid #e2e8f0;
+      padding: 1rem;
+    }
+
+    .search-wrap {
+      position: relative;
+    }
+
+    .search-icon {
+      color: #94a3b8;
+      font-size: 1rem;
+      height: 1rem;
+      left: 0.75rem;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1rem;
     }
 
     .search-input {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.75rem;
+      color: #0f172a;
+      font-size: 0.875rem;
+      font-weight: 600;
+      outline: none;
+      padding: 0.65rem 0.85rem 0.65rem 2.25rem;
+      transition: all 160ms ease;
       width: 100%;
-      padding: 6px 9px;
-      font-size: 12px;
-      border: 0.5px solid var(--color-border-secondary);
-      border-radius: var(--border-radius-md);
-      background: var(--color-background-primary);
-      color: var(--color-text-primary);
+    }
+
+    .search-input::placeholder {
+      color: #94a3b8;
+      font-weight: 500;
     }
 
     .search-input:focus {
-      outline: none;
-      border-color: #1D9E75;
-      box-shadow: 0 0 0 2px rgba(29, 158, 117, 0.1);
+      background: #fff;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
     }
 
     .tree {
       flex: 1;
       overflow-y: auto;
-      padding: 8px;
+      padding: 1rem;
     }
 
     .empty-state {
-      display: flex;
       align-items: center;
+      color: #64748b;
+      display: flex;
+      flex: 1;
+      flex-direction: column;
       justify-content: center;
-      padding: 20px;
+      padding: 2.5rem 1.5rem;
       text-align: center;
     }
-  `]
+
+    .empty-icon {
+      align-items: center;
+      background: #f1f5f9;
+      border-radius: 999px;
+      color: #94a3b8;
+      display: inline-flex;
+      height: 3.5rem;
+      justify-content: center;
+      margin-bottom: 1rem;
+      width: 3.5rem;
+    }
+
+    .empty-icon mat-icon {
+      font-size: 1.75rem;
+      height: 1.75rem;
+      width: 1.75rem;
+    }
+
+    .empty-title {
+      color: #334155;
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin: 0;
+    }
+
+    .empty-copy {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      margin: 0.35rem 0 0;
+      max-width: 16rem;
+    }
+  `],
 })
 export class CategoryTreeComponent {
   @Input() nodes: CategoryTreeNode[] = [];
@@ -352,14 +434,18 @@ export class CategoryTreeComponent {
   searchQuery = '';
   expandedNodes = new Set<string>();
 
-  filteredTree = computed(() => {
+  filteredTree(): CategoryTreeNode[] {
     if (!this.searchQuery.trim()) {
       return this.nodes;
     }
 
     const query = this.searchQuery.toLowerCase();
     return this.filterNodes(this.nodes, query);
-  });
+  }
+
+  trackNode(_: number, node: CategoryTreeNode): string {
+    return node.id;
+  }
 
   onNodeSelect(node: CategoryTreeNode | any): void {
     if (typeof node === 'string') return;
@@ -383,11 +469,13 @@ export class CategoryTreeComponent {
 
   private filterNodes(nodes: CategoryTreeNode[], query: string): CategoryTreeNode[] {
     return nodes
-      .filter(node => node.name.toLowerCase().includes(query) || (node.code?.toLowerCase().includes(query)))
       .map(node => ({
         ...node,
         children: node.children ? this.filterNodes(node.children, query) : [],
       }))
-      .filter(node => node.name.toLowerCase().includes(query) || node.children!.length > 0);
+      .filter(node => {
+        const matchesSelf = node.name.toLowerCase().includes(query) || !!node.code?.toLowerCase().includes(query);
+        return matchesSelf || (node.children?.length ?? 0) > 0;
+      });
   }
 }
