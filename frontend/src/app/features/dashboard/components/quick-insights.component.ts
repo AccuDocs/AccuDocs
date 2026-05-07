@@ -8,68 +8,40 @@ import { heroShieldCheckSolid, heroDocumentTextSolid, heroBoltSolid } from '@ng-
   standalone: true,
   imports: [CommonModule, NgIconComponent],
   template: `
-    <div class="space-y-6">
-      <!-- Data Integrity Card (Blue accent panel) -->
-      <div
-        class="bg-[#0074c9] dark:bg-blue-700 rounded-3xl text-white relative overflow-hidden group transition-transform duration-300 hover:scale-[1.02]"
-        style="padding: 28px 32px; box-shadow: 0 20px 40px -8px rgba(0, 116, 201, 0.3);"
-      >
-        <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none"></div>
-        <div class="relative z-10 space-y-5">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-              <ng-icon name="heroShieldCheckSolid" size="20"></ng-icon>
-            </div>
-            <h4 class="text-lg font-extrabold">Data Integrity</h4>
+    <div class="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <section class="relative overflow-hidden rounded-[26px] bg-[#0074c9] p-6 text-white shadow-lg shadow-blue-700/20">
+        <div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10"></div>
+        <div class="relative">
+          <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15">
+            <ng-icon name="heroShieldCheckSolid" size="22"></ng-icon>
           </div>
-          <p class="text-blue-100 font-medium text-sm leading-relaxed">
-            Encryption 256-bit active. All data secured with GDPR-compliant protocols.
+          <p class="text-[10px] font-black uppercase tracking-[0.22em] text-blue-100">Workspace confidence</p>
+          <h4 class="mt-1 text-2xl font-black">94.2%</h4>
+          <p class="mt-3 text-sm font-semibold leading-6 text-blue-100">
+            Security posture is healthy. Next improvement is operational completeness: reminders, approvals, OCR, and audit automation.
           </p>
-          <div class="space-y-2.5">
-            <div class="flex justify-between items-end">
-              <span class="text-blue-100 text-[10px] font-bold uppercase tracking-widest">Confidence Score</span>
-              <span class="text-2xl font-black leading-none">94.2%</span>
-            </div>
-            <div class="h-2.5 bg-white/20 rounded-full overflow-hidden">
-              <div class="w-[94%] h-full bg-white rounded-full transition-all duration-1000"></div>
-            </div>
+          <div class="mt-5 h-2.5 overflow-hidden rounded-full bg-white/20">
+            <div class="h-full w-[94%] rounded-full bg-white"></div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Quick Stats Card -->
-      <div
-        class="bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-200 dark:border-slate-700/50"
-        style="padding: 28px 32px; box-shadow: 0 4px 24px -4px rgba(15, 23, 42, 0.05);"
-      >
-        <h4 class="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">Quick Stats</h4>
-        <p class="text-slate-400 font-semibold text-[10px] uppercase tracking-widest mt-1 mb-5">Workspace Overview</p>
+      <section class="rounded-[26px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+        <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">What we can add next</p>
+        <h4 class="mt-1 text-lg font-black text-slate-950 dark:text-white">ERP dashboard upgrades</h4>
 
-        <div class="space-y-0 divide-y divide-slate-100 dark:divide-slate-700/50">
-          <!-- Insight rows -->
-          @for (insight of insights; track insight.label) {
-            <div class="flex items-center justify-between py-4">
-              <div class="flex items-center gap-3">
-                <div
-                  class="w-9 h-9 rounded-xl flex items-center justify-center"
-                  [style.background]="insight.bg"
-                >
-                  <ng-icon [name]="insight.icon" size="18" [style.color]="insight.color"></ng-icon>
-                </div>
-                <span class="text-[13px] font-semibold text-slate-600 dark:text-slate-300">{{ insight.label }}</span>
+        <div class="mt-5 grid gap-4 md:grid-cols-3">
+          @for (item of roadmap; track item.label) {
+            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/60">
+              <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-white dark:bg-slate-900" [style.color]="item.color">
+                <ng-icon [name]="item.icon" size="17"></ng-icon>
               </div>
-              <span class="text-sm font-extrabold text-slate-900 dark:text-white">{{ insight.value }}</span>
+              <h5 class="mt-3 text-sm font-black text-slate-900 dark:text-white">{{ item.label }}</h5>
+              <p class="mt-1 text-xs font-semibold leading-5 text-slate-500">{{ item.description }}</p>
             </div>
           }
         </div>
-
-        <button
-          class="w-full mt-5 py-3.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-bold text-sm hover:bg-slate-800 dark:hover:bg-slate-100 transition-all active:scale-[0.97]"
-          style="box-shadow: 0 8px 24px -4px rgba(0,0,0,0.15);"
-        >
-          Generate Report
-        </button>
-      </div>
+      </section>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -78,9 +50,24 @@ import { heroShieldCheckSolid, heroDocumentTextSolid, heroBoltSolid } from '@ng-
   ]
 })
 export class QuickInsightsComponent {
-  insights = [
-    { label: 'Documents this week', value: '12', icon: 'heroDocumentTextSolid', bg: '#eff6ff', color: '#0074c9' },
-    { label: 'Active clients', value: '8', icon: 'heroBoltSolid', bg: '#f0fdf4', color: '#16a34a' },
-    { label: 'Avg. turnaround', value: '~2h', icon: 'heroShieldCheckSolid', bg: '#fefce8', color: '#d97706' },
+  roadmap = [
+    {
+      label: 'Today command queue',
+      description: 'Unify due tasks, overdue deadlines, pending documents, and client follow-ups into one priority list.',
+      icon: 'heroBoltSolid',
+      color: '#0074c9',
+    },
+    {
+      label: 'Document aging analytics',
+      description: 'Show which clients are blocking filings because documents are pending for too long.',
+      icon: 'heroDocumentTextSolid',
+      color: '#16a34a',
+    },
+    {
+      label: 'Firm health score',
+      description: 'Score compliance readiness using overdue work, missing files, active clients, and audit activity.',
+      icon: 'heroShieldCheckSolid',
+      color: '#d97706',
+    },
   ];
 }

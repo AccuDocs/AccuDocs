@@ -2,58 +2,47 @@ import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { heroClockSolid, heroCloudArrowUpSolid, heroDocumentArrowDownSolid } from '@ng-icons/heroicons/solid';
+import { heroCloudArrowUpSolid, heroDocumentArrowDownSolid } from '@ng-icons/heroicons/solid';
 
 @Component({
   selector: 'app-welcome-header',
   standalone: true,
   imports: [CommonModule, RouterLink, NgIconComponent],
   template: `
-    <header class="flex flex-col lg:flex-row lg:items-end justify-between gap-8" style="margin-bottom: 48px;">
+    <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <!-- Section label with underline accent -->
-        <div class="flex items-center gap-2 text-[#0074c9] dark:text-blue-400 font-bold text-[11px] uppercase" style="letter-spacing: 0.12em;">
-          DASHBOARD
-        </div>
-        <div class="w-8 h-[3px] bg-[#0074c9] dark:bg-blue-400 rounded-full mt-2 mb-4"></div>
-
-        <!-- Greeting headline -->
-        <h1
-          class="text-4xl font-black text-slate-900 dark:text-white"
-          style="letter-spacing: -0.03em; line-height: 1.1;"
-        >
-          Good {{ getGreeting() }}, <span class="text-[#0074c9] dark:text-blue-400">{{ userName() }}</span>
+        <h1 class="text-[28px] font-bold tracking-tight text-slate-900 dark:text-white">
+          Good {{ getGreeting() }}, <span class="text-primary-600 dark:text-primary-300">{{ userName() || 'Admin' }}</span>
         </h1>
-        <p class="text-[15px] font-medium text-slate-500 dark:text-slate-400 mt-2">
+        <p class="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">
           Here's what's happening across your workspace today.
         </p>
+        <div class="mt-2 h-[3px] w-10 rounded-full bg-primary-600 dark:bg-primary-300"></div>
       </div>
 
-      <!-- Action buttons -->
       <div class="flex flex-wrap gap-3">
-        <button
-          class="btn-secondary flex items-center gap-2"
-          style="height: 48px; padding: 0 24px;"
+        <a
+          class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition-colors hover:border-primary-200 hover:bg-primary-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
           routerLink="/logs"
         >
-          <ng-icon name="heroDocumentArrowDownSolid" size="18"></ng-icon>
+          <ng-icon name="heroDocumentArrowDownSolid" size="17"></ng-icon>
           Export Report
-        </button>
-        <button
-          class="btn-primary flex items-center gap-2"
-          style="height: 48px; padding: 0 28px;"
+        </a>
+        <a
+          class="inline-flex h-10 items-center gap-2 rounded-lg bg-primary-600 px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-700"
           routerLink="/documents"
           [queryParams]="{action: 'upload'}"
         >
-          <ng-icon name="heroCloudArrowUpSolid" size="18"></ng-icon>
+          <ng-icon name="heroCloudArrowUpSolid" size="17"></ng-icon>
           New Document
-        </button>
+        </a>
       </div>
     </header>
   `,
+  styles: [`:host { display: block; }`],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
-    provideIcons({ heroClockSolid, heroCloudArrowUpSolid, heroDocumentArrowDownSolid })
+    provideIcons({ heroCloudArrowUpSolid, heroDocumentArrowDownSolid })
   ]
 })
 export class WelcomeHeaderComponent {

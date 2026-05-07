@@ -11,86 +11,77 @@ import { ComplianceService, ClientDeadlineAssignment, ComplianceStats } from '@c
   imports: [CommonModule, RouterLink, NgIconComponent],
   providers: [provideIcons({ heroCalendarDaysSolid, heroArrowRightSolid })],
   template: `
-    <div
-      class="rounded-2xl overflow-hidden"
-      style="background: var(--card-bg); border: 1px solid var(--border-color); box-shadow: 0 4px 24px -4px rgba(0,0,0,0.06);"
-    >
-      <!-- Header -->
-      <div
-        class="flex items-center justify-between px-5 py-4"
-        style="border-bottom: 1px solid var(--border-color);"
-      >
-        <div class="flex items-center gap-2.5">
-          <div
-            class="w-8 h-8 rounded-lg flex items-center justify-center"
-            style="background: rgba(0, 116, 201, 0.1);"
-          >
-            <ng-icon name="heroCalendarDaysSolid" size="16" style="color: #0074c9;"></ng-icon>
+    <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+      <header class="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-[#0074c9] dark:bg-blue-950/40 dark:text-blue-300">
+            <ng-icon name="heroCalendarDaysSolid" size="17"></ng-icon>
           </div>
-          <h3 class="text-sm font-bold" style="color: var(--text-primary);">Deadlines This Week</h3>
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Compliance</p>
+            <h3 class="text-sm font-black text-slate-950 dark:text-white">Deadlines This Week</h3>
+          </div>
         </div>
         <a
           routerLink="/compliance"
-          class="flex items-center gap-1 text-xs font-semibold transition-all duration-200 hover:gap-2"
-          style="color: #0074c9;"
+          class="flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-2 text-xs font-bold text-[#0074c9] transition-colors hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300"
         >
           View All
           <ng-icon name="heroArrowRightSolid" size="12"></ng-icon>
         </a>
-      </div>
+      </header>
 
-      <!-- Stats Row -->
-      <div class="grid grid-cols-3 gap-0" style="border-bottom: 1px solid var(--border-color);">
-        <div class="px-4 py-3 text-center" style="border-right: 1px solid var(--border-color);">
-          <p class="text-lg font-bold" style="color: #f59e0b;">{{ stats()?.upcoming || 0 }}</p>
-          <p class="text-[10px] font-medium" style="color: var(--text-secondary);">Upcoming</p>
+      <div class="grid grid-cols-3 border-b border-slate-100 dark:border-slate-800">
+        <div class="border-r border-slate-100 px-4 py-3 text-center dark:border-slate-800">
+          <p class="text-lg font-black text-amber-500">{{ stats()?.upcoming || 0 }}</p>
+          <p class="text-[10px] font-bold text-slate-500">Upcoming</p>
         </div>
-        <div class="px-4 py-3 text-center" style="border-right: 1px solid var(--border-color);">
-          <p class="text-lg font-bold" style="color: #ef4444;">{{ stats()?.overdue || 0 }}</p>
-          <p class="text-[10px] font-medium" style="color: var(--text-secondary);">Overdue</p>
+        <div class="border-r border-slate-100 px-4 py-3 text-center dark:border-slate-800">
+          <p class="text-lg font-black text-red-500">{{ stats()?.overdue || 0 }}</p>
+          <p class="text-[10px] font-bold text-slate-500">Overdue</p>
         </div>
         <div class="px-4 py-3 text-center">
-          <p class="text-lg font-bold" style="color: #22c55e;">{{ stats()?.filed || 0 }}</p>
-          <p class="text-[10px] font-medium" style="color: var(--text-secondary);">Filed</p>
+          <p class="text-lg font-black text-emerald-500">{{ stats()?.filed || 0 }}</p>
+          <p class="text-[10px] font-bold text-slate-500">Filed</p>
         </div>
       </div>
 
-      <!-- Upcoming List -->
-      <div class="p-4 space-y-2">
+      <div class="space-y-2 p-4">
         @for (cd of upcomingDeadlines(); track cd.id; let i = $index) {
           @if (i < 5) {
-            <div
-              class="flex items-center justify-between p-2.5 rounded-xl transition-all duration-200"
-              style="background: var(--hover-bg);"
-            >
-              <div class="flex items-center gap-2.5 min-w-0">
-                <span class="text-base">{{ getTypeEmoji(cd.deadline?.type) }}</span>
+            <article class="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3 transition-colors hover:bg-blue-50/60 dark:bg-slate-800/70 dark:hover:bg-slate-800">
+              <div class="flex min-w-0 items-center gap-3">
+                <span class="rounded-lg bg-white px-2 py-1 text-[10px] font-black text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700">
+                  {{ getTypeLabel(cd.deadline?.type) }}
+                </span>
                 <div class="min-w-0">
-                  <p class="text-xs font-semibold truncate" style="color: var(--text-primary);">
+                  <p class="truncate text-xs font-black text-slate-900 dark:text-white">
                     {{ cd.deadline?.title || 'Deadline' }}
                   </p>
-                  <p class="text-[10px]" style="color: var(--text-secondary);">
+                  <p class="text-[11px] font-semibold text-slate-500">
                     {{ cd.client?.user?.name || 'Client' }}
                   </p>
                 </div>
               </div>
               <span
-                class="text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0"
+                class="shrink-0 rounded-lg px-2 py-1 text-[10px] font-black"
                 [style.background]="getCountdownBg(cd.deadline?.dueDate)"
                 [style.color]="getCountdownColor(cd.deadline?.dueDate)"
               >
                 {{ getCountdownText(cd.deadline?.dueDate) }}
               </span>
-            </div>
+            </article>
           }
         } @empty {
-          <div class="text-center py-6">
-            <p class="text-2xl mb-1.5">✅</p>
-            <p class="text-xs font-medium" style="color: var(--text-secondary);">No upcoming deadlines this week!</p>
+          <div class="py-7 text-center">
+            <div class="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30">
+              <ng-icon name="heroCalendarDaysSolid" size="18"></ng-icon>
+            </div>
+            <p class="text-xs font-bold text-slate-500">No upcoming deadlines this week.</p>
           </div>
         }
       </div>
-    </div>
+    </section>
   `,
   styles: [`:host { display: block; }`],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -110,10 +101,10 @@ export class DeadlineWidgetComponent implements OnInit {
     });
   }
 
-  getTypeEmoji(type?: string): string {
-    if (!type) return '📌';
-    const emojis: Record<string, string> = { GST: '🧾', ITR: '📄', TDS: '💰', ROC: '🏢', ADVANCE_TAX: '💳', OTHER: '📌' };
-    return emojis[type] || '📌';
+  getTypeLabel(type?: string): string {
+    if (!type) return 'GEN';
+    const labels: Record<string, string> = { GST: 'GST', ITR: 'ITR', TDS: 'TDS', ROC: 'ROC', ADVANCE_TAX: 'TAX', OTHER: 'GEN' };
+    return labels[type] || type.slice(0, 3).toUpperCase();
   }
 
   getCountdownText(dateStr?: string): string {

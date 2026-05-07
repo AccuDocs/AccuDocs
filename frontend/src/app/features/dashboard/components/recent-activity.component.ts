@@ -23,28 +23,24 @@ const DOT_COLORS = ['#0074c9', '#16a34a', '#d97706', '#db2777'];
   standalone: true,
   imports: [CommonModule, RouterLink, NgIconComponent],
   template: `
-    <div
-      class="bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-200 dark:border-slate-700/50 overflow-hidden"
-      style="box-shadow: 0 4px 24px -4px rgba(15, 23, 42, 0.05);"
-    >
-      <!-- Card header -->
-      <div class="flex items-center justify-between px-8 py-5 border-b border-slate-100 dark:border-slate-700/50">
-        <h2 class="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">Recent Activity</h2>
+    <div class="flex h-full min-h-[360px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+      <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+        <h2 class="text-base font-bold tracking-tight text-slate-950 dark:text-white">Recent Activity</h2>
         <a
           routerLink="/logs"
-          class="text-[13px] font-semibold text-[#0074c9] dark:text-blue-400 hover:text-[#005fa3] transition-colors flex items-center gap-1 group"
+          class="flex items-center gap-1 rounded-lg bg-primary-50 px-3 py-2 text-xs font-bold text-primary-700 transition-colors hover:bg-primary-100 dark:bg-blue-950/40 dark:text-blue-300"
         >
           View All
-          <ng-icon name="heroArrowUpRightSolid" size="14" class="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></ng-icon>
+          <ng-icon name="heroArrowUpRightSolid" size="14"></ng-icon>
         </a>
       </div>
 
       <!-- Content -->
       @if (isLoading()) {
         <!-- Skeleton loading -->
-        <div class="divide-y divide-slate-100 dark:divide-slate-700/30">
+        <div class="flex-1 divide-y divide-slate-100 dark:divide-slate-700/30">
           @for (i of [1,2,3,4,5]; track i) {
-            <div class="flex items-center gap-4 px-8 py-5">
+            <div class="flex items-center gap-4 px-5 py-4">
               <div class="w-2 h-2 rounded-full skeleton shrink-0"></div>
               <div class="flex-1 space-y-2">
                 <div class="skeleton h-4 w-3/4 rounded"></div>
@@ -55,10 +51,10 @@ const DOT_COLORS = ['#0074c9', '#16a34a', '#d97706', '#db2777'];
           }
         </div>
       } @else if (activities().length) {
-        <div class="divide-y divide-slate-50 dark:divide-slate-700/30">
+        <div class="flex-1 divide-y divide-slate-50 overflow-auto dark:divide-slate-700/30">
           @for (log of activities().slice(0, 6); track log.id; let i = $index) {
             <div
-              class="flex items-start gap-4 px-8 py-5 hover:bg-[#f8fafc] dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
+              class="flex cursor-pointer items-start gap-4 px-5 py-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60"
             >
               <!-- Colored dot -->
               <div
@@ -88,16 +84,27 @@ const DOT_COLORS = ['#0074c9', '#16a34a', '#d97706', '#db2777'];
         </div>
       } @else {
         <!-- Empty state -->
-        <div class="py-20 flex flex-col items-center justify-center gap-3 text-center px-8">
-          <div class="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center">
-            <ng-icon name="heroClockSolid" size="32" class="text-slate-200 dark:text-slate-600"></ng-icon>
+        <div class="flex flex-1 flex-col items-center justify-center px-8 py-12 text-center">
+          <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 ring-1 ring-slate-100 dark:bg-slate-800 dark:ring-slate-700">
+            <ng-icon name="heroClockSolid" size="30" class="text-slate-300 dark:text-slate-600"></ng-icon>
           </div>
-          <h3 class="text-base font-bold text-slate-900 dark:text-white">No recent activity</h3>
-          <p class="text-sm text-slate-400">Activity will appear here as you and your team work.</p>
+          <h3 class="text-base font-bold text-slate-950 dark:text-white">No recent activity</h3>
+          <p class="mt-2 max-w-md text-sm font-medium leading-6 text-slate-500">
+            Activity will appear here as you and your team work.
+          </p>
+          <div class="mt-5 flex flex-wrap justify-center gap-3">
+            <a routerLink="/documents" class="rounded-lg bg-primary-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-primary-700">
+              Upload document
+            </a>
+            <a routerLink="/logs" class="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 transition-colors hover:border-primary-200 hover:bg-primary-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
+              Open audit logs
+            </a>
+          </div>
         </div>
       }
     </div>
   `,
+  styles: [`:host { display: block; width: 100%; height: 100%; min-height: 0; }`],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     provideIcons({

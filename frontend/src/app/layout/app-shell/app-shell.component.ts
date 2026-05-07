@@ -42,13 +42,13 @@ import { CommandPaletteComponent } from '../command-palette/command-palette.comp
       }
 
       <!-- Main column -->
-      <div class="main-column flex flex-col flex-1 min-w-0">
+      <div class="main-column flex h-full min-h-0 flex-1 flex-col min-w-0">
         <!-- Top bar -->
         <app-top-bar />
 
         <!-- Layer 3: Content area (without favorites bar) -->
         <main
-          class="content-area flex-1 overflow-auto"
+          class="content-area min-h-0 w-full flex-1 overflow-auto"
           style="background: var(--color-bg);"
         >
           <router-outlet></router-outlet>
