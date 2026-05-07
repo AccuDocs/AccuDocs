@@ -19,10 +19,11 @@ import {
 } from '@ng-icons/heroicons/solid';
 import { InvoiceFormComponent } from '../../../billing/components/invoice-form/invoice-form.component';
 import { PaymentLinkComponent } from '../../../billing/components/payment-link/payment-link.component';
+import { TemplateSelectorComponent } from '../../../billing/components/template-selector/template-selector.component';
 import { Invoice, InvoiceStatus } from '../../../billing/models/invoice.model';
 import { InvoiceService } from '../../../billing/services/invoice.service';
 
-type BillingTab = 'createInvoice' | 'invoices';
+type BillingTab = 'createInvoice' | 'invoices' | 'templates';
 
 @Component({
   selector: 'app-client-billing',
@@ -34,6 +35,7 @@ type BillingTab = 'createInvoice' | 'invoices';
     NgIconComponent,
     PaymentLinkComponent,
     InvoiceFormComponent,
+    TemplateSelectorComponent,
   ],
   providers: [
     provideIcons({
@@ -363,6 +365,55 @@ type BillingTab = 'createInvoice' | 'invoices';
               }
             </div>
           </section>
+        } @else if (billingTab() === 'templates') {
+          <section class="space-y-6">
+            <div class="rounded-3xl border border-cyan-200 bg-gradient-to-br from-white via-cyan-50/60 to-white p-5 shadow-sm">
+              <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <div class="inline-flex items-center gap-2 rounded-full bg-cyan-100 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-cyan-700">
+                    <ng-icon name="heroDocumentTextSolid" size="14"></ng-icon>
+                    Invoice template module
+                  </div>
+                  <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-950">Invoice PDF templates</h2>
+                  <p class="mt-1 max-w-3xl text-sm leading-6 text-slate-500">
+                    Pick the default design used when this workspace prints or downloads customer invoices.
+                    System templates are shared; setting one as default creates a workspace-safe copy.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  (click)="setTab('createInvoice')"
+                  class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-primary-700"
+                >
+                  <ng-icon name="heroPlusSolid" size="18"></ng-icon>
+                  Create invoice
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Applies To</p>
+                <p class="mt-3 text-sm font-bold text-slate-900">Print and Download PDF</p>
+                <p class="mt-2 text-sm leading-6 text-slate-500">Both buttons use the selected default template for the generated PDF.</p>
+              </article>
+              <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Document Types</p>
+                <p class="mt-3 text-sm font-bold text-slate-900">Tax invoice, proforma, quotation</p>
+                <p class="mt-2 text-sm leading-6 text-slate-500">The same design works across the customer billing documents.</p>
+              </article>
+              <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Next Step</p>
+                <p class="mt-3 text-sm font-bold text-slate-900">Custom editor ready</p>
+                <p class="mt-2 text-sm leading-6 text-slate-500">The backend supports custom HTML templates; this module now manages selection/defaults.</p>
+              </article>
+            </div>
+
+            <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <app-template-selector></app-template-selector>
+            </div>
+          </section>
         }
       } @else {
         <div class="mb-4">
@@ -397,6 +448,7 @@ export class ClientBillingComponent implements OnInit, OnChanges {
   readonly tabs: Array<{ key: BillingTab; label: string; icon: string }> = [
     { key: 'createInvoice', label: 'Create Invoice', icon: 'heroDocumentTextSolid' },
     { key: 'invoices', label: 'Customer Invoices', icon: 'heroClockSolid' },
+    { key: 'templates', label: 'Invoice Templates', icon: 'heroDocumentTextSolid' },
   ];
 
   readonly statusOptions: Array<{ value: InvoiceStatus | ''; label: string }> = [

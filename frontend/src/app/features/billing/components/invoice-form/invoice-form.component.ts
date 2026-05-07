@@ -701,17 +701,70 @@ export class InvoiceFormComponent {
   }
 
   printInvoice(): void {
-    window.print();
+    const invoiceId = this.invoiceId();
+    if (!invoiceId) {
+      this.toast.info('Save the invoice before printing');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      this.toast.error('Please allow pop-ups to print the invoice PDF');
+      return;
+    }
+
+    printWindow.document.write('<p style="font-family:sans-serif;padding:24px">Preparing invoice PDF...</p>');
+
+    this.invoiceService.generatePdfWithTemplate(invoiceId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const title = this.invoicePdfFileName();
+        printWindow.document.open();
+        printWindow.document.write(`
+          <!doctype html>
+          <html>
+            <head>
+              <title>${title}</title>
+              <style>
+                html, body, iframe { width: 100%; height: 100%; margin: 0; border: 0; overflow: hidden; }
+              </style>
+            </head>
+            <body>
+              <iframe id="invoice-pdf" src="${url}"></iframe>
+              <script>
+                const frame = document.getElementById('invoice-pdf');
+                frame.addEventListener('load', () => {
+                  setTimeout(() => {
+                    frame.contentWindow.focus();
+                    frame.contentWindow.print();
+                  }, 350);
+                });
+              <\/script>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      },
+      error: () => {
+        printWindow.close();
+        this.toast.error('Invoice PDF could not be prepared for printing');
+      },
+    });
   }
 
   downloadPdf(): void {
-    if (!this.invoiceId()) {
+    const invoiceId = this.invoiceId();
+    if (!invoiceId) {
       this.toast.info('Save the invoice before downloading PDF');
       return;
     }
 
-    this.invoiceService.generatePdfWithTemplate(this.invoiceId()!).subscribe({
-      next: () => this.toast.success('PDF generation started'),
+    this.invoiceService.generatePdfWithTemplate(invoiceId).subscribe({
+      next: (blob) => {
+        this.savePdfBlob(blob, this.invoicePdfFileName());
+        this.toast.success('Invoice PDF downloaded');
+      },
       error: () => this.toast.error('PDF could not be generated'),
     });
   }
@@ -722,6 +775,24 @@ export class InvoiceFormComponent {
 
   sendWhatsApp(): void {
     this.toast.info('WhatsApp sharing will be connected to the finalized invoice PDF flow');
+  }
+
+  private savePdfBlob(blob: Blob, fileName: string): void {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.rel = 'noopener';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  private invoicePdfFileName(): string {
+    const rawName = this.invoiceNumberControl.value || this.invoiceId() || 'invoice';
+    const safeName = String(rawName).trim().replace(/[^\w.-]+/g, '-').replace(/^-+|-+$/g, '');
+    return `${safeName || 'invoice'}.pdf`;
   }
 
   recalculateGST(): void {

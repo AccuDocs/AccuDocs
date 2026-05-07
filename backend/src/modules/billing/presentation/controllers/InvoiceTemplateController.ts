@@ -42,8 +42,8 @@ async function buildInvoiceTemplateData(invoiceId: string, orgId: string): Promi
         <td>${item.description}</td>
         <td>${item.sacCode || ''}</td>
         <td>${item.quantity}</td>
-        <td>₹${Number(item.unitRate).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-        <td>₹${Number(item.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+        <td>Rs. ${Number(item.unitRate).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+        <td>Rs. ${Number(item.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
       </tr>`
     )
     .join('');
@@ -53,11 +53,19 @@ async function buildInvoiceTemplateData(invoiceId: string, orgId: string): Promi
   const sgst = Number(invoice.sgstAmount) || 0;
   const igst = Number(invoice.igstAmount) || 0;
   let taxRows = '';
+  let taxSummaryRows = '';
   if (igst > 0) {
-    taxRows += `<tr><td colspan="5" style="text-align:right">IGST</td><td>₹${igst.toFixed(2)}</td></tr>`;
+    taxRows += `<tr><td colspan="5" style="text-align:right">IGST</td><td>Rs. ${igst.toFixed(2)}</td></tr>`;
+    taxSummaryRows += `<div><span>IGST</span><strong>Rs. ${igst.toFixed(2)}</strong></div>`;
   } else {
-    if (cgst > 0) taxRows += `<tr><td colspan="5" style="text-align:right">CGST</td><td>₹${cgst.toFixed(2)}</td></tr>`;
-    if (sgst > 0) taxRows += `<tr><td colspan="5" style="text-align:right">SGST</td><td>₹${sgst.toFixed(2)}</td></tr>`;
+    if (cgst > 0) {
+      taxRows += `<tr><td colspan="5" style="text-align:right">CGST</td><td>Rs. ${cgst.toFixed(2)}</td></tr>`;
+      taxSummaryRows += `<div><span>CGST</span><strong>Rs. ${cgst.toFixed(2)}</strong></div>`;
+    }
+    if (sgst > 0) {
+      taxRows += `<tr><td colspan="5" style="text-align:right">SGST</td><td>Rs. ${sgst.toFixed(2)}</td></tr>`;
+      taxSummaryRows += `<div><span>SGST</span><strong>Rs. ${sgst.toFixed(2)}</strong></div>`;
+    }
   }
 
   const notesSection = invoice.notes
@@ -88,7 +96,7 @@ async function buildInvoiceTemplateData(invoiceId: string, orgId: string): Promi
     dueDate: formatDate(invoice.dueDate),
     clientName: raw.receiverName || client?.name || '',
     clientAddress: raw.receiverAddress || [client?.address, client?.city, client?.pincode].filter(Boolean).join(', '),
-    clientGstin: client?.gstin || '',
+    clientGstin: raw.clientGstin || client?.gstin || '',
     gstType: invoice.gstType,
     placeOfSupply: invoice.placeOfSupply,
     subtotal: Number(invoice.subtotal).toFixed(2),
@@ -99,6 +107,7 @@ async function buildInvoiceTemplateData(invoiceId: string, orgId: string): Promi
     totalAmount: Number(invoice.totalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
     lineItemsRows,
     taxRows,
+    taxSummaryRows,
     notesSection,
     amountInWords: numberToWords(Number(invoice.totalAmount)),
     lineItemsDetailedRows: lineItemsRows, // same for detailed template variant

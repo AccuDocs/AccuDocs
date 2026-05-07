@@ -2,7 +2,7 @@ import { Component, inject, signal, output, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { InvoiceService } from '../../services/invoice.service';
-import { HotToastService } from '@ngneat/hot-toast';
+import { ToastService } from '@core/services/toast.service';
 
 export interface InvoiceTemplate {
   id: string;
@@ -43,15 +43,14 @@ export interface InvoiceTemplate {
       @if (!templatesResource.isLoading()) {
         <div class="ts-grid">
           @for (tpl of templates(); track tpl.id) {
-            <button
+            <article
               class="ts-card"
               [class.ts-card--selected]="selectedId() === tpl.id"
               [class.ts-card--default]="tpl.isDefault"
-              (click)="selectTemplate(tpl)"
               [id]="'template-card-' + tpl.id"
             >
               <!-- Thumbnail -->
-              <div class="ts-thumb">
+              <button type="button" class="ts-thumb" (click)="selectTemplate(tpl)">
                 @if (tpl.thumbnailUrl) {
                   <img [src]="tpl.thumbnailUrl" [alt]="tpl.name" class="ts-thumb-img" />
                 } @else {
@@ -74,16 +73,24 @@ export interface InvoiceTemplate {
                 @if (tpl.isDefault) {
                   <div class="ts-default-badge">Default</div>
                 }
-              </div>
+              </button>
 
               <!-- Name & actions -->
               <div class="ts-card-footer">
-                <span class="ts-card-name">{{ tpl.name }}</span>
-                @if (tpl.isSystem) {
-                  <span class="ts-system-tag">System</span>
-                }
+                <div class="ts-card-copy">
+                  <span class="ts-card-name">{{ tpl.name }}</span>
+                  <span class="ts-system-tag">{{ tpl.isSystem ? 'System template' : 'Custom template' }}</span>
+                </div>
+                <button
+                  type="button"
+                  class="ts-default-action"
+                  [disabled]="tpl.isDefault || settingDefaultId() === tpl.id"
+                  (click)="setDefault(tpl)"
+                >
+                  {{ tpl.isDefault ? 'Default' : settingDefaultId() === tpl.id ? 'Saving...' : 'Set default' }}
+                </button>
               </div>
-            </button>
+            </article>
           }
 
           <!-- Empty state -->
@@ -113,12 +120,12 @@ export interface InvoiceTemplate {
     .ts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
 
     .ts-card { position: relative; display: flex; flex-direction: column; gap: 0; border-radius: 12px; border: 2px solid #e2e8f0;
-      background: #fff; cursor: pointer; transition: all 0.18s ease; padding: 0; overflow: hidden; text-align: left; }
+      background: #fff; transition: all 0.18s ease; padding: 0; overflow: hidden; text-align: left; }
     .ts-card:hover { border-color: #93c5fd; box-shadow: 0 4px 16px rgba(59,130,246,0.12); transform: translateY(-2px); }
     .ts-card--selected { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
     .ts-card--default { border-color: #a5f3fc; }
 
-    .ts-thumb { position: relative; width: 100%; aspect-ratio: 3/4; background: #f8fafc; overflow: hidden; }
+    .ts-thumb { position: relative; width: 100%; aspect-ratio: 3/4; background: #f8fafc; overflow: hidden; border: 0; padding: 0; cursor: pointer; }
     .ts-thumb-img { width: 100%; height: 100%; object-fit: cover; }
     .ts-thumb-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 8px; padding: 12px; }
     .ts-thumb-icon { width: 32px; height: 32px; color: #94a3b8; }
@@ -128,9 +135,13 @@ export interface InvoiceTemplate {
     .ts-check-icon { width: 14px; height: 14px; color: #fff; }
     .ts-default-badge { position: absolute; top: 6px; left: 6px; background: #0ea5e9; color: #fff; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: .06em; }
 
-    .ts-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 8px 10px; border-top: 1px solid #f1f5f9; }
+    .ts-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px; border-top: 1px solid #f1f5f9; }
+    .ts-card-copy { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
     .ts-card-name { font-size: 11px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ts-system-tag { font-size: 9px; color: #94a3b8; white-space: nowrap; }
+    .ts-default-action { flex: 0 0 auto; border: 1px solid #dbeafe; color: #2563eb; background: #eff6ff; border-radius: 999px; padding: 5px 9px; font-size: 10px; font-weight: 800; cursor: pointer; }
+    .ts-default-action:hover:not(:disabled) { background: #dbeafe; }
+    .ts-default-action:disabled { cursor: default; opacity: .65; color: #64748b; background: #f1f5f9; border-color: #e2e8f0; }
 
     .ts-empty { grid-column: 1 / -1; text-align: center; color: #94a3b8; font-size: 13px; padding: 24px; }
 
@@ -143,9 +154,10 @@ export interface InvoiceTemplate {
 })
 export class TemplateSelectorComponent {
   private invoiceService = inject(InvoiceService);
-  private toast = inject(HotToastService);
+  private toast = inject(ToastService);
 
   readonly selectedId = signal<string | null>(null);
+  readonly settingDefaultId = signal<string | null>(null);
 
   readonly templateSelected = output<string | null>();
 
@@ -163,5 +175,24 @@ export class TemplateSelectorComponent {
   clearSelection(): void {
     this.selectedId.set(null);
     this.templateSelected.emit(null);
+  }
+
+  setDefault(tpl: InvoiceTemplate): void {
+    if (tpl.isDefault || this.settingDefaultId()) {
+      return;
+    }
+
+    this.settingDefaultId.set(tpl.id);
+    this.invoiceService.setDefaultTemplate(tpl.id).subscribe({
+      next: () => {
+        this.settingDefaultId.set(null);
+        this.toast.success('Default invoice template updated');
+        this.templatesResource.reload();
+      },
+      error: () => {
+        this.settingDefaultId.set(null);
+        this.toast.error('Could not update default template');
+      },
+    });
   }
 }
