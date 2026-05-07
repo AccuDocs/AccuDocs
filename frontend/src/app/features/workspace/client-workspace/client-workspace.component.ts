@@ -181,7 +181,9 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
       } @else if (activeTab() === 'billing') {
         <app-client-billing [clientId]="workspace()?.clientId || ''"></app-client-billing>
       } @else if (activeTab() === 'inventory') {
-        <app-client-inventory [clientId]="workspace()?.clientId || ''"></app-client-inventory>
+        <div class="no-scrollbar min-h-0 flex-1 overflow-auto">
+          <app-client-inventory class="block min-h-full" [clientId]="workspace()?.clientId || ''"></app-client-inventory>
+        </div>
       } @else if (activeTab() === 'dashboard') {
         <app-client-dashboard [clientId]="workspace()?.clientId || ''"></app-client-dashboard>
       } @else {

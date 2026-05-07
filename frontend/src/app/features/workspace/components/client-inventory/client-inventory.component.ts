@@ -1,6 +1,8 @@
-import { Component, Input, inject, signal, OnInit, OnChanges, SimpleChanges, effect } from '@angular/core';
+import { Component, Input, inject, signal, OnInit, OnChanges, SimpleChanges, effect, computed } from '@angular/core';
 import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   heroArchiveBoxSolid, heroPlusSolid, heroArrowPathSolid,
@@ -15,13 +17,39 @@ import { ItemFormComponent } from '../../../inventory/items/item-form/item-form.
 import { PoFormComponent } from '../../../inventory/purchase-orders/po-form/po-form.component';
 import { TransferFormComponent } from '../../../inventory/stock-transfers/transfer-form/transfer-form.component';
 import { CategoryManagerComponent } from '../../../inventory/categories/category-manager.component';
+import { DashboardToolbarComponent } from '../../../inventory/components/header/dashboard-toolbar/dashboard-toolbar.component';
+import { InventoryKpiCardsComponent } from '../../../inventory/components/kpis/inventory-kpi-cards/inventory-kpi-cards.component';
+import { LowStockAlertWidgetComponent } from '../../../inventory/components/inventory/low-stock-alert-widget/low-stock-alert-widget.component';
+import { WarehousePerformanceWidgetComponent } from '../../../inventory/components/inventory/warehouse-performance-widget/warehouse-performance-widget.component';
+import { RecentStockActivityWidgetComponent } from '../../../inventory/components/inventory/recent-stock-activity-widget/recent-stock-activity-widget.component';
+import { SystemWarningWidgetComponent } from '../../../inventory/components/monitoring/system-warning-widget/system-warning-widget.component';
+import { QuickActionsWidgetComponent } from '../../../inventory/components/actions/quick-actions-widget/quick-actions-widget.component';
+import type { InventoryKpi, QuickAction, SystemWarning, WarehousePerformanceRow } from '../../../inventory/models/inventory-dashboard.models';
 import { heroTagSolid } from '@ng-icons/heroicons/solid';
 type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purchase-orders' | 'transfers' | 'ledger' | 'low-stock';
 
 @Component({
   selector: 'app-client-inventory',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgIconComponent, DecimalPipe, DatePipe, ItemFormComponent, PoFormComponent, TransferFormComponent, CategoryManagerComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    NgIconComponent,
+    DecimalPipe,
+    DatePipe,
+    ItemFormComponent,
+    PoFormComponent,
+    TransferFormComponent,
+    CategoryManagerComponent,
+    DashboardToolbarComponent,
+    InventoryKpiCardsComponent,
+    LowStockAlertWidgetComponent,
+    WarehousePerformanceWidgetComponent,
+    RecentStockActivityWidgetComponent,
+    SystemWarningWidgetComponent,
+    QuickActionsWidgetComponent,
+  ],
   providers: [provideIcons({
     heroArchiveBoxSolid, heroPlusSolid, heroArrowPathSolid,
     heroTruckSolid, heroDocumentTextSolid,
@@ -31,9 +59,9 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
     heroChevronRightSolid, heroCheckCircleSolid, heroTagSolid
   })],
   template: `
-    <div class="space-y-6 animate-in fade-in duration-500">
+    <div class="client-inventory-shell w-full min-w-0 max-w-none animate-in fade-in duration-500">
       <!-- Sub-Navigation Tabs -->
-      <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-lg w-fit overflow-x-auto max-w-full no-scrollbar">
+      <div class="inventory-tabs no-scrollbar mb-6 flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-slate-100/80 p-1 shadow-sm">
         <button (click)="activeView.set('overview')"
                 [class]="activeView() === 'overview' ? 'bg-white shadow-sm text-primary-600' : 'text-slate-500 hover:text-slate-700'"
                 class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-1.5 whitespace-nowrap">
@@ -78,6 +106,33 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
 
       <!-- ═══ OVERVIEW TAB ═══ -->
       @if (activeView() === 'overview') {
+        <section class="inventory-overview space-y-5">
+          <app-dashboard-toolbar
+            [loading]="isLoading()"
+            [lastUpdated]="lastUpdated()"
+            (refresh)="refresh()">
+          </app-dashboard-toolbar>
+
+          <app-inventory-kpi-cards [cards]="overviewKpiCards()" [loading]="isLoading()"></app-inventory-kpi-cards>
+
+          <app-quick-actions-widget [actions]="quickActions"></app-quick-actions-widget>
+
+          <div class="inventory-support-grid grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-3">
+            <app-low-stock-alert-widget [alerts]="lowStockAlerts()" [loading]="isLoading()"></app-low-stock-alert-widget>
+            <app-warehouse-performance-widget
+              [warehouses]="warehousePerformanceRows()"
+              [loading]="isLoading()">
+            </app-warehouse-performance-widget>
+            <app-system-warning-widget [warnings]="systemWarnings()" [loading]="isLoading()"></app-system-warning-widget>
+          </div>
+
+          <app-recent-stock-activity-widget
+            [movements]="recentMovements()"
+            [loading]="isLoading()">
+          </app-recent-stock-activity-widget>
+        </section>
+
+        @if (false) {
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 class="text-[28px] font-bold text-slate-900 tracking-tight">Inventory & Stock</h1>
@@ -181,7 +236,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
               <h3 class="font-semibold text-slate-800">Recent Stock Movements</h3>
               <button (click)="activeView.set('ledger')" class="text-xs font-bold text-primary-600 hover:underline">Full Ledger →</button>
             </div>
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto no-scrollbar">
               <table class="w-full text-left border-collapse">
                 <thead>
                   <tr class="bg-white border-b border-slate-100">
@@ -239,6 +294,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
         </div>
 
       <!-- ═══ ITEMS TAB ═══ -->
+        }
       } @else if (activeView() === 'items') {
         @if (showItemForm) {
           <div class="bg-slate-900 rounded-xl overflow-hidden shadow-xl border border-slate-800">
@@ -280,7 +336,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
                 <p class="text-slate-500 max-w-sm mx-auto mt-2">Your product catalog is empty. Items will appear here once created.</p>
               </div>
             } @else {
-              <div class="overflow-x-auto">
+              <div class="overflow-x-auto no-scrollbar">
                 <table class="w-full text-left border-collapse">
                   <thead>
                     <tr class="bg-white border-b border-slate-100">
@@ -435,7 +491,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
               } @else if (warehouseStock().length === 0) {
                 <div class="p-8 text-center text-slate-400 text-sm">No stock entries for this warehouse</div>
               } @else {
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto no-scrollbar">
                   <table class="w-full text-left border-collapse">
                     <thead>
                       <tr class="bg-white border-b border-slate-100">
@@ -507,7 +563,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
                 <p class="text-slate-500 max-w-sm mx-auto mt-2">Purchase orders will appear here as they are created.</p>
               </div>
             } @else {
-              <div class="overflow-x-auto">
+              <div class="overflow-x-auto no-scrollbar">
                 <table class="w-full text-left border-collapse">
                   <thead>
                     <tr class="bg-white border-b border-slate-100">
@@ -580,7 +636,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
                 <p class="text-slate-500 max-w-sm mx-auto mt-2">Stock transfers between warehouses will appear here.</p>
               </div>
             } @else {
-              <div class="overflow-x-auto">
+              <div class="overflow-x-auto no-scrollbar">
                 <table class="w-full text-left border-collapse">
                   <thead>
                     <tr class="bg-white border-b border-slate-100">
@@ -642,7 +698,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
         </div>
 
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div class="overflow-x-auto">
+          <div class="overflow-x-auto no-scrollbar">
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="bg-slate-50 border-b border-slate-200">
@@ -754,7 +810,37 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
     </div>
   `,
   styles: [`
-    :host { display: block; }
+    :host {
+      display: block;
+      min-width: 0;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    .client-inventory-shell {
+      min-width: 0;
+      max-width: 100%;
+      color: #0f172a;
+    }
+    .inventory-tabs {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .inventory-tabs::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    .inventory-tabs button {
+      min-height: 36px;
+    }
+    .inventory-overview {
+      min-width: 0;
+      max-width: 100%;
+    }
+    .inventory-support-grid {
+      min-width: 0;
+      align-items: stretch;
+    }
     .sa-card {
       background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px;
       box-shadow: 0 1px 3px rgba(0,0,0,.06); transition: all .2s ease;
@@ -785,6 +871,127 @@ export class ClientInventoryComponent implements OnInit, OnChanges {
   valuationRows = signal<any[]>([]);
   recentMovements = signal<any[]>([]);
   lowStockAlerts = signal<any[]>([]);
+  lastUpdated = signal<Date | null>(null);
+  warehousePerformanceRows = signal<WarehousePerformanceRow[]>([]);
+  defaultWarehouseCount = signal(0);
+
+  quickActions: QuickAction[] = [
+    {
+      label: 'Add inventory item',
+      description: 'Create SKU, barcode, GST, pricing, and stock rules.',
+      icon: 'add_box',
+      route: '/inventory/items/new',
+      tone: 'blue',
+    },
+    {
+      label: 'Create purchase order',
+      description: 'Raise supplier PO for replenishment.',
+      icon: 'receipt_long',
+      route: '/inventory/purchase-orders/new',
+      tone: 'green',
+    },
+    {
+      label: 'Transfer stock',
+      description: 'Move stock between store and warehouse.',
+      icon: 'swap_horiz',
+      route: '/inventory/transfers/new',
+      tone: 'slate',
+    },
+    {
+      label: 'Scan barcode',
+      description: 'Lookup product stock by barcode or SKU.',
+      icon: 'qr_code_scanner',
+      route: '/inventory/scanner',
+      tone: 'amber',
+    },
+  ];
+
+  overviewKpiCards = computed<InventoryKpi[]>(() => {
+    const totalUnits = this.warehousePerformanceRows().reduce((sum, row) => sum + row.qtyOnHand, 0);
+    const alerts = this.lowStockAlerts();
+    const outOfStock = alerts.filter((alert: any) => alert.severity === 'out_of_stock').length;
+
+    return [
+      {
+        label: 'Total SKUs',
+        value: String(this.totalItems()),
+        icon: 'inventory_2',
+        tone: 'blue',
+        sub: `${this.formatShortNumber(totalUnits)} units on hand`,
+      },
+      {
+        label: 'Stock Value',
+        value: `INR ${this.formatMoneyShort(this.stockValue())}`,
+        icon: 'payments',
+        tone: 'green',
+        sub: 'Weighted average valuation',
+      },
+      {
+        label: 'Low Stock',
+        value: String(this.lowStockCount()),
+        icon: outOfStock > 0 ? 'error' : 'warning',
+        tone: outOfStock > 0 ? 'red' : this.lowStockCount() > 0 ? 'amber' : 'green',
+        sub: outOfStock > 0 ? `${outOfStock} out of stock` : 'Reorder watchlist',
+      },
+      {
+        label: 'Pending POs',
+        value: String(this.pendingPOs()),
+        icon: 'local_shipping',
+        tone: this.pendingPOs() > 0 ? 'amber' : 'slate',
+        sub: 'Sent and awaiting receipt',
+      },
+    ];
+  });
+
+  systemWarnings = computed<SystemWarning[]>(() => {
+    const warnings: SystemWarning[] = [];
+    const alerts = this.lowStockAlerts();
+    const outOfStock = alerts.filter((alert: any) => alert.severity === 'out_of_stock').length;
+
+    if (outOfStock > 0) {
+      warnings.push({
+        title: 'Out-of-stock items detected',
+        message: `${outOfStock} item(s) need replenishment before sale.`,
+        severity: 'critical',
+        icon: 'report',
+        actionLabel: 'Open alerts',
+        actionRoute: '/inventory/low-stock',
+      });
+    } else if (alerts.length > 0) {
+      warnings.push({
+        title: 'Reorder threshold reached',
+        message: `${alerts.length} item(s) are at or below reorder point.`,
+        severity: 'warning',
+        icon: 'warning',
+        actionLabel: 'Review low stock',
+        actionRoute: '/inventory/low-stock',
+      });
+    }
+
+    if (this.defaultWarehouseCount() > 1) {
+      warnings.push({
+        title: 'Multiple default warehouses',
+        message: 'More than one warehouse is marked default. Invoice stock selection may become ambiguous.',
+        severity: 'warning',
+        icon: 'warehouse',
+        actionLabel: 'Fix warehouses',
+        actionRoute: '/inventory/warehouses',
+      });
+    }
+
+    if (this.warehousePerformanceRows().length === 0) {
+      warnings.push({
+        title: 'No warehouse stock summary',
+        message: 'Record opening stock to activate warehouse analytics.',
+        severity: 'info',
+        icon: 'inventory',
+        actionLabel: 'Open warehouses',
+        actionRoute: '/inventory/warehouses',
+      });
+    }
+
+    return warnings;
+  });
 
   // Items
   items = signal<any[]>([]);
@@ -890,6 +1097,7 @@ export class ClientInventoryComponent implements OnInit, OnChanges {
   loadOverview() {
     this.isLoading.set(true);
     const clientId = this.scopedClientId;
+    this.loadWarehousePerformance();
 
     this.inventoryService.getLowStockAlerts().subscribe({
       next: (res: any) => {
@@ -914,6 +1122,7 @@ export class ClientInventoryComponent implements OnInit, OnChanges {
     ledgerRequest.subscribe({
       next: (res: any) => {
         this.recentMovements.set(res.data ?? []);
+        this.lastUpdated.set(new Date());
         this.isLoading.set(false);
       },
       error: () => this.isLoading.set(false)
@@ -939,6 +1148,69 @@ export class ClientInventoryComponent implements OnInit, OnChanges {
       next: (res: any) => this.pendingPOs.set(res.meta?.total ?? res.total ?? 0),
       error: () => {}
     });
+  }
+
+  private loadWarehousePerformance() {
+    this.inventoryService.getWarehouses().pipe(
+      switchMap((res: any) => {
+        const allWarehouses = res?.data ?? res ?? [];
+        this.defaultWarehouseCount.set(allWarehouses.filter((warehouse: any) => warehouse.isDefault).length);
+        if (allWarehouses.length === 0) {
+          return of([]);
+        }
+
+        return forkJoin(
+          allWarehouses.map((warehouse: any) =>
+            this.inventoryService.getWarehouseStock(warehouse.id).pipe(
+              map((stockRes: any) => this.toWarehousePerformanceRow(warehouse, stockRes?.data ?? stockRes ?? [])),
+              catchError(() => of(this.toWarehousePerformanceRow(warehouse, []))),
+            )
+          )
+        );
+      }),
+      catchError(() => of([])),
+    ).subscribe((rows: any) => {
+      this.warehousePerformanceRows.set(
+        (rows as WarehousePerformanceRow[])
+          .sort((a: WarehousePerformanceRow, b: WarehousePerformanceRow) => Number(b.stockValue ?? 0) - Number(a.stockValue ?? 0))
+          .slice(0, 5),
+      );
+    });
+  }
+
+  private toWarehousePerformanceRow(warehouse: any, stockRows: any[]): WarehousePerformanceRow {
+    const qtyOnHand = stockRows.reduce((sum, row) => sum + Number(row.qtyOnHand ?? row.qty_on_hand ?? 0), 0);
+    const qtyReserved = stockRows.reduce((sum, row) => sum + Number(row.qtyReserved ?? row.qty_reserved ?? 0), 0);
+    const stockValue = stockRows.reduce((sum, row) => {
+      const qty = Number(row.qtyOnHand ?? row.qty_on_hand ?? 0);
+      const cost = Number(row.avgCost ?? row.avg_cost ?? 0);
+      return sum + qty * cost;
+    }, 0);
+
+    return {
+      id: warehouse.id,
+      name: warehouse.name,
+      code: warehouse.code,
+      itemCount: stockRows.length,
+      qtyOnHand,
+      qtyReserved,
+      stockValue,
+      reservedPct: qtyOnHand > 0 ? Math.min(100, Math.round((qtyReserved / qtyOnHand) * 100)) : 0,
+      isDefault: warehouse.isDefault,
+    };
+  }
+
+  private formatMoneyShort(value: number): string {
+    if (value >= 1_00_00_000) return `${(value / 1_00_00_000).toFixed(1)}Cr`;
+    if (value >= 1_00_000) return `${(value / 1_00_000).toFixed(1)}L`;
+    if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+    return value.toFixed(0);
+  }
+
+  private formatShortNumber(value: number): string {
+    if (value >= 1_00_000) return `${(value / 1_00_000).toFixed(1)}L`;
+    if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+    return value.toFixed(0);
   }
 
   // Items

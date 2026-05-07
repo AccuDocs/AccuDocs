@@ -4,7 +4,7 @@ export const INVENTORY_ROUTES: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./inventory-dashboard/inventory-dashboard.component').then(m => m.InventoryDashboardComponent),
+      import('./pages/dashboard/inventory-dashboard-page/inventory-dashboard-page.component').then(m => m.InventoryDashboardPageComponent),
   },
   {
     path: 'items',
