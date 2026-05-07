@@ -6,7 +6,7 @@ import { RecurringInvoiceController } from '../controllers/RecurringInvoiceContr
 import { BulkInvoiceController } from '../controllers/BulkInvoiceController';
 import { CurrencyController } from '../controllers/CurrencyController';
 import { validate } from '../../../../middlewares/validate.middleware';
-import { CreateInvoiceSchema, UpdateInvoiceStatusSchema } from '../validators/billing.validators';
+import { CreateInvoiceSchema, UpdateInvoiceSchema, UpdateInvoiceStatusSchema } from '../validators/billing.validators';
 import { authenticate } from '../../../../middlewares/auth.middleware';
 
 const router = Router();
@@ -24,6 +24,7 @@ router.use(authenticate);
 router.post('/invoices', validate(CreateInvoiceSchema), BillingController.createInvoice);
 router.get('/invoices', BillingController.getInvoices);
 router.get('/invoices/:id', BillingController.getInvoiceById);
+router.put('/invoices/:id', validate(UpdateInvoiceSchema), BillingController.updateInvoice);
 router.patch('/invoices/:id/status', validate(UpdateInvoiceStatusSchema), BillingController.updateStatus);
 
 // ─── Proforma → Tax Invoice Conversion ───────────────────────────────────────

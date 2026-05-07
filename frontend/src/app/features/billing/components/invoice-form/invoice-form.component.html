@@ -1,358 +1,443 @@
-<div class="billing-studio-container p-6 animate-fade-in" 
+<div class="billing-studio-container mode-client p-6 animate-fade-in"
      [class.embedded]="isEmbedded"
-     [class.mode-client]="viewMode() === 'client'"
      [class.mode-firm]="viewMode() === 'firm'">
-  <!-- Studio Header -->
-  <header class="studio-header mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
-    <div class="header-info">
-      <div class="flex items-center gap-3">
+  <header class="mb-6 rounded-3xl border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/60 to-white p-6 shadow-sm">
+    <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+      <div>
         <div class="studio-badge">
-          <ng-icon name="heroSquares2x2" size="14" [style.color]="'var(--studio-primary)'"></ng-icon>
-          <span>{{ viewMode() === 'client' ? 'SALES STUDIO' : 'CA BILLING' }}</span>
+          <ng-icon name="heroSquares2x2" size="14"></ng-icon>
+          <span>{{ viewMode() === 'client' ? 'SALES INVOICE' : 'INVOICE' }}</span>
         </div>
-        <h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-          {{ pageTitle() }}
+        <h1 class="mt-3 text-3xl font-black tracking-tight text-slate-950">
+          {{ viewMode() === 'client' ? 'Create Sales Invoice' : pageTitle() }}
         </h1>
+        <p class="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500">
+          Create a customer bill with warehouse stock validation, product rows, GST split, payment tracking, and final invoice actions.
+        </p>
       </div>
-      <p class="mt-2 text-slate-500 text-sm font-medium">Design and issue premium invoices with real-time tax computation.</p>
-    </div>
 
-    <div class="flex items-center gap-3">
-      <button class="btn-studio-secondary" (click)="onCancel()" [disabled]="isSubmitting()">
-        <ng-icon name="heroXMark" size="18"></ng-icon>
-        <span>Dismiss</span>
-      </button>
-      <button 
-        class="btn-studio-primary" 
-        [disabled]="isSubmitting() || (invoiceForm.invalid && !readOnlyMode())"
-        (click)="onSubmit()">
-        @if (isSubmitting()) {
-          <div class="loader-sm mr-2 border-white/30 border-t-white"></div>
-          <span>Processing...</span>
-        } @else {
-          <ng-icon [name]="isEditMode() ? 'heroBookmark' : 'heroPaperAirplane'" size="18"></ng-icon>
-          <span>{{ primaryActionLabel() }}</span>
-        }
-      </button>
+      <div class="flex flex-wrap items-center gap-3">
+        <button type="button" class="btn-studio-secondary" (click)="onCancel()" [disabled]="isSubmitting()">
+          <ng-icon name="heroXMark" size="18"></ng-icon>
+          <span>Dismiss</span>
+        </button>
+        <button type="button" class="btn-studio-primary" (click)="saveAndIssue()" [disabled]="isSubmitting() || invoiceForm.invalid">
+          @if (isSubmitting()) {
+            <div class="loader-sm"></div>
+            <span>Processing...</span>
+          } @else {
+            <ng-icon name="heroPaperAirplane" size="18"></ng-icon>
+            <span>Generate Invoice</span>
+          }
+        </button>
+      </div>
     </div>
   </header>
 
   @if (isLoading() && !invoicePatched()) {
-    <div class="flex flex-col items-center justify-center py-24 glass-card bg-white/50">
+    <div class="glass-card flex flex-col items-center justify-center py-24">
       <div class="loader-lg"></div>
-      <p class="mt-4 text-slate-500 font-bold uppercase tracking-widest text-xs">Syncing Workspace...</p>
+      <p class="mt-4 text-xs font-black uppercase tracking-widest text-slate-500">Loading invoice workspace...</p>
     </div>
   } @else {
-    <div class="studio-layout grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-8">
-      <!-- Main Form Area -->
-      <main class="studio-main space-y-8" [formGroup]="invoiceForm">
-        
-        <!-- Selection & Basics Section -->
-        <section class="glass-card p-6 overflow-visible">
-          <div class="flex items-center gap-3 mb-6">
-            <div class="section-icon shadow-sm" [style.boxShadow]="'0 10px 15px -3px var(--studio-primary-glow)'">
-              <ng-icon name="heroUser" size="20"></ng-icon>
+    <main class="grid min-w-0 grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]" [formGroup]="invoiceForm">
+      <div class="space-y-6">
+        <section class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div class="glass-card p-6">
+            <div class="mb-5 flex items-center gap-3">
+              <div class="section-icon"><ng-icon name="heroUser" size="20"></ng-icon></div>
+              <div>
+                <h2 class="text-xl font-black text-slate-950">Customer Information</h2>
+                <p class="text-xs font-semibold text-slate-500">Bill-to and ship-to details</p>
+              </div>
             </div>
-            <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ viewMode() === 'client' ? 'Customer Details' : 'Select Client' }}</h2>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="md:col-span-2">
+                <label class="studio-label">Customer Name</label>
+                <input formControlName="customerName" class="studio-input h-12" placeholder="Search or enter customer name" />
+              </div>
+              <div>
+                <label class="studio-label">Mobile Number</label>
+                <input formControlName="customerMobile" class="studio-input h-12" placeholder="9876543210" />
+              </div>
+              <div>
+                <label class="studio-label">Email</label>
+                <input formControlName="customerEmail" class="studio-input h-12" placeholder="customer@example.com" />
+              </div>
+              <div>
+                <label class="studio-label">GST Number</label>
+                <input formControlName="clientGstin" class="studio-input h-12 uppercase" placeholder="24ABCDE1234F1Z5" />
+              </div>
+              <div>
+                <label class="studio-label">Client Workspace</label>
+                <input class="studio-input h-12" [value]="organization().name" disabled />
+              </div>
+              <div class="md:col-span-2">
+                <label class="studio-label">Billing Address</label>
+                <textarea formControlName="customerAddress" rows="3" class="studio-input py-3" placeholder="Enter complete billing address"></textarea>
+              </div>
+              <div class="md:col-span-2">
+                <label class="studio-label">Shipping Address</label>
+                <textarea formControlName="shippingAddress" rows="3" class="studio-input py-3" placeholder="Enter shipping address if different"></textarea>
+              </div>
+            </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Client Search (Only for FIRM mode) -->
-            @if (viewMode() === 'firm') {
-              <div class="col-span-2 relative">
-                <label class="studio-label">Search Client Database</label>
-                <div class="relative group">
-                  <ng-icon name="heroMagnifyingGlass" size="18" class="absolute left-3 top-3.5 text-slate-400 group-focus-within:text-primary transition-colors"></ng-icon>
-                  <input 
-                    type="text" 
-                    [formControl]="clientSearchControl"
-                    class="studio-input pl-10 h-12"
-                    placeholder="Start typing name, GSTIN or code..."
-                  />
-                </div>
-                
-                <!-- Search Results Dropdown -->
-                @if (clientSearchControl.value && clientsResource.value()?.data?.length) {
-                  <div class="absolute z-[100] w-full mt-2 glass-card-float shadow-2xl max-h-64 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
-                    @for (client of clients(); track client.id) {
-                      <button 
-                        type="button"
-                        class="dropdown-item p-4 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors w-full text-left"
-                        (click)="onSelectClient(client.id)">
-                        <div class="flex items-center justify-between">
-                          <div>
-                            <p class="font-bold text-slate-900 dark:text-white">{{ client.name }}</p>
-                            <p class="text-xs text-slate-500 font-medium">{{ client.gstin || 'No GSTIN' }} • {{ client.code }}</p>
-                          </div>
-                          <ng-icon name="heroPlus" size="16" class="text-primary opacity-0 group-hover:opacity-100"></ng-icon>
-                        </div>
-                      </button>
-                    }
-                  </div>
-                }
+          <div class="glass-card p-6">
+            <div class="mb-5 flex items-center gap-3">
+              <div class="section-icon"><ng-icon name="heroDocumentText" size="20"></ng-icon></div>
+              <div>
+                <h2 class="text-xl font-black text-slate-950">Invoice Information</h2>
+                <p class="text-xs font-semibold text-slate-500">Document, warehouse, and status</p>
+              </div>
+            </div>
 
-                @if (selectedClient() && !clientSearchControl.value) {
-                  <div class="mt-4 p-4 rounded-xl bg-primary-50 dark:bg-primary-900/10 border border-primary-100 dark:border-primary-900/30 flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                      <div class="w-10 h-10 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center shadow-sm">
-                        <ng-icon name="heroCheckCircle" size="20" class="text-green-500"></ng-icon>
-                      </div>
-                      <div>
-                        <p class="text-sm font-bold text-slate-900 dark:text-white">{{ selectedClient()?.name }}</p>
-                        <p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{{ selectedClient()?.gstin || 'B2C (UNREGISTERED)' }}</p>
-                      </div>
-                    </div>
-                    <button class="text-slate-400 hover:text-danger-500 transition-colors" (click)="onSelectClient('')">
-                      <ng-icon name="heroXMark" size="18"></ng-icon>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label class="studio-label">Invoice Number</label>
+                <input [formControl]="invoiceNumberControl" class="studio-input h-12" placeholder="Auto generated" />
+              </div>
+              <div>
+                <label class="studio-label">Document Type</label>
+                <select formControlName="invoiceType" class="studio-select h-12">
+                  <option value="tax_invoice">Tax Invoice</option>
+                  <option value="proforma">Proforma Invoice</option>
+                  <option value="quotation">Quotation</option>
+                  <option value="credit_note">Credit Note</option>
+                  <option value="debit_note">Debit Note</option>
+                </select>
+              </div>
+              <div>
+                <label class="studio-label">Invoice Date</label>
+                <input type="date" formControlName="invoiceDate" class="studio-input h-12" />
+              </div>
+              <div>
+                <label class="studio-label">Due Date</label>
+                <input type="date" formControlName="dueDate" class="studio-input h-12" />
+              </div>
+              <div>
+                <label class="studio-label">Warehouse</label>
+                <select formControlName="warehouseId" class="studio-select h-12">
+                  <option value="">Select warehouse</option>
+                  @for (warehouse of warehouses(); track warehouse.id) {
+                    <option [value]="warehouse.id">{{ warehouse.name }} ({{ warehouse.code }})</option>
+                  }
+                </select>
+              </div>
+              <div>
+                <label class="studio-label">Sales Person</label>
+                <input formControlName="salesPerson" class="studio-input h-12" placeholder="Sales person / counter" />
+              </div>
+              <div>
+                <label class="studio-label">Payment Method</label>
+                <select formControlName="paymentMethod" class="studio-select h-12">
+                  <option value="upi">UPI</option>
+                  <option value="cash">Cash</option>
+                  <option value="card">Card</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="cheque">Cheque</option>
+                  <option value="credit">Credit</option>
+                </select>
+              </div>
+              <div>
+                <label class="studio-label">Status</label>
+                <select formControlName="paymentStatus" class="studio-select h-12">
+                  <option value="draft">Draft</option>
+                  <option value="pending">Pending</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <label class="radio-tile" [class.active]="selectedGstType() === 'CGST_SGST'">
+                <input type="radio" formControlName="gstType" value="CGST_SGST" class="hidden" />
+                <p class="font-black text-sm">CGST + SGST</p>
+                <p class="mt-1 text-[10px] font-semibold text-slate-500">Same-state sale</p>
+              </label>
+              <label class="radio-tile" [class.active]="selectedGstType() === 'IGST'">
+                <input type="radio" formControlName="gstType" value="IGST" class="hidden" />
+                <p class="font-black text-sm">IGST</p>
+                <p class="mt-1 text-[10px] font-semibold text-slate-500">Different-state sale</p>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="glass-card overflow-hidden">
+          <div class="border-b border-slate-100 p-6">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div class="flex items-center gap-3">
+                <div class="section-icon"><ng-icon name="heroQueueList" size="20"></ng-icon></div>
+                <div>
+                  <h2 class="text-xl font-black text-slate-950">Product Items Table</h2>
+                  <p class="text-xs font-semibold text-slate-500">Search by item, SKU, or barcode and validate available stock.</p>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <input [formControl]="barcodeScanControl" class="studio-input h-11 sm:w-64" placeholder="Scan or type barcode" />
+                <button type="button" class="btn-studio-secondary h-11 justify-center" (click)="onBarcodeScan()">
+                  <ng-icon name="heroBolt" size="17"></ng-icon>
+                  <span>Scan Barcode</span>
+                </button>
+                <button type="button" class="btn-studio-primary h-11 justify-center" (click)="addLineItem()" [disabled]="readOnlyMode()">
+                  <ng-icon name="heroPlus" size="17"></ng-icon>
+                  <span>Add Item</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto" formArrayName="lineItems">
+            <div class="min-w-[1120px]">
+              <div class="grid grid-cols-[240px_130px_150px_80px_120px_90px_110px_130px_44px] gap-3 bg-slate-50 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <div>Item</div>
+                <div>SKU</div>
+                <div>Serial / Batch</div>
+                <div class="text-center">Qty</div>
+                <div class="text-right">Price</div>
+                <div class="text-right">GST</div>
+                <div class="text-right">Discount</div>
+                <div class="text-right">Total</div>
+                <div></div>
+              </div>
+
+              @for (item of lineItemsArray.controls; track $index; let i = $index) {
+                <div [formGroupName]="i" class="grid grid-cols-[240px_130px_150px_80px_120px_90px_110px_130px_44px] gap-3 border-t border-slate-100 px-5 py-4">
+                  <div>
+                    <select formControlName="itemId" class="studio-select h-11" (change)="onSelectInventoryItem(i, $any($event.target).value)">
+                      <option value="">Search product / service</option>
+                      @for (product of inventoryItems(); track product.id) {
+                        <option [value]="product.id">{{ product.name }}{{ product.sku ? ' - ' + product.sku : '' }}</option>
+                      }
+                    </select>
+                    <input formControlName="description" class="studio-input mt-2 h-10" placeholder="Item description" />
+                    <p class="mt-1 text-[11px] font-bold" [ngClass]="stockTone(i)">
+                      @if (item.controls.trackInventory.value) {
+                        Available Stock = {{ item.controls.availableStock.value ?? 'Not loaded' }}
+                      } @else {
+                        Service / non-stock item
+                      }
+                    </p>
+                  </div>
+
+                  <div>
+                    <input formControlName="sku" class="studio-input h-11" placeholder="SKU" />
+                    <input formControlName="sacCode" class="studio-input mt-2 h-10" placeholder="HSN/SAC" />
+                  </div>
+
+                  <div>
+                    <input formControlName="batchNo" class="studio-input h-11" placeholder="Serial / Batch" />
+                    <p class="mt-2 rounded-xl bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-500">Scanner auto-fills item, price, and stock when barcode exists.</p>
+                  </div>
+
+                  <div>
+                    <input type="number" formControlName="quantity" class="studio-input h-11 text-center" min="0.01" />
+                  </div>
+
+                  <div>
+                    <input type="number" formControlName="unitRate" class="studio-input h-11 text-right" min="0" />
+                  </div>
+
+                  <div>
+                    <input type="number" formControlName="gstRate" class="studio-input h-11 text-right" min="0" max="100" />
+                  </div>
+
+                  <div>
+                    <input type="number" formControlName="discountPct" class="studio-input h-11 text-right" min="0" max="100" />
+                    <p class="mt-2 text-right text-[11px] font-bold text-slate-400">{{ lineDiscount(i) | inrCurrency }}</p>
+                  </div>
+
+                  <div class="text-right">
+                    <p class="text-base font-black text-slate-950">{{ lineTotal(i) | inrCurrency }}</p>
+                    <p class="mt-1 text-[11px] font-bold text-slate-400">Tax {{ lineTax(i) | inrCurrency }}</p>
+                  </div>
+
+                  <div class="flex justify-end">
+                    <button type="button"
+                            class="flex h-10 w-10 items-center justify-center rounded-xl text-slate-300 transition hover:bg-rose-50 hover:text-rose-600"
+                            (click)="removeLineItem(i)"
+                            [disabled]="lineItemsArray.length === 1 || readOnlyMode()">
+                      <ng-icon name="heroTrash" size="18"></ng-icon>
                     </button>
                   </div>
-                }
-              </div>
-            } @else {
-              <!-- Customer Fields (Only for CLIENT mode) -->
-              <div class="col-span-1">
-                <label class="studio-label">Customer Name</label>
-                <input formControlName="customerName" class="studio-input h-12" placeholder="e.g. John Doe / Ace Corp" />
-              </div>
-              <div class="col-span-1">
-                <label class="studio-label">Customer GSTIN (Optional)</label>
-                <input formControlName="clientGstin" class="studio-input h-12" placeholder="22AAAAA0000A1Z5" />
-              </div>
-              <div class="col-span-2">
-                <label class="studio-label">Billing Address</label>
-                <textarea formControlName="customerAddress" rows="2" class="studio-input py-3" placeholder="Enter complete address..."></textarea>
-              </div>
-            }
+                </div>
+              }
+            </div>
           </div>
         </section>
 
-        <!-- Document Configuration -->
-        <section class="glass-card p-6">
-          <div class="flex items-center gap-3 mb-6">
-            <div class="section-icon shadow-blue-100"><ng-icon name="heroDocumentText" size="20"></ng-icon></div>
-            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Document Config</h2>
+        <section class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div class="glass-card p-6">
+            <div class="mb-5 flex items-center gap-3">
+              <div class="section-icon"><ng-icon name="heroClipboardDocumentCheck" size="20"></ng-icon></div>
+              <div>
+                <h2 class="text-xl font-black text-slate-950">Payment Information</h2>
+                <p class="text-xs font-semibold text-slate-500">Payment capture and outstanding balance</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label class="studio-label">Payment Status</label>
+                <select formControlName="paymentStatus" class="studio-select h-12">
+                  <option value="draft">Draft</option>
+                  <option value="pending">Pending</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </div>
+              <div>
+                <label class="studio-label">Payment Method</label>
+                <select formControlName="paymentMethod" class="studio-select h-12">
+                  <option value="upi">UPI</option>
+                  <option value="cash">Cash</option>
+                  <option value="card">Card</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="cheque">Cheque</option>
+                  <option value="credit">Credit</option>
+                </select>
+              </div>
+              <div>
+                <label class="studio-label">Transaction ID</label>
+                <input formControlName="transactionId" class="studio-input h-12" placeholder="TXN784512" />
+              </div>
+              <div>
+                <label class="studio-label">Amount Paid</label>
+                <input type="number" formControlName="amountPaid" class="studio-input h-12 text-right" min="0" />
+              </div>
+            </div>
+
+            <div class="mt-5 rounded-2xl bg-slate-50 p-4">
+              <div class="flex items-center justify-between text-sm font-bold text-slate-500">
+                <span>Remaining Balance</span>
+                <span class="text-xl font-black text-slate-950">{{ salesTotals().balanceDue | inrCurrency }}</span>
+              </div>
+            </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label class="studio-label">Document Type</label>
-              <select formControlName="invoiceType" class="studio-select h-12">
-                <option value="tax_invoice">Tax Invoice</option>
-                <option value="proforma">Proforma Invoice</option>
-                <option value="quotation">Quotation</option>
-                <option value="credit_note">Credit Note</option>
-                <option value="debit_note">Debit Note</option>
-              </select>
-            </div>
-            <div>
-              <label class="studio-label">Invoice Date</label>
-              <input type="date" formControlName="invoiceDate" class="studio-input h-12" />
-            </div>
-            <div>
-              <label class="studio-label">Due Date</label>
-              <input type="date" formControlName="dueDate" class="studio-input h-12" />
-            </div>
-          </div>
-          
-          <div class="mt-6 flex flex-wrap gap-4">
-            <label class="radio-tile flex-1 min-w-[200px]" [class.active]="selectedGstType() === 'CGST_SGST'">
-              <input type="radio" formControlName="gstType" value="CGST_SGST" class="hidden">
-              <div class="radio-content">
-                <p class="font-bold text-sm">CGST + SGST</p>
-                <p class="text-[10px] opacity-60">Intra-state (Within same state)</p>
+          <div class="glass-card p-6">
+            <h2 class="mb-5 text-xl font-black text-slate-950">Notes / Terms & Conditions</h2>
+            <div class="space-y-4">
+              <div>
+                <label class="studio-label">Customer Notes</label>
+                <textarea formControlName="notes" rows="3" class="studio-input py-3" placeholder="Visible invoice notes"></textarea>
               </div>
-            </label>
-            <label class="radio-tile flex-1 min-w-[200px]" [class.active]="selectedGstType() === 'IGST'">
-              <input type="radio" formControlName="gstType" value="IGST" class="hidden">
-              <div class="radio-content">
-                <p class="font-bold text-sm">IGST</p>
-                <p class="text-[10px] opacity-60">Inter-state (Different states)</p>
+              <div>
+                <label class="studio-label">Internal Notes</label>
+                <textarea formControlName="internalNotes" rows="3" class="studio-input py-3" placeholder="Internal team notes"></textarea>
               </div>
-            </label>
+              <div>
+                <label class="studio-label">Terms & Conditions</label>
+                <textarea formControlName="terms" rows="3" class="studio-input py-3" placeholder="Goods once sold will not be returned."></textarea>
+              </div>
+            </div>
           </div>
         </section>
 
-        <!-- Line Items Studio -->
-        <section class="glass-card p-6 overflow-hidden">
-          <div class="flex items-center justify-between mb-6">
-            <div class="flex items-center gap-3">
-              <div class="section-icon shadow-slate-100"><ng-icon name="heroQueueList" size="20"></ng-icon></div>
-              <h2 class="text-xl font-bold text-slate-900 dark:text-white">Service Items</h2>
-            </div>
-            <button type="button" class="btn-studio-text group" (click)="addLineItem()" [disabled]="readOnlyMode()">
-              <ng-icon name="heroPlus" size="18" class="group-hover:rotate-90 transition-transform duration-300"></ng-icon>
-              <span>Add Row</span>
+        <section class="glass-card p-5">
+          <div class="flex flex-wrap items-center justify-end gap-3">
+            <button type="button" class="btn-studio-secondary" (click)="saveDraft()" [disabled]="isSubmitting()">
+              <ng-icon name="heroBookmark" size="18"></ng-icon>
+              <span>Save Draft</span>
+            </button>
+            <button type="button" class="btn-studio-primary" (click)="saveAndIssue()" [disabled]="isSubmitting() || invoiceForm.invalid">
+              <ng-icon name="heroPaperAirplane" size="18"></ng-icon>
+              <span>Generate Invoice</span>
+            </button>
+            <button type="button" class="btn-studio-secondary" (click)="printInvoice()">
+              <span>Print</span>
+            </button>
+            <button type="button" class="btn-studio-secondary" (click)="downloadPdf()">
+              <span>Download PDF</span>
+            </button>
+            <button type="button" class="btn-studio-secondary" (click)="sendMail()">
+              <span>Send Mail</span>
+            </button>
+            <button type="button" class="btn-studio-secondary" (click)="sendWhatsApp()">
+              <span>WhatsApp</span>
             </button>
           </div>
-
-          <div class="items-grid flex flex-col gap-4" formArrayName="lineItems">
-            <div class="items-header grid grid-cols-[1fr_100px_140px_140px_50px] gap-4 px-4 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              <div>Description & SAC</div>
-              <div class="text-center">Qty</div>
-              <div class="text-right">Rate</div>
-              <div class="text-right">Amount</div>
-              <div></div>
-            </div>
-
-            @for (item of lineItemsArray.controls; track $index; let i = $index) {
-              <div [formGroupName]="i" class="item-row grid grid-cols-[1fr_100px_140px_140px_50px] gap-4 p-4 rounded-2xl hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-800 animate-in slide-in-from-left duration-300">
-                <div class="space-y-2">
-                  <input 
-                    formControlName="description" 
-                    class="studio-input-minimal font-bold text-slate-900 dark:text-white" 
-                    placeholder="Enter service or product name..."
-                  />
-                  <div class="flex items-center gap-2">
-                    <span class="text-[9px] font-black bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-slate-500 uppercase tracking-tighter">SAC/HSN</span>
-                    <input 
-                      formControlName="sacCode" 
-                      class="studio-input-minimal text-xs text-slate-400 font-medium" 
-                      placeholder="998231"
-                    />
-                  </div>
-                </div>
-                <div class="flex items-center justify-center">
-                  <input type="number" formControlName="quantity" class="studio-input text-center h-10 w-full" />
-                </div>
-                <div class="relative flex items-center">
-                  <span class="absolute left-3 text-slate-300 text-xs font-bold">₹</span>
-                  <input type="number" formControlName="unitRate" class="studio-input text-right h-10 pr-3 pl-7 w-full" />
-                </div>
-                <div class="flex items-center justify-end font-black text-slate-900 dark:text-white text-base">
-                  {{ (lineAmount(i) || 0) | inrCurrency }}
-                </div>
-                <div class="flex items-center justify-center">
-                  <button 
-                    type="button"
-                    class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-danger-500 hover:bg-danger-50 transition-all" 
-                    (click)="removeLineItem(i)"
-                    [disabled]="lineItemsArray.length === 1 || readOnlyMode()">
-                    <ng-icon name="heroTrash" size="18"></ng-icon>
-                  </button>
-                </div>
-              </div>
-            }
-          </div>
         </section>
+      </div>
 
-        <!-- Notes Area -->
-        <section class="glass-card p-6">
-          <label class="studio-label">Terms & Conditions / Internal Notes</label>
-          <textarea formControlName="notes" rows="4" class="studio-input mt-3 py-4" placeholder="Include payment instructions, bank details, or terms..."></textarea>
-        </section>
-      </main>
-
-      <!-- Studio Sidebar -->
-      <aside class="studio-sidebar space-y-6">
-        <!-- Summary Workspace -->
-        <div class="glass-card-primary p-6 text-white overflow-hidden relative shadow-2xl shadow-primary-500/20">
-          <div class="absolute top-[-40px] right-[-40px] opacity-[0.05] pointer-events-none">
-            <ng-icon name="heroArrowTrendingUp" size="180"></ng-icon>
-          </div>
-          
-          <h3 class="text-[10px] font-black text-white/50 uppercase tracking-[0.2em] mb-8">Computation Panel</h3>
-          
-          <div class="space-y-5">
-            <div class="flex justify-between items-center text-sm font-medium">
+      <aside class="space-y-6 2xl:sticky 2xl:top-6 2xl:h-fit">
+        <div class="glass-card-primary p-6 text-white shadow-2xl">
+          <h3 class="mb-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Tax & Total Summary</h3>
+          <div class="space-y-4">
+            <div class="flex justify-between text-sm">
               <span class="text-white/60">Subtotal</span>
-              <span class="font-mono">{{ gstCalc().subtotal | inrCurrency }}</span>
+              <span class="font-mono font-bold">{{ salesTotals().subtotal | inrCurrency }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-white/60">Discount</span>
+              <span class="font-mono font-bold">- {{ salesTotals().discountAmount | inrCurrency }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-white/60">Taxable Value</span>
+              <span class="font-mono font-bold">{{ salesTotals().taxableAmount | inrCurrency }}</span>
             </div>
 
-            <div class="space-y-2 pt-2 border-t border-white/10">
+            <div class="border-t border-white/10 pt-4">
               @if (selectedGstType() === 'CGST_SGST') {
-                <div class="flex justify-between items-center text-xs">
-                  <span class="text-white/50">CGST (9%)</span>
-                  <span class="font-mono text-white/80">{{ gstCalc().cgstAmount | inrCurrency }}</span>
+                <div class="flex justify-between text-xs">
+                  <span class="text-white/50">CGST</span>
+                  <span class="font-mono">{{ salesTotals().cgstAmount | inrCurrency }}</span>
                 </div>
-                <div class="flex justify-between items-center text-xs">
-                  <span class="text-white/50">SGST (9%)</span>
-                  <span class="font-mono text-white/80">{{ gstCalc().sgstAmount | inrCurrency }}</span>
+                <div class="mt-2 flex justify-between text-xs">
+                  <span class="text-white/50">SGST</span>
+                  <span class="font-mono">{{ salesTotals().sgstAmount | inrCurrency }}</span>
                 </div>
               } @else {
-                <div class="flex justify-between items-center text-xs">
-                  <span class="text-white/50">IGST (18%)</span>
-                  <span class="font-mono text-white/80">{{ gstCalc().igstAmount | inrCurrency }}</span>
+                <div class="flex justify-between text-xs">
+                  <span class="text-white/50">IGST</span>
+                  <span class="font-mono">{{ salesTotals().igstAmount | inrCurrency }}</span>
                 </div>
               }
             </div>
 
-            @if (gstCalc().roundOff !== 0) {
-              <div class="flex justify-between items-center text-[10px] text-white/40 italic">
-                <span>Adjustment (Round Off)</span>
-                <span>{{ gstCalc().roundOff | inrCurrency }}</span>
-              </div>
-            }
-
-            <div class="pt-6 mt-4 border-t-2 border-white/20">
-              <div class="flex flex-col">
-                <span class="text-[9px] font-black text-white/40 uppercase tracking-widest mb-1">Final Payable Amount</span>
-                <span class="text-4xl font-black tracking-tighter shadow-text">{{ gstCalc().totalAmount | inrCurrency }}</span>
+            <div class="border-t border-white/20 pt-5">
+              <span class="text-[9px] font-black uppercase tracking-widest text-white/40">Grand Total</span>
+              <p class="mt-1 text-4xl font-black tracking-tight">{{ salesTotals().grandTotal | inrCurrency }}</p>
+              <div class="mt-4 grid grid-cols-2 gap-3 text-xs">
+                <div class="rounded-2xl bg-white/10 p-3">
+                  <p class="text-white/50">Paid</p>
+                  <p class="mt-1 font-mono font-black">{{ salesTotals().amountPaid | inrCurrency }}</p>
+                </div>
+                <div class="rounded-2xl bg-white/10 p-3">
+                  <p class="text-white/50">Balance</p>
+                  <p class="mt-1 font-mono font-black">{{ salesTotals().balanceDue | inrCurrency }}</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Quick Templates / Products -->
-        <div class="glass-card p-6">
-          <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <ng-icon name="heroBolt" size="14" class="text-amber-500 fill-amber-500"></ng-icon>
-              <span>{{ viewMode() === 'client' ? 'Product Catalog' : 'Service Portfolio' }}</span>
-            </div>
-            @if (serviceTemplatesResource.isLoading()) {
-              <div class="loader-sm w-4 h-4"></div>
-            }
-          </h3>
-          
-          <div class="flex flex-col gap-3">
-            @for (template of serviceTemplates(); track template.id) {
-              <button 
-                type="button"
-                class="template-tile group"
-                (click)="applyTemplate(template)"
-                [disabled]="readOnlyMode()">
-                <div class="flex flex-col text-left flex-1 min-w-0">
-                  <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate group-hover:text-primary transition-colors">{{ template.name }}</span>
-                  <span class="text-[10px] text-slate-400 font-medium mt-0.5">₹{{ template.defaultRate | number }} + {{ template.defaultGstRate }}% Tax</span>
-                </div>
-                <div class="p-1 px-2 rounded-lg bg-primary-50 text-primary opacity-0 group-hover:opacity-100 transition-all transform scale-90 group-hover:scale-100">
-                  <ng-icon name="heroPlus" size="14"></ng-icon>
-                </div>
-              </button>
-            } @empty {
-              @if (!serviceTemplatesResource.isLoading()) {
-                <div class="text-center py-10 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border-2 border-dashed border-slate-100 dark:border-slate-800">
-                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No Items Loaded</p>
-                </div>
-              }
-            }
+        <div class="glass-card p-5">
+          <h4 class="mb-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Inventory Actions On Submit</h4>
+          <div class="space-y-3 text-sm font-semibold text-slate-600">
+            <div class="flex items-center gap-3"><ng-icon name="heroCheckCircle" size="16" class="text-emerald-500"></ng-icon><span>Validate available stock</span></div>
+            <div class="flex items-center gap-3"><ng-icon name="heroCheckCircle" size="16" class="text-emerald-500"></ng-icon><span>Deduct inventory on generated invoice</span></div>
+            <div class="flex items-center gap-3"><ng-icon name="heroCheckCircle" size="16" class="text-emerald-500"></ng-icon><span>Create SALE ledger movement</span></div>
+            <div class="flex items-center gap-3"><ng-icon name="heroCheckCircle" size="16" class="text-emerald-500"></ng-icon><span>Keep invoice audit trail</span></div>
           </div>
         </div>
 
-        <!-- Sender Info / Profile Snapshot -->
-        <div class="glass-card p-5 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/50 dark:to-slate-900/50 border-slate-100">
-          <h4 class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">
-            {{ viewMode() === 'client' ? 'Business Identity' : 'Issuer Profile' }}
-          </h4>
+        <div class="glass-card p-5">
+          <h4 class="mb-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Client Business Identity</h4>
           <div class="flex items-start gap-3">
-            <div class="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-lg shadow-slate-200/50 ring-1 ring-slate-100">
-              <ng-icon name="heroBuildingOffice" size="22" class="text-primary-600"></ng-icon>
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+              <ng-icon name="heroBuildingOffice" size="22"></ng-icon>
             </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-black text-slate-900 dark:text-white truncate">{{ organization().name }}</p>
-              <div class="flex items-center gap-1.5 mt-1">
-                <span class="text-[10px] font-bold bg-green-50 text-green-600 px-1.5 rounded">{{ organization().gstin }}</span>
-              </div>
-              <p class="text-[10px] text-slate-400 font-medium mt-2 leading-relaxed line-clamp-2">{{ organization().addressLine1 }}</p>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-black text-slate-950">{{ organization().name }}</p>
+              <p class="mt-1 text-xs font-bold text-emerald-600">{{ organization().gstin }}</p>
+              <p class="mt-2 line-clamp-2 text-xs font-medium leading-5 text-slate-400">{{ organization().addressLine1 }}</p>
             </div>
-          </div>
-          
-          <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Verified Billing Entity</span>
-            <ng-icon name="heroShieldCheck" size="14" class="text-green-500"></ng-icon>
           </div>
         </div>
       </aside>
-    </div>
+    </main>
   }
 </div>

@@ -6,7 +6,18 @@ export const CreateInvoiceSchema = z.object({
   dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)').optional(),
   expiryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)').optional(),
   invoiceType: z.enum(['tax_invoice', 'proforma', 'quotation', 'credit_note', 'debit_note']).optional().default('tax_invoice'),
+  status: z.enum(['draft', 'issued', 'paid']).optional(),
+  gstType: z.enum(['CGST_SGST', 'IGST']).optional(),
+  clientGstin: z.string().optional().nullable(),
+  customerName: z.string().optional().nullable(),
+  customerMobile: z.string().optional().nullable(),
+  customerEmail: z.string().email().optional().nullable(),
+  customerAddress: z.string().optional().nullable(),
+  shippingAddress: z.string().optional().nullable(),
+  amountPaid: z.number().min(0).optional(),
+  discountAmount: z.number().min(0).optional(),
   notes: z.string().optional(),
+  internalNotes: z.string().optional().nullable(),
   lineItems: z.array(
     z.object({
       description: z.string().min(1, 'Description is required'),
@@ -16,12 +27,20 @@ export const CreateInvoiceSchema = z.object({
       variantId: z.string().uuid().optional().nullable(),
       warehouseId: z.string().uuid().optional().nullable(),
       batchNo: z.string().optional().nullable(),
+      serialNo: z.string().optional().nullable(),
       trackInventory: z.boolean().optional().default(false),
       quantity: z.number().positive('Quantity must be positive'),
       unitRate: z.number().min(0, 'Unit rate must be non-negative'),
       gstRate: z.number().min(0).max(100).optional(),
+      discountPct: z.number().min(0).max(100).optional(),
     })
   ).min(1, 'At least one line item is required'),
+});
+
+export const UpdateInvoiceSchema = CreateInvoiceSchema.partial({
+  clientId: true,
+  invoiceDate: true,
+  lineItems: true,
 });
 
 export const UpdateInvoiceStatusSchema = z.object({

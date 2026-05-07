@@ -27,10 +27,10 @@ export class BillingService {
       throw new AppError('Client not found', 404);
     }
 
-    const invoiceType: string = data.invoiceType || 'tax_invoice';
+    const invoiceType = (data.invoiceType || 'tax_invoice') as 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
     const isQuotation = invoiceType === 'quotation';
     const isIgst = org.stateCode !== (client as any).stateCode;
-    const gstType = isIgst ? ('IGST' as const) : ('CGST_SGST' as const);
+    const gstType = data.gstType || (isIgst ? ('IGST' as const) : ('CGST_SGST' as const));
     const placeOfSupply = (client as any).stateCode;
 
     let subtotal = 0;
@@ -41,21 +41,20 @@ export class BillingService {
     });
 
     // For quotations, skip GST computation — amounts are zero until converted
-    let cgstAmount = 0;
-    let sgstAmount = 0;
-    let igstAmount = 0;
-    let totalAmount = subtotal;
-    let roundOff = 0;
-
-    if (!isQuotation) {
-      const taxCalculation = calculateGST(itemsWithAmounts, (client as any).stateCode, org.stateCode);
-      cgstAmount = (taxCalculation as any).cgst || 0;
-      sgstAmount = (taxCalculation as any).sgst || 0;
-      igstAmount = (taxCalculation as any).igst || 0;
-      roundOff = taxCalculation.roundOff;
-      totalAmount = (taxCalculation as any).total || 0;
-      subtotal = taxCalculation.subtotal !== undefined ? taxCalculation.subtotal : 0;
-    }
+    const amountSummary = calculateInvoiceAmounts(
+      itemsWithAmounts,
+      isQuotation,
+      gstType,
+      Number(data.discountAmount ?? 0),
+    );
+    subtotal = amountSummary.subtotal;
+    const discountAmount = amountSummary.discountAmount;
+    const cgstAmount = amountSummary.cgstAmount;
+    const sgstAmount = amountSummary.sgstAmount;
+    const igstAmount = amountSummary.igstAmount;
+    const totalAmount = amountSummary.totalAmount;
+    const roundOff = amountSummary.roundOff;
+    const amountPaid = Math.min(Number(data.amountPaid ?? (data.status === 'paid' ? totalAmount : 0)), totalAmount);
     
     const financialYear = getFinancialYear(new Date(data.invoiceDate));
     const invoiceNumber = await this.invoiceRepo.generateNextInvoiceNumber(organizationId, financialYear);
@@ -67,6 +66,8 @@ export class BillingService {
       dueDate = d.toISOString().split('T')[0];
     }
 
+    const hasExternalReceiver = Boolean(data.customerName || data.customerAddress);
+    const issuerGstin = hasExternalReceiver ? ((client as any).gstin || null) : org.gstin;
     const invoiceProps = {
       organizationId,
       clientId: client.id,
@@ -78,19 +79,23 @@ export class BillingService {
       expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
       gstType,
       placeOfSupply,
-      clientGstin: (client as any).gstin,
-      firmGstin: org.gstin,
+      clientGstin: hasExternalReceiver ? (data.clientGstin || null) : (data.clientGstin || (client as any).gstin),
+      firmGstin: issuerGstin,
       subtotal,
+      discountType: discountAmount > 0 ? ('flat' as const) : null,
+      discountValue: discountAmount,
+      discountAmount,
       cgstAmount,
       sgstAmount,
       igstAmount,
       roundOff,
       totalAmount,
-      amountPaid: 0,
-      balanceDue: totalAmount,
+      amountPaid,
+      balanceDue: Math.max(totalAmount - amountPaid, 0),
       notes: data.notes,
-      receiverName: data.customerName,
-      receiverAddress: data.customerAddress,
+      internalNotes: data.internalNotes ?? null,
+      receiverName: data.customerName || null,
+      receiverAddress: data.customerAddress || null,
       createdBy: adminId
     };
 
@@ -104,7 +109,7 @@ export class BillingService {
         itemId: item.itemId ?? null,
         variantId: item.variantId ?? null,
         warehouseId: item.warehouseId ?? null,
-        batchNo: item.batchNo ?? null,
+        batchNo: item.batchNo ?? item.serialNo ?? null,
         trackInventory: item.trackInventory === true,
         description: item.description,
         sacCode: item.sacCode,
@@ -127,6 +132,120 @@ export class BillingService {
     }
 
     return saved;
+  }
+
+  async updateInvoice(organizationId: string, invoiceId: string, data: any) {
+    const existing = await this.invoiceRepo.findById(invoiceId, organizationId);
+    if (!existing) throw new AppError('Invoice not found', 404);
+    if (existing.status !== 'draft') throw new AppError('Only draft invoices can be edited', 400);
+
+    const org = await OrganizationModel.findByPk(organizationId);
+    if (!org) throw new AppError('Organization not found', 404);
+
+    const clientId = data.clientId || existing.clientId;
+    const client = await this.clientRepo.findById(clientId);
+    if (!client || (client as any).organizationId !== organizationId) {
+      throw new AppError('Client not found', 404);
+    }
+
+    const invoiceType = (data.invoiceType || existing.invoiceType || 'tax_invoice') as 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
+    const isQuotation = invoiceType === 'quotation';
+    const isIgst = org.stateCode !== (client as any).stateCode;
+    const gstType = data.gstType || existing.gstType || (isIgst ? ('IGST' as const) : ('CGST_SGST' as const));
+    const sourceLineItems = data.lineItems ?? existing.lineItems.map((item) => ({
+      serviceTemplateId: item.serviceTemplateId,
+      itemId: item.itemId,
+      variantId: item.variantId,
+      warehouseId: item.warehouseId,
+      batchNo: item.batchNo,
+      trackInventory: item.trackInventory,
+      description: item.description,
+      sacCode: item.sacCode,
+      quantity: item.quantity,
+      unitRate: item.unitRate,
+    }));
+
+    let subtotal = 0;
+    const itemsWithAmounts = sourceLineItems.map((item: any) => {
+      const amount = Number(item.quantity || 0) * Number(item.unitRate || 0);
+      subtotal += amount;
+      return { ...item, amount };
+    });
+
+    const amountSummary = calculateInvoiceAmounts(
+      itemsWithAmounts,
+      isQuotation,
+      gstType,
+      Number(data.discountAmount ?? existing.discountAmount ?? 0),
+    );
+    subtotal = amountSummary.subtotal;
+    const discountAmount = amountSummary.discountAmount;
+    const cgstAmount = amountSummary.cgstAmount;
+    const sgstAmount = amountSummary.sgstAmount;
+    const igstAmount = amountSummary.igstAmount;
+    const totalAmount = amountSummary.totalAmount;
+    const roundOff = amountSummary.roundOff;
+    const amountPaid = Math.min(
+      Object.prototype.hasOwnProperty.call(data, 'amountPaid') ? Number(data.amountPaid ?? 0) : Number(existing.amountPaid || 0),
+      totalAmount,
+    );
+
+    const hasClientGstin = Object.prototype.hasOwnProperty.call(data, 'clientGstin');
+    const hasCustomerName = Object.prototype.hasOwnProperty.call(data, 'customerName');
+    const hasCustomerAddress = Object.prototype.hasOwnProperty.call(data, 'customerAddress');
+    const receiverNameForUpdate = hasCustomerName ? data.customerName : existing.receiverName;
+    const receiverAddressForUpdate = hasCustomerAddress ? data.customerAddress : existing.receiverAddress;
+    const hasExternalReceiverForUpdate = Boolean(receiverNameForUpdate || receiverAddressForUpdate);
+
+    (existing as any).props.clientId = clientId;
+    (existing as any).props.invoiceType = invoiceType;
+    (existing as any).props.invoiceDate = data.invoiceDate ? new Date(data.invoiceDate) : existing.invoiceDate;
+    (existing as any).props.dueDate = data.dueDate ? new Date(data.dueDate) : existing.dueDate;
+    (existing as any).props.expiryDate = data.expiryDate ? new Date(data.expiryDate) : existing.expiryDate ?? null;
+    (existing as any).props.gstType = gstType;
+    (existing as any).props.placeOfSupply = (client as any).stateCode;
+    (existing as any).props.clientGstin = hasClientGstin
+      ? (data.clientGstin || null)
+      : hasExternalReceiverForUpdate
+        ? existing.clientGstin
+        : existing.clientGstin || (client as any).gstin;
+    (existing as any).props.firmGstin = hasExternalReceiverForUpdate ? ((client as any).gstin || null) : org.gstin;
+    (existing as any).props.subtotal = subtotal;
+    (existing as any).props.discountType = discountAmount > 0 ? 'flat' : null;
+    (existing as any).props.discountValue = discountAmount;
+    (existing as any).props.discountAmount = discountAmount;
+    (existing as any).props.cgstAmount = cgstAmount;
+    (existing as any).props.sgstAmount = sgstAmount;
+    (existing as any).props.igstAmount = igstAmount;
+    (existing as any).props.roundOff = roundOff;
+    (existing as any).props.totalAmount = totalAmount;
+    (existing as any).props.amountPaid = amountPaid;
+    (existing as any).props.balanceDue = Math.max(totalAmount - amountPaid, 0);
+    (existing as any).props.notes = Object.prototype.hasOwnProperty.call(data, 'notes') ? data.notes : existing.notes;
+    (existing as any).props.internalNotes = Object.prototype.hasOwnProperty.call(data, 'internalNotes') ? data.internalNotes : existing.internalNotes;
+    (existing as any).props.receiverName = receiverNameForUpdate || null;
+    (existing as any).props.receiverAddress = receiverAddressForUpdate || null;
+    (existing as any).props.lineItems = itemsWithAmounts.map((item: any, index: number) => {
+      const liResult = InvoiceLineItem.create({
+        invoiceId: existing.id,
+        serviceTemplateId: item.serviceTemplateId ?? null,
+        itemId: item.itemId ?? null,
+        variantId: item.variantId ?? null,
+        warehouseId: item.warehouseId ?? null,
+        batchNo: item.batchNo ?? item.serialNo ?? null,
+        trackInventory: item.trackInventory === true,
+        description: item.description,
+        sacCode: item.sacCode,
+        quantity: item.quantity,
+        unitRate: item.unitRate,
+        amount: item.amount,
+        sortOrder: index,
+      });
+      if (liResult.isFailure) throw new AppError(liResult.getError() as string, 500);
+      return liResult.getValue();
+    });
+
+    return this.invoiceRepo.save(existing);
   }
 
   async getInvoices(organizationId: string, filters: any, pagination: any) {
@@ -223,7 +342,7 @@ export class BillingService {
         organizationId,
         invoiceNo: invoice.invoiceNumber,
         invoiceDate: invoice.invoiceDate,
-        customerName: (client as any).name || (client as any).businessName || 'Client',
+        customerName: invoice.receiverName || (client as any).name || (client as any).businessName || 'Client',
         description: item.description,
         hsnSacCode: item.sacCode,
         quantity: item.quantity,
@@ -439,4 +558,51 @@ export class BillingService {
 
     return saved;
   }
+}
+
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function calculateInvoiceAmounts(
+  lineItems: any[],
+  isQuotation: boolean,
+  gstType: 'CGST_SGST' | 'IGST',
+  invoiceLevelDiscount = 0,
+) {
+  const subtotal = roundMoney(
+    lineItems.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.unitRate || 0), 0),
+  );
+  const lineDiscount = lineItems.reduce((sum, item) => {
+    const base = Number(item.quantity || 0) * Number(item.unitRate || 0);
+    return sum + base * (Number(item.discountPct || 0) / 100);
+  }, 0);
+  const discountAmount = roundMoney(lineDiscount + Number(invoiceLevelDiscount || 0));
+  const taxableAmount = Math.max(subtotal - discountAmount, 0);
+  const taxAmount = isQuotation
+    ? 0
+    : roundMoney(
+        lineItems.reduce((sum, item) => {
+          const base = Number(item.quantity || 0) * Number(item.unitRate || 0);
+          const discount = base * (Number(item.discountPct || 0) / 100);
+          const taxable = Math.max(base - discount, 0);
+          return sum + taxable * (Number(item.gstRate ?? 18) / 100);
+        }, 0),
+      );
+
+  const cgstAmount = gstType === 'CGST_SGST' ? roundMoney(taxAmount / 2) : 0;
+  const sgstAmount = gstType === 'CGST_SGST' ? roundMoney(taxAmount / 2) : 0;
+  const igstAmount = gstType === 'IGST' ? taxAmount : 0;
+  const totalBeforeRounding = taxableAmount + taxAmount;
+  const totalAmount = Math.round(totalBeforeRounding);
+
+  return {
+    subtotal,
+    discountAmount,
+    cgstAmount,
+    sgstAmount,
+    igstAmount,
+    roundOff: roundMoney(totalAmount - totalBeforeRounding),
+    totalAmount,
+  };
 }

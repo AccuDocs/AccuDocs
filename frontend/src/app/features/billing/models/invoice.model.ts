@@ -29,6 +29,8 @@ export interface Invoice {
   invoiceNumber: string;
   invoiceType?: 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
   expiryDate?: string;
+  receiverName?: string;
+  receiverAddress?: string;
   status: InvoiceStatus;
   invoiceDate: string;
   dueDate: string;
@@ -76,6 +78,16 @@ export interface CreateLineItemDto {
   quantity: number;
   unitRate: number;
   serviceTemplateId?: string;
+  itemId?: string;
+  variantId?: string;
+  warehouseId?: string;
+  batchNo?: string;
+  serialNo?: string;
+  sku?: string;
+  trackInventory?: boolean;
+  gstRate?: number;
+  discountPct?: number;
+  availableStock?: number | null;
 }
 
 export interface CreateInvoiceDto {
@@ -84,8 +96,14 @@ export interface CreateInvoiceDto {
   dueDate: string;
   invoiceType?: 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
   expiryDate?: string;
+  status?: 'draft' | 'issued' | 'paid';
+  amountPaid?: number;
+  discountAmount?: number;
   notes?: string;
+  internalNotes?: string;
   clientGstin?: string;
+  customerName?: string;
+  customerAddress?: string;
   gstType?: GstType;
   lineItems: CreateLineItemDto[];
 }
@@ -95,8 +113,14 @@ export interface UpdateInvoiceDto {
   dueDate?: string;
   invoiceType?: 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
   expiryDate?: string;
+  status?: 'draft' | 'issued' | 'paid';
+  amountPaid?: number;
+  discountAmount?: number;
   notes?: string;
+  internalNotes?: string;
   clientGstin?: string;
+  customerName?: string;
+  customerAddress?: string;
   gstType?: GstType;
   lineItems?: CreateLineItemDto[];
 }

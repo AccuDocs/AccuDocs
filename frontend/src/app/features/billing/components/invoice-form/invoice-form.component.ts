@@ -13,11 +13,14 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { HotToastService } from '@ngneat/hot-toast';
 import { PaginatedApiResponse } from '@core/services/workspace.service';
 import { AuthService, User } from '@core/services/auth.service';
+import { ClientService } from '@core/services/client.service';
+import { ToastService } from '@core/services/toast.service';
 import { environment } from '@environments/environment';
 import { of, startWith } from 'rxjs';
+import { InventoryService } from '@app/features/inventory/data-access/inventory.service';
+import type { Item, StockSummary, Warehouse } from '@app/features/inventory/models/inventory.models';
 import {
   CreateInvoiceDto,
   CreateLineItemDto,
@@ -81,14 +84,26 @@ interface BillingClient {
 
 type LineItemFormModel = {
   serviceTemplateId: FormControl<string | null>;
+  itemId: FormControl<string>;
+  variantId: FormControl<string>;
+  sku: FormControl<string>;
+  serialNo: FormControl<string>;
+  batchNo: FormControl<string>;
+  warehouseId: FormControl<string>;
+  trackInventory: FormControl<boolean>;
+  availableStock: FormControl<number | null>;
   description: FormControl<string>;
   sacCode: FormControl<string>;
   quantity: FormControl<number | null>;
   unitRate: FormControl<number | null>;
+  gstRate: FormControl<number | null>;
+  discountPct: FormControl<number | null>;
 };
 
 type InvoiceFormModel = {
   clientId: FormControl<string>;
+  warehouseId: FormControl<string>;
+  salesPerson: FormControl<string>;
   invoiceDate: FormControl<string>;
   dueDate: FormControl<string>;
   invoiceType: FormControl<'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note'>;
@@ -96,13 +111,36 @@ type InvoiceFormModel = {
   gstType: FormControl<GstType>;
   clientGstin: FormControl<string>;
   customerName: FormControl<string>;
+  customerMobile: FormControl<string>;
+  customerEmail: FormControl<string>;
   customerAddress: FormControl<string>;
+  shippingAddress: FormControl<string>;
+  paymentStatus: FormControl<'draft' | 'pending' | 'paid'>;
+  paymentMethod: FormControl<'cash' | 'upi' | 'card' | 'bank_transfer' | 'cheque' | 'credit'>;
+  transactionId: FormControl<string>;
+  amountPaid: FormControl<number | null>;
   notes: FormControl<string>;
+  internalNotes: FormControl<string>;
+  terms: FormControl<string>;
   lineItems: FormArray<FormGroup<LineItemFormModel>>;
   isRecurring: FormControl<boolean>;
   recurringFrequency: FormControl<'weekly' | 'monthly' | 'quarterly' | 'yearly'>;
   recurringAutoSend: FormControl<boolean>;
 };
+
+interface SalesTotals {
+  subtotal: number;
+  discountAmount: number;
+  taxableAmount: number;
+  taxAmount: number;
+  cgstAmount: number;
+  sgstAmount: number;
+  igstAmount: number;
+  grandTotal: number;
+  roundOff: number;
+  amountPaid: number;
+  balanceDue: number;
+}
 
 const DEFAULT_ORGANIZATION: BillingOrganization = {
   name: 'Shah & Associates',
@@ -179,7 +217,8 @@ function isoDateFromValue(value: string | Date | undefined): string {
       --studio-primary-glow: rgba(16, 185, 129, 0.2);
     }
     
-    .billing-studio-container { max-width: 1400px; margin: 0 auto; min-height: 100vh; }
+    .billing-studio-container { width: 100%; max-width: none; margin: 0; min-height: 100vh; }
+    .billing-studio-container.embedded { min-height: auto; }
     .animate-fade-in { animation: fadeIn 0.5s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -229,9 +268,11 @@ export class InvoiceFormComponent {
   private fb = inject(FormBuilder);
   private http = inject(HttpClient);
   private invoiceService = inject(InvoiceService);
+  private clientService = inject(ClientService);
+  private inventoryService = inject(InventoryService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private toast = inject(HotToastService);
+  private toast = inject(ToastService);
 
   @Input() embeddedClientId: string | null = null;
   @Input() embeddedInvoiceId: string | null = null;
@@ -243,16 +284,22 @@ export class InvoiceFormComponent {
   readonly invoiceId = signal<string | null>(null);
   readonly isSubmitting = signal(false);
   readonly readOnlyMode = signal(false);
+  readonly embeddedClient = signal<BillingClient | null>(null);
+  readonly warehouseStock = signal<StockSummary[]>([]);
+  readonly isStockLoading = signal(false);
   protected readonly invoicePatched = signal(false);
 
-  // Studio Context: 'firm' (CA Firm billing Client) or 'client' (Client billing Guest/Customer)
+  // Embedded workspace billing is for the client business invoicing its own customers.
   readonly viewMode = computed(() => this.isEmbedded ? 'client' : 'firm');
 
   readonly invoiceNumberControl = new FormControl({ value: '', disabled: true }, { nonNullable: true });
   readonly clientSearchControl = new FormControl('', { nonNullable: true });
+  readonly barcodeScanControl = new FormControl('', { nonNullable: true });
 
   readonly invoiceForm = this.fb.group<InvoiceFormModel>({
     clientId: this.fb.nonNullable.control('', Validators.required),
+    warehouseId: this.fb.nonNullable.control(''),
+    salesPerson: this.fb.nonNullable.control(''),
     invoiceDate: this.fb.nonNullable.control(formatDateInput(new Date()), Validators.required),
     dueDate: this.fb.nonNullable.control(formatDateInput(this.addDays(new Date(), 30)), Validators.required),
     expiryDate: this.fb.nonNullable.control(''),
@@ -260,8 +307,17 @@ export class InvoiceFormComponent {
     gstType: this.fb.nonNullable.control<GstType>('CGST_SGST'),
     clientGstin: this.fb.nonNullable.control(''),
     customerName: this.fb.nonNullable.control(''),
+    customerMobile: this.fb.nonNullable.control(''),
+    customerEmail: this.fb.nonNullable.control('', Validators.email),
     customerAddress: this.fb.nonNullable.control(''),
+    shippingAddress: this.fb.nonNullable.control(''),
+    paymentStatus: this.fb.nonNullable.control<'draft' | 'pending' | 'paid'>('pending'),
+    paymentMethod: this.fb.nonNullable.control<'cash' | 'upi' | 'card' | 'bank_transfer' | 'cheque' | 'credit'>('upi'),
+    transactionId: this.fb.nonNullable.control(''),
+    amountPaid: this.fb.control<number | null>(0, Validators.min(0)),
     notes: this.fb.nonNullable.control(''),
+    internalNotes: this.fb.nonNullable.control(''),
+    terms: this.fb.nonNullable.control('Goods once sold will not be returned.'),
     lineItems: this.fb.array<FormGroup<LineItemFormModel>>([this.createLineItemGroup()]),
     isRecurring: this.fb.nonNullable.control(false),
     recurringFrequency: this.fb.nonNullable.control<'weekly' | 'monthly' | 'quarterly' | 'yearly'>('monthly'),
@@ -281,6 +337,22 @@ export class InvoiceFormComponent {
     loader: ({ request }) => this.invoiceService.getServiceTemplates(request),
   });
 
+  readonly inventoryItemsResource = rxResource({
+    request: () => this.viewMode(),
+    loader: ({ request }) =>
+      request === 'client'
+        ? this.inventoryService.getItems({ limit: 100, isActive: true })
+        : of({ data: [] }),
+  });
+
+  readonly warehousesResource = rxResource({
+    request: () => this.viewMode(),
+    loader: ({ request }) =>
+      request === 'client'
+        ? this.inventoryService.getWarehouses()
+        : of({ data: [] }),
+  });
+
   readonly invoiceResource = rxResource({
     request: () => (this.isEditMode() ? this.invoiceId() : null),
     loader: ({ request }) => (request ? this.invoiceService.getInvoice(request) : of(null)),
@@ -288,20 +360,31 @@ export class InvoiceFormComponent {
 
   readonly clients = computed(() => this.clientsResource.value()?.data ?? []);
   readonly filteredClients = computed(() => this.clients());
-  readonly serviceTemplates = computed(() => (this.serviceTemplatesResource.value()?.data ?? []).slice(0, 15));
+  readonly inventoryItems = computed<Item[]>(() => {
+    const response: any = this.inventoryItemsResource.value();
+    return response?.data ?? response?.items ?? [];
+  });
+  readonly warehouses = computed<Warehouse[]>(() => {
+    const response: any = this.warehousesResource.value();
+    return response?.data ?? response ?? [];
+  });
+  readonly serviceTemplates = computed(() =>
+    this.viewMode() === 'client' ? [] : (this.serviceTemplatesResource.value()?.data ?? []).slice(0, 15)
+  );
   readonly organization = computed(() => {
     const user = this.authService.currentUser() as BillingUser | null;
     if (this.viewMode() === 'client' && this.selectedClient()) {
       const client = this.selectedClient()!;
       return {
-        name: client.name || client.user?.name || 'Company Name',
+        name: client.name || client.user?.name || 'Client Business',
         gstin: client.gstin || 'No GSTIN',
-        pan: '', // Client PAN not always available but could be added
-        addressLine1: client.address || 'Address Line 1',
-        addressLine2: `${client.city || ''} ${client.pincode || ''}`,
-        stateCode: client.stateCode || '24',
+        pan: '',
+        addressLine1: client.address || 'Address not set',
+        addressLine2: `${client.city || ''} ${client.pincode || ''}`.trim(),
+        stateCode: client.stateCode || DEFAULT_ORGANIZATION.stateCode,
       };
     }
+
     return {
       ...DEFAULT_ORGANIZATION,
       ...user?.organization,
@@ -320,6 +403,24 @@ export class InvoiceFormComponent {
     ),
     { initialValue: this.invoiceForm.controls.gstType.getRawValue() }
   );
+  readonly selectedWarehouseId = toSignal(
+    this.invoiceForm.controls.warehouseId.valueChanges.pipe(
+      startWith(this.invoiceForm.controls.warehouseId.getRawValue())
+    ),
+    { initialValue: this.invoiceForm.controls.warehouseId.getRawValue() }
+  );
+  readonly amountPaidValue = toSignal(
+    this.invoiceForm.controls.amountPaid.valueChanges.pipe(
+      startWith(this.invoiceForm.controls.amountPaid.getRawValue())
+    ),
+    { initialValue: this.invoiceForm.controls.amountPaid.getRawValue() }
+  );
+  readonly paymentStatusValue = toSignal(
+    this.invoiceForm.controls.paymentStatus.valueChanges.pipe(
+      startWith(this.invoiceForm.controls.paymentStatus.getRawValue())
+    ),
+    { initialValue: this.invoiceForm.controls.paymentStatus.getRawValue() }
+  );
   readonly lineItemsValue = toSignal(
     this.invoiceForm.controls.lineItems.valueChanges.pipe(
       startWith(this.invoiceForm.controls.lineItems.getRawValue())
@@ -327,8 +428,9 @@ export class InvoiceFormComponent {
     { initialValue: this.invoiceForm.controls.lineItems.getRawValue() }
   );
   readonly selectedClient = computed(
-    () => this.clients().find((client) => client.id === this.selectedClientId()) ?? null
+    () => this.clients().find((client) => client.id === this.selectedClientId()) ?? this.embeddedClient()
   );
+  readonly salesTotals = computed<SalesTotals>(() => this.calculateSalesTotals());
   readonly gstCalc = signal<GstCalculation>(
     calculateGST([], DEFAULT_ORGANIZATION.stateCode, DEFAULT_ORGANIZATION.stateCode)
   );
@@ -336,10 +438,15 @@ export class InvoiceFormComponent {
     () =>
       this.clientsResource.isLoading() ||
       this.serviceTemplatesResource.isLoading() ||
+      this.inventoryItemsResource.isLoading() ||
+      this.warehousesResource.isLoading() ||
       this.invoiceResource.isLoading()
   );
-  readonly pageTitle = computed(() => this.viewMode() === 'client' ? 'Client Sales Studio' : 'CA Billing Studio');
-  readonly primaryActionLabel = computed(() => (this.isEditMode() ? 'Update Document' : 'Generate Draft'));
+  readonly pageTitle = computed(() => this.viewMode() === 'client' ? 'Create Customer Invoice' : 'CA Billing Studio');
+  readonly primaryActionLabel = computed(() => {
+    if (this.isEditMode()) return 'Update Invoice';
+    return this.viewMode() === 'client' ? 'Save Customer Invoice' : 'Save Invoice';
+  });
 
   ngOnInit() {
     this.isEditMode.set(this.isEmbedded ? !!this.embeddedInvoiceId : Boolean(this.route.snapshot.data['editMode']));
@@ -349,6 +456,12 @@ export class InvoiceFormComponent {
     if (initialClientId && !this.isEditMode()) {
       this.invoiceForm.controls.clientId.setValue(initialClientId);
     }
+
+    if (this.isEmbedded && initialClientId) {
+      this.loadEmbeddedClient(initialClientId);
+      this.invoiceForm.controls.customerName.addValidators(Validators.required);
+      this.invoiceForm.controls.customerName.updateValueAndValidity();
+    }
   }
 
   constructor() {
@@ -356,10 +469,19 @@ export class InvoiceFormComponent {
       .pipe(takeUntilDestroyed())
       .subscribe((clientId) => this.handleClientSelection(clientId));
 
+    this.invoiceForm.controls.warehouseId.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((warehouseId) => this.handleWarehouseSelection(warehouseId));
+
+    this.invoiceForm.controls.paymentStatus.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((status) => this.handlePaymentStatusChange(status));
+
     effect(() => {
       this.lineItemsValue();
       this.selectedClient();
       this.selectedGstType();
+      this.selectedWarehouseId();
       this.recalculateGST();
     });
 
@@ -372,6 +494,26 @@ export class InvoiceFormComponent {
       this.patchInvoice(response.data);
       this.invoicePatched.set(true);
     });
+
+    effect(() => {
+      const warehouses = this.warehouses();
+      if (this.viewMode() !== 'client' || this.invoiceForm.controls.warehouseId.getRawValue() || warehouses.length === 0) {
+        return;
+      }
+
+      const defaultWarehouse = warehouses.find((warehouse) => warehouse.isDefault) ?? warehouses[0];
+      this.invoiceForm.controls.warehouseId.setValue(defaultWarehouse.id);
+    });
+
+    effect(() => {
+      this.lineItemsValue();
+      if (this.paymentStatusValue() !== 'paid') return;
+
+      const grandTotal = this.salesTotals().grandTotal;
+      if (this.invoiceForm.controls.amountPaid.getRawValue() !== grandTotal) {
+        this.invoiceForm.controls.amountPaid.setValue(grandTotal);
+      }
+    });
   }
 
   get lineItemsArray(): FormArray<FormGroup<LineItemFormModel>> {
@@ -381,11 +523,19 @@ export class InvoiceFormComponent {
   createLineItemGroup(item?: Partial<CreateLineItemDto>): FormGroup<LineItemFormModel> {
     return this.fb.group<LineItemFormModel>({
       serviceTemplateId: this.fb.control(item?.serviceTemplateId ?? null),
+      itemId: this.fb.nonNullable.control(item?.itemId ?? ''),
+      variantId: this.fb.nonNullable.control(item?.variantId ?? ''),
+      sku: this.fb.nonNullable.control(item?.sku ?? ''),
+      serialNo: this.fb.nonNullable.control(item?.serialNo ?? ''),
+      batchNo: this.fb.nonNullable.control(item?.batchNo ?? ''),
+      warehouseId: this.fb.nonNullable.control(item?.warehouseId ?? ''),
+      trackInventory: this.fb.nonNullable.control(item?.trackInventory === true),
+      availableStock: this.fb.control<number | null>(item?.availableStock ?? null),
       description: this.fb.nonNullable.control(item?.description ?? '', [
         Validators.required,
         Validators.maxLength(255),
       ]),
-      sacCode: this.fb.nonNullable.control(item?.sacCode ?? '998231', Validators.required),
+      sacCode: this.fb.nonNullable.control(item?.sacCode ?? '8517', Validators.required),
       quantity: this.fb.control<number | null>(item?.quantity ?? 1, [
         Validators.required,
         Validators.min(0.01),
@@ -394,11 +544,24 @@ export class InvoiceFormComponent {
         Validators.required,
         Validators.min(0),
       ]),
+      gstRate: this.fb.control<number | null>(item?.gstRate ?? 18, [
+        Validators.min(0),
+        Validators.max(100),
+      ]),
+      discountPct: this.fb.control<number | null>(item?.discountPct ?? 0, [
+        Validators.min(0),
+        Validators.max(100),
+      ]),
     });
   }
 
   addLineItem(item?: Partial<CreateLineItemDto>): void {
-    this.lineItemsArray.push(this.createLineItemGroup(item));
+    this.lineItemsArray.push(
+      this.createLineItemGroup({
+        ...item,
+        warehouseId: item?.warehouseId ?? this.invoiceForm.controls.warehouseId.getRawValue(),
+      })
+    );
   }
 
   removeLineItem(index: number): void {
@@ -415,14 +578,97 @@ export class InvoiceFormComponent {
       sacCode: template.sacCode,
       quantity: 1,
       unitRate: template.defaultRate,
+      gstRate: template.defaultGstRate,
       serviceTemplateId: template.id,
     });
   }
 
   lineAmount(index: number): number {
-    const group = this.lineItemsArray.at(index);
-    const rawValue = group.getRawValue();
-    return lineItemAmount(rawValue.quantity ?? 0, rawValue.unitRate ?? 0);
+    return this.lineTotal(index);
+  }
+
+  lineBase(index: number): number {
+    const rawValue = this.lineItemsArray.at(index).getRawValue();
+    return this.roundMoney((rawValue.quantity ?? 0) * (rawValue.unitRate ?? 0));
+  }
+
+  lineDiscount(index: number): number {
+    const rawValue = this.lineItemsArray.at(index).getRawValue();
+    return this.roundMoney(this.lineBase(index) * ((rawValue.discountPct ?? 0) / 100));
+  }
+
+  lineTaxable(index: number): number {
+    return this.roundMoney(Math.max(this.lineBase(index) - this.lineDiscount(index), 0));
+  }
+
+  lineTax(index: number): number {
+    const rawValue = this.lineItemsArray.at(index).getRawValue();
+    return this.roundMoney(this.lineTaxable(index) * ((rawValue.gstRate ?? 0) / 100));
+  }
+
+  lineTotal(index: number): number {
+    return this.roundMoney(this.lineTaxable(index) + this.lineTax(index));
+  }
+
+  stockTone(index: number): string {
+    const rawValue = this.lineItemsArray.at(index).getRawValue();
+    if (!rawValue.trackInventory) return 'text-slate-400';
+    const available = rawValue.availableStock;
+    if (available === null || available === undefined) return 'text-amber-600';
+    if ((rawValue.quantity ?? 0) > available) return 'text-rose-600';
+    return 'text-emerald-600';
+  }
+
+  onSelectInventoryItem(index: number, itemId: string): void {
+    const item = this.inventoryItems().find((entry) => entry.id === itemId);
+    if (!item) return;
+    this.patchInventoryItem(index, item);
+  }
+
+  private patchInventoryItem(index: number, item: Partial<Item> & { id: string }): void {
+    const row = this.lineItemsArray.at(index);
+    const stock = this.getAvailableStock(item.id, row.controls.batchNo.getRawValue());
+
+    row.patchValue({
+      itemId: item.id,
+      sku: item.sku ?? item.barcode ?? '',
+      description: item.name,
+      sacCode: item.hsnSacCode ?? row.controls.sacCode.getRawValue(),
+      unitRate: Number(item.sellingPrice ?? 0),
+      gstRate: Number(item.gstRate ?? 18),
+      trackInventory: item.trackInventory === true,
+      warehouseId: this.invoiceForm.controls.warehouseId.getRawValue(),
+      availableStock: stock,
+    });
+  }
+
+  onBarcodeScan(): void {
+    const barcode = this.barcodeScanControl.getRawValue().trim();
+    if (!barcode) {
+      this.toast.info('Enter or scan a barcode first');
+      return;
+    }
+
+    this.inventoryService.getItemByBarcode(barcode).subscribe({
+      next: (response: any) => {
+        const item = response?.data?.item ?? response?.data ?? response?.item ?? response;
+        if (!item?.id) {
+          this.toast.error('Barcode did not match an item');
+          return;
+        }
+
+        let index = this.lineItemsArray.controls.findIndex((row) => !row.controls.itemId.getRawValue() && !row.controls.description.getRawValue());
+        if (index === -1) {
+          this.addLineItem();
+          index = this.lineItemsArray.length - 1;
+        }
+
+        this.patchInventoryItem(index, item);
+        this.barcodeScanControl.setValue('');
+        this.toast.success('Barcode item added');
+      },
+      error: () => this.toast.error('Item not found for barcode'),
+    });
   }
 
   onSubmit(): void {
@@ -454,39 +700,94 @@ export class InvoiceFormComponent {
     this.persistInvoice('preview');
   }
 
-  recalculateGST(): void {
-    const rawLineItems = this.lineItemsArray.getRawValue().map((item) => ({
-      quantity: item.quantity ?? 0,
-      unitRate: item.unitRate ?? 0,
-    }));
-    const clientStateCode = this.selectedClient()?.stateCode ?? this.orgStateCode();
-    const orgStateCode = this.orgStateCode();
-    const calculated = calculateGST(rawLineItems, clientStateCode, orgStateCode);
-    const selectedType = this.invoiceForm.controls.gstType.getRawValue();
+  printInvoice(): void {
+    window.print();
+  }
 
-    if (selectedType === calculated.gstType) {
-      this.gstCalc.set(calculated);
+  downloadPdf(): void {
+    if (!this.invoiceId()) {
+      this.toast.info('Save the invoice before downloading PDF');
       return;
     }
 
-    const subtotal = calculated.subtotal;
-    const cgstAmount = selectedType === 'CGST_SGST' ? Math.round(subtotal * 9) / 100 : 0;
-    const sgstAmount = selectedType === 'CGST_SGST' ? Math.round(subtotal * 9) / 100 : 0;
-    const igstAmount = selectedType === 'IGST' ? Math.round(subtotal * 18) / 100 : 0;
-    const totalBeforeRounding = subtotal + cgstAmount + sgstAmount + igstAmount;
-    const totalAmount = Math.round(totalBeforeRounding);
-    const roundOff = Math.round((totalAmount - totalBeforeRounding) * 100) / 100;
+    this.invoiceService.generatePdfWithTemplate(this.invoiceId()!).subscribe({
+      next: () => this.toast.success('PDF generation started'),
+      error: () => this.toast.error('PDF could not be generated'),
+    });
+  }
+
+  sendMail(): void {
+    this.toast.info('Email sending will use the finalized invoice PDF once mail settings are connected');
+  }
+
+  sendWhatsApp(): void {
+    this.toast.info('WhatsApp sharing will be connected to the finalized invoice PDF flow');
+  }
+
+  recalculateGST(): void {
+    const totals = this.salesTotals();
 
     this.gstCalc.set({
+      subtotal: totals.taxableAmount,
+      gstType: this.invoiceForm.controls.gstType.getRawValue(),
+      cgstAmount: totals.cgstAmount,
+      sgstAmount: totals.sgstAmount,
+      igstAmount: totals.igstAmount,
+      totalBeforeRounding: totals.taxableAmount + totals.taxAmount,
+      roundOff: totals.roundOff,
+      totalAmount: totals.grandTotal,
+    });
+  }
+
+  calculateSalesTotals(): SalesTotals {
+    this.lineItemsValue();
+    this.selectedGstType();
+    this.amountPaidValue();
+
+    const rawValue = this.invoiceForm.getRawValue();
+    const gstType = rawValue.gstType;
+    let subtotal = 0;
+    let discountAmount = 0;
+    let taxAmount = 0;
+
+    for (const item of rawValue.lineItems) {
+      const qty = Number(item.quantity ?? 0);
+      const rate = Number(item.unitRate ?? 0);
+      const gstRate = Number(item.gstRate ?? 0);
+      const discountPct = Number(item.discountPct ?? 0);
+      const base = qty * rate;
+      const discount = base * (discountPct / 100);
+      const taxable = Math.max(base - discount, 0);
+
+      subtotal += base;
+      discountAmount += discount;
+      taxAmount += taxable * (gstRate / 100);
+    }
+
+    subtotal = this.roundMoney(subtotal);
+    discountAmount = this.roundMoney(discountAmount);
+    const taxableAmount = this.roundMoney(Math.max(subtotal - discountAmount, 0));
+    taxAmount = this.roundMoney(taxAmount);
+    const cgstAmount = gstType === 'CGST_SGST' ? this.roundMoney(taxAmount / 2) : 0;
+    const sgstAmount = gstType === 'CGST_SGST' ? this.roundMoney(taxAmount / 2) : 0;
+    const igstAmount = gstType === 'IGST' ? taxAmount : 0;
+    const totalBeforeRounding = taxableAmount + taxAmount;
+    const grandTotal = Math.round(totalBeforeRounding);
+    const amountPaid = Math.min(this.roundMoney(Number(rawValue.amountPaid ?? 0)), grandTotal);
+
+    return {
       subtotal,
-      gstType: selectedType,
+      discountAmount,
+      taxableAmount,
+      taxAmount,
       cgstAmount,
       sgstAmount,
       igstAmount,
-      totalBeforeRounding: Math.round(totalBeforeRounding * 100) / 100,
-      roundOff,
-      totalAmount,
-    });
+      grandTotal,
+      roundOff: this.roundMoney(grandTotal - totalBeforeRounding),
+      amountPaid,
+      balanceDue: this.roundMoney(Math.max(grandTotal - amountPaid, 0)),
+    };
   }
 
   controlHasError(control: AbstractControl | null, error: string): boolean {
@@ -509,6 +810,72 @@ export class InvoiceFormComponent {
     });
   }
 
+  private handleWarehouseSelection(warehouseId: string): void {
+    for (const row of this.lineItemsArray.controls) {
+      row.controls.warehouseId.setValue(warehouseId, { emitEvent: false });
+    }
+
+    if (!warehouseId) {
+      this.warehouseStock.set([]);
+      this.refreshLineStock();
+      return;
+    }
+
+    this.loadWarehouseStock(warehouseId);
+  }
+
+  private handlePaymentStatusChange(status: 'draft' | 'pending' | 'paid'): void {
+    if (status === 'paid') {
+      this.invoiceForm.controls.amountPaid.setValue(this.salesTotals().grandTotal);
+    }
+  }
+
+  private loadWarehouseStock(warehouseId: string): void {
+    this.isStockLoading.set(true);
+    this.inventoryService.getWarehouseStock(warehouseId).subscribe({
+      next: (response: any) => {
+        this.warehouseStock.set(response?.data ?? response ?? []);
+        this.isStockLoading.set(false);
+        this.refreshLineStock();
+      },
+      error: () => {
+        this.warehouseStock.set([]);
+        this.isStockLoading.set(false);
+        this.toast.error('Could not load warehouse stock');
+      },
+    });
+  }
+
+  private refreshLineStock(): void {
+    for (const row of this.lineItemsArray.controls) {
+      const itemId = row.controls.itemId.getRawValue();
+      if (!itemId) {
+        row.controls.availableStock.setValue(null, { emitEvent: false });
+        continue;
+      }
+
+      row.controls.availableStock.setValue(
+        this.getAvailableStock(itemId, row.controls.batchNo.getRawValue()),
+        { emitEvent: false },
+      );
+    }
+  }
+
+  private getAvailableStock(itemId: string, batchNo?: string | null): number | null {
+    const stockRows = this.warehouseStock().filter((entry: any) => {
+      const matchesItem = entry.itemId === itemId || entry.item_id === itemId;
+      const entryBatch = entry.batchNo ?? entry.batch_no ?? null;
+      return matchesItem && (!batchNo || entryBatch === batchNo);
+    });
+
+    if (stockRows.length === 0) return null;
+
+    return stockRows.reduce((sum, entry: any) => {
+      const available = entry.qtyAvailable ?? entry.qty_available ?? entry.qtyOnHand ?? entry.qty_on_hand ?? 0;
+      return sum + Number(available);
+    }, 0);
+  }
+
   private detectGstType(clientStateCode: string): GstType {
     return clientStateCode === this.orgStateCode() ? 'CGST_SGST' : 'IGST';
   }
@@ -519,12 +886,15 @@ export class InvoiceFormComponent {
     this.invoiceForm.patchValue(
       {
         clientId: invoice.clientId,
+        amountPaid: invoice.amountPaid ?? 0,
         invoiceDate: isoDateFromValue(invoice.invoiceDate),
         dueDate: isoDateFromValue(invoice.dueDate),
         invoiceType: (invoice as any).invoiceType || 'tax_invoice',
         expiryDate: (invoice as any).expiryDate ? isoDateFromValue((invoice as any).expiryDate) : '',
         gstType: invoice.gstType,
         clientGstin: invoice.clientGstin ?? '',
+        customerName: invoice.receiverName ?? '',
+        customerAddress: invoice.receiverAddress ?? '',
         notes: invoice.notes ?? '',
       },
       { emitEvent: false }
@@ -535,6 +905,11 @@ export class InvoiceFormComponent {
       this.lineItemsArray.push(
         this.createLineItemGroup({
           serviceTemplateId: item.serviceTemplateId,
+          itemId: item.itemId,
+          variantId: item.variantId,
+          warehouseId: item.warehouseId,
+          batchNo: item.batchNo,
+          trackInventory: item.trackInventory,
           description: item.description,
           sacCode: item.sacCode,
           quantity: item.quantity,
@@ -569,8 +944,12 @@ export class InvoiceFormComponent {
       return;
     }
 
+    if (!this.validateStockBeforeSave()) {
+      return;
+    }
+
     this.isSubmitting.set(true);
-    const dto = this.buildDto();
+    const dto = this.buildDto(action);
 
     if (this.isEditMode() && this.invoiceId()) {
       this.updateExistingInvoice(this.invoiceId()!, dto, action);
@@ -614,6 +993,21 @@ export class InvoiceFormComponent {
 
     const finishSave = () => {
       if (this.isEmbedded) {
+        if (action === 'issue' && rawValue.paymentStatus !== 'paid') {
+          this.invoiceService.issueInvoice(id).subscribe({
+            next: () => {
+              this.isSubmitting.set(false);
+              this.toast.success(wasUpdate ? 'Invoice updated and generated' : 'Invoice generated');
+              this.saved.emit();
+            },
+            error: () => {
+              this.isSubmitting.set(false);
+              this.toast.error('Invoice saved, but generation failed');
+            },
+          });
+          return;
+        }
+
         this.isSubmitting.set(false);
         this.toast.success(wasUpdate ? 'Invoice updated' : 'Invoice saved successfully');
         this.saved.emit();
@@ -677,9 +1071,16 @@ export class InvoiceFormComponent {
     }
   }
 
-  private buildDto(): CreateInvoiceDto {
+  private buildDto(action: 'draft' | 'issue' | 'preview'): CreateInvoiceDto {
     const rawValue = this.invoiceForm.getRawValue();
     const isQuotation = rawValue.invoiceType === 'quotation';
+    const totals = this.salesTotals();
+    const status =
+      rawValue.paymentStatus === 'paid'
+        ? 'paid'
+        : action === 'issue'
+          ? 'issued'
+          : 'draft';
 
     return {
       clientId: rawValue.clientId,
@@ -687,24 +1088,106 @@ export class InvoiceFormComponent {
       dueDate: rawValue.dueDate,
       expiryDate: isQuotation && rawValue.expiryDate ? rawValue.expiryDate : undefined,
       invoiceType: rawValue.invoiceType,
-      notes: rawValue.notes || undefined,
+      status,
+      amountPaid: totals.amountPaid,
+      discountAmount: totals.discountAmount,
+      notes: this.buildCustomerNotes(rawValue),
+      internalNotes: this.buildInternalNotes(rawValue),
       customerName: rawValue.customerName || undefined,
       customerAddress: rawValue.customerAddress || undefined,
       clientGstin: rawValue.clientGstin || undefined,
       gstType: rawValue.gstType,
       lineItems: rawValue.lineItems.map((item) => ({
         serviceTemplateId: item.serviceTemplateId ?? undefined,
+        itemId: item.itemId || undefined,
+        variantId: item.variantId || undefined,
+        warehouseId: item.warehouseId || rawValue.warehouseId || undefined,
+        batchNo: item.batchNo || item.serialNo || undefined,
+        trackInventory: item.trackInventory === true,
+        gstRate: item.gstRate ?? 18,
+        discountPct: item.discountPct ?? 0,
         description: item.description.trim(),
         sacCode: item.sacCode.trim(),
         quantity: item.quantity ?? 0,
         unitRate: item.unitRate ?? 0,
       })),
-    } as any;
+    };
+  }
+
+  private buildCustomerNotes(rawValue: any): string | undefined {
+    const parts = [
+      rawValue.notes?.trim(),
+      rawValue.shippingAddress?.trim() ? `Shipping Address:\n${rawValue.shippingAddress.trim()}` : '',
+      rawValue.terms?.trim() ? `Terms & Conditions:\n${rawValue.terms.trim()}` : '',
+    ].filter(Boolean);
+
+    return parts.length ? parts.join('\n\n') : undefined;
+  }
+
+  private buildInternalNotes(rawValue: any): string | undefined {
+    const warehouse = this.warehouses().find((entry) => entry.id === rawValue.warehouseId);
+    const parts = [
+      rawValue.internalNotes?.trim(),
+      rawValue.customerMobile ? `Customer mobile: ${rawValue.customerMobile}` : '',
+      rawValue.customerEmail ? `Customer email: ${rawValue.customerEmail}` : '',
+      warehouse ? `Warehouse: ${warehouse.name} (${warehouse.code})` : '',
+      rawValue.salesPerson ? `Sales person: ${rawValue.salesPerson}` : '',
+      rawValue.paymentMethod ? `Payment method: ${rawValue.paymentMethod}` : '',
+      rawValue.transactionId ? `Transaction ID: ${rawValue.transactionId}` : '',
+    ].filter(Boolean);
+
+    return parts.length ? parts.join('\n') : undefined;
+  }
+
+  private validateStockBeforeSave(): boolean {
+    for (const row of this.lineItemsArray.controls) {
+      const value = row.getRawValue();
+      if (!value.trackInventory) continue;
+      if (!value.itemId || !value.warehouseId) continue;
+      if (value.availableStock == null) continue;
+      if ((value.quantity ?? 0) > value.availableStock) {
+        this.toast.error(`${value.description || 'Item'} has only ${value.availableStock} available in stock`);
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private addDays(date: Date, days: number): Date {
     const updated = new Date(date);
     updated.setDate(updated.getDate() + days);
     return updated;
+  }
+
+  private roundMoney(value: number): number {
+    return Math.round((Number(value) || 0) * 100) / 100;
+  }
+
+  private loadEmbeddedClient(clientId: string): void {
+    this.clientService.getClient(clientId).subscribe({
+      next: (response: any) => {
+        const client = response?.data ?? response;
+        if (!client) return;
+
+        this.embeddedClient.set({
+          id: client.id,
+          code: client.code,
+          name: client.name ?? client.businessName ?? client.user?.name,
+          gstin: client.gstin,
+          mobile: client.mobile ?? client.user?.mobile,
+          stateCode: client.stateCode || '24',
+          address: client.address,
+          city: client.city,
+          pincode: client.pincode,
+          user: client.user,
+        });
+
+        if (!this.isEditMode()) {
+          this.invoiceForm.controls.gstType.setValue('CGST_SGST');
+        }
+      },
+      error: () => undefined,
+    });
   }
 }

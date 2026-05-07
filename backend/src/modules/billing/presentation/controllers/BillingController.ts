@@ -128,10 +128,12 @@ export class BillingController {
         organizationId: rawInvoice.organizationId,
         clientId: rawInvoice.clientId,
         recurringTemplateId: rawInvoice.recurringTemplateId,
+        invoiceType: rawInvoice.invoiceType,
         invoiceNumber: rawInvoice.invoiceNumber,
         status: rawInvoice.status,
         invoiceDate: rawInvoice.invoiceDate,
         dueDate: rawInvoice.dueDate,
+        expiryDate: rawInvoice.expiryDate,
         issuedAt: rawInvoice.issuedAt,
         paidAt: rawInvoice.paidAt,
         cancelledAt: rawInvoice.cancelledAt,
@@ -148,6 +150,8 @@ export class BillingController {
         amountPaid: toNumber(rawInvoice.amountPaid),
         balanceDue: toNumber(rawInvoice.balanceDue),
         notes: rawInvoice.notes,
+        receiverName: rawInvoice.receiverName,
+        receiverAddress: rawInvoice.receiverAddress,
         cancelReason: rawInvoice.cancelReason,
         pdfS3Key: rawInvoice.pdfS3Key,
         pdfGeneratedAt: rawInvoice.pdfGeneratedAt,
@@ -240,10 +244,12 @@ export class BillingController {
       organizationId: rawInvoice.organizationId,
       clientId: rawInvoice.clientId,
       recurringTemplateId: rawInvoice.recurringTemplateId,
+      invoiceType: rawInvoice.invoiceType,
       invoiceNumber: rawInvoice.invoiceNumber,
       status: rawInvoice.status,
       invoiceDate: rawInvoice.invoiceDate,
       dueDate: rawInvoice.dueDate,
+      expiryDate: rawInvoice.expiryDate,
       issuedAt: rawInvoice.issuedAt,
       paidAt: rawInvoice.paidAt,
       cancelledAt: rawInvoice.cancelledAt,
@@ -260,6 +266,8 @@ export class BillingController {
       amountPaid: toNumber(rawInvoice.amountPaid),
       balanceDue: toNumber(rawInvoice.balanceDue),
       notes: rawInvoice.notes,
+      receiverName: rawInvoice.receiverName,
+      receiverAddress: rawInvoice.receiverAddress,
       cancelReason: rawInvoice.cancelReason,
       pdfS3Key: rawInvoice.pdfS3Key,
       pdfGeneratedAt: rawInvoice.pdfGeneratedAt,
@@ -305,6 +313,22 @@ export class BillingController {
     };
 
     sendSuccess(res, payload);
+  });
+
+  static updateInvoice = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(BillingService);
+    const invoice = await service.updateInvoice(req.user!.organizationId, req.params.id, req.body);
+
+    sendSuccess(
+      res,
+      {
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        totalAmount: invoice.totalAmount,
+        status: invoice.status,
+      },
+      'Invoice updated successfully'
+    );
   });
 
   static generatePdf = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
