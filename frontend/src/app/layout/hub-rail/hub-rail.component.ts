@@ -1,124 +1,163 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
 import { NavigationService } from '../../core/navigation.service';
-import { HUBS, getHubBadgeCount, HubId } from '../../core/module-registry';
+import { HUBS, getHubBadgeCount } from '../../core/module-registry';
+import { IconComponent } from '@ui/atoms/icon.component';
 
 @Component({
   selector: 'app-hub-rail',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, IconComponent],
   template: `
-    <nav
-      class="hub-rail flex flex-col items-center justify-between"
-      style="
-        width: 58px;
-        height: 100vh;
-        background: var(--color-surface);
-        border-right: 1px solid var(--color-border);
-        padding: 16px 0;
-        overflow-y: auto;
-      "
-    >
-      <!-- Logo at top -->
+    <nav class="hub-rail" aria-label="Primary modules">
       <button
-        class="hub-icon"
-        (click)="nav.setActiveHub('core')"
+        type="button"
+        class="rail-button rail-logo"
+        [class.active]="nav.activeHub() === 'core'"
+        style="--hub-accent: #C9943A"
         title="Home"
-        style="
-          font-size: 24px;
-          width: 40px;
-          height: 40px;
-          border-radius: 9px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-          border: none;
-          background: transparent;
-          color: var(--color-text);
-        "
-        [style.background]="nav.activeHub() === 'core' ? 'var(--color-gold-faint)' : 'transparent'"
-        [style.color]="nav.activeHub() === 'core' ? 'var(--color-gold)' : 'inherit'"
+        aria-label="Home"
+        (click)="nav.setActiveHub('core')"
       >
-        🏛️
+        <app-icon name="heroBuildingLibrarySolid" size="md" tone="current" ariaLabel=""></app-icon>
       </button>
 
-      <!-- Hubs list -->
-      <div class="flex-1 flex flex-col gap-2 mt-6">
+      <div class="rail-list">
         @for (hub of hubs; track hub.id) {
           <button
-            class="hub-icon relative"
+            type="button"
+            class="rail-button"
+            [class.active]="nav.activeHub() === hub.id"
+            [style.--hub-accent]="hub.color"
             [attr.title]="hub.label"
+            [attr.aria-label]="hub.label"
             (click)="nav.setActiveHub(hub.id)"
-            style="
-              font-size: 20px;
-              width: 40px;
-              height: 40px;
-              border-radius: 9px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              cursor: pointer;
-              transition: all 0.2s;
-              border: none;
-              background: transparent;
-              color: var(--color-text-sub);
-              position: relative;
-              border-left: 3px solid transparent;
-            "
-            [style.background]="nav.activeHub() === hub.id ? 'var(--color-gold-faint)' : 'transparent'"
-            [style.border-left-color]="nav.activeHub() === hub.id ? hub.color : 'transparent'"
-            [style.color]="nav.activeHub() === hub.id ? hub.color : 'inherit'"
-            [style.opacity]="nav.activeHub() === hub.id ? '1' : '0.7'"
           >
-            {{ hub.icon }}
-            <!-- Badge if hub has notifications -->
+            <app-icon [name]="hub.iconName" size="md" tone="current" ariaLabel=""></app-icon>
+
             @if (getHubBadgeCount(hub.id) > 0) {
-              <div
-                class="absolute top-0 right-0 w-5 h-5 rounded-full"
-                style="
-                  background: var(--color-red);
-                  color: white;
-                  font-size: 10px;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  font-weight: 700;
-                "
-              >
+              <span class="rail-badge">
                 {{ getHubBadgeCount(hub.id) > 99 ? '99+' : getHubBadgeCount(hub.id) }}
-              </div>
+              </span>
             }
           </button>
         }
       </div>
 
-      <!-- Search icon at bottom -->
       <button
-        class="hub-icon"
+        type="button"
+        class="rail-button rail-search"
+        title="Search modules"
+        aria-label="Search modules"
         (click)="nav.openCommandPalette()"
-        title="Search (⌘K)"
-        style="
-          font-size: 20px;
-          width: 40px;
-          height: 40px;
-          border-radius: 9px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-          border: none;
-          background: transparent;
-          color: var(--color-text-sub);
-        "
       >
-        🔍
+        <app-icon name="heroMagnifyingGlassSolid" size="md" tone="current" ariaLabel=""></app-icon>
       </button>
     </nav>
   `,
+  styles: [`
+    :host {
+      display: block;
+      flex: 0 0 58px;
+    }
+
+    .hub-rail {
+      align-items: center;
+      background: var(--color-surface);
+      border-right: 1px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      justify-content: space-between;
+      overflow-y: auto;
+      padding: 12px 0;
+      scrollbar-width: none;
+      width: 58px;
+    }
+
+    .hub-rail::-webkit-scrollbar {
+      display: none;
+    }
+
+    .rail-list {
+      align-items: center;
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 22px;
+      width: 100%;
+    }
+
+    .rail-button {
+      --hub-accent: #64748b;
+      align-items: center;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      color: #64748b;
+      cursor: pointer;
+      display: inline-flex;
+      justify-content: center;
+      position: relative;
+      transition:
+        background 180ms ease,
+        border-color 180ms ease,
+        color 180ms ease;
+      width: 42px;
+      height: 42px;
+    }
+
+    .rail-button:hover {
+      background: #f8fafc;
+      border-color: color-mix(in srgb, var(--hub-accent) 26%, #e2e8f0);
+      color: var(--hub-accent);
+    }
+
+    .rail-button.active {
+      background: color-mix(in srgb, var(--hub-accent) 12%, #ffffff);
+      border-color: color-mix(in srgb, var(--hub-accent) 22%, #ffffff);
+      color: var(--hub-accent);
+    }
+
+    .rail-button.active::before {
+      background: var(--hub-accent);
+      border-radius: 999px;
+      content: '';
+      height: 24px;
+      left: -10px;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+    }
+
+    .rail-logo {
+      color: #64748b;
+    }
+
+    .rail-search {
+      margin-top: 16px;
+    }
+
+    .rail-badge {
+      align-items: center;
+      background: #ef4444;
+      border: 2px solid var(--color-surface);
+      border-radius: 999px;
+      color: #ffffff;
+      display: inline-flex;
+      font-size: 10px;
+      font-weight: 900;
+      height: 20px;
+      justify-content: center;
+      min-width: 20px;
+      padding: 0 4px;
+      position: absolute;
+      right: -7px;
+      top: -7px;
+    }
+  `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HubRailComponent {

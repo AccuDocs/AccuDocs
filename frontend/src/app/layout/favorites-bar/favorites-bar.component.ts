@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { NavigationService } from '../../core/navigation.service';
 import { MODULE_REGISTRY } from '../../core/module-registry';
+import { IconComponent } from '@ui/atoms/icon.component';
 
 @Component({
   selector: 'app-favorites-bar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, IconComponent],
   template: `
     <div
       class="favorites-bar"
@@ -26,9 +27,7 @@ import { MODULE_REGISTRY } from '../../core/module-registry';
       "
     >
       <!-- Decorative pin icon -->
-      <span style="color: var(--color-text-dim); font-size: 16px; flex-shrink: 0;">
-        📌
-      </span>
+      <app-icon name="heroBookmarkSolid" size="xs" tone="current" ariaLabel=""></app-icon>
 
       <!-- Pinned modules -->
       @for (module of nav.pinnedModules(); track module.id) {
@@ -64,7 +63,11 @@ import { MODULE_REGISTRY } from '../../core/module-registry';
           "
           class="hover:border-primary-200"
         >
-          <span>{{ module.icon }}</span>
+          @if (module.iconName) {
+            <app-icon [name]="module.iconName" size="xs" tone="current" ariaLabel=""></app-icon>
+          } @else {
+            <span>{{ module.icon }}</span>
+          }
           <span style="font-weight: 500;">{{ module.label }}</span>
           @if (module.badge && module.badge > 0) {
             <span
@@ -107,7 +110,7 @@ import { MODULE_REGISTRY } from '../../core/module-registry';
         "
         class="hover:border-primary-200"
       >
-        <span>⊞</span>
+        <app-icon name="heroSquares2x2Solid" size="xs" tone="current" ariaLabel=""></app-icon>
         <span style="font-weight: 500;">All Modules ({{ totalModules }})</span>
       </button>
     </div>

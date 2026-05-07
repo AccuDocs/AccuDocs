@@ -10,12 +10,13 @@ import {
   AppModule,
   Hub,
 } from '../../core/module-registry';
+import { IconComponent } from '@ui/atoms/icon.component';
 
 // Inner module card component (declared first)
 @Component({
   selector: 'app-module-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     <button
       (click)="!_disabled && _nav.navigateTo(module.id)"
@@ -70,7 +71,11 @@ import {
             justify-content: center;
           "
         >
-          {{ module.icon }}
+          @if (module.iconName) {
+            <app-icon [name]="module.iconName" size="md" tone="current" ariaLabel=""></app-icon>
+          } @else {
+            {{ module.icon }}
+          }
         </div>
         <span
           style="
@@ -154,7 +159,7 @@ export class ModuleCardComponent {
 @Component({
   selector: 'app-hub-overview',
   standalone: true,
-  imports: [CommonModule, RouterModule, ModuleCardComponent],
+  imports: [CommonModule, RouterModule, ModuleCardComponent, IconComponent],
   template: `
     @if (hubData(); as hub) {
       <div style="padding: 32px 40px;">
@@ -173,7 +178,7 @@ export class ModuleCardComponent {
                 border-radius: 9px;
               "
             >
-              {{ hub.icon }}
+              <app-icon [name]="hub.iconName" size="xl" tone="current" ariaLabel=""></app-icon>
             </div>
             <div>
               <h1

@@ -4,11 +4,12 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { signal, effect } from '@angular/core';
 import { findModule, getHubModules, MODULE_REGISTRY } from '../../core/module-registry';
 import { NavigationService } from '../../core/navigation.service';
+import { IconComponent } from '@ui/atoms/icon.component';
 
 @Component({
   selector: 'app-coming-soon',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, IconComponent],
   template: `
     @if (module(); as mod) {
       <div
@@ -30,7 +31,11 @@ import { NavigationService } from '../../core/navigation.service';
             opacity: 0.8;
           "
         >
-          {{ mod.icon }}
+          @if (mod.iconName) {
+            <app-icon [name]="mod.iconName" size="2xl" tone="current" ariaLabel=""></app-icon>
+          } @else {
+            {{ mod.icon }}
+          }
         </div>
 
         <!-- Module Name -->
@@ -182,7 +187,11 @@ import { NavigationService } from '../../core/navigation.service';
                   "
                   class="hover:bg-gray-900 hover:border-gold-500"
                 >
-                  <span>{{ relModule.icon }}</span>
+                  @if (relModule.iconName) {
+                    <app-icon [name]="relModule.iconName" size="xs" tone="current" ariaLabel=""></app-icon>
+                  } @else {
+                    <span>{{ relModule.icon }}</span>
+                  }
                   <span style="flex: 1;">{{ relModule.label }}</span>
                   <span style="font-size: 11px; color: var(--color-text-sub);">
                     {{ relModule.status }}

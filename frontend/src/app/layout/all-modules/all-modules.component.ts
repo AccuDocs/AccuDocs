@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HUBS, MODULE_REGISTRY, getHubModules, groupModulesByStatus } from '../../core/module-registry';
 import { ModuleCardComponent } from '../hub-overview/hub-overview.component';
+import { IconComponent } from '@ui/atoms/icon.component';
 
 @Component({
   selector: 'app-all-modules',
   standalone: true,
-  imports: [CommonModule, RouterModule, ModuleCardComponent],
+  imports: [CommonModule, RouterModule, ModuleCardComponent, IconComponent],
   template: `
     <div style="padding: 32px 40px;">
       <!-- Header -->
@@ -50,7 +51,7 @@ import { ModuleCardComponent } from '../hub-overview/hub-overview.component';
                   margin-bottom: 4px;
                 "
               >
-                <span style="font-size: 24px;">{{ hub.icon }}</span>
+                <app-icon [name]="hub.iconName" size="md" tone="current" ariaLabel=""></app-icon>
                 <h2
                   style="
                     font-size: 20px;

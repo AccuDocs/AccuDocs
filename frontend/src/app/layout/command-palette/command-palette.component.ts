@@ -13,11 +13,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NavigationService } from '../../core/navigation.service';
 import { searchModules, getDefaultPins, findHub } from '../../core/module-registry';
+import { IconComponent } from '@ui/atoms/icon.component';
 
 @Component({
   selector: 'app-command-palette',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, IconComponent],
   template: `
     <div
       class="command-palette-overlay fixed inset-0 flex items-start justify-center pt-16"
@@ -54,7 +55,7 @@ import { searchModules, getDefaultPins, findHub } from '../../core/module-regist
             gap: 8px;
           "
         >
-          <span style="color: var(--color-text-sub); font-size: 16px;">🔍</span>
+          <app-icon name="heroMagnifyingGlassSolid" size="xs" tone="current" ariaLabel=""></app-icon>
           <input
             #searchInput
             [(ngModel)]="query"
@@ -124,7 +125,11 @@ import { searchModules, getDefaultPins, findHub } from '../../core/module-regist
                   "
                   class="hover:bg-gray-900"
                 >
-                  <span>{{ module.icon }}</span>
+                  @if (module.iconName) {
+                    <app-icon [name]="module.iconName" size="xs" tone="current" ariaLabel=""></app-icon>
+                  } @else {
+                    <span>{{ module.icon }}</span>
+                  }
                   <span style="flex: 1;">{{ module.label }}</span>
                   <span style="font-size: 11px; color: var(--color-text-dim);">
                     {{ module.hub }}
@@ -172,7 +177,11 @@ import { searchModules, getDefaultPins, findHub } from '../../core/module-regist
                     flex-shrink: 0;
                   "
                 >
-                  {{ module.icon }}
+                  @if (module.iconName) {
+                    <app-icon [name]="module.iconName" size="sm" tone="current" ariaLabel=""></app-icon>
+                  } @else {
+                    {{ module.icon }}
+                  }
                 </div>
 
                 <!-- Content -->

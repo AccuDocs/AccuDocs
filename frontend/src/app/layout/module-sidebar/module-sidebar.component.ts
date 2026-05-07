@@ -12,11 +12,12 @@ import {
   groupModulesByStatus,
 } from '../../core/module-registry';
 import { NavRowButtonComponent } from '@ui/molecules/nav-row-button.component';
+import { IconComponent } from '@ui/atoms/icon.component';
 
 @Component({
   selector: 'app-module-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule, NavRowButtonComponent],
+  imports: [CommonModule, RouterModule, NavRowButtonComponent, IconComponent],
   template: `
     <aside
       class="module-sidebar flex flex-col"
@@ -42,7 +43,21 @@ import { NavRowButtonComponent } from '@ui/molecules/nav-row-button.component';
       >
         <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
           @if (hubData(); as hub) {
-            <div style="font-size: 20px;">{{ hub.icon }}</div>
+            <div
+              style="
+                align-items: center;
+                background: var(--color-bg-raised);
+                border: 1px solid var(--color-border);
+                border-radius: 10px;
+                color: var(--color-text);
+                display: flex;
+                height: 32px;
+                justify-content: center;
+                width: 32px;
+              "
+            >
+              <app-icon [name]="hub.iconName" size="sm" tone="current" ariaLabel=""></app-icon>
+            </div>
             <div>
               <div style="font-weight: 600; font-size: 14px; color: var(--color-text);">
                 {{ hub.label }}
@@ -97,7 +112,8 @@ import { NavRowButtonComponent } from '@ui/molecules/nav-row-button.component';
             </div>
             @for (module of grouped().live; track module.id) {
               <app-nav-row-button
-                [glyph]="module.icon"
+                [iconName]="module.iconName || ''"
+                [glyph]="module.iconName ? '' : module.icon"
                 [label]="module.label"
                 [badge]="module.badge || null"
                 [active]="nav.activeModule() === module.id"
@@ -162,7 +178,8 @@ import { NavRowButtonComponent } from '@ui/molecules/nav-row-button.component';
             </div>
             @for (module of grouped().beta; track module.id) {
               <app-nav-row-button
-                [glyph]="module.icon"
+                [iconName]="module.iconName || ''"
+                [glyph]="module.iconName ? '' : module.icon"
                 [label]="module.label"
                 [badge]="module.badge || null"
                 [active]="nav.activeModule() === module.id"
@@ -212,7 +229,11 @@ import { NavRowButtonComponent } from '@ui/molecules/nav-row-button.component';
                   cursor: not-allowed;
                 "
               >
-                <span>{{ module.icon }}</span>
+                @if (module.iconName) {
+                  <app-icon [name]="module.iconName" size="sm" tone="current" ariaLabel=""></app-icon>
+                } @else {
+                  <span>{{ module.icon }}</span>
+                }
                 <span class="flex-1">{{ module.label }}</span>
               </button>
             }
