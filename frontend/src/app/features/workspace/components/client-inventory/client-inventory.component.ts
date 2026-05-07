@@ -1,4 +1,4 @@
-import { Component, Input, inject, signal, OnInit, effect } from '@angular/core';
+import { Component, Input, inject, signal, OnInit, OnChanges, SimpleChanges, effect } from '@angular/core';
 import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
@@ -160,7 +160,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
               </div>
             } @else {
               <div class="divide-y divide-slate-100">
-                @for (row of valuationRows(); track row.itemId) {
+                @for (row of valuationRows(); track $index) {
                   <div class="px-4 py-3 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                     <div class="min-w-0 flex-1">
                       <p class="text-sm font-medium text-slate-800 truncate">{{ row.itemName }}</p>
@@ -764,7 +764,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
     }
   `]
 })
-export class ClientInventoryComponent implements OnInit {
+export class ClientInventoryComponent implements OnInit, OnChanges {
   @Input() clientId = '';
 
   private inventoryService = inject(InventoryService);
@@ -855,16 +855,52 @@ export class ClientInventoryComponent implements OnInit {
     this.loadOverview();
   }
 
+  ngOnChanges(changes: SimpleChanges) {
+    if (!changes['clientId'] || changes['clientId'].firstChange) return;
+
+    this.loadedViews.clear();
+    this.loadedViews.add(this.activeView());
+    this.loadActiveView();
+  }
+
   refresh() {
     this.loadOverview();
   }
 
+  private get scopedClientId(): string | undefined {
+    const value = this.clientId?.trim();
+    return value || undefined;
+  }
+
+  private loadActiveView() {
+    switch (this.activeView()) {
+      case 'overview': this.loadOverview(); break;
+      case 'items': this.loadItems(); break;
+      case 'warehouses': this.loadWarehouses(); break;
+      case 'purchase-orders': this.loadPOs(); break;
+      case 'transfers': this.loadTransfers(); break;
+      case 'ledger': this.loadLedger(); break;
+      case 'categories':
+      case 'low-stock':
+        this.loadOverview();
+        break;
+    }
+  }
+
   loadOverview() {
     this.isLoading.set(true);
+    const clientId = this.scopedClientId;
 
     this.inventoryService.getLowStockAlerts().subscribe({
       next: (res: any) => {
-        const alerts = res.data ?? [];
+        const alerts = (res.data ?? []).map((alert: any) => ({
+          ...alert,
+          itemName: alert.itemName ?? alert.name,
+          currentQty: alert.currentQty ?? alert.qtyOnHand,
+          reorderLevel: alert.reorderLevel ?? alert.reorderPoint,
+          warehouseName: alert.warehouseName ?? 'All warehouses',
+          severity: alert.severity === 'low_stock' ? 'low' : alert.severity,
+        }));
         this.lowStockAlerts.set(alerts);
         this.lowStockCount.set(alerts.length);
         this.outOfStockCount.set(alerts.filter((a: any) => a.severity === 'out_of_stock').length);
@@ -872,7 +908,10 @@ export class ClientInventoryComponent implements OnInit {
       error: () => {}
     });
 
-    this.inventoryService.getStockLedger({ limit: 15 }).subscribe({
+    const ledgerRequest = clientId
+      ? this.inventoryService.getClientStockLedger(clientId, { limit: 15 })
+      : this.inventoryService.getStockLedger({ limit: 15 });
+    ledgerRequest.subscribe({
       next: (res: any) => {
         this.recentMovements.set(res.data ?? []);
         this.isLoading.set(false);
@@ -880,18 +919,23 @@ export class ClientInventoryComponent implements OnInit {
       error: () => this.isLoading.set(false)
     });
 
-    this.inventoryService.getStockValuation().subscribe({
+    const valuationRequest = clientId
+      ? this.inventoryService.getClientStockValuation(clientId)
+      : this.inventoryService.getStockValuation();
+    valuationRequest.subscribe({
       next: (res: any) => {
         const report = res.data;
-        const rows = (report?.rows ?? []).sort((a: any, b: any) => b.stockValue - a.stockValue).slice(0, 10);
+        const allRows = report?.rows ?? [];
+        const rows = [...allRows].sort((a: any, b: any) => Number(b.stockValue ?? 0) - Number(a.stockValue ?? 0)).slice(0, 10);
+        const uniqueItemCount = new Set(allRows.map((row: any) => row.itemId).filter(Boolean)).size;
         this.valuationRows.set(rows);
         this.stockValue.set(report?.totalStockValue ?? 0);
-        this.totalItems.set(report?.rows?.length ?? 0);
+        this.totalItems.set(uniqueItemCount || allRows.length);
       },
       error: () => {}
     });
 
-    this.inventoryService.getPurchaseOrders({ status: 'sent', limit: 1 }).subscribe({
+    this.inventoryService.getPurchaseOrders({ clientId, status: 'sent', limit: 1 }).subscribe({
       next: (res: any) => this.pendingPOs.set(res.meta?.total ?? res.total ?? 0),
       error: () => {}
     });
@@ -935,7 +979,11 @@ export class ClientInventoryComponent implements OnInit {
   // POs
   loadPOs() {
     this.isLoadingPOs.set(true);
-    this.inventoryService.getPurchaseOrders({ status: this.poStatusFilter || undefined, limit: 50 }).subscribe({
+    this.inventoryService.getPurchaseOrders({
+      clientId: this.scopedClientId,
+      status: this.poStatusFilter || undefined,
+      limit: 50,
+    }).subscribe({
       next: (res: any) => { this.purchaseOrders.set(res.data ?? []); this.isLoadingPOs.set(false); },
       error: () => this.isLoadingPOs.set(false)
     });
@@ -944,7 +992,12 @@ export class ClientInventoryComponent implements OnInit {
   // Transfers
   loadTransfers() {
     this.isLoadingTransfers.set(true);
-    this.inventoryService.getTransfers({ limit: 50 }).subscribe({
+    const clientId = this.scopedClientId;
+    const request = clientId
+      ? this.inventoryService.getStockTransfersForClient(clientId, { limit: 50 })
+      : this.inventoryService.getTransfers({ limit: 50 });
+
+    request.subscribe({
       next: (res: any) => { this.transfers.set(res.data ?? []); this.isLoadingTransfers.set(false); },
       error: () => this.isLoadingTransfers.set(false)
     });
@@ -953,7 +1006,13 @@ export class ClientInventoryComponent implements OnInit {
   // Ledger
   loadLedger() {
     this.isLoadingLedger.set(true);
-    this.inventoryService.getStockLedger({ transactionType: this.ledgerTypeFilter || undefined, limit: 100 }).subscribe({
+    const clientId = this.scopedClientId;
+    const filters = { transactionType: this.ledgerTypeFilter || undefined, limit: 100 };
+    const request = clientId
+      ? this.inventoryService.getClientStockLedger(clientId, filters)
+      : this.inventoryService.getStockLedger(filters);
+
+    request.subscribe({
       next: (res: any) => { this.ledgerEntries.set(res.data ?? []); this.isLoadingLedger.set(false); },
       error: () => this.isLoadingLedger.set(false)
     });
