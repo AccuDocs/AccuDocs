@@ -5,6 +5,11 @@ import { Guard } from "../../../../shared/core/Guard";
 export interface InvoiceLineItemProps {
   invoiceId: string;
   serviceTemplateId?: string | null;
+  itemId?: string | null;
+  variantId?: string | null;
+  warehouseId?: string | null;
+  batchNo?: string | null;
+  trackInventory?: boolean;
   description: string;
   sacCode: string;
   quantity: number;
@@ -16,6 +21,11 @@ export interface InvoiceLineItemProps {
 export class InvoiceLineItem extends Entity<InvoiceLineItemProps> {
   get invoiceId() { return this.props.invoiceId; }
   get serviceTemplateId() { return this.props.serviceTemplateId; }
+  get itemId() { return this.props.itemId; }
+  get variantId() { return this.props.variantId; }
+  get warehouseId() { return this.props.warehouseId; }
+  get batchNo() { return this.props.batchNo; }
+  get trackInventory() { return this.props.trackInventory; }
   get description() { return this.props.description; }
   get sacCode() { return this.props.sacCode; }
   get quantity() { return this.props.quantity; }

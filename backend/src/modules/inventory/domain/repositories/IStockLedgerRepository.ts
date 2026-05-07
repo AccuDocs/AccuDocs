@@ -1,4 +1,5 @@
 import { StockMovement } from '../entities/StockMovement.entity';
+import type { Transaction } from 'sequelize';
 
 export interface StockLedgerFilters {
   orgId: string;
@@ -13,9 +14,15 @@ export interface StockLedgerFilters {
 }
 
 export interface IStockLedgerRepository {
-  append(movement: StockMovement): Promise<StockMovement>;
+  append(movement: StockMovement, options?: { transaction?: Transaction }): Promise<StockMovement>;
   findAll(filters: StockLedgerFilters): Promise<{ rows: StockMovement[]; total: number }>;
-  getCurrentBalance(warehouseId: string, itemId: string, variantId?: string | null): Promise<number>;
+  getCurrentBalance(
+    warehouseId: string,
+    itemId: string,
+    variantId?: string | null,
+    batchNo?: string | null,
+    options?: { transaction?: Transaction; lock?: boolean },
+  ): Promise<number>;
   getClientMovements(clientId: string, orgId: string): Promise<StockMovement[]>;
   updateStockSummary(
     warehouseId: string,
@@ -25,5 +32,6 @@ export interface IStockLedgerRepository {
     qtyIn: number,
     qtyOut: number,
     rate: number,
+    options?: { transaction?: Transaction; allowNegativeStock?: boolean },
   ): Promise<void>;
 }

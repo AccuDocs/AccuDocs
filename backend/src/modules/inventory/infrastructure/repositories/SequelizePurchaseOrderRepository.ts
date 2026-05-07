@@ -1,4 +1,5 @@
 import { injectable } from 'tsyringe';
+import { QueryTypes } from 'sequelize';
 import { IPurchaseOrderRepository } from '../../domain/repositories/IPurchaseOrderRepository';
 import { PurchaseOrder as POEntity } from '../../domain/entities/PurchaseOrder.entity';
 import {
@@ -117,12 +118,24 @@ export class SequelizePurchaseOrderRepository implements IPurchaseOrderRepositor
   }
 
   async generatePoNumber(orgId: string): Promise<string> {
-    const [result] = await sequelize.query(
-      `SELECT COUNT(*) AS cnt FROM purchase_orders WHERE org_id = :orgId`,
-      { replacements: { orgId } },
-    );
-    const cnt = Number((result as any[])[0]?.cnt ?? 0) + 1;
     const year = new Date().getFullYear().toString().slice(-2);
-    return `PO/${year}/${String(cnt).padStart(4, '0')}`;
+    return sequelize.transaction(async (transaction) => {
+      const rows = await sequelize.query<{ current_value: number }>(
+        `
+          INSERT INTO inventory_number_sequences (org_id, sequence_type, current_value, created_at, updated_at)
+          VALUES (:orgId, :sequenceType, 1, NOW(), NOW())
+          ON CONFLICT (org_id, sequence_type)
+          DO UPDATE SET current_value = inventory_number_sequences.current_value + 1, updated_at = NOW()
+          RETURNING current_value
+        `,
+        {
+          replacements: { orgId, sequenceType: 'purchase_order' },
+          type: QueryTypes.SELECT,
+          transaction,
+        },
+      );
+      const nextValue = Number(rows[0]?.current_value ?? 1);
+      return `PO/${year}/${String(nextValue).padStart(4, '0')}`;
+    });
   }
 }

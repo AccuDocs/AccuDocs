@@ -9,6 +9,8 @@ import {
   ItemVariant as ItemVariantModel,
   StockLedger as StockLedgerModel,
   Warehouse as WarehouseModel,
+  ClientItemPricing as ClientItemPricingModel,
+  Client as ClientModel,
 } from '../../../../models';
 
 @injectable()
@@ -169,7 +171,34 @@ export class ItemService {
     });
   }
 
-  async getClientPricingList(clientId: string) {
+  async getClientPricingList(orgId: string, clientId: string) {
+    const client = await ClientModel.findOne({ where: { id: clientId, organizationId: orgId } });
+    if (!client) throw new AppError('Client not found', 404);
     return this.pricingRepo.findByClient(clientId);
+  }
+
+  async updateClientPrice(orgId: string, id: string, data: any) {
+    const pricing = await ClientItemPricingModel.findOne({
+      where: { id },
+      include: [{ model: ItemModel, as: 'item', where: { orgId }, attributes: ['id'] }],
+    });
+    if (!pricing) throw new AppError('Client pricing not found', 404);
+
+    return pricing.update({
+      variantId: data.variantId !== undefined ? data.variantId : pricing.variantId,
+      customSellingPrice: data.customSellingPrice !== undefined ? Number(data.customSellingPrice) : pricing.customSellingPrice,
+      discountPct: data.discountPct !== undefined ? Number(data.discountPct) : pricing.discountPct,
+      validFrom: data.validFrom !== undefined ? data.validFrom : pricing.validFrom,
+      validTo: data.validTo !== undefined ? data.validTo : pricing.validTo,
+    });
+  }
+
+  async deleteClientPrice(orgId: string, id: string) {
+    const pricing = await ClientItemPricingModel.findOne({
+      where: { id },
+      include: [{ model: ItemModel, as: 'item', where: { orgId }, attributes: ['id'] }],
+    });
+    if (!pricing) throw new AppError('Client pricing not found', 404);
+    await pricing.destroy();
   }
 }

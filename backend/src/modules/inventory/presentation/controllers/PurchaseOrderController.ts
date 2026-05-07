@@ -55,6 +55,28 @@ export class PurchaseOrderController {
     sendSuccess(res, po, 'Items received and stock updated');
   });
 
+  static generatePdf = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(PurchaseOrderService);
+    const pdf = await service.generatePdf(req.user!.organizationId, req.params.id);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${pdf.filename}"`);
+    res.send(pdf.buffer);
+  });
+
+  static autoCreateFromLowStock = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const poService = container.resolve(PurchaseOrderService);
+    const stockService = container.resolve(StockService);
+    const alerts = req.body.alerts ?? await stockService.getLowStockItems(req.user!.organizationId);
+    const po = await poService.generateFromReorder(
+      req.user!.organizationId,
+      req.user!.userId,
+      req.body.warehouseId,
+      req.params.clientId,
+      alerts,
+    );
+    sendCreated(res, po, 'Draft purchase order generated from low-stock alerts');
+  });
+
   // ─── Client workspace: POs for a supplier client ─────────────────────────────
 
   static getByClient = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {

@@ -72,7 +72,12 @@ export const AdjustStockSchema = z.object({
   adjustedQty:  z.number().min(0),
   rate:         z.number().min(0).default(0),
   reason:       z.string().optional(),
+  batchNo:      z.string().optional().nullable(),
+  clientId:     z.string().uuid().optional().nullable(),
+  notes:        z.string().optional().nullable(),
 });
+
+export const RecordStockAdjustmentSchema = AdjustStockSchema;
 
 export const CreatePOSchema = z.object({
   supplierClientId:     z.string().uuid(),
@@ -91,6 +96,11 @@ export const CreatePOSchema = z.object({
     batchNo:     z.string().optional().nullable(),
     expectedDate: z.string().optional().nullable(),
   })).min(1),
+});
+
+export const AutoCreatePOSchema = z.object({
+  warehouseId: z.string().uuid(),
+  alerts: z.array(z.any()).optional(),
 });
 
 export const ReceivePOItemsSchema = z.object({

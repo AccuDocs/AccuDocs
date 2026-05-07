@@ -1,5 +1,5 @@
 import { injectable } from 'tsyringe';
-import { Op } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 import { IStockLedgerRepository, StockLedgerFilters } from '../../domain/repositories/IStockLedgerRepository';
 import { StockMovement as StockMovementEntity } from '../../domain/entities/StockMovement.entity';
 import {
@@ -8,6 +8,7 @@ import {
   Item as ItemModel,
   Warehouse as WarehouseModel,
   ItemVariant as ItemVariantModel,
+  Client as ClientModel,
 } from '../../../../models';
 import { StockValuationService } from '../../domain/services/StockValuationService';
 
@@ -38,12 +39,13 @@ function toEntity(raw: any): StockMovementEntity {
   // Attach included models for caller convenience
   (entity as any)._item = raw.item ?? null;
   (entity as any)._warehouse = raw.warehouse ?? null;
+  (entity as any)._client = raw.client ?? null;
   return entity;
 }
 
 @injectable()
 export class SequelizeStockLedgerRepository implements IStockLedgerRepository {
-  async append(movement: StockMovementEntity): Promise<StockMovementEntity> {
+  async append(movement: StockMovementEntity, options?: { transaction?: Transaction }): Promise<StockMovementEntity> {
     const row = await StockLedgerModel.create({
       id: movement.id,
       orgId: movement.orgId,
@@ -64,7 +66,7 @@ export class SequelizeStockLedgerRepository implements IStockLedgerRepository {
       transactionDate: movement.transactionDate,
       notes: movement.notes,
       createdBy: movement.createdBy,
-    });
+    }, { transaction: options?.transaction });
     return toEntity(row);
   }
 
@@ -89,6 +91,7 @@ export class SequelizeStockLedgerRepository implements IStockLedgerRepository {
         { model: ItemModel,     as: 'item',      attributes: ['id', 'name', 'sku', 'unitOfMeasure'], required: false },
         { model: WarehouseModel, as: 'warehouse', attributes: ['id', 'name', 'code'],               required: false },
         { model: ItemVariantModel, as: 'variant', attributes: ['id', 'variantName'],                required: false },
+        { model: ClientModel, as: 'client', attributes: ['id', 'name'], required: false },
       ],
       offset: (page - 1) * limit,
       limit,
@@ -99,14 +102,22 @@ export class SequelizeStockLedgerRepository implements IStockLedgerRepository {
     return { rows: rows.map(toEntity), total: count };
   }
 
-  async getCurrentBalance(warehouseId: string, itemId: string, variantId?: string | null): Promise<number> {
+  async getCurrentBalance(
+    warehouseId: string,
+    itemId: string,
+    variantId?: string | null,
+    batchNo?: string | null,
+    options?: { transaction?: Transaction; lock?: boolean },
+  ): Promise<number> {
     const summary = await StockSummaryModel.findOne({
       where: {
         warehouseId,
         itemId,
         variantId: variantId ?? null,
-        batchNo: null,
+        batchNo: batchNo ?? null,
       },
+      transaction: options?.transaction,
+      lock: options?.lock && options.transaction ? (options.transaction as any).LOCK.UPDATE : undefined,
     });
     return summary ? Number((summary as any).qtyOnHand) : 0;
   }
@@ -131,37 +142,47 @@ export class SequelizeStockLedgerRepository implements IStockLedgerRepository {
     qtyIn: number,
     qtyOut: number,
     rate: number,
+    options?: { transaction?: Transaction; allowNegativeStock?: boolean },
   ): Promise<void> {
     const existing = await StockSummaryModel.findOne({
       where: { warehouseId, itemId, variantId: variantId ?? null, batchNo: batchNo ?? null },
+      transaction: options?.transaction,
+      lock: options?.transaction ? (options.transaction as any).LOCK.UPDATE : undefined,
     });
 
     if (existing) {
       const existingQty  = Number((existing as any).qtyOnHand);
       const existingAvg  = Number((existing as any).avgCost);
       const newQtyOnHand = existingQty + qtyIn - qtyOut;
+      if (!options?.allowNegativeStock && newQtyOnHand < 0) {
+        throw new Error('Stock summary would become negative');
+      }
       const newAvgCost   = qtyIn > 0
         ? StockValuationService.calculateWeightedAvg(existingQty, existingAvg, qtyIn, rate)
         : existingAvg;
 
       await existing.update({
-        qtyOnHand: Math.max(0, newQtyOnHand),
+        qtyOnHand: options?.allowNegativeStock ? newQtyOnHand : Math.max(0, newQtyOnHand),
         avgCost: newAvgCost,
         lastPurchaseRate: qtyIn > 0 ? rate : (existing as any).lastPurchaseRate,
         lastUpdated: new Date(),
-      });
+      }, { transaction: options?.transaction });
     } else {
+      const initialQty = qtyIn - qtyOut;
+      if (!options?.allowNegativeStock && initialQty < 0) {
+        throw new Error('Stock summary would become negative');
+      }
       await StockSummaryModel.create({
         warehouseId,
         itemId,
         variantId: variantId ?? null,
         batchNo: batchNo ?? null,
-        qtyOnHand: Math.max(0, qtyIn - qtyOut),
+        qtyOnHand: options?.allowNegativeStock ? initialQty : Math.max(0, initialQty),
         qtyReserved: 0,
         avgCost: rate,
         lastPurchaseRate: rate,
         lastUpdated: new Date(),
-      });
+      }, { transaction: options?.transaction });
     }
   }
 }

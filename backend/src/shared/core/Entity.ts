@@ -33,4 +33,19 @@ export abstract class Entity<T> {
 
     return this._id === object._id;
   }
+
+  public toJSON(): Record<string, unknown> {
+    const json: Record<string, unknown> = {
+      id: this._id,
+      ...(this.props as Record<string, unknown>),
+    };
+
+    for (const [key, value] of Object.entries(this as Record<string, unknown>)) {
+      if (key.startsWith('_') && key !== '_id') {
+        json[key.slice(1)] = value;
+      }
+    }
+
+    return json;
+  }
 }

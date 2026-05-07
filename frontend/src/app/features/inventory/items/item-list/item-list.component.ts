@@ -231,7 +231,7 @@ export class ItemListComponent implements OnInit {
     this.service.getItems(filters).subscribe({
       next: (res: any) => {
         this.items.set(res.data ?? []);
-        this.total.set(res.total ?? 0);
+        this.total.set(res.meta?.total ?? res.total ?? 0);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),

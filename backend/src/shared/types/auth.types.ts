@@ -3,7 +3,7 @@ import { Request } from 'express';
 export interface JwtPayload {
   userId: string;
   organizationId: string;
-  role: 'super_admin' | 'admin' | 'staff' | 'client';
+  role: 'super_admin' | 'admin' | 'staff' | 'accountant' | 'client';
   mobile: string;
 }
 

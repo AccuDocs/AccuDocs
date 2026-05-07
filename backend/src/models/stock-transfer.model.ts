@@ -8,6 +8,7 @@ export class StockTransfer extends Model {
   declare public transferDate: Date;
   declare public fromWarehouseId: string;
   declare public toWarehouseId: string;
+  declare public clientId: string | null;
   declare public status: 'draft' | 'in_transit' | 'received' | 'cancelled';
   declare public notes: string | null;
   declare public createdBy: string;
@@ -24,6 +25,7 @@ StockTransfer.init({
   transferDate:     { type: DataTypes.DATEONLY, allowNull: false, defaultValue: DataTypes.NOW, field: 'transfer_date' },
   fromWarehouseId:  { type: DataTypes.UUID, allowNull: false, field: 'from_warehouse_id' },
   toWarehouseId:    { type: DataTypes.UUID, allowNull: false, field: 'to_warehouse_id' },
+  clientId:         { type: DataTypes.UUID, allowNull: true, field: 'client_id' },
   status:           { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'draft' },
   notes:            { type: DataTypes.TEXT, allowNull: true },
   createdBy:        { type: DataTypes.UUID, allowNull: false, field: 'created_by' },
@@ -35,5 +37,5 @@ StockTransfer.init({
   tableName: 'stock_transfers',
   underscored: true,
   timestamps: true,
-  indexes: [{ fields: ['org_id'] }],
+  indexes: [{ fields: ['org_id'] }, { fields: ['client_id'] }],
 });

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ForbiddenError } from '../utils/errors';
 import { AuthenticatedRequest } from '../shared/types/auth.types';
-export type UserRole = 'admin' | 'staff' | 'client' | 'super_admin';
+export type UserRole = 'admin' | 'staff' | 'accountant' | 'client' | 'super_admin';
 
 /**
  * Role-based access control middleware

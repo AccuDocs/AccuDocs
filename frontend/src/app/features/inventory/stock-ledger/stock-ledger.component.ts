@@ -125,7 +125,7 @@ export class StockLedgerComponent implements OnInit {
     }).subscribe({
       next: (res: any) => {
         this.entries.set(res.data ?? []);
-        this.total.set(res.total ?? 0);
+        this.total.set(res.meta?.total ?? res.total ?? 0);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),

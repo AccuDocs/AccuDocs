@@ -5,6 +5,11 @@ export class InvoiceLineItem extends Model {
   declare public id: string;
   declare public invoiceId: string;
   declare public serviceTemplateId: string | null;
+  declare public itemId: string | null;
+  declare public variantId: string | null;
+  declare public warehouseId: string | null;
+  declare public batchNo: string | null;
+  declare public trackInventory: boolean;
   declare public description: string;
   declare public sacCode: string;
   declare public quantity: number;
@@ -19,6 +24,11 @@ InvoiceLineItem.init({
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   invoiceId: { type: DataTypes.UUID, allowNull: false, field: 'invoice_id' },
   serviceTemplateId: { type: DataTypes.UUID, allowNull: true, field: 'service_template_id' },
+  itemId: { type: DataTypes.UUID, allowNull: true, field: 'item_id' },
+  variantId: { type: DataTypes.UUID, allowNull: true, field: 'variant_id' },
+  warehouseId: { type: DataTypes.UUID, allowNull: true, field: 'warehouse_id' },
+  batchNo: { type: DataTypes.STRING(100), allowNull: true, field: 'batch_no' },
+  trackInventory: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'track_inventory' },
   description: { type: DataTypes.STRING(255), allowNull: false },
   sacCode: { type: DataTypes.STRING(10), allowNull: false, field: 'sac_code' },
   quantity: { type: DataTypes.DECIMAL(8, 2), allowNull: false, defaultValue: 1.00 },

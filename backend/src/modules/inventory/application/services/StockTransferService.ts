@@ -2,6 +2,7 @@ import { injectable, inject } from 'tsyringe';
 import { IStockTransferRepository } from '../../domain/repositories/IStockTransferRepository';
 import { StockService } from './StockService';
 import { AppError } from '../../../../utils/errors';
+import { sequelize } from '../../../../config/database.config';
 import {
   StockTransfer as StockTransferModel,
   StockTransferItem as StockTransferItemModel,
@@ -35,6 +36,7 @@ export class StockTransferService {
       transferDate: data.transferDate ? new Date(data.transferDate) : new Date(),
       fromWarehouseId: data.fromWarehouseId,
       toWarehouseId: data.toWarehouseId,
+      clientId: data.clientId ?? null,
       status: 'draft',
       notes: data.notes ?? null,
       createdBy: userId,
@@ -52,66 +54,74 @@ export class StockTransferService {
   }
 
   async dispatchTransfer(orgId: string, id: string, userId: string, stockService: StockService) {
-    const transfer = await StockTransferModel.findOne({
-      where: { id, orgId },
-      include: [{ model: StockTransferItemModel, as: 'transferItems' }],
-    });
-    if (!transfer) throw new AppError('Transfer not found', 404);
-    if ((transfer as any).status !== 'draft') throw new AppError('Only draft transfers can be dispatched', 422);
-
-    await StockTransferModel.update({ status: 'in_transit' }, { where: { id } });
-
-    // Deduct from source warehouse
-    for (const item of (transfer as any).transferItems ?? []) {
-      await stockService.recordMovement({
-        orgId,
-        warehouseId: (transfer as any).fromWarehouseId,
-        itemId: item.itemId,
-        variantId: item.variantId ?? null,
-        transactionType: 'transfer_out',
-        referenceType: 'transfer',
-        referenceId: id,
-        batchNo: item.batchNo ?? null,
-        qtyIn: 0,
-        qtyOut: Number(item.qtyTransferred),
-        rate: Number(item.unitCost),
-        createdBy: userId,
+    await sequelize.transaction(async (transaction) => {
+      const transfer = await StockTransferModel.findOne({
+        where: { id, orgId },
+        include: [{ model: StockTransferItemModel, as: 'transferItems' }],
+        transaction,
+        lock: transaction.LOCK.UPDATE,
       });
-    }
+      if (!transfer) throw new AppError('Transfer not found', 404);
+      if ((transfer as any).status !== 'draft') throw new AppError('Only draft transfers can be dispatched', 422);
+
+      await StockTransferModel.update({ status: 'in_transit' }, { where: { id }, transaction });
+
+      for (const item of (transfer as any).transferItems ?? []) {
+        await stockService.recordMovement({
+          orgId,
+          warehouseId: (transfer as any).fromWarehouseId,
+          itemId: item.itemId,
+          variantId: item.variantId ?? null,
+          transactionType: 'transfer_out',
+          referenceType: 'transfer',
+          referenceId: id,
+          clientId: (transfer as any).clientId ?? null,
+          batchNo: item.batchNo ?? null,
+          qtyIn: 0,
+          qtyOut: Number(item.qtyTransferred),
+          rate: Number(item.unitCost),
+          createdBy: userId,
+        }, { transaction });
+      }
+    });
 
     return this.transferRepo.findById(id, orgId);
   }
 
   async receiveTransfer(orgId: string, id: string, userId: string, stockService: StockService, receivedQtys?: Record<string, number>) {
-    const transfer = await StockTransferModel.findOne({
-      where: { id, orgId },
-      include: [{ model: StockTransferItemModel, as: 'transferItems' }],
-    });
-    if (!transfer) throw new AppError('Transfer not found', 404);
-    if ((transfer as any).status !== 'in_transit') throw new AppError('Transfer must be in transit to receive', 422);
-
-    await StockTransferModel.update({ status: 'received' }, { where: { id } });
-
-    // Add to destination warehouse
-    for (const item of (transfer as any).transferItems ?? []) {
-      const qtyReceived = receivedQtys?.[item.id] ?? Number(item.qtyTransferred);
-      await StockTransferItemModel.update({ qtyReceived }, { where: { id: item.id } });
-
-      await stockService.recordMovement({
-        orgId,
-        warehouseId: (transfer as any).toWarehouseId,
-        itemId: item.itemId,
-        variantId: item.variantId ?? null,
-        transactionType: 'transfer_in',
-        referenceType: 'transfer',
-        referenceId: id,
-        batchNo: item.batchNo ?? null,
-        qtyIn: qtyReceived,
-        qtyOut: 0,
-        rate: Number(item.unitCost),
-        createdBy: userId,
+    await sequelize.transaction(async (transaction) => {
+      const transfer = await StockTransferModel.findOne({
+        where: { id, orgId },
+        include: [{ model: StockTransferItemModel, as: 'transferItems' }],
+        transaction,
+        lock: transaction.LOCK.UPDATE,
       });
-    }
+      if (!transfer) throw new AppError('Transfer not found', 404);
+      if ((transfer as any).status !== 'in_transit') throw new AppError('Transfer must be in transit to receive', 422);
+
+      await StockTransferModel.update({ status: 'received' }, { where: { id }, transaction });
+
+      for (const item of (transfer as any).transferItems ?? []) {
+        const qtyReceived = receivedQtys?.[item.id] ?? Number(item.qtyTransferred);
+        await StockTransferItemModel.update({ qtyReceived }, { where: { id: item.id }, transaction });
+
+        await stockService.recordMovement({
+          orgId,
+          warehouseId: (transfer as any).toWarehouseId,
+          itemId: item.itemId,
+          variantId: item.variantId ?? null,
+          transactionType: 'transfer_in',
+          referenceType: 'transfer',
+          referenceId: id,
+          clientId: (transfer as any).clientId ?? null,
+          batchNo: item.batchNo ?? null,
+          qtyIn: qtyReceived,
+          qtyOut: 0,
+          rate: Number(item.unitCost),
+          createdBy: userId,
+        }, { transaction });
+      }
+    });
 
     return this.transferRepo.findById(id, orgId);
   }

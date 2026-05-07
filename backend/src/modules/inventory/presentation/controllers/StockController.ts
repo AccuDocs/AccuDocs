@@ -5,6 +5,14 @@ import { sendSuccess, sendCreated, sendPaginated } from '../../../../utils/respo
 import { asyncHandler } from '../../../../middlewares';
 import { AuthenticatedRequest } from '../../../../shared/types/auth.types';
 
+const stockMovementToDto = (movement: any) => ({
+  id: movement.id,
+  ...(movement.props ?? {}),
+  item: movement._item ?? null,
+  warehouse: movement._warehouse ?? null,
+  client: movement._client ?? null,
+});
+
 export class StockController {
   // ─── Ledger ───────────────────────────────────────────────────────────────────
 
@@ -12,7 +20,7 @@ export class StockController {
     const service = container.resolve(StockService);
     const { page = 1, limit = 20, ...filters } = req.query;
     const result = await service.getLedger(req.user!.organizationId, filters, { page, limit });
-    sendPaginated(res, result.rows, Number(page), Number(limit), result.total);
+    sendPaginated(res, result.rows.map(stockMovementToDto), Number(page), Number(limit), result.total);
   });
 
   // ─── Opening Stock ────────────────────────────────────────────────────────────
@@ -24,7 +32,7 @@ export class StockController {
       orgId: req.user!.organizationId,
       createdBy: req.user!.userId,
     });
-    sendCreated(res, movement, 'Opening stock recorded');
+    sendCreated(res, stockMovementToDto(movement), 'Opening stock recorded');
   });
 
   // ─── Manual Adjustment ────────────────────────────────────────────────────────
@@ -36,7 +44,17 @@ export class StockController {
       orgId: req.user!.organizationId,
       createdBy: req.user!.userId,
     });
-    sendCreated(res, movement, 'Stock adjusted');
+    sendCreated(res, stockMovementToDto(movement), 'Stock adjusted');
+  });
+
+  static recordStockAdjustment = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(StockService);
+    const movement = await service.adjustStock({
+      ...req.body,
+      orgId: req.user!.organizationId,
+      createdBy: req.user!.userId,
+    });
+    sendCreated(res, stockMovementToDto(movement), 'Stock adjustment recorded');
   });
 
   // ─── Valuation Report ─────────────────────────────────────────────────────────
@@ -61,5 +79,27 @@ export class StockController {
     const service = container.resolve(StockService);
     const summary = await service.getClientStockSummary(req.user!.organizationId, req.params.clientId);
     sendSuccess(res, summary);
+  });
+
+  static getClientLedger = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(StockService);
+    const { page = 1, limit = 20, ...filters } = req.query;
+    const result = await service.getClientStockLedger(
+      req.user!.organizationId,
+      req.params.clientId,
+      filters,
+      { page, limit },
+    );
+    sendPaginated(res, result.rows.map(stockMovementToDto), Number(page), Number(limit), result.total);
+  });
+
+  static getClientValuation = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(StockService);
+    const valuation = await service.getClientStockValuation(
+      req.user!.organizationId,
+      req.params.clientId,
+      req.query,
+    );
+    sendSuccess(res, valuation);
   });
 }

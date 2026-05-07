@@ -144,7 +144,7 @@ export class PoListComponent implements OnInit {
     this.service.getPurchaseOrders({ status: this.filterStatus || undefined }).subscribe({
       next: (res: any) => {
         this.orders.set(res.data ?? []);
-        this.total.set(res.total ?? 0);
+        this.total.set(res.meta?.total ?? res.total ?? 0);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),

@@ -2,9 +2,8 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
+import { CategoryService } from '../../../core/services/category.service';
 import { CategoryTreeComponent, CategoryTreeNode } from '../../../shared/components/category-tree.component';
 import { CategoryBreadcrumbComponent, BreadcrumbItem } from '../../../shared/components/category-breadcrumb.component';
 
@@ -504,10 +503,9 @@ interface CategoryDetailsResponse {
   `]
 })
 export class CategoryManagerComponent implements OnInit {
-  private http = inject(HttpClient);
+  private categoryService = inject(CategoryService);
   private fb = inject(FormBuilder);
   private toast = inject(ToastService);
-  private apiUrl = `${environment.apiUrl}/inventory/categories`;
 
   tree = signal<CategoryTreeNode[]>([]);
   selectedNode = signal<CategoryDetailsResponse | null>(null);
@@ -574,8 +572,8 @@ export class CategoryManagerComponent implements OnInit {
 
   loadTree(): void {
     this.loading.set(true);
-    this.http.get<CategoryTreeNode[]>(`${this.apiUrl}/tree`).subscribe({
-      next: (data) => this.tree.set(data),
+    this.categoryService.getTree().subscribe({
+      next: (data) => this.tree.set(data as CategoryTreeNode[]),
       error: (err) => {
         this.toast.error('Failed to load categories');
         console.error(err);
@@ -591,9 +589,9 @@ export class CategoryManagerComponent implements OnInit {
   }
 
   loadCategoryDetails(categoryId: string): void {
-    this.http.get<CategoryDetailsResponse>(`${this.apiUrl}/${categoryId}`).subscribe({
+    this.categoryService.getCategoryById(categoryId).subscribe({
       next: (data) => {
-        this.selectedNode.set(data);
+        this.selectedNode.set(data as CategoryDetailsResponse);
         this.form.patchValue({
           name: data.name,
           code: data.code,
@@ -618,21 +616,21 @@ export class CategoryManagerComponent implements OnInit {
   }
 
   loadBreadcrumb(categoryId: string): void {
-    this.http.get<BreadcrumbItem[]>(`${this.apiUrl}/${categoryId}/breadcrumb`).subscribe({
-      next: (data) => this.breadcrumb.set(data),
+    this.categoryService.getBreadcrumb(categoryId).subscribe({
+      next: (data) => this.breadcrumb.set(data as BreadcrumbItem[]),
       error: () => this.breadcrumb.set([]),
     });
   }
 
   loadItemCount(categoryId: string): void {
-    this.http.get<{ count: number }>(`${this.apiUrl}/${categoryId}/item-count`).subscribe({
+    this.categoryService.getItemCount(categoryId).subscribe({
       next: (data) => this.itemCount.set(data.count),
       error: () => this.itemCount.set(0),
     });
   }
 
   loadStockValue(categoryId: string): void {
-    this.http.get<{ stock_value: number }>(`${this.apiUrl}/${categoryId}/stock-value`).subscribe({
+    this.categoryService.getStockValue(categoryId).subscribe({
       next: (data) => this.stockValue.set(data.stock_value),
       error: () => this.stockValue.set(0),
     });
@@ -660,8 +658,8 @@ export class CategoryManagerComponent implements OnInit {
     this.saving.set(true);
 
     const request$ = node
-      ? this.http.patch(`${this.apiUrl}/${node.id}`, this.form.value)
-      : this.http.post(`${this.apiUrl}`, this.form.value);
+      ? this.categoryService.updateCategory(node.id, this.form.value)
+      : this.categoryService.createCategory(this.form.value);
 
     request$.subscribe({
       next: () => {
@@ -684,7 +682,7 @@ export class CategoryManagerComponent implements OnInit {
     if (!confirm(`Delete "${node.name}"? This cannot be undone.`)) return;
 
     this.deleting.set(true);
-    this.http.delete(`${this.apiUrl}/${node.id}`).subscribe({
+    this.categoryService.deleteCategory(node.id).subscribe({
       next: () => {
         this.toast.success('Category deleted');
         this.loadTree();

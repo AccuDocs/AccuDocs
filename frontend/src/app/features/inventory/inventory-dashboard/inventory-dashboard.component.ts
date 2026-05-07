@@ -261,7 +261,7 @@ export class InventoryDashboardComponent implements OnInit {
     });
 
     this.inventoryService.getPurchaseOrders({ status: 'sent', limit: 1 }).subscribe({
-      next: (res: any) => this.updateKpi(3, String(res.total ?? 0), '🛒'),
+      next: (res: any) => this.updateKpi(3, String(res.meta?.total ?? res.total ?? 0), '🛒'),
       error: () => {},
     });
   }

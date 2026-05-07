@@ -33,7 +33,7 @@ Item.init({
   id:                 { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   orgId:              { type: DataTypes.UUID, allowNull: false, field: 'org_id' },
   name:               { type: DataTypes.STRING(200), allowNull: false },
-  sku:                { type: DataTypes.STRING(100), allowNull: true, unique: true },
+  sku:                { type: DataTypes.STRING(100), allowNull: true },
   barcode:            { type: DataTypes.STRING(100), allowNull: true },
   hsnSacCode:         { type: DataTypes.STRING(20),  allowNull: true, field: 'hsn_sac_code' },
   itemType:           { type: DataTypes.STRING(10),  allowNull: false, defaultValue: 'goods', field: 'item_type' },
@@ -60,6 +60,7 @@ Item.init({
   timestamps: true,
   indexes: [
     { fields: ['org_id'] },
+    { unique: true, fields: ['org_id', 'sku'] },
     { fields: ['barcode'] },
     { fields: ['category_id'] },
   ],

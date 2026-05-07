@@ -1,10 +1,11 @@
-import { injectable, inject } from "tsyringe";
+import { injectable, inject, container } from "tsyringe";
 import { Op } from "sequelize";
 import { IInvoiceRepository } from "../../domain/repositories/IInvoiceRepository";
 import { IClientRepository } from "../../../client/domain/repositories/IClientRepository";
 import { Invoice } from "../../domain/entities/Invoice";
 import { InvoiceLineItem } from "../../domain/entities/InvoiceLineItem";
-import { Organization as OrganizationModel, ServiceTemplate as ServiceTemplateModel, ClientSale } from "../../../../models";
+import { Organization as OrganizationModel, ServiceTemplate as ServiceTemplateModel, ClientSale, StockLedger as StockLedgerModel } from "../../../../models";
+import { StockService } from "../../../inventory/application/services/StockService";
 import { calculateGST } from "../../../../shared/utils/gst.util";
 import { getFinancialYear, getMonthFromDate } from "../../../../utils/gstCalculator";
 import { AppError } from "../../../../utils/errors";
@@ -100,6 +101,11 @@ export class BillingService {
     const lineItemEntities = itemsWithAmounts.map((item: any, index: number) => {
       const liProps = {
         invoiceId: invoice.id,
+        itemId: item.itemId ?? null,
+        variantId: item.variantId ?? null,
+        warehouseId: item.warehouseId ?? null,
+        batchNo: item.batchNo ?? null,
+        trackInventory: item.trackInventory === true,
         description: item.description,
         sacCode: item.sacCode,
         quantity: item.quantity,
@@ -117,6 +123,7 @@ export class BillingService {
 
     if (saved.status === 'issued' || saved.status === 'paid') {
       await this.syncToSalesRegister(saved.id, organizationId);
+      await this.syncInventoryForIssuedInvoice(saved, organizationId, adminId);
     }
 
     return saved;
@@ -173,9 +180,11 @@ export class BillingService {
 
     if (saved.status === 'issued' || saved.status === 'paid') {
       await this.syncToSalesRegister(saved.id, organizationId);
+      await this.syncInventoryForIssuedInvoice(saved, organizationId, adminId);
     } else if (saved.status === 'cancelled' && (oldStatus === 'issued' || oldStatus === 'paid')) {
       // Remove from sales register if cancelled after being issued/paid
       await ClientSale.destroy({ where: { invoiceNo: saved.invoiceNumber, organizationId } });
+      await this.reverseInventoryForCancelledInvoice(saved, organizationId, adminId);
     }
 
     return saved;
@@ -241,6 +250,88 @@ export class BillingService {
 
     if (salesProfiles.length > 0) {
       await ClientSale.bulkCreate(salesProfiles);
+    }
+  }
+
+  private async syncInventoryForIssuedInvoice(invoice: Invoice, organizationId: string, adminId: string) {
+    const trackedItems = invoice.lineItems.filter(
+      (item) => item.trackInventory === true && item.itemId && item.warehouseId,
+    );
+    if (trackedItems.length === 0) return;
+
+    const existingMovements = await StockLedgerModel.count({
+      where: {
+        orgId: organizationId,
+        referenceType: 'invoice',
+        referenceId: invoice.id,
+        transactionType: 'sale',
+      },
+    });
+    if (existingMovements > 0) return;
+
+    const stockService = container.resolve(StockService);
+    for (const item of trackedItems) {
+      await stockService.recordMovement({
+        orgId: organizationId,
+        warehouseId: item.warehouseId!,
+        itemId: item.itemId!,
+        variantId: item.variantId ?? null,
+        transactionType: 'sale',
+        referenceType: 'invoice',
+        referenceId: invoice.id,
+        clientId: invoice.clientId,
+        batchNo: item.batchNo ?? null,
+        qtyIn: 0,
+        qtyOut: Number(item.quantity),
+        rate: Number(item.unitRate),
+        transactionDate: invoice.invoiceDate,
+        notes: `Invoice ${invoice.invoiceNumber}`,
+        createdBy: adminId,
+      });
+    }
+  }
+
+  private async reverseInventoryForCancelledInvoice(invoice: Invoice, organizationId: string, adminId: string) {
+    const existingReversals = await StockLedgerModel.count({
+      where: {
+        orgId: organizationId,
+        referenceType: 'invoice',
+        referenceId: invoice.id,
+        transactionType: 'return',
+      },
+    });
+    if (existingReversals > 0) return;
+
+    const saleMovements = await StockLedgerModel.findAll({
+      where: {
+        orgId: organizationId,
+        referenceType: 'invoice',
+        referenceId: invoice.id,
+        transactionType: 'sale',
+      },
+      order: [['created_at', 'ASC']],
+    });
+    if (saleMovements.length === 0) return;
+
+    const stockService = container.resolve(StockService);
+    for (const movement of saleMovements) {
+      await stockService.recordMovement({
+        orgId: organizationId,
+        warehouseId: movement.warehouseId,
+        itemId: movement.itemId,
+        variantId: movement.variantId ?? null,
+        transactionType: 'return',
+        referenceType: 'invoice',
+        referenceId: invoice.id,
+        clientId: invoice.clientId,
+        batchNo: movement.batchNo ?? null,
+        qtyIn: Number(movement.qtyOut),
+        qtyOut: 0,
+        rate: Number(movement.rate),
+        transactionDate: new Date(),
+        notes: `Inventory reversal for cancelled invoice ${invoice.invoiceNumber}`,
+        createdBy: adminId,
+      });
     }
   }
 
@@ -344,6 +435,7 @@ export class BillingService {
     
     // Sync to sales register
     await this.syncToSalesRegister(saved.id, organizationId);
+    await this.syncInventoryForIssuedInvoice(saved, organizationId, adminId);
 
     return saved;
   }

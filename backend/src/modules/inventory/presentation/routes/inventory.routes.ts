@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../../../../middlewares/auth.middleware';
+import { requireRole } from '../../../../middlewares/role.middleware';
 import { validate } from '../../../../middlewares/validate.middleware';
 
 import { ItemController } from '../controllers/ItemController';
@@ -18,13 +19,15 @@ import {
   UpdateWarehouseSchema,
   OpeningStockSchema,
   AdjustStockSchema,
+  RecordStockAdjustmentSchema,
   CreatePOSchema,
+  AutoCreatePOSchema,
   ReceivePOItemsSchema,
   CreateTransferSchema,
 } from '../validators/inventory.validators';
 
 const router = Router();
-router.use(authenticate);
+router.use(authenticate, requireRole('admin', 'accountant'));
 
 /**
  * @openapi
@@ -591,6 +594,8 @@ router.post('/items/client-pricing',           validate(SetClientPriceSchema),  
  *         description: Client pricing retrieved
  */
 router.get('/client-pricing/:clientId',                                                 ItemController.getClientPricing);
+router.put('/client-pricing/:id',              validate(SetClientPriceSchema.partial()), ItemController.updateClientPrice);
+router.delete('/client-pricing/:id',                                                    ItemController.deleteClientPrice);
 
 // ─── Warehouses ───────────────────────────────────────────────────────────────
 
@@ -814,6 +819,7 @@ router.post('/stock/opening',                  validate(OpeningStockSchema),    
  *         description: Stock adjusted successfully
  */
 router.post('/stock/adjust',                   validate(AdjustStockSchema),             StockController.adjustStock);
+router.post('/stock/adjustment',               validate(RecordStockAdjustmentSchema),    StockController.recordStockAdjustment);
 
 /**
  * @openapi
@@ -864,6 +870,8 @@ router.get('/stock/low-stock-alerts',                                           
  *         description: Client stock summary retrieved
  */
 router.get('/stock/client-summary/:clientId',                                           StockController.getClientSummary);
+router.get('/stock/client-ledger/:clientId',                                            StockController.getClientLedger);
+router.get('/stock/client-valuation/:clientId',                                         StockController.getClientValuation);
 
 /**
  * @openapi
@@ -935,6 +943,8 @@ router.post('/purchase-orders',                validate(CreatePOSchema),        
  *         description: Purchase orders retrieved
  */
 router.get('/purchase-orders',                                                          PurchaseOrderController.getPOs);
+router.post('/purchase-orders/auto-create/:clientId', validate(AutoCreatePOSchema),      PurchaseOrderController.autoCreateFromLowStock);
+router.get('/purchase-orders/:id/pdf',                                                  PurchaseOrderController.generatePdf);
 
 /**
  * @openapi
@@ -1103,6 +1113,8 @@ router.post('/transfers',                      validate(CreateTransferSchema),  
  *         description: Stock transfers retrieved
  */
 router.get('/transfers',                                                                StockTransferController.getTransfers);
+router.get('/transfers/client/:clientId',                                               StockTransferController.getTransfersForClient);
+router.post('/transfers/client/:clientId',     validate(CreateTransferSchema),          StockTransferController.createTransferForClient);
 
 /**
  * @openapi

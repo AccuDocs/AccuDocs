@@ -1,9 +1,11 @@
 import { injectable, inject } from 'tsyringe';
+import type { Transaction } from 'sequelize';
 import { IStockLedgerRepository } from '../../domain/repositories/IStockLedgerRepository';
 import { IWarehouseRepository } from '../../domain/repositories/IWarehouseRepository';
 import { StockMovement, TransactionType, ValuationMethod } from '../../domain/entities/StockMovement.entity';
 import { StockValuationService } from '../../domain/services/StockValuationService';
 import { AppError } from '../../../../utils/errors';
+import { sequelize } from '../../../../config/database.config';
 import {
   Item as ItemModel,
   StockSummary as StockSummaryModel,
@@ -29,6 +31,10 @@ export interface StockMovementDTO {
   createdBy: string;
 }
 
+interface StockMovementOptions {
+  transaction?: Transaction;
+}
+
 @injectable()
 export class StockService {
   constructor(
@@ -38,19 +44,31 @@ export class StockService {
 
   // ─── Core: Record Movement ────────────────────────────────────────────────────
 
-  async recordMovement(dto: StockMovementDTO): Promise<StockMovement> {
+  async recordMovement(dto: StockMovementDTO, options: StockMovementOptions = {}): Promise<StockMovement> {
+    if (!options.transaction) {
+      return sequelize.transaction((transaction) => this.recordMovement(dto, { transaction }));
+    }
+    const transaction = options.transaction;
+
     const qtyIn  = Number(dto.qtyIn  ?? 0);
     const qtyOut = Number(dto.qtyOut ?? 0);
     const rate   = Number(dto.rate   ?? 0);
 
     // Fetch item to check allow_negative_stock flag
-    const item = await ItemModel.findOne({ where: { id: dto.itemId, orgId: dto.orgId } });
+    const item = await ItemModel.findOne({ where: { id: dto.itemId, orgId: dto.orgId }, transaction });
     if (!item) throw new AppError('Item not found', 404);
+    await this.lockStockKey(transaction, dto);
 
     if (!item.trackInventory && dto.transactionType !== 'adjustment') {
       // Services don't track inventory — still write ledger entry but skip stock check
     } else if (qtyOut > 0) {
-      const currentBalance = await this.stockRepo.getCurrentBalance(dto.warehouseId, dto.itemId, dto.variantId);
+      const currentBalance = await this.stockRepo.getCurrentBalance(
+        dto.warehouseId,
+        dto.itemId,
+        dto.variantId,
+        dto.batchNo,
+        { transaction, lock: true },
+      );
       const check = StockValuationService.checkNegativeStock(
         currentBalance,
         qtyOut,
@@ -60,7 +78,13 @@ export class StockService {
     }
 
     // Compute running balance
-    const currentBalance = await this.stockRepo.getCurrentBalance(dto.warehouseId, dto.itemId, dto.variantId);
+    const currentBalance = await this.stockRepo.getCurrentBalance(
+      dto.warehouseId,
+      dto.itemId,
+      dto.variantId,
+      dto.batchNo,
+      { transaction, lock: true },
+    );
     const runningBalance = currentBalance + qtyIn - qtyOut;
 
     const movementResult = StockMovement.create({
@@ -85,7 +109,7 @@ export class StockService {
     });
     if (movementResult.isFailure) throw new AppError(movementResult.getError() as string, 400);
 
-    const saved = await this.stockRepo.append(movementResult.getValue());
+    const saved = await this.stockRepo.append(movementResult.getValue(), { transaction });
 
     // Update stock_summary synchronously
     await this.stockRepo.updateStockSummary(
@@ -96,6 +120,7 @@ export class StockService {
       qtyIn,
       qtyOut,
       rate,
+      { transaction, allowNegativeStock: item.allowNegativeStock },
     );
 
     return saved;
@@ -116,15 +141,24 @@ export class StockService {
   // ─── Manual Adjustment ────────────────────────────────────────────────────────
 
   async adjustStock(dto: StockMovementDTO & { adjustedQty: number; reason?: string }) {
-    const current = await this.stockRepo.getCurrentBalance(dto.warehouseId, dto.itemId, dto.variantId);
-    const diff = dto.adjustedQty - current;
-    return this.recordMovement({
-      ...dto,
-      transactionType: 'adjustment',
-      qtyIn:  diff > 0 ? diff : 0,
-      qtyOut: diff < 0 ? Math.abs(diff) : 0,
-      referenceType: 'manual',
-      notes: dto.reason ?? dto.notes,
+    return sequelize.transaction(async (transaction) => {
+      await this.lockStockKey(transaction, dto);
+      const current = await this.stockRepo.getCurrentBalance(
+        dto.warehouseId,
+        dto.itemId,
+        dto.variantId,
+        dto.batchNo,
+        { transaction, lock: true },
+      );
+      const diff = dto.adjustedQty - current;
+      return this.recordMovement({
+        ...dto,
+        transactionType: 'adjustment',
+        qtyIn:  diff > 0 ? diff : 0,
+        qtyOut: diff < 0 ? Math.abs(diff) : 0,
+        referenceType: 'manual',
+        notes: dto.reason ?? dto.notes,
+      }, { transaction });
     });
   }
 
@@ -142,6 +176,19 @@ export class StockService {
       page:  Number(pagination.page  ?? 1),
       limit: Number(pagination.limit ?? 20),
     });
+  }
+
+  async getClientStockLedger(orgId: string, clientId: string, filters: any, pagination: any) {
+    return this.getLedger(
+      orgId,
+      {
+        ...filters,
+        clientId,
+        startDate: filters.startDate ?? filters.dateFrom,
+        endDate: filters.endDate ?? filters.dateTo,
+      },
+      pagination,
+    );
   }
 
   // ─── Valuation Report ─────────────────────────────────────────────────────────
@@ -176,6 +223,56 @@ export class StockService {
 
     const totalStockValue = rows.reduce((sum, r) => sum + r.stockValue, 0);
     return { rows, totalStockValue };
+  }
+
+  async getClientStockValuation(orgId: string, clientId: string, filters: any = {}) {
+    const { rows } = await this.stockRepo.findAll({
+      orgId,
+      clientId,
+      warehouseId: filters.warehouseId,
+      page: 1,
+      limit: 10000,
+    });
+
+    const grouped = new Map<string, any>();
+    for (const movement of rows) {
+      const item = (movement as any)._item;
+      const warehouse = (movement as any)._warehouse;
+      const key = `${movement.itemId}:${movement.warehouseId}:${movement.variantId ?? ''}`;
+      const existing = grouped.get(key) ?? {
+        itemId: movement.itemId,
+        itemName: item?.name ?? null,
+        sku: item?.sku ?? null,
+        warehouseId: movement.warehouseId,
+        warehouseName: warehouse?.name ?? null,
+        variantId: movement.variantId ?? null,
+        qtyOnHand: 0,
+        avgCost: 0,
+        stockValue: 0,
+        uom: item?.unitOfMeasure ?? null,
+      };
+
+      const qtyIn = Number(movement.qtyIn ?? 0);
+      const qtyOut = Number(movement.qtyOut ?? 0);
+      const currentQty = Number(existing.qtyOnHand);
+      if (qtyIn > 0) {
+        existing.avgCost = StockValuationService.calculateWeightedAvg(
+          currentQty,
+          Number(existing.avgCost),
+          qtyIn,
+          Number(movement.rate ?? 0),
+        );
+      }
+      existing.qtyOnHand = currentQty + qtyIn - qtyOut;
+      existing.stockValue = existing.qtyOnHand * Number(existing.avgCost);
+      grouped.set(key, existing);
+    }
+
+    const valuationRows = [...grouped.values()].filter((row) => row.qtyOnHand !== 0);
+    return {
+      rows: valuationRows,
+      totalStockValue: valuationRows.reduce((sum, row) => sum + Number(row.stockValue ?? 0), 0),
+    };
   }
 
   // ─── Low Stock Alerts ─────────────────────────────────────────────────────────
@@ -248,5 +345,28 @@ export class StockService {
     }
 
     return summary;
+  }
+
+  private async lockStockKey(
+    transaction: Transaction,
+    dto: Pick<StockMovementDTO, 'warehouseId' | 'itemId' | 'variantId' | 'batchNo'>,
+  ) {
+    if (sequelize.getDialect() !== 'postgres') return;
+
+    await sequelize.query(
+      'SELECT pg_advisory_xact_lock(hashtext(:lockKey))',
+      {
+        replacements: {
+          lockKey: [
+            'stock',
+            dto.warehouseId,
+            dto.itemId,
+            dto.variantId ?? 'base',
+            dto.batchNo ?? 'base',
+          ].join(':'),
+        },
+        transaction,
+      },
+    );
   }
 }

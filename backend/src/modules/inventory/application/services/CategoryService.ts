@@ -6,11 +6,19 @@ export interface CategoryNode {
   id: string;
   org_id: string;
   name: string;
+  code: string | null;
   parent_id: string | null;
+  level: number;
+  path: string | null;
+  sort_order: number;
+  default_hsn: string | null;
+  default_gst_rate: number | null;
+  default_uom: string | null;
+  allow_items: boolean;
   description: string | null;
   is_active: boolean;
-  level?: number;
-  path?: string;
+  created_at?: Date;
+  updated_at?: Date;
   children?: CategoryNode[];
   item_count?: number;
   stock_value?: number;
@@ -18,17 +26,35 @@ export interface CategoryNode {
 
 export interface CreateCategoryDTO {
   name: string;
+  code?: string | null;
   parent_id?: string | null;
+  sort_order?: number;
+  default_hsn?: string | null;
+  default_gst_rate?: number | null;
+  default_uom?: string | null;
+  allow_items?: boolean;
   description?: string;
   is_active?: boolean;
 }
 
 export interface UpdateCategoryDTO {
   name?: string;
+  code?: string | null;
   parent_id?: string | null;
+  sort_order?: number;
+  default_hsn?: string | null;
+  default_gst_rate?: number | null;
+  default_uom?: string | null;
+  allow_items?: boolean;
   description?: string;
   is_active?: boolean;
 }
+
+const CATEGORY_COLUMNS = `
+  id, org_id, name, code, parent_id, level, path, sort_order,
+  default_hsn, default_gst_rate, default_uom, allow_items,
+  description, is_active, created_at, updated_at
+`;
 
 @injectable()
 export class CategoryService {
@@ -43,10 +69,7 @@ export class CategoryService {
       WITH RECURSIVE cat_tree AS (
         -- Base: top-level categories (parent_id IS NULL)
         SELECT 
-          id, org_id, name, parent_id,
-          description, is_active,
-          1 as level,
-          CAST(name AS TEXT) as path
+          ${CATEGORY_COLUMNS}
         FROM item_categories
         WHERE org_id = $1 AND parent_id IS NULL
         ${!includeInactive ? 'AND is_active = true' : ''}
@@ -55,16 +78,15 @@ export class CategoryService {
         
         -- Recursive: children of categories already selected
         SELECT 
-          c.id, c.org_id, c.name, c.parent_id,
-          c.description, c.is_active,
-          p.level + 1 as level,
-          p.path || '/' || c.name as path
+          c.id, c.org_id, c.name, c.code, c.parent_id, c.level, c.path, c.sort_order,
+          c.default_hsn, c.default_gst_rate, c.default_uom, c.allow_items,
+          c.description, c.is_active, c.created_at, c.updated_at
         FROM item_categories c
         JOIN cat_tree p ON c.parent_id = p.id
         ${!includeInactive ? 'WHERE c.is_active = true' : ''}
       )
       SELECT * FROM cat_tree
-      ORDER BY path
+      ORDER BY path, sort_order, name
     `;
 
     const result = await pool.query(query, [orgId]);
@@ -77,11 +99,11 @@ export class CategoryService {
   async getGroups(orgId: string): Promise<CategoryNode[]> {
     const query = `
       SELECT 
-        id, org_id, name, parent_id, description, is_active,
+        ${CATEGORY_COLUMNS},
         (SELECT COUNT(*) FROM items WHERE category_id = ic.id) as item_count
       FROM item_categories ic
       WHERE org_id = $1 AND parent_id IS NULL AND is_active = true
-      ORDER BY name
+      ORDER BY sort_order, name
     `;
 
     const result = await pool.query(query, [orgId]);
@@ -94,11 +116,11 @@ export class CategoryService {
   async getChildren(categoryId: string, orgId: string): Promise<CategoryNode[]> {
     const query = `
       SELECT 
-        id, org_id, name, parent_id, description, is_active,
+        ${CATEGORY_COLUMNS},
         (SELECT COUNT(*) FROM items WHERE category_id = ic.id) as item_count
       FROM item_categories ic
       WHERE parent_id = $1 AND org_id = $2 AND is_active = true
-      ORDER BY name
+      ORDER BY sort_order, name
     `;
 
     const result = await pool.query(query, [categoryId, orgId]);
@@ -111,18 +133,21 @@ export class CategoryService {
   async getBreadcrumb(categoryId: string, orgId: string): Promise<CategoryNode[]> {
     const query = `
       WITH RECURSIVE breadcrumb AS (
-        SELECT id, org_id, name, parent_id, 1 as level
+        SELECT ${CATEGORY_COLUMNS}
         FROM item_categories
         WHERE id = $1 AND org_id = $2
         
         UNION ALL
         
-        SELECT c.id, c.org_id, c.name, c.parent_id, b.level + 1
+        SELECT
+          c.id, c.org_id, c.name, c.code, c.parent_id, c.level, c.path, c.sort_order,
+          c.default_hsn, c.default_gst_rate, c.default_uom, c.allow_items,
+          c.description, c.is_active, c.created_at, c.updated_at
         FROM item_categories c
         JOIN breadcrumb b ON c.id = b.parent_id
       )
       SELECT * FROM breadcrumb
-      ORDER BY level DESC
+      ORDER BY level ASC
     `;
 
     const result = await pool.query(query, [categoryId, orgId]);
@@ -135,13 +160,16 @@ export class CategoryService {
   async getDescendants(categoryId: string, orgId: string): Promise<CategoryNode[]> {
     const query = `
       WITH RECURSIVE descendants AS (
-        SELECT id, org_id, name, parent_id, description, is_active
+        SELECT ${CATEGORY_COLUMNS}
         FROM item_categories
         WHERE id = $1 AND org_id = $2
         
         UNION ALL
         
-        SELECT c.id, c.org_id, c.name, c.parent_id, c.description, c.is_active
+        SELECT
+          c.id, c.org_id, c.name, c.code, c.parent_id, c.level, c.path, c.sort_order,
+          c.default_hsn, c.default_gst_rate, c.default_uom, c.allow_items,
+          c.description, c.is_active, c.created_at, c.updated_at
         FROM item_categories c
         JOIN descendants d ON c.parent_id = d.id
       )
@@ -199,7 +227,18 @@ export class CategoryService {
    * Create a new category
    */
   async createCategory(orgId: string, data: CreateCategoryDTO): Promise<CategoryNode> {
-    const { name, parent_id, description, is_active } = data;
+    const {
+      name,
+      code,
+      parent_id,
+      sort_order,
+      default_hsn,
+      default_gst_rate,
+      default_uom,
+      allow_items,
+      description,
+      is_active,
+    } = data;
 
     if (parent_id) {
       const parentQuery = 'SELECT id FROM item_categories WHERE id = $1 AND org_id = $2';
@@ -211,16 +250,24 @@ export class CategoryService {
 
     const query = `
       INSERT INTO item_categories (
-        org_id, name, parent_id, description, is_active
+        org_id, name, code, parent_id, sort_order,
+        default_hsn, default_gst_rate, default_uom, allow_items,
+        description, is_active
       )
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, org_id, name, parent_id, description, is_active
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING ${CATEGORY_COLUMNS}
     `;
 
     const result = await pool.query(query, [
       orgId,
       name,
+      code || null,
       parent_id || null,
+      sort_order ?? 0,
+      default_hsn || null,
+      default_gst_rate ?? null,
+      default_uom || null,
+      allow_items !== undefined ? allow_items : true,
       description || null,
       is_active !== undefined ? is_active : true,
     ]);
@@ -254,9 +301,33 @@ export class CategoryService {
       setClause.push(`name = $${paramCount++}`);
       values.push(data.name);
     }
+    if (data.code !== undefined) {
+      setClause.push(`code = $${paramCount++}`);
+      values.push(data.code || null);
+    }
     if (data.parent_id !== undefined) {
       setClause.push(`parent_id = $${paramCount++}`);
       values.push(data.parent_id || null);
+    }
+    if (data.sort_order !== undefined) {
+      setClause.push(`sort_order = $${paramCount++}`);
+      values.push(data.sort_order);
+    }
+    if (data.default_hsn !== undefined) {
+      setClause.push(`default_hsn = $${paramCount++}`);
+      values.push(data.default_hsn || null);
+    }
+    if (data.default_gst_rate !== undefined) {
+      setClause.push(`default_gst_rate = $${paramCount++}`);
+      values.push(data.default_gst_rate);
+    }
+    if (data.default_uom !== undefined) {
+      setClause.push(`default_uom = $${paramCount++}`);
+      values.push(data.default_uom || null);
+    }
+    if (data.allow_items !== undefined) {
+      setClause.push(`allow_items = $${paramCount++}`);
+      values.push(data.allow_items);
     }
     if (data.description !== undefined) {
       setClause.push(`description = $${paramCount++}`);
@@ -276,9 +347,9 @@ export class CategoryService {
 
     const query = `
       UPDATE item_categories
-      SET ${setClause.join(', ')}
+      SET ${setClause.join(', ')}, updated_at = NOW()
       WHERE id = $${paramCount} AND org_id = $${paramCount + 1}
-      RETURNING id, org_id, name, parent_id, description, is_active
+      RETURNING ${CATEGORY_COLUMNS}
     `;
 
     const result = await pool.query(query, values);
@@ -328,7 +399,7 @@ export class CategoryService {
    */
   async getCategoryById(categoryId: string, orgId: string): Promise<CategoryNode | null> {
     const query = `
-      SELECT id, org_id, name, parent_id, description, is_active
+      SELECT ${CATEGORY_COLUMNS}
       FROM item_categories
       WHERE id = $1 AND org_id = $2
     `;

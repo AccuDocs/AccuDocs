@@ -4,11 +4,14 @@ import { IStockLedgerRepository } from '../../domain/repositories/IStockLedgerRe
 import { PurchaseOrder } from '../../domain/entities/PurchaseOrder.entity';
 import { StockService } from './StockService';
 import { AppError } from '../../../../utils/errors';
+import PDFDocument from 'pdfkit';
+import { sequelize } from '../../../../config/database.config';
 import {
   PurchaseOrder as PurchaseOrderModel,
   PurchaseOrderItem as PurchaseOrderItemModel,
   Client as ClientModel,
   Warehouse as WarehouseModel,
+  Item as ItemModel,
 } from '../../../../models';
 
 @injectable()
@@ -122,9 +125,12 @@ export class PurchaseOrderService {
     qtyReceived: number;
     batchNo?: string;
   }>, stockService: StockService) {
+    await sequelize.transaction(async (transaction) => {
     const po = await PurchaseOrderModel.findOne({
       where: { id: poId, orgId },
       include: [{ model: PurchaseOrderItemModel, as: 'items' }],
+      transaction,
+      lock: transaction.LOCK.UPDATE,
     });
     if (!po) throw new AppError('Purchase Order not found', 404);
     if (po.status === 'cancelled') throw new AppError('PO is cancelled', 422);
@@ -144,7 +150,7 @@ export class PurchaseOrderService {
       // Update PO item received qty
       await PurchaseOrderItemModel.update(
         { qtyReceived: newQtyReceived },
-        { where: { id: recv.poItemId } },
+        { where: { id: recv.poItemId }, transaction },
       );
 
       // Record stock movement — client_id = supplier
@@ -163,13 +169,15 @@ export class PurchaseOrderService {
         rate: Number(poItem.unitPrice),
         createdBy: userId,
         transactionDate: new Date(),
-      });
+      }, { transaction });
     }
 
     // Recompute PO status
     const updatedPO = await PurchaseOrderModel.findOne({
       where: { id: poId },
       include: [{ model: PurchaseOrderItemModel, as: 'items' }],
+      transaction,
+      lock: transaction.LOCK.UPDATE,
     });
     const updatedRaw = updatedPO as any;
     const allReceived = (updatedRaw.items ?? []).every(
@@ -179,8 +187,9 @@ export class PurchaseOrderService {
 
     await PurchaseOrderModel.update(
       { status: allReceived ? 'received' : anyReceived ? 'partial' : po.status },
-      { where: { id: poId } },
+      { where: { id: poId }, transaction },
     );
+    });
 
     return this.poRepo.findById(poId, orgId);
   }
@@ -201,6 +210,65 @@ export class PurchaseOrderService {
       warehouseId,
       lineItems,
       notes: 'Auto-generated from reorder alerts',
+    });
+  }
+
+  async generatePdf(orgId: string, poId: string): Promise<{ filename: string; buffer: Buffer }> {
+    const po = await PurchaseOrderModel.findOne({
+      where: { id: poId, orgId },
+      include: [
+        {
+          model: PurchaseOrderItemModel,
+          as: 'items',
+          include: [{ model: ItemModel, as: 'item', attributes: ['id', 'name', 'sku', 'unitOfMeasure'] }],
+        },
+        { model: ClientModel, as: 'supplier', attributes: ['id', 'name', 'gstin', 'mobile'] },
+        { model: WarehouseModel, as: 'warehouse', attributes: ['id', 'name', 'code', 'address'] },
+      ],
+    });
+    if (!po) throw new AppError('Purchase Order not found', 404);
+
+    const raw = po as any;
+    const doc = new PDFDocument({ margin: 48, size: 'A4' });
+    const chunks: Buffer[] = [];
+
+    return new Promise((resolve, reject) => {
+      doc.on('data', (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+      doc.on('error', reject);
+      doc.on('end', () => {
+        const safeNumber = String(raw.poNumber ?? poId).replace(/[^\w.-]+/g, '-');
+        resolve({ filename: `${safeNumber}.pdf`, buffer: Buffer.concat(chunks) });
+      });
+
+      doc.fontSize(18).text('Purchase Order', { align: 'center' });
+      doc.moveDown();
+      doc.fontSize(11).text(`PO Number: ${raw.poNumber}`);
+      doc.text(`PO Date: ${raw.poDate}`);
+      doc.text(`Status: ${raw.status}`);
+      doc.moveDown();
+      doc.text(`Supplier: ${raw.supplier?.name ?? raw.supplierClientId}`);
+      if (raw.supplier?.gstin) doc.text(`Supplier GSTIN: ${raw.supplier.gstin}`);
+      doc.text(`Warehouse: ${raw.warehouse?.name ?? raw.warehouseId}`);
+      doc.moveDown();
+
+      doc.fontSize(12).text('Items', { underline: true });
+      doc.moveDown(0.5);
+      for (const item of raw.items ?? []) {
+        doc.fontSize(10).text(
+          `${item.item?.name ?? item.itemId} | Qty: ${Number(item.qtyOrdered)} | Received: ${Number(item.qtyReceived)} | Rate: ${Number(item.unitPrice).toFixed(2)} | Total: ${Number(item.total ?? 0).toFixed(2)}`,
+        );
+      }
+
+      doc.moveDown();
+      doc.fontSize(11).text(`Subtotal: ${Number(raw.subtotal ?? 0).toFixed(2)}`, { align: 'right' });
+      doc.text(`GST: ${Number(raw.gstAmount ?? 0).toFixed(2)}`, { align: 'right' });
+      doc.fontSize(13).text(`Total: ${Number(raw.total ?? 0).toFixed(2)}`, { align: 'right' });
+      if (raw.notes) {
+        doc.moveDown();
+        doc.fontSize(10).text(`Notes: ${raw.notes}`);
+      }
+
+      doc.end();
     });
   }
 }

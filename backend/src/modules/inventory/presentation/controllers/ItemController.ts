@@ -99,7 +99,19 @@ export class ItemController {
 
   static getClientPricing = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(ItemService);
-    const list = await service.getClientPricingList(req.params.clientId);
+    const list = await service.getClientPricingList(req.user!.organizationId, req.params.clientId);
     sendSuccess(res, list);
+  });
+
+  static updateClientPrice = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(ItemService);
+    const pricing = await service.updateClientPrice(req.user!.organizationId, req.params.id, req.body);
+    sendSuccess(res, pricing, 'Client pricing updated');
+  });
+
+  static deleteClientPrice = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(ItemService);
+    await service.deleteClientPrice(req.user!.organizationId, req.params.id);
+    sendSuccess(res, null, 'Client pricing deleted');
   });
 }

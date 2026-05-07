@@ -14,10 +14,10 @@ import { Payment } from './payment.model';
 import { RevenueForecast } from './RevenueForecast.model';
 import { ClientRiskScore } from './ClientRiskScore.model';
 import { Task } from './task.model';
-import { Notification as NotificationModel } from './notification.model';
+import { Notification as NotificationModel } from './Notification.model';
 import { AuditLog } from './AuditLog.model';
 import { SuperAdmin } from './SuperAdmin.model';
-import { Subscription } from './subscription.model';
+import { Subscription } from './Subscription.model';
 import { StaffPermission as StaffPermissionModel } from './StaffPermission.model';
 import { DocumentVersion } from './DocumentVersion.model';
 import { ClientAccessToken } from './ClientAccessToken.model';
@@ -195,6 +195,11 @@ StockSummary.belongsTo(ItemVariant, { foreignKey: 'variant_id',   as: 'variant' 
 Warehouse.hasMany(StockSummary, { foreignKey: 'warehouse_id', as: 'stockSummaries' });
 Item.hasMany(StockSummary,      { foreignKey: 'item_id',      as: 'stockSummaries' });
 
+// Invoice inventory linkage
+InvoiceLineItem.belongsTo(Item,        { foreignKey: 'item_id',      as: 'inventoryItem' });
+InvoiceLineItem.belongsTo(ItemVariant, { foreignKey: 'variant_id',   as: 'variant' });
+InvoiceLineItem.belongsTo(Warehouse,   { foreignKey: 'warehouse_id', as: 'warehouse' });
+
 // PurchaseOrder — supplier is a Client
 Client.hasMany(PurchaseOrder, { foreignKey: 'supplier_client_id', as: 'supplierPurchaseOrders' });
 PurchaseOrder.belongsTo(Client,    { foreignKey: 'supplier_client_id', as: 'supplier' });
@@ -207,6 +212,8 @@ PurchaseOrderItem.belongsTo(ItemVariant,   { foreignKey: 'variant_id', as: 'vari
 // StockTransfer
 StockTransfer.belongsTo(Warehouse, { foreignKey: 'from_warehouse_id', as: 'fromWarehouse' });
 StockTransfer.belongsTo(Warehouse, { foreignKey: 'to_warehouse_id',   as: 'toWarehouse' });
+StockTransfer.belongsTo(Client,    { foreignKey: 'client_id',         as: 'client' });
+Client.hasMany(StockTransfer,      { foreignKey: 'client_id',         as: 'stockTransfers' });
 StockTransfer.hasMany(StockTransferItem, { foreignKey: 'transfer_id', as: 'transferItems' });
 StockTransferItem.belongsTo(StockTransfer, { foreignKey: 'transfer_id', as: 'transfer' });
 StockTransferItem.belongsTo(Item,          { foreignKey: 'item_id',     as: 'item' });
