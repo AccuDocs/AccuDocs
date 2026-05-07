@@ -26,7 +26,349 @@ import { ClientService, Client } from '@core/services/client.service';
   standalone: true,
   imports: [CommonModule, FormsModule, NgIconComponent],
   template: `
-    <div class=" space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div class="min-h-full w-full space-y-5 px-6 pb-8 pt-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <section class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+        <div class="relative flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between">
+          <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.12),transparent_34%),linear-gradient(135deg,rgba(248,250,252,0.98),rgba(239,246,255,0.72))] dark:bg-none"></div>
+          <div class="relative max-w-3xl">
+            <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-300">
+              <ng-icon name="heroClipboardDocumentCheckSolid" size="14"></ng-icon>
+              Compliance operations
+            </div>
+            <h1 class="text-3xl font-black tracking-tight text-slate-950 dark:text-white">Document Checklist Control Center</h1>
+            <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+              Track every client document request, pending upload, reminder, due date, and compliance handoff from one clean workspace.
+            </p>
+            <div class="mt-5 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
+              <div class="rounded-2xl bg-white/85 p-3 ring-1 ring-slate-200/70 dark:bg-slate-900/70 dark:ring-slate-700">
+                <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Visible</div>
+                <div class="mt-1 text-xl font-black text-slate-950 dark:text-white">{{ visibleChecklists().length }}</div>
+              </div>
+              <div class="rounded-2xl bg-white/85 p-3 ring-1 ring-slate-200/70 dark:bg-slate-900/70 dark:ring-slate-700">
+                <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Avg progress</div>
+                <div class="mt-1 text-xl font-black text-blue-700 dark:text-blue-300">{{ averageProgress() }}%</div>
+              </div>
+              <div class="rounded-2xl bg-white/85 p-3 ring-1 ring-slate-200/70 dark:bg-slate-900/70 dark:ring-slate-700">
+                <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Due soon</div>
+                <div class="mt-1 text-xl font-black text-amber-600">{{ dueSoonCount() }}</div>
+              </div>
+              <div class="rounded-2xl bg-white/85 p-3 ring-1 ring-slate-200/70 dark:bg-slate-900/70 dark:ring-slate-700">
+                <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Overdue</div>
+                <div class="mt-1 text-xl font-black text-rose-600">{{ visibleOverdueCount() }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="relative flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              (click)="loadChecklists(); loadStats()"
+              class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            >
+              <ng-icon name="heroClockSolid" size="16"></ng-icon>
+              Refresh
+            </button>
+            <button
+              type="button"
+              (click)="openBulkModal()"
+              class="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 active:scale-[0.98]"
+            >
+              <ng-icon name="heroRocketLaunchSolid" size="17"></ng-icon>
+              Bulk Assign Checklist
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        @for (stat of statCards(); track stat.label) {
+          <article class="group rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-slate-200/60 dark:border-slate-700/50 dark:bg-slate-900 dark:hover:shadow-slate-950/40">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{{ stat.label }}</p>
+                <strong class="mt-2 block text-3xl font-black text-slate-950 dark:text-white">{{ stat.value }}</strong>
+              </div>
+              <div class="flex h-11 w-11 items-center justify-center rounded-2xl transition group-hover:scale-105" [style.background]="stat.bg">
+                <ng-icon [name]="stat.icon" size="19" [style.color]="stat.color"></ng-icon>
+              </div>
+            </div>
+            <p class="mt-3 text-xs font-semibold text-slate-500 dark:text-slate-400">{{ statHelper(stat.label) }}</p>
+          </article>
+        }
+      </section>
+
+      <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <main class="space-y-5">
+          <section class="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+              <div class="relative min-w-0 flex-1">
+                <ng-icon name="heroMagnifyingGlassSolid" size="17" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></ng-icon>
+                <input
+                  type="text"
+                  [(ngModel)]="filters.search"
+                  (ngModelChange)="onSearchChange()"
+                  placeholder="Search by client, checklist, service type, FY, or code..."
+                  class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:ring-blue-950"
+                />
+              </div>
+
+              <select
+                [(ngModel)]="filters.financialYear"
+                (ngModelChange)="onFilterChange()"
+                class="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              >
+                <option value="">All Years</option>
+                @for (year of fyYears; track year) {
+                  <option [value]="year">{{ year }}</option>
+                }
+              </select>
+
+              <select
+                [(ngModel)]="filters.status"
+                (ngModelChange)="onFilterChange()"
+                class="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              >
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+                <option value="archived">Archived</option>
+              </select>
+
+              @if (hasActiveFilters()) {
+                <button
+                  type="button"
+                  (click)="clearFilters()"
+                  class="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-xs font-black text-slate-600 transition hover:border-rose-200 hover:text-rose-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                >
+                  Clear filters
+                </button>
+              }
+            </div>
+          </section>
+
+          <section class="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+            <div class="flex flex-col gap-3 border-b border-slate-100 p-5 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 class="text-lg font-black text-slate-950 dark:text-white">Client document requests</h2>
+                <p class="mt-1 text-xs font-semibold text-slate-500">
+                  Showing {{ visibleChecklists().length }} visible row(s) from {{ totalCount() || checklists().length }} total assignment(s)
+                </p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <span class="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">Upload links</span>
+                <span class="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">ZIP export</span>
+                <span class="rounded-full bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">Reminders</span>
+              </div>
+            </div>
+
+            @if (loading()) {
+              <div class="space-y-3 p-6">
+                @for (i of [1,2,3,4,5]; track i) {
+                  <div class="h-16 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800"></div>
+                }
+              </div>
+            } @else if (visibleChecklists().length === 0) {
+              <div class="flex flex-col items-center justify-center px-4 py-16 text-center">
+                <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-50 text-blue-600 dark:bg-blue-950/40">
+                  <ng-icon name="heroClipboardDocumentCheckSolid" size="30"></ng-icon>
+                </div>
+                <h3 class="text-lg font-black text-slate-950 dark:text-white">{{ checklists().length ? 'No matching checklists' : 'No checklists yet' }}</h3>
+                <p class="mt-2 max-w-md text-sm text-slate-500">
+                  {{ checklists().length ? 'Try a different search or clear filters.' : 'Use Bulk Assign Checklist to create document requests for selected clients.' }}
+                </p>
+              </div>
+            } @else {
+              <div class="overflow-x-auto">
+                <table class="w-full min-w-[1040px] text-sm">
+                  <thead class="bg-slate-50/80 dark:bg-slate-800/60">
+                    <tr>
+                      <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Client</th>
+                      <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Checklist</th>
+                      <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Workflow</th>
+                      <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Progress</th>
+                      <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Due health</th>
+                      <th class="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (cl of visibleChecklists(); track cl.id) {
+                      <tr class="border-t border-slate-100 transition hover:bg-blue-50/40 dark:border-slate-800 dark:hover:bg-slate-800/70">
+                        <td class="px-5 py-4">
+                          <button type="button" class="flex items-center gap-3 text-left" (click)="goToChecklist(cl)">
+                            <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-sm font-black text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700">
+                              {{ getClientInitials(cl) }}
+                            </span>
+                            <span class="min-w-0">
+                              <span class="block truncate font-black text-slate-950 dark:text-white">{{ getClientName(cl) }}</span>
+                              <span class="mt-0.5 block font-mono text-[11px] font-semibold text-slate-400">{{ getClientCode(cl) || 'No code' }}</span>
+                            </span>
+                          </button>
+                        </td>
+                        <td class="px-5 py-4">
+                          <button type="button" class="block max-w-[320px] text-left" (click)="goToChecklist(cl)">
+                            <span class="block truncate font-black text-slate-800 dark:text-slate-100">{{ cl.name }}</span>
+                            <span class="mt-1 block text-xs font-semibold text-slate-500">FY {{ cl.financialYear }} - {{ cl.receivedItems || 0 }}/{{ cl.totalItems || 0 }} documents received</span>
+                          </button>
+                        </td>
+                        <td class="px-5 py-4">
+                          <div class="flex flex-col items-start gap-2">
+                            <span class="inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest" [ngClass]="serviceTone(cl.serviceType)">
+                              {{ cl.serviceType || 'general' }}
+                            </span>
+                            <span class="inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest" [ngClass]="statusTone(cl.status)">
+                              {{ statusLabel(cl.status) }}
+                            </span>
+                          </div>
+                        </td>
+                        <td class="px-5 py-4">
+                          <div class="min-w-[190px]">
+                            <div class="mb-2 flex items-center justify-between">
+                              <span class="text-xs font-black text-slate-600 dark:text-slate-300">{{ cl.progress || 0 }}%</span>
+                              <span class="text-[11px] font-bold text-slate-400">{{ progressLabel(cl.progress || 0) }}</span>
+                            </div>
+                            <div class="h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                              <div class="h-full rounded-full transition-all duration-700" [style.width.%]="cl.progress || 0" [ngClass]="progressTone(cl.progress || 0)"></div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-5 py-4">
+                          @if (cl.dueDate) {
+                            <div class="flex flex-col gap-1">
+                              <span class="text-sm font-black" [ngClass]="isOverdue(cl) ? 'text-rose-600' : 'text-slate-800 dark:text-slate-100'">{{ cl.dueDate | date:'dd MMM yyyy' }}</span>
+                              <span class="text-xs font-semibold" [ngClass]="dueTone(cl)">{{ dueMeta(cl) }}</span>
+                            </div>
+                          } @else {
+                            <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-400 dark:bg-slate-800">No due date</span>
+                          }
+                        </td>
+                        <td class="px-5 py-4">
+                          <div class="flex flex-wrap items-center justify-end gap-2" (click)="$event.stopPropagation()">
+                            <button type="button" (click)="goToChecklist(cl)" class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:text-slate-300">
+                              Open
+                            </button>
+                            <button type="button" (click)="generateLink(cl)" class="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 transition hover:bg-blue-100 dark:border-blue-900/40 dark:bg-blue-950/40 dark:text-blue-300">
+                              Link
+                            </button>
+                            @if ((cl.receivedItems || 0) > 0) {
+                              <button type="button" (click)="downloadAll(cl)" class="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300">
+                                ZIP
+                              </button>
+                            }
+                            @if (cl.status === 'active' && (cl.progress || 0) < 100) {
+                              <button type="button" (click)="sendReminder(cl)" class="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-black text-amber-700 transition hover:bg-amber-100 dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-300">
+                                Remind
+                              </button>
+                            }
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+                <span class="text-xs font-semibold text-slate-500">
+                  Showing {{ displayRangeStart() }} to {{ displayRangeEnd() }} of {{ totalCount() || visibleChecklists().length }}
+                </span>
+                <div class="flex items-center gap-1">
+                  <button
+                    [disabled]="pagination.page <= 1"
+                    (click)="pagination.page = pagination.page - 1; loadChecklists()"
+                    class="rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-blue-700 disabled:opacity-30 dark:hover:bg-slate-800"
+                  >
+                    <ng-icon name="heroChevronLeftSolid" size="17"></ng-icon>
+                  </button>
+                  <span class="rounded-xl bg-slate-100 px-3 py-1.5 text-sm font-black text-slate-700 dark:bg-slate-800 dark:text-slate-200">{{ pagination.page }}</span>
+                  <button
+                    [disabled]="pagination.page * pagination.limit >= totalCount()"
+                    (click)="pagination.page = pagination.page + 1; loadChecklists()"
+                    class="rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-blue-700 disabled:opacity-30 dark:hover:bg-slate-800"
+                  >
+                    <ng-icon name="heroChevronRightSolid" size="17"></ng-icon>
+                  </button>
+                </div>
+              </div>
+            }
+          </section>
+        </main>
+
+        <aside class="space-y-5">
+          <section class="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+            <div class="mb-4 flex items-center justify-between">
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Compliance health</p>
+                <h3 class="mt-1 text-lg font-black text-slate-950 dark:text-white">Today's focus</h3>
+              </div>
+              <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                <ng-icon name="heroBoltSolid" size="19"></ng-icon>
+              </div>
+            </div>
+            <div class="space-y-3">
+              <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/70">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="font-bold text-slate-600 dark:text-slate-300">Average completion</span>
+                  <strong class="text-slate-950 dark:text-white">{{ averageProgress() }}%</strong>
+                </div>
+                <div class="mt-3 h-2 overflow-hidden rounded-full bg-white dark:bg-slate-900">
+                  <div class="h-full rounded-full bg-blue-600" [style.width.%]="averageProgress()"></div>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="rounded-2xl bg-amber-50 p-4 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
+                  <span class="text-[10px] font-black uppercase tracking-widest">Due soon</span>
+                  <strong class="mt-1 block text-2xl font-black">{{ dueSoonCount() }}</strong>
+                </div>
+                <div class="rounded-2xl bg-rose-50 p-4 text-rose-800 dark:bg-rose-950/30 dark:text-rose-300">
+                  <span class="text-[10px] font-black uppercase tracking-widest">Overdue</span>
+                  <strong class="mt-1 block text-2xl font-black">{{ visibleOverdueCount() }}</strong>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Recommended additions</p>
+            <h3 class="mt-1 text-lg font-black text-slate-950 dark:text-white">What we can implement next</h3>
+            <div class="mt-4 space-y-3">
+              @for (idea of upgradeIdeas; track idea.title) {
+                <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/60">
+                  <div class="flex items-start gap-3">
+                    <span class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl bg-white text-blue-700 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
+                      <ng-icon name="heroSparklesSolid" size="15"></ng-icon>
+                    </span>
+                    <div>
+                      <h4 class="text-sm font-black text-slate-900 dark:text-white">{{ idea.title }}</h4>
+                      <p class="mt-1 text-xs font-semibold leading-5 text-slate-500">{{ idea.description }}</p>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
+
+          <section class="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Template coverage</p>
+            <h3 class="mt-1 text-lg font-black text-slate-950 dark:text-white">{{ templates().length }} templates ready</h3>
+            <div class="mt-4 space-y-2">
+              @for (template of templates().slice(0, 4); track template.id) {
+                <div class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-800/70">
+                  <div class="min-w-0">
+                    <p class="truncate text-sm font-black text-slate-800 dark:text-slate-100">{{ template.name }}</p>
+                    <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">{{ template.serviceType }} - {{ template.items.length || 0 }} items</p>
+                  </div>
+                </div>
+              }
+              @if (templates().length === 0) {
+                <p class="rounded-2xl bg-slate-50 p-4 text-sm font-semibold text-slate-500 dark:bg-slate-800/70">No templates loaded yet.</p>
+              }
+            </div>
+          </section>
+        </aside>
+      </section>
+    </div>
+
+    <div class="hidden">
 
       <!-- Page Header -->
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -567,6 +909,25 @@ export class ChecklistsOverviewComponent implements OnInit, OnDestroy {
     { label: 'Overdue', value: '—', icon: 'heroExclamationTriangleSolid', color: '#dc2626', bg: '#fef2f2' },
   ]);
 
+  upgradeIdeas = [
+    {
+      title: 'Auto reminder scheduler',
+      description: 'Send WhatsApp/email reminders based on due date, pending count, and client response history.',
+    },
+    {
+      title: 'Document approval queue',
+      description: 'Review, approve, reject, and comment on uploaded documents before marking checklist items complete.',
+    },
+    {
+      title: 'OCR validation',
+      description: 'Read PAN, GSTIN, bank statements, and invoices automatically and flag missing or mismatched data.',
+    },
+    {
+      title: 'Checklist audit trail',
+      description: 'Track who requested, uploaded, reviewed, rejected, downloaded, or completed each document.',
+    },
+  ];
+
   // Bulk modal
   showBulkModal = false;
   bulkData = {
@@ -595,8 +956,45 @@ export class ChecklistsOverviewComponent implements OnInit, OnDestroy {
 
   // Filters
   filters = { search: '', financialYear: '', status: '' };
+  private filterRevision = signal(0);
   pagination = { page: 1, limit: 20 };
   fyYears = ['2024-25', '2025-26', '2023-24', '2022-23'];
+
+  visibleChecklists = computed(() => {
+    this.filterRevision();
+    const term = this.filters.search.trim().toLowerCase();
+    const rows = this.checklists();
+    if (!term) return rows;
+
+    return rows.filter((cl) => {
+      const haystack = [
+        this.getClientName(cl),
+        this.getClientCode(cl),
+        cl.name,
+        cl.serviceType,
+        cl.financialYear,
+        cl.status,
+      ].join(' ').toLowerCase();
+
+      return haystack.includes(term);
+    });
+  });
+
+  averageProgress = computed(() => {
+    const rows = this.visibleChecklists();
+    if (rows.length === 0) return 0;
+    const total = rows.reduce((sum, cl) => sum + Number(cl.progress || 0), 0);
+    return Math.round(total / rows.length);
+  });
+
+  visibleOverdueCount = computed(() => this.visibleChecklists().filter((cl) => this.isOverdue(cl)).length);
+
+  dueSoonCount = computed(() =>
+    this.visibleChecklists().filter((cl) => {
+      const days = this.daysUntilDue(cl);
+      return days !== null && days >= 0 && days <= 7 && cl.status !== 'completed';
+    }).length
+  );
 
   ngOnInit() {
     this.loadChecklists();
@@ -757,9 +1155,28 @@ export class ChecklistsOverviewComponent implements OnInit, OnDestroy {
 
   // ========== TABLE HELPERS ==========
 
+  onSearchChange() {
+    // Search is applied client-side to the current page so typing stays instant.
+    this.filterRevision.update((value) => value + 1);
+  }
+
   onFilterChange() {
     this.pagination.page = 1;
+    this.filterRevision.update((value) => value + 1);
     this.loadChecklists();
+  }
+
+  clearFilters() {
+    this.filters.search = '';
+    this.filters.financialYear = '';
+    this.filters.status = '';
+    this.pagination.page = 1;
+    this.filterRevision.update((value) => value + 1);
+    this.loadChecklists();
+  }
+
+  hasActiveFilters(): boolean {
+    return Boolean(this.filters.search || this.filters.financialYear || this.filters.status);
   }
 
   goToChecklist(cl: any) {
@@ -774,9 +1191,116 @@ export class ChecklistsOverviewComponent implements OnInit, OnDestroy {
     return cl.client?.code || '';
   }
 
+  getClientInitials(cl: any): string {
+    const name = this.getClientName(cl);
+    return name
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join('') || 'CL';
+  }
+
   isOverdue(cl: any): boolean {
     if (!cl.dueDate || cl.status === 'completed') return false;
     return new Date(cl.dueDate) < new Date();
+  }
+
+  daysUntilDue(cl: any): number | null {
+    if (!cl.dueDate) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(cl.dueDate);
+    due.setHours(0, 0, 0, 0);
+    return Math.ceil((due.getTime() - today.getTime()) / 86400000);
+  }
+
+  dueMeta(cl: any): string {
+    const days = this.daysUntilDue(cl);
+    if (days === null) return 'No due date';
+    if (cl.status === 'completed') return 'Completed';
+    if (days < 0) return `${Math.abs(days)} day(s) overdue`;
+    if (days === 0) return 'Due today';
+    if (days <= 7) return `Due in ${days} day(s)`;
+    return `Due in ${days} day(s)`;
+  }
+
+  dueTone(cl: any): string {
+    const days = this.daysUntilDue(cl);
+    if (days === null || cl.status === 'completed') return 'text-slate-400';
+    if (days < 0) return 'text-rose-600';
+    if (days <= 7) return 'text-amber-600';
+    return 'text-emerald-600';
+  }
+
+  statusLabel(status: string): string {
+    return status ? status.replace(/_/g, ' ') : 'active';
+  }
+
+  statusTone(status: string): string {
+    switch (status) {
+      case 'completed':
+        return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300';
+      case 'archived':
+        return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
+      default:
+        return 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300';
+    }
+  }
+
+  serviceTone(serviceType: string): string {
+    switch ((serviceType || '').toLowerCase()) {
+      case 'gst':
+        return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300';
+      case 'audit':
+        return 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300';
+      case 'tds':
+      case 'roc':
+        return 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300';
+      case 'itr':
+        return 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300';
+      default:
+        return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
+    }
+  }
+
+  progressTone(progress: number): string {
+    if (progress >= 80) return 'bg-emerald-500';
+    if (progress >= 40) return 'bg-blue-500';
+    if (progress > 0) return 'bg-amber-500';
+    return 'bg-slate-300';
+  }
+
+  progressLabel(progress: number): string {
+    if (progress >= 100) return 'Complete';
+    if (progress >= 80) return 'Almost done';
+    if (progress >= 40) return 'In progress';
+    if (progress > 0) return 'Started';
+    return 'Not started';
+  }
+
+  statHelper(label: string): string {
+    switch (label.toLowerCase()) {
+      case 'total':
+        return 'All assigned document request workflows';
+      case 'active':
+        return 'Currently waiting for client or staff action';
+      case 'completed':
+        return 'Closed with all required documents received';
+      case 'overdue':
+        return 'Needs follow-up before compliance risk grows';
+      default:
+        return 'Checklist health indicator';
+    }
+  }
+
+  displayRangeStart(): number {
+    if ((this.totalCount() || this.visibleChecklists().length) === 0) return 0;
+    return (this.pagination.page - 1) * this.pagination.limit + 1;
+  }
+
+  displayRangeEnd(): number {
+    return Math.min(this.pagination.page * this.pagination.limit, this.totalCount() || this.visibleChecklists().length);
   }
 
   // ========== ACTIONS ==========
