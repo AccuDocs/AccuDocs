@@ -14,6 +14,7 @@ export class HsnSacController {
       q,
       type,
       rate,
+      live,
       page = '1',
       limit = '20',
     } = req.query as Record<string, string>;
@@ -22,6 +23,7 @@ export class HsnSacController {
       q: q?.trim(),
       type: type as 'HSN' | 'SAC' | undefined,
       rate: rate ? Number(rate) : undefined,
+      live: live === 'true' || live === '1',
       page: Number(page),
       limit: Math.min(Number(limit), 100),
     });
@@ -51,5 +53,16 @@ export class HsnSacController {
     if (!result) throw new AppError('Code not found in official records', 404);
 
     sendSuccess(res, result, 'Live details fetched successfully');
+  });
+
+  /** POST /gst/hsn-sac/sync-live */
+  static syncLive = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { codes } = req.body;
+    if (!Array.isArray(codes) || codes.length === 0) {
+      throw new AppError('At least one HSN/SAC code is required for live sync', 400);
+    }
+
+    const result = await hsnSacService.syncLiveCodes(codes);
+    sendSuccess(res, result, `Live sync completed: ${result.succeeded} updated`);
   });
 }

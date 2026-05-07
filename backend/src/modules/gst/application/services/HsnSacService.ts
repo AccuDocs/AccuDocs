@@ -21,8 +21,9 @@ export class HsnSacService {
     rate?: number;
     page?: number;
     limit?: number;
+    live?: boolean;
   }) {
-    const { q, type, rate, page = 1, limit = 20 } = params;
+    const { q, type, rate, page = 1, limit = 20, live = false } = params;
     const offset = (page - 1) * limit;
 
     const where: any = { isActive: true };
@@ -32,6 +33,10 @@ export class HsnSacService {
 
     if (q && q.trim()) {
       const term = q.trim();
+      if (live && /^\d{4,8}$/.test(term)) {
+        await this.lookupOnlineSafely(term);
+      }
+
       where[Op.or] = [
         { code: { [Op.iLike]: `${term}%` } },
         { description: { [Op.iLike]: `%${term}%` } },
@@ -177,5 +182,53 @@ export class HsnSacService {
     await this.bulkUpsert([entry]);
 
     return entry;
+  }
+
+  /**
+   * Refreshes a small set of visible/search-result codes from the configured live provider.
+   * Full-directory sync is intentionally not attempted here because GSTN/Sandbox exposes
+   * lookup-style access, not a stable public bulk feed.
+   */
+  async syncLiveCodes(codes: string[]) {
+    const uniqueCodes = [...new Set(
+      codes
+        .map((code) => String(code || '').replace(/[^0-9]/g, ''))
+        .filter((code) => /^\d{4,8}$/.test(code))
+    )].slice(0, 50);
+
+    const results = await Promise.all(
+      uniqueCodes.map(async (code) => {
+        try {
+          const refreshed = await this.lookupOnline(code);
+          return refreshed
+            ? { code, status: 'updated' as const, description: refreshed.description }
+            : { code, status: 'not_found' as const, message: 'Code not found in live records' };
+        } catch (error: any) {
+          return {
+            code,
+            status: 'failed' as const,
+            message: error?.message || 'Live lookup failed',
+          };
+        }
+      })
+    );
+
+    return {
+      requested: codes.length,
+      processed: uniqueCodes.length,
+      succeeded: results.filter((result) => result.status === 'updated').length,
+      failed: results.filter((result) => result.status === 'failed').length,
+      notFound: results.filter((result) => result.status === 'not_found').length,
+      refreshedAt: new Date().toISOString(),
+      results,
+    };
+  }
+
+  private async lookupOnlineSafely(code: string) {
+    try {
+      await this.lookupOnline(code);
+    } catch {
+      // Search must remain usable even when live-provider credentials are missing or down.
+    }
   }
 }

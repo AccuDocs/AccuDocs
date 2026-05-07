@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { catchError, forkJoin, map, Observable, of, throwError } from 'rxjs';
 import { ApiResponse, PaginatedApiResponse } from '@core/services/workspace.service';
 import { environment } from '@environments/environment';
 
@@ -12,6 +12,8 @@ export interface HsnSacCode {
   type: 'HSN' | 'SAC';
   chapter: string | null;
   isActive: boolean;
+  updatedAt?: string;
+  createdAt?: string;
 }
 
 export interface ItcLedgerRecord {
@@ -62,6 +64,7 @@ export interface HsnSacSearchParams {
   rate?: number;
   page?: number;
   limit?: number;
+  live?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -77,6 +80,7 @@ export class GstExtendedService {
     if (params.rate !== undefined) httpParams = httpParams.set('rate', String(params.rate));
     if (params.page) httpParams = httpParams.set('page', String(params.page));
     if (params.limit) httpParams = httpParams.set('limit', String(params.limit));
+    if (params.live) httpParams = httpParams.set('live', 'true');
 
     return this.http.get<PaginatedApiResponse<HsnSacCode>>(`${this.base}/hsn-sac/search`, {
       params: httpParams,
@@ -95,6 +99,89 @@ export class GstExtendedService {
 
   lookupOnlineHsn(code: string): Observable<ApiResponse<HsnSacCode>> {
     return this.http.post<ApiResponse<HsnSacCode>>(`${this.base}/hsn-sac/lookup-online`, { code });
+  }
+
+  syncLiveHsnSac(codes: string[]): Observable<ApiResponse<{
+    requested: number;
+    processed: number;
+    succeeded: number;
+    failed: number;
+    notFound: number;
+    refreshedAt: string;
+    results: Array<{ code: string; status: 'updated' | 'failed' | 'not_found'; description?: string; message?: string }>;
+  }>> {
+    return this.http.post<ApiResponse<any>>(`${this.base}/hsn-sac/sync-live`, { codes }).pipe(
+      catchError((error) => {
+        if (error.status !== 404) {
+          return throwError(() => error);
+        }
+
+        return this.syncLiveHsnSacFallback(codes);
+      })
+    );
+  }
+
+  private syncLiveHsnSacFallback(codes: string[]): Observable<ApiResponse<{
+    requested: number;
+    processed: number;
+    succeeded: number;
+    failed: number;
+    notFound: number;
+    refreshedAt: string;
+    results: Array<{ code: string; status: 'updated' | 'failed' | 'not_found'; description?: string; message?: string }>;
+  }>> {
+    const uniqueCodes = [...new Set(
+      codes
+        .map((code) => String(code || '').replace(/[^0-9]/g, ''))
+        .filter((code) => /^\d{4,8}$/.test(code))
+    )].slice(0, 20);
+
+    if (uniqueCodes.length === 0) {
+      return of({
+        success: true,
+        message: 'No valid HSN/SAC codes to sync',
+        data: {
+          requested: codes.length,
+          processed: 0,
+          succeeded: 0,
+          failed: 0,
+          notFound: 0,
+          refreshedAt: new Date().toISOString(),
+          results: [],
+        },
+      });
+    }
+
+    const lookups = uniqueCodes.map((code) =>
+      this.lookupOnlineHsn(code).pipe(
+        map((res) => ({
+          code,
+          status: 'updated' as const,
+          description: res.data?.description,
+        })),
+        catchError((err) => of({
+          code,
+          status: err.status === 404 ? 'not_found' as const : 'failed' as const,
+          message: err.error?.message || err.message || 'Live lookup failed',
+        }))
+      )
+    );
+
+    return forkJoin(lookups).pipe(
+      map((results) => ({
+        success: true,
+        message: 'Live sync completed through lookup fallback',
+        data: {
+          requested: codes.length,
+          processed: uniqueCodes.length,
+          succeeded: results.filter((result) => result.status === 'updated').length,
+          failed: results.filter((result) => result.status === 'failed').length,
+          notFound: results.filter((result) => result.status === 'not_found').length,
+          refreshedAt: new Date().toISOString(),
+          results,
+        },
+      }))
+    );
   }
 
   // ─── ITC Tracker ──────────────────────────────────────────────────────────

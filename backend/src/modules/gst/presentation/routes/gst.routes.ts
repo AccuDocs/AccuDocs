@@ -313,6 +313,7 @@ router.post('/hsn-sac/import', authenticate, upload.single('file'), HsnSacContro
  *         description: Lookup result retrieved
  */
 router.post('/hsn-sac/lookup-online', authenticate, HsnSacController.onlineLookup);
+router.post('/hsn-sac/sync-live', authenticate, HsnSacController.syncLive);
 
 // ─── ITC Tracker ─────────────────────────────────────────────────────────────
 
