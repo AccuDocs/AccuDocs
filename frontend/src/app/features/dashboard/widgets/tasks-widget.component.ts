@@ -25,7 +25,7 @@ import { Task, TaskStats } from '@app/models/task.model';
           <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Team execution</p>
           <h2 class="mt-1 text-lg font-black text-slate-950 dark:text-white">Tasks</h2>
         </div>
-        <a routerLink="/tasks" class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700 transition-colors hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300">
+        <a routerLink="/work/tasks" class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700 transition-colors hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300">
           <mat-icon class="text-lg">arrow_forward</mat-icon>
         </a>
       </div>
@@ -145,7 +145,7 @@ import { Task, TaskStats } from '@app/models/task.model';
 
         <!-- View All Button -->
         <button class="mt-5 w-full rounded-lg border border-slate-200 bg-white py-3 text-sm font-black text-slate-700 transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-          <a routerLink="/tasks" class="flex w-full items-center justify-center gap-2">
+          <a routerLink="/work/tasks" class="flex w-full items-center justify-center gap-2">
             View All Tasks
             <mat-icon class="text-sm">arrow_forward</mat-icon>
           </a>

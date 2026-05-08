@@ -5,10 +5,12 @@ import { environment } from '@environments/environment';
 
 export interface Document {
   id: string;
+  title?: string;
   fileName: string;
   originalName: string;
   mimeType: string;
   size: number;
+  fileSize?: number;
   uploadedBy: {
     id: string;
     name: string;

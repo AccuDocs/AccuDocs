@@ -68,8 +68,8 @@ import type { StockLedgerEntry } from '../../../models/inventory.models';
   `,
   styles: [`
     :host { display: block; min-width: 0; }
-    .dashboard-panel { min-width: 0; overflow: hidden; border-radius: 24px; border: 1px solid #e2e8f0; background: white; box-shadow: 0 1px 3px rgba(15, 23, 42, .06); }
-    .panel-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #e2e8f0; padding: 16px; }
+    .dashboard-panel { min-width: 0; overflow: hidden; border-radius: 20px; border: 1px solid #dbe3ef; background: white; box-shadow: 0 1px 3px rgba(15, 23, 42, .06); }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #dbe3ef; padding: 16px 18px; }
     .eyebrow { font-size: 10px; font-weight: 900; letter-spacing: .22em; text-transform: uppercase; color: #94a3b8; }
     .panel-title { margin-top: 2px; font-size: 16px; font-weight: 950; color: #0f172a; }
     .panel-link { font-size: 12px; font-weight: 900; color: #4f46e5; }

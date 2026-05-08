@@ -49,12 +49,12 @@ import type { SystemWarning } from '../../../models/inventory-dashboard.models';
   `,
   styles: [`
     :host { display: block; min-width: 0; }
-    .dashboard-panel { height: 100%; min-width: 0; overflow: hidden; border-radius: 24px; border: 1px solid #e2e8f0; background: white; box-shadow: 0 1px 3px rgba(15, 23, 42, .06); }
-    .panel-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #e2e8f0; padding: 16px; }
+    .dashboard-panel { height: 100%; min-width: 0; overflow: hidden; border-radius: 20px; border: 1px solid #dbe3ef; background: white; box-shadow: 0 1px 3px rgba(15, 23, 42, .06); }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #dbe3ef; padding: 16px 18px; }
     .eyebrow { font-size: 10px; font-weight: 900; letter-spacing: .22em; text-transform: uppercase; color: #94a3b8; }
     .panel-title { margin-top: 2px; font-size: 16px; font-weight: 950; color: #0f172a; }
     .warning-row { display: flex; gap: 12px; border-radius: 16px; border: 1px solid; padding: 14px; }
-    .healthy-state { display: grid; place-items: center; gap: 6px; padding: 36px 20px; text-align: center; color: #64748b; }
+    .healthy-state { display: grid; min-height: 360px; place-items: center; align-content: center; gap: 8px; padding: 36px 20px; text-align: center; color: #64748b; }
     .healthy-state mat-icon { color: #059669; }
     .healthy-state p { font-weight: 950; color: #0f172a; }
   `],
@@ -66,7 +66,7 @@ export class SystemWarningWidgetComponent {
   warningClass(severity: SystemWarning['severity']): string {
     const classes: Record<SystemWarning['severity'], string> = {
       critical: 'border-rose-200 bg-rose-50 text-rose-900',
-      warning: 'border-amber-200 bg-amber-50 text-amber-900',
+      warning: 'border-amber-700 bg-amber-50 text-amber-950',
       info: 'border-primary-200 bg-primary-50 text-primary-900',
       success: 'border-emerald-200 bg-emerald-50 text-emerald-900',
     };

@@ -1,35 +1,44 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
+  heroArrowPathSolid,
   heroCalendarDaysSolid,
-  heroListBulletSolid,
-  heroFunnelSolid,
-  heroPlusSolid,
+  heroCheckCircleSolid,
   heroChevronLeftSolid,
   heroChevronRightSolid,
   heroClockSolid,
-  heroCheckCircleSolid,
   heroExclamationTriangleSolid,
-  heroXMarkSolid,
-  heroUserGroupSolid,
-  heroInformationCircleSolid,
+  heroFunnelSolid,
+  heroListBulletSolid,
+  heroPlusSolid,
 } from '@ng-icons/heroicons/solid';
+
 import {
-  ComplianceService,
-  ComplianceDeadline,
   ClientDeadlineAssignment,
+  ComplianceDeadline,
+  ComplianceService,
   ComplianceStats,
-  DeadlineType,
 } from '@core/services/compliance.service';
-import { ClientService, Client } from '@core/services/client.service';
 import { ToastService } from '@core/services/toast.service';
-import { CalendarViewComponent } from './components/calendar-view.component';
-import { DeadlineListComponent } from './components/deadline-list.component';
 import { AddDeadlineModalComponent } from './components/add-deadline-modal.component';
 import { AssignClientModalComponent } from './components/assign-client-modal.component';
+import { CalendarViewComponent } from './components/calendar-view.component';
 import { DeadlineDetailModalComponent } from './components/deadline-detail-modal.component';
+import { DeadlineListComponent } from './components/deadline-list.component';
+
+interface ComplianceStatCard {
+  label: string;
+  value: number;
+  helper: string;
+  icon: string;
+  cardClass: string;
+  labelClass: string;
+  valueClass: string;
+  iconClass: string;
+  helperClass: string;
+}
 
 @Component({
   selector: 'app-compliance-calendar',
@@ -46,182 +55,328 @@ import { DeadlineDetailModalComponent } from './components/deadline-detail-modal
   ],
   providers: [
     provideIcons({
+      heroArrowPathSolid,
       heroCalendarDaysSolid,
-      heroListBulletSolid,
-      heroFunnelSolid,
-      heroPlusSolid,
+      heroCheckCircleSolid,
       heroChevronLeftSolid,
       heroChevronRightSolid,
       heroClockSolid,
-      heroCheckCircleSolid,
       heroExclamationTriangleSolid,
-      heroXMarkSolid,
-      heroUserGroupSolid,
-      heroInformationCircleSolid,
+      heroFunnelSolid,
+      heroListBulletSolid,
+      heroPlusSolid,
     }),
   ],
   template: `
-    <div class="p-6 animate-page-enter">
-      <!-- Page Header -->
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 class="text-2xl font-bold" style="color: var(--text-primary);">📅 Compliance Calendar</h1>
-          <p class="text-sm mt-1" style="color: var(--text-secondary);">
-            Track all Indian tax compliance deadlines — ITR, GST, TDS, ROC & Advance Tax
-          </p>
-        </div>
-        <button
-          (click)="showAddDeadlineModal.set(true)"
-          class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-          style="background: linear-gradient(135deg, #0074c9, #005fa3); box-shadow: 0 4px 14px -2px rgba(0, 116, 201, 0.4);"
-        >
-          <ng-icon name="heroPlusSolid" size="16"></ng-icon>
-          Add Deadline
-        </button>
-      </div>
-
-      <!-- Stats Cards -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        @for (stat of statsCards(); track stat.label) {
-          <div
-            class="rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02]"
-            [style.background]="stat.bg"
-            [style.border]="'1px solid ' + stat.border"
-            style="backdrop-filter: blur(10px);"
-          >
-            <div class="flex items-center gap-3">
-              <div
-                class="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-                [style.background]="stat.iconBg"
-              >
-                {{ stat.emoji }}
-              </div>
-              <div>
-                <p class="text-2xl font-bold" [style.color]="stat.valueColor">{{ stat.value }}</p>
-                <p class="text-xs font-medium" style="color: var(--text-secondary);">{{ stat.label }}</p>
-              </div>
-            </div>
-          </div>
-        }
-      </div>
-
-      <!-- View Toggle + Filters -->
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        <!-- View Toggle -->
-        <div
-          class="flex rounded-xl p-1 gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
-        >
-          <button
-            (click)="activeView.set('calendar')"
-            class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
-            [style.background]="activeView() === 'calendar' ? 'var(--primary-color, #0074c9)' : 'transparent'"
-            [style.color]="activeView() === 'calendar' ? '#fff' : 'var(--text-secondary)'"
-          >
-            <ng-icon name="heroCalendarDaysSolid" size="16"></ng-icon>
-            Calendar
-          </button>
-          <button
-            (click)="activeView.set('list')"
-            class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
-            [style.background]="activeView() === 'list' ? 'var(--primary-color, #0074c9)' : 'transparent'"
-            [style.color]="activeView() === 'list' ? '#fff' : 'var(--text-secondary)'"
-          >
-            <ng-icon name="heroListBulletSolid" size="16"></ng-icon>
-            List
-          </button>
-        </div>
-
-        <!-- Filters -->
-        <div class="flex items-center gap-3 flex-wrap">
-          <select
-            [ngModel]="selectedType()"
-            (ngModelChange)="onTypeChange($event)"
-            class="px-3 py-2 rounded-xl text-sm font-medium outline-none transition-all duration-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
-          >
-            <option value="">All Types</option>
-            <option value="ITR">ITR</option>
-            <option value="GST">GST</option>
-            <option value="TDS">TDS</option>
-            <option value="ROC">ROC</option>
-            <option value="ADVANCE_TAX">Advance Tax</option>
-            <option value="OTHER">Other</option>
-          </select>
-
-          <!-- Month/Year (for calendar) -->
-          @if (activeView() === 'calendar') {
-            <div class="flex items-center gap-2">
-              <button
-                (click)="prevMonth()"
-                class="p-2 rounded-lg transition-all duration-200 hover:bg-opacity-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
-              >
-                <ng-icon name="heroChevronLeftSolid" size="16" style="color: var(--text-secondary);"></ng-icon>
-              </button>
-              <span class="text-sm font-bold min-w-[140px] text-center" style="color: var(--text-primary);">
-                {{ monthNames[currentMonth()] }} {{ currentYear() }}
+    <div class="compliance-shell p-6">
+      <section class="command-toolbar">
+        <div class="flex min-w-0 flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div class="min-w-0">
+            <div class="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-sky-700">
+              <span class="grid h-7 w-7 place-items-center rounded-lg bg-sky-100 text-sky-700">
+                <ng-icon name="heroCalendarDaysSolid" size="15"></ng-icon>
               </span>
-              <button
-                (click)="nextMonth()"
-                class="p-2 rounded-lg transition-all duration-200 hover:bg-opacity-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
-              >
-                <ng-icon name="heroChevronRightSolid" size="16" style="color: var(--text-secondary);"></ng-icon>
-              </button>
+              Compliance Control Center
             </div>
-          }
+            <h1 class="mt-3 text-[32px] font-black leading-tight tracking-normal text-slate-950">Compliance Calendar</h1>
+            <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-slate-500">
+              Track every statutory due date for ITR, GST, TDS, ROC, and advance tax from one calendar.
+            </p>
+            <p class="mt-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+              {{ filteredDeadlines().length }} deadline template(s) loaded · {{ stats().pending }} pending assignment(s)
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" class="toolbar-button" (click)="refreshData()">
+              <ng-icon name="heroArrowPathSolid" size="16"></ng-icon>
+              Refresh Data
+            </button>
+            <button type="button" class="toolbar-button toolbar-button--primary" (click)="showAddDeadlineModal.set(true)">
+              <ng-icon name="heroPlusSolid" size="16"></ng-icon>
+              Add Deadline
+            </button>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Calendar View -->
-      @if (activeView() === 'calendar') {
-        <app-calendar-view
-          [deadlines]="filteredDeadlines()"
-          [month]="currentMonth()"
-          [year]="currentYear()"
-          [clientDeadlines]="clientDeadlines()"
-          (deadlineClick)="onDeadlineClick($event)"
-        ></app-calendar-view>
-      }
+      <section class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        @for (stat of statsCards(); track stat.label) {
+          <article class="metric-card" [ngClass]="stat.cardClass">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="truncate text-[11px] font-black uppercase tracking-[0.2em]" [ngClass]="stat.labelClass">{{ stat.label }}</p>
+                <p class="mt-5 text-[30px] font-black leading-none tracking-normal" [ngClass]="stat.valueClass">{{ stat.value }}</p>
+                <p class="mt-3 text-xs font-bold" [ngClass]="stat.helperClass">{{ stat.helper }}</p>
+              </div>
+              <div class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white shadow-sm ring-1 ring-slate-100" [ngClass]="stat.iconClass">
+                <ng-icon [name]="stat.icon" size="18"></ng-icon>
+              </div>
+            </div>
+          </article>
+        }
+      </section>
 
-      <!-- List View -->
-      @if (activeView() === 'list') {
-        <app-deadline-list
-          [deadlines]="filteredDeadlines()"
-          [clientDeadlines]="clientDeadlines()"
-          (deadlineClick)="onDeadlineClick($event)"
-          (assignClick)="onAssignClick($event)"
-          (statusChange)="onStatusChange($event)"
-        ></app-deadline-list>
-      }
+      <section class="dashboard-panel mt-5">
+        <div class="controls-bar">
+          <div class="view-toggle">
+            <button
+              type="button"
+              (click)="activeView.set('calendar')"
+              [class.is-active]="activeView() === 'calendar'"
+            >
+              <ng-icon name="heroCalendarDaysSolid" size="16"></ng-icon>
+              Calendar
+            </button>
+            <button
+              type="button"
+              (click)="activeView.set('list')"
+              [class.is-active]="activeView() === 'list'"
+            >
+              <ng-icon name="heroListBulletSolid" size="16"></ng-icon>
+              List
+            </button>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="filter-field">
+              <ng-icon name="heroFunnelSolid" size="15"></ng-icon>
+              <select [ngModel]="selectedType()" (ngModelChange)="onTypeChange($event)">
+                <option value="">All Types</option>
+                <option value="ITR">ITR</option>
+                <option value="GST">GST</option>
+                <option value="TDS">TDS</option>
+                <option value="ROC">ROC</option>
+                <option value="ADVANCE_TAX">Advance Tax</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </label>
+
+            @if (activeView() === 'calendar') {
+              <div class="month-nav">
+                <button type="button" (click)="prevMonth()">
+                  <ng-icon name="heroChevronLeftSolid" size="16"></ng-icon>
+                </button>
+                <span>{{ monthNames[currentMonth()] }} {{ currentYear() }}</span>
+                <button type="button" (click)="nextMonth()">
+                  <ng-icon name="heroChevronRightSolid" size="16"></ng-icon>
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-5">
+        @if (activeView() === 'calendar') {
+          <app-calendar-view
+            [deadlines]="filteredDeadlines()"
+            [month]="currentMonth()"
+            [year]="currentYear()"
+            [clientDeadlines]="clientDeadlines()"
+            (deadlineClick)="onDeadlineClick($event)"
+          ></app-calendar-view>
+        }
+
+        @if (activeView() === 'list') {
+          <app-deadline-list
+            [deadlines]="filteredDeadlines()"
+            [clientDeadlines]="clientDeadlines()"
+            (deadlineClick)="onDeadlineClick($event)"
+            (assignClick)="onAssignClick($event)"
+            (statusChange)="onStatusChange($event)"
+          ></app-deadline-list>
+        }
+      </section>
     </div>
 
-    <!-- Modals -->
     @if (showAddDeadlineModal()) {
-        <app-add-deadline-modal
-          (close)="showAddDeadlineModal.set(false)"
-          (saved)="onDeadlineCreated()"
-        ></app-add-deadline-modal>
-      }
+      <app-add-deadline-modal
+        (close)="showAddDeadlineModal.set(false)"
+        (saved)="onDeadlineCreated()"
+      ></app-add-deadline-modal>
+    }
 
-      @if (showAssignModal()) {
-        <app-assign-client-modal
-          [deadlineId]="selectedDeadlineId()!"
-          [deadlineTitle]="selectedDeadlineTitle()"
-          (close)="showAssignModal.set(false)"
-          (assigned)="onClientAssigned()"
-        ></app-assign-client-modal>
-      }
+    @if (showAssignModal()) {
+      <app-assign-client-modal
+        [deadlineId]="selectedDeadlineId()!"
+        [deadlineTitle]="selectedDeadlineTitle()"
+        (close)="showAssignModal.set(false)"
+        (assigned)="onClientAssigned()"
+      ></app-assign-client-modal>
+    }
 
-      @if (showDetailModal()) {
-        <app-deadline-detail-modal
-          [deadline]="selectedDeadline()!"
-          [clientDeadlines]="selectedDeadlineClientDeadlines()"
-          (close)="showDetailModal.set(false)"
-          (assign)="onAssignFromDetail($event)"
-          (statusChange)="onStatusChange($event)"
-        ></app-deadline-detail-modal>
+    @if (showDetailModal()) {
+      <app-deadline-detail-modal
+        [deadline]="selectedDeadline()!"
+        [clientDeadlines]="selectedDeadlineClientDeadlines()"
+        (close)="showDetailModal.set(false)"
+        (assign)="onAssignFromDetail($event)"
+        (statusChange)="onStatusChange($event)"
+      ></app-deadline-detail-modal>
     }
   `,
   styles: [`
-    :host { display: block; }
+    :host {
+      display: block;
+    }
+    .compliance-shell {
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.10), transparent 26%),
+        radial-gradient(circle at top right, rgba(16, 185, 129, 0.08), transparent 24%),
+        linear-gradient(180deg, #f8fafc 0%, #eef4f8 100%);
+    }
+    .command-toolbar {
+      border-radius: 24px;
+      border: 1px solid rgba(219, 231, 240, 0.95);
+      background: rgba(255, 255, 255, 0.82);
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+      backdrop-filter: blur(14px);
+    }
+    .toolbar-button {
+      display: inline-flex;
+      height: 40px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      background: white;
+      padding: 0 16px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #334155;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+      transition: background-color .16s ease;
+    }
+    .toolbar-button:hover {
+      background: #f8fafc;
+    }
+    .toolbar-button--primary {
+      border-color: #0369a1;
+      background: #0369a1;
+      color: white;
+    }
+    .toolbar-button--primary:hover {
+      background: #075985;
+    }
+    .metric-card {
+      min-width: 0;
+      min-height: 132px;
+      border-radius: 20px;
+      border: 1px solid #dbe7f0;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    }
+    .dashboard-panel {
+      min-width: 0;
+      overflow: hidden;
+      border-radius: 20px;
+      border: 1px solid #dbe3ef;
+      background: white;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, .06);
+    }
+    .controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 18px;
+    }
+    .view-toggle {
+      display: inline-flex;
+      gap: 4px;
+      border-radius: 14px;
+      border: 1px solid #dbe3ef;
+      background: #f8fafc;
+      padding: 4px;
+    }
+    .view-toggle button {
+      display: inline-flex;
+      min-width: 112px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #64748b;
+      transition: all .16s ease;
+    }
+    .view-toggle button.is-active {
+      background: #0369a1;
+      color: white;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.10);
+    }
+    .filter-field {
+      display: inline-flex;
+      height: 42px;
+      align-items: center;
+      gap: 10px;
+      border-radius: 12px;
+      border: 1px solid #dbe3ef;
+      background: white;
+      padding: 0 12px;
+      color: #64748b;
+    }
+    .filter-field select {
+      min-width: 140px;
+      background: transparent;
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+      outline: none;
+    }
+    .month-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .month-nav button {
+      display: grid;
+      height: 40px;
+      width: 40px;
+      place-items: center;
+      border-radius: 10px;
+      border: 1px solid #dbe3ef;
+      background: white;
+      color: #64748b;
+      transition: background-color .16s ease;
+    }
+    .month-nav button:hover {
+      background: #f8fafc;
+    }
+    .month-nav span {
+      min-width: 160px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 900;
+      color: #0f172a;
+    }
+    @media (max-width: 640px) {
+      .toolbar-button {
+        flex: 1 1 160px;
+      }
+      .view-toggle {
+        width: 100%;
+      }
+      .view-toggle button {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+      .month-nav {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .month-nav span {
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+    }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -229,7 +384,6 @@ export class ComplianceCalendarComponent implements OnInit {
   private complianceService = inject(ComplianceService);
   private toastService = inject(ToastService);
 
-  // State
   activeView = signal<'calendar' | 'list'>('calendar');
   currentMonth = signal(new Date().getMonth());
   currentYear = signal(new Date().getFullYear());
@@ -239,7 +393,6 @@ export class ComplianceCalendarComponent implements OnInit {
   stats = signal<ComplianceStats>({ totalDeadlines: 0, upcoming: 0, overdue: 0, filed: 0, pending: 0 });
   loading = signal(false);
 
-  // Modals
   showAddDeadlineModal = signal(false);
   showAssignModal = signal(false);
   showDetailModal = signal(false);
@@ -254,104 +407,148 @@ export class ComplianceCalendarComponent implements OnInit {
     let items = this.deadlines();
     const type = this.selectedType();
     if (type) {
-      items = items.filter(d => d.type === type);
+      items = items.filter((deadline) => deadline.type === type);
     }
     return items;
   });
 
-  statsCards = computed(() => {
-    const s = this.stats();
+  statsCards = computed<ComplianceStatCard[]>(() => {
+    const stats = this.stats();
     return [
-      { label: 'Total Deadlines', value: s.totalDeadlines, emoji: '📋', bg: '#ffffff', border: 'var(--border-color)', iconBg: 'rgba(0, 116, 201, 0.1)', valueColor: 'var(--text-primary)' },
-      { label: 'Upcoming (7d)', value: s.upcoming, emoji: '⏰', bg: 'rgba(245, 158, 11, 0.06)', border: 'rgba(245, 158, 11, 0.15)', iconBg: 'rgba(245, 158, 11, 0.12)', valueColor: '#f59e0b' },
-      { label: 'Overdue', value: s.overdue, emoji: '🔴', bg: 'rgba(239, 68, 68, 0.06)', border: 'rgba(239, 68, 68, 0.15)', iconBg: 'rgba(239, 68, 68, 0.12)', valueColor: '#ef4444' },
-      { label: 'Filed', value: s.filed, emoji: '✅', bg: 'rgba(34, 197, 94, 0.06)', border: 'rgba(34, 197, 94, 0.15)', iconBg: 'rgba(34, 197, 94, 0.12)', valueColor: '#22c55e' },
+      {
+        label: 'Total Deadlines',
+        value: stats.totalDeadlines,
+        helper: 'Deadline templates loaded',
+        icon: 'heroCalendarDaysSolid',
+        cardClass: 'bg-sky-50/45',
+        labelClass: 'text-sky-700',
+        valueClass: 'text-slate-950',
+        iconClass: 'text-sky-700',
+        helperClass: 'text-slate-500',
+      },
+      {
+        label: 'Upcoming',
+        value: stats.upcoming,
+        helper: 'Next 7 days',
+        icon: 'heroClockSolid',
+        cardClass: 'bg-amber-50/65',
+        labelClass: 'text-amber-700',
+        valueClass: 'text-amber-800',
+        iconClass: 'text-amber-700',
+        helperClass: 'text-amber-700',
+      },
+      {
+        label: 'Overdue',
+        value: stats.overdue,
+        helper: 'Needs immediate follow-up',
+        icon: 'heroExclamationTriangleSolid',
+        cardClass: 'bg-rose-50/65',
+        labelClass: 'text-rose-700',
+        valueClass: 'text-rose-800',
+        iconClass: 'text-rose-700',
+        helperClass: 'text-rose-700',
+      },
+      {
+        label: 'Filed',
+        value: stats.filed,
+        helper: 'Completed and marked filed',
+        icon: 'heroCheckCircleSolid',
+        cardClass: 'bg-emerald-50/65',
+        labelClass: 'text-emerald-700',
+        valueClass: 'text-emerald-800',
+        iconClass: 'text-emerald-700',
+        helperClass: 'text-emerald-700',
+      },
     ];
   });
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.loadData();
   }
 
-  loadData() {
+  refreshData(): void {
+    this.loadData();
+  }
+
+  loadData(): void {
     this.loading.set(true);
 
-    // Load deadlines for current year
     this.complianceService.getDeadlines({ year: this.currentYear() }).subscribe({
-      next: (res) => {
-        this.deadlines.set(res.data);
+      next: (response) => {
+        this.deadlines.set(response.data);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
 
-    // Load client deadlines
     this.complianceService.getClientDeadlines().subscribe({
-      next: (res) => this.clientDeadlines.set(res.data),
+      next: (response) => this.clientDeadlines.set(response.data),
     });
 
-    // Load stats
     this.complianceService.getStats(this.currentYear()).subscribe({
-      next: (res) => this.stats.set(res.data),
+      next: (response) => this.stats.set(response.data),
     });
   }
 
-  prevMonth() {
-    const m = this.currentMonth();
-    const y = this.currentYear();
-    if (m === 0) {
+  prevMonth(): void {
+    const month = this.currentMonth();
+    const year = this.currentYear();
+
+    if (month === 0) {
       this.currentMonth.set(11);
-      this.currentYear.set(y - 1);
+      this.currentYear.set(year - 1);
     } else {
-      this.currentMonth.set(m - 1);
+      this.currentMonth.set(month - 1);
     }
+
     this.loadData();
   }
 
-  nextMonth() {
-    const m = this.currentMonth();
-    const y = this.currentYear();
-    if (m === 11) {
+  nextMonth(): void {
+    const month = this.currentMonth();
+    const year = this.currentYear();
+
+    if (month === 11) {
       this.currentMonth.set(0);
-      this.currentYear.set(y + 1);
+      this.currentYear.set(year + 1);
     } else {
-      this.currentMonth.set(m + 1);
+      this.currentMonth.set(month + 1);
     }
+
     this.loadData();
   }
 
-  onTypeChange(type: string) {
+  onTypeChange(type: string): void {
     this.selectedType.set(type);
   }
 
-  onDeadlineClick(deadline: ComplianceDeadline) {
+  onDeadlineClick(deadline: ComplianceDeadline): void {
     this.selectedDeadline.set(deadline);
-    // Load client deadlines for this specific deadline
     this.complianceService.getClientDeadlines({ deadlineId: deadline.id }).subscribe({
-      next: (res) => {
-        this.selectedDeadlineClientDeadlines.set(res.data);
+      next: (response) => {
+        this.selectedDeadlineClientDeadlines.set(response.data);
         this.showDetailModal.set(true);
       },
     });
   }
 
-  onAssignClick(deadline: ComplianceDeadline) {
+  onAssignClick(deadline: ComplianceDeadline): void {
     this.selectedDeadlineId.set(deadline.id);
     this.selectedDeadlineTitle.set(deadline.title);
     this.showAssignModal.set(true);
   }
 
-  onAssignFromDetail(deadlineId: string) {
+  onAssignFromDetail(deadlineId: string): void {
     this.showDetailModal.set(false);
-    const d = this.deadlines().find(x => x.id === deadlineId);
-    if (d) {
-      this.selectedDeadlineId.set(d.id);
-      this.selectedDeadlineTitle.set(d.title);
-      this.showAssignModal.set(true);
-    }
+    const deadline = this.deadlines().find((item) => item.id === deadlineId);
+    if (!deadline) return;
+
+    this.selectedDeadlineId.set(deadline.id);
+    this.selectedDeadlineTitle.set(deadline.title);
+    this.showAssignModal.set(true);
   }
 
-  onStatusChange(event: { clientDeadlineId: string; status: string }) {
+  onStatusChange(event: { clientDeadlineId: string; status: string }): void {
     this.complianceService.updateClientDeadline(event.clientDeadlineId, { status: event.status as any }).subscribe({
       next: () => {
         this.toastService.success('Status updated successfully');
@@ -361,13 +558,13 @@ export class ComplianceCalendarComponent implements OnInit {
     });
   }
 
-  onDeadlineCreated() {
+  onDeadlineCreated(): void {
     this.showAddDeadlineModal.set(false);
     this.toastService.success('Deadline created successfully');
     this.loadData();
   }
 
-  onClientAssigned() {
+  onClientAssigned(): void {
     this.showAssignModal.set(false);
     this.toastService.success('Client assigned successfully');
     this.loadData();

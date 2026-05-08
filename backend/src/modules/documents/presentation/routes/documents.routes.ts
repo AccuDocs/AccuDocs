@@ -15,6 +15,8 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 
 
 router.use(authenticate);
 
+router.get('/', DocumentController.listFiles);
+
 /**
  * @openapi
  * /documents/upload:

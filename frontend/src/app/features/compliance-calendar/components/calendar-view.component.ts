@@ -1,177 +1,273 @@
-import { Component, Input, Output, EventEmitter, computed, signal, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ComplianceDeadline, ClientDeadlineAssignment } from '@core/services/compliance.service';
+
+import { ClientDeadlineAssignment, ComplianceDeadline } from '@core/services/compliance.service';
 
 @Component({
   selector: 'app-calendar-view',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <!-- Calendar Grid -->
-    <div
-      class="rounded-2xl overflow-hidden"
-      style="background: var(--card-bg); border: 1px solid var(--border-color); box-shadow: 0 4px 24px -4px rgba(0,0,0,0.06);"
-    >
-      <!-- Day Headers -->
-      <div class="grid grid-cols-7 border-b" style="border-color: var(--border-color);">
+    <section class="calendar-panel">
+      <div class="calendar-head grid grid-cols-7">
         @for (day of dayNames; track day) {
-          <div
-            class="py-3 text-center text-xs font-bold uppercase tracking-wider"
-            style="color: var(--text-secondary); background: var(--hover-bg);"
-          >
-            {{ day }}
-          </div>
+          <div class="day-name">{{ day }}</div>
         }
       </div>
 
-      <!-- Calendar Cells -->
       <div class="grid grid-cols-7">
         @for (cell of calendarCells(); track $index) {
-          <div
-            class="min-h-[110px] p-2 border-b border-r transition-all duration-200"
-            [class.opacity-40]="!cell.isCurrentMonth"
-            [style.border-color]="'var(--border-color)'"
-            [style.background]="cell.isToday ? 'rgba(0, 116, 201, 0.04)' : 'transparent'"
-          >
-            <!-- Date Number -->
-            <div class="flex items-center justify-between mb-1">
-              <span
-                class="text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full"
-                [style.background]="cell.isToday ? '#0074c9' : 'transparent'"
-                [style.color]="cell.isToday ? '#fff' : 'var(--text-primary)'"
-              >
-                {{ cell.day }}
-              </span>
+          <div class="calendar-cell" [class.is-muted]="!cell.isCurrentMonth" [class.is-today]="cell.isToday">
+            <div class="mb-2 flex items-center justify-between gap-2">
+              <span class="day-pill" [class.day-pill--today]="cell.isToday">{{ cell.day }}</span>
             </div>
 
-            <!-- Deadline Pills -->
-            <div class="flex flex-col gap-1">
-              @for (dl of cell.deadlines; track dl.id; let i = $index) {
-                @if (i < 3) {
-                  <button
-                    (click)="deadlineClick.emit(dl)"
-                    class="w-full text-left px-2 py-1 rounded-lg text-[10px] font-semibold leading-tight truncate transition-all duration-200 hover:scale-[1.02] cursor-pointer"
-                    [style.background]="getTypeColor(dl.type).bg"
-                    [style.color]="getTypeColor(dl.type).text"
-                    [style.border]="'1px solid ' + getTypeColor(dl.type).border"
-                    [title]="dl.title"
-                  >
-                    <span class="mr-1">{{ getTypeEmoji(dl.type) }}</span>{{ dl.title | slice:0:20 }}
+            <div class="space-y-1.5">
+              @for (deadline of cell.deadlines; track deadline.id; let index = $index) {
+                @if (index < 3) {
+                  <button type="button" class="deadline-chip" [ngClass]="chipClass(deadline.type)" (click)="deadlineClick.emit(deadline)">
+                    <span class="chip-dot" [ngClass]="dotClass(deadline.type)"></span>
+                    <span class="truncate">{{ deadline.title }}</span>
+                    @if (getAssignedCount(deadline.id) > 0) {
+                      <span class="chip-count">{{ getAssignedCount(deadline.id) }}</span>
+                    }
                   </button>
                 }
               }
+
               @if (cell.deadlines.length > 3) {
-                <span class="text-[10px] font-bold px-2" style="color: var(--text-secondary);">
-                  +{{ cell.deadlines.length - 3 }} more
-                </span>
+                <span class="more-chip">+{{ cell.deadlines.length - 3 }} more</span>
               }
             </div>
           </div>
         }
       </div>
-    </div>
 
-    <!-- Legend -->
-    <div class="flex flex-wrap items-center gap-4 mt-4 px-2">
-      @for (item of legendItems; track item.label) {
-        <div class="flex items-center gap-2">
-          <div
-            class="w-3 h-3 rounded-sm"
-            [style.background]="item.color"
-          ></div>
-          <span class="text-xs font-medium" style="color: var(--text-secondary);">{{ item.label }}</span>
-        </div>
-      }
-    </div>
+      <div class="legend-row">
+        @for (item of legendItems; track item.label) {
+          <div class="legend-item">
+            <span class="legend-dot" [ngClass]="item.dotClass"></span>
+            <span>{{ item.label }}</span>
+          </div>
+        }
+      </div>
+    </section>
   `,
   styles: [`
-    :host { display: block; }
+    :host {
+      display: block;
+    }
+    .calendar-panel {
+      overflow: hidden;
+      border-radius: 20px;
+      border: 1px solid #dbe3ef;
+      background: white;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    }
+    .calendar-head {
+      border-bottom: 1px solid #dbe3ef;
+      background: #f8fafc;
+    }
+    .day-name {
+      padding: 14px 12px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+    .calendar-cell {
+      min-height: 132px;
+      border-right: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 10px;
+      background: white;
+    }
+    .calendar-cell:nth-child(7n) {
+      border-right: 0;
+    }
+    .calendar-cell.is-muted {
+      background: #fbfdff;
+      color: #94a3b8;
+    }
+    .calendar-cell.is-today {
+      background: #f0f9ff;
+    }
+    .day-pill {
+      display: inline-flex;
+      height: 28px;
+      min-width: 28px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 900;
+      color: #0f172a;
+    }
+    .day-pill--today {
+      background: #0369a1;
+      color: white;
+    }
+    .deadline-chip {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      gap: 8px;
+      border-radius: 10px;
+      border: 1px solid;
+      padding: 6px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      text-align: left;
+      transition: filter .16s ease;
+    }
+    .deadline-chip:hover {
+      filter: brightness(0.98);
+    }
+    .chip-dot,
+    .legend-dot {
+      height: 8px;
+      width: 8px;
+      flex: 0 0 auto;
+      border-radius: 999px;
+    }
+    .chip-count {
+      margin-left: auto;
+      display: inline-flex;
+      min-width: 18px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.75);
+      padding: 0 5px;
+      font-size: 10px;
+      font-weight: 900;
+    }
+    .more-chip {
+      display: inline-flex;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 900;
+      color: #64748b;
+    }
+    .legend-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      border-top: 1px solid #dbe3ef;
+      padding: 14px 16px;
+      background: #fcfdff;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+    }
+    @media (max-width: 900px) {
+      .calendar-cell {
+        min-height: 108px;
+        padding: 8px;
+      }
+      .day-name {
+        padding: 12px 6px;
+      }
+    }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CalendarViewComponent {
-  @Input() deadlines: ComplianceDeadline[] = [];
-  @Input() month: number = new Date().getMonth();
-  @Input() year: number = new Date().getFullYear();
-  @Input() clientDeadlines: ClientDeadlineAssignment[] = [];
+  readonly deadlines = input<ComplianceDeadline[]>([]);
+  readonly month = input(new Date().getMonth());
+  readonly year = input(new Date().getFullYear());
+  readonly clientDeadlines = input<ClientDeadlineAssignment[]>([]);
 
-  @Output() deadlineClick = new EventEmitter<ComplianceDeadline>();
+  readonly deadlineClick = output<ComplianceDeadline>();
 
-  dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-  legendItems = [
-    { label: 'GST', color: '#6366f1' },
-    { label: 'ITR', color: '#0074c9' },
-    { label: 'TDS', color: '#f59e0b' },
-    { label: 'ROC', color: '#8b5cf6' },
-    { label: 'Advance Tax', color: '#ec4899' },
-    { label: 'Other', color: '#64748b' },
+  readonly dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  readonly legendItems = [
+    { label: 'GST', dotClass: 'bg-indigo-500' },
+    { label: 'ITR', dotClass: 'bg-sky-600' },
+    { label: 'TDS', dotClass: 'bg-amber-500' },
+    { label: 'ROC', dotClass: 'bg-violet-500' },
+    { label: 'Advance Tax', dotClass: 'bg-pink-500' },
+    { label: 'Other', dotClass: 'bg-slate-500' },
   ];
 
-  calendarCells = computed(() => {
+  readonly calendarCells = computed(() => {
+    const month = this.month();
+    const year = this.year();
     const cells: { day: number; isCurrentMonth: boolean; isToday: boolean; deadlines: ComplianceDeadline[] }[] = [];
-    const firstDay = new Date(this.year, this.month, 1).getDay();
-    const daysInMonth = new Date(this.year, this.month + 1, 0).getDate();
-    const daysInPrevMonth = new Date(this.year, this.month, 0).getDate();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
     const today = new Date();
-    const isCurrentMonthYear = today.getMonth() === this.month && today.getFullYear() === this.year;
+    const isCurrentMonthYear = today.getMonth() === month && today.getFullYear() === year;
 
-    // Create a map of deadlines by date
     const deadlineMap = new Map<string, ComplianceDeadline[]>();
-    for (const dl of this.deadlines) {
-      const dateStr = dl.dueDate.split('T')[0];
-      if (!deadlineMap.has(dateStr)) deadlineMap.set(dateStr, []);
-      deadlineMap.get(dateStr)!.push(dl);
+    for (const deadline of this.deadlines()) {
+      const dateKey = deadline.dueDate.split('T')[0];
+      if (!deadlineMap.has(dateKey)) deadlineMap.set(dateKey, []);
+      deadlineMap.get(dateKey)!.push(deadline);
     }
 
-    // Previous month's trailing days
-    for (let i = firstDay - 1; i >= 0; i--) {
-      const day = daysInPrevMonth - i;
-      const prevMonth = this.month === 0 ? 11 : this.month - 1;
-      const prevYear = this.month === 0 ? this.year - 1 : this.year;
-      const dateStr = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      cells.push({ day, isCurrentMonth: false, isToday: false, deadlines: deadlineMap.get(dateStr) || [] });
+    for (let index = firstDay - 1; index >= 0; index--) {
+      const day = daysInPrevMonth - index;
+      const prevMonth = month === 0 ? 11 : month - 1;
+      const prevYear = month === 0 ? year - 1 : year;
+      const dateKey = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      cells.push({ day, isCurrentMonth: false, isToday: false, deadlines: deadlineMap.get(dateKey) || [] });
     }
 
-    // Current month's days
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dateStr = `${this.year}-${String(this.month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       cells.push({
-        day: d,
+        day,
         isCurrentMonth: true,
-        isToday: isCurrentMonthYear && today.getDate() === d,
-        deadlines: deadlineMap.get(dateStr) || [],
+        isToday: isCurrentMonthYear && today.getDate() === day,
+        deadlines: deadlineMap.get(dateKey) || [],
       });
     }
 
-    // Next month's leading days
-    const remaining = 42 - cells.length; // Always show 6 rows
-    for (let d = 1; d <= remaining; d++) {
-      const nextMonth = this.month === 11 ? 0 : this.month + 1;
-      const nextYear = this.month === 11 ? this.year + 1 : this.year;
-      const dateStr = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      cells.push({ day: d, isCurrentMonth: false, isToday: false, deadlines: deadlineMap.get(dateStr) || [] });
+    const remaining = 42 - cells.length;
+    for (let day = 1; day <= remaining; day++) {
+      const nextMonth = month === 11 ? 0 : month + 1;
+      const nextYear = month === 11 ? year + 1 : year;
+      const dateKey = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      cells.push({ day, isCurrentMonth: false, isToday: false, deadlines: deadlineMap.get(dateKey) || [] });
     }
 
     return cells;
   });
 
-  getTypeColor(type: string): { bg: string; text: string; border: string } {
-    const colors: Record<string, { bg: string; text: string; border: string }> = {
-      GST: { bg: 'rgba(99, 102, 241, 0.1)', text: '#6366f1', border: 'rgba(99, 102, 241, 0.2)' },
-      ITR: { bg: 'rgba(0, 116, 201, 0.1)', text: '#0074c9', border: 'rgba(0, 116, 201, 0.2)' },
-      TDS: { bg: 'rgba(245, 158, 11, 0.1)', text: '#d97706', border: 'rgba(245, 158, 11, 0.2)' },
-      ROC: { bg: 'rgba(139, 92, 246, 0.1)', text: '#8b5cf6', border: 'rgba(139, 92, 246, 0.2)' },
-      ADVANCE_TAX: { bg: 'rgba(236, 72, 153, 0.1)', text: '#ec4899', border: 'rgba(236, 72, 153, 0.2)' },
-      OTHER: { bg: 'rgba(100, 116, 139, 0.1)', text: '#64748b', border: 'rgba(100, 116, 139, 0.2)' },
-    };
-    return colors[type] || colors['OTHER'];
+  getAssignedCount(deadlineId: string): number {
+    return this.clientDeadlines().filter((deadline) => deadline.deadlineId === deadlineId).length;
   }
 
-  getTypeEmoji(type: string): string {
-    const emojis: Record<string, string> = {
-      GST: '🧾', ITR: '📄', TDS: '💰', ROC: '🏢', ADVANCE_TAX: '💳', OTHER: '📌',
+  chipClass(type: string): string {
+    const classes: Record<string, string> = {
+      GST: 'border-indigo-200 bg-indigo-50 text-indigo-700',
+      ITR: 'border-sky-200 bg-sky-50 text-sky-700',
+      TDS: 'border-amber-200 bg-amber-50 text-amber-700',
+      ROC: 'border-violet-200 bg-violet-50 text-violet-700',
+      ADVANCE_TAX: 'border-pink-200 bg-pink-50 text-pink-700',
+      OTHER: 'border-slate-200 bg-slate-50 text-slate-700',
     };
-    return emojis[type] || '📌';
+    return classes[type] || classes['OTHER'];
+  }
+
+  dotClass(type: string): string {
+    const classes: Record<string, string> = {
+      GST: 'bg-indigo-500',
+      ITR: 'bg-sky-600',
+      TDS: 'bg-amber-500',
+      ROC: 'bg-violet-500',
+      ADVANCE_TAX: 'bg-pink-500',
+      OTHER: 'bg-slate-500',
+    };
+    return classes[type] || classes['OTHER'];
   }
 }

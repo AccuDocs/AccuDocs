@@ -8,20 +8,20 @@ import type { InventoryDashboardTone, InventoryKpi } from '../../../models/inven
   standalone: true,
   imports: [CommonModule, MatIconModule],
   template: `
-    <article class="group min-w-0 rounded-2xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" [ngClass]="toneCardClass(kpi().tone)">
+    <article class="group flex min-h-[130px] min-w-0 flex-col justify-between rounded-2xl border p-5 shadow-sm transition hover:shadow-md" [ngClass]="toneCardClass(kpi().tone)">
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
-          <p class="truncate text-xs font-black uppercase tracking-[0.18em]" [ngClass]="toneLabelClass(kpi().tone)">{{ kpi().label }}</p>
+          <p class="truncate text-[11px] font-black uppercase tracking-[0.2em]" [ngClass]="toneLabelClass(kpi().tone)">{{ kpi().label }}</p>
           @if (loading()) {
-            <div class="mt-4 h-8 w-24 rounded-xl bg-white/70 animate-pulse"></div>
+            <div class="mt-5 h-8 w-24 rounded-lg bg-white/70 animate-pulse"></div>
           } @else {
-            <p class="mt-4 truncate text-3xl font-black tracking-tight" [ngClass]="toneValueClass(kpi().tone)">{{ kpi().value }}</p>
+            <p class="mt-5 truncate font-mono text-[30px] font-black leading-none tracking-normal" [ngClass]="toneValueClass(kpi().tone)">{{ kpi().value }}</p>
           }
           @if (kpi().sub) {
-            <p class="mt-1 truncate text-xs font-semibold" [ngClass]="toneSubClass(kpi().tone)">{{ kpi().sub }}</p>
+            <p class="mt-3 truncate text-xs font-bold" [ngClass]="toneSubClass(kpi().tone)">{{ kpi().sub }}</p>
           }
         </div>
-        <div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white shadow-sm" [ngClass]="toneIconClass(kpi().tone)">
+        <div class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white shadow-sm ring-1 ring-slate-100" [ngClass]="toneIconClass(kpi().tone)">
           <mat-icon class="!h-5 !w-5 !text-xl">{{ kpi().icon }}</mat-icon>
         </div>
       </div>
@@ -37,10 +37,10 @@ export class InventoryKpiCardComponent {
 
   toneCardClass(tone: InventoryDashboardTone): string {
     const classes: Record<InventoryDashboardTone, string> = {
-      blue: 'border-primary-100 bg-primary-50/40',
-      green: 'border-emerald-100 bg-emerald-50/60',
-      amber: 'border-amber-100 bg-amber-50/60',
-      red: 'border-rose-100 bg-rose-50/60',
+      blue: 'border-primary-100 bg-primary-50/35',
+      green: 'border-emerald-100 bg-emerald-50/65',
+      amber: 'border-amber-100 bg-amber-50/65',
+      red: 'border-rose-100 bg-rose-50/65',
       slate: 'border-slate-200 bg-white',
     };
     return classes[tone];
