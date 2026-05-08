@@ -13,6 +13,7 @@ import {
   heroFunnelSolid,
   heroListBulletSolid,
   heroPlusSolid,
+  heroQueueListSolid,
 } from '@ng-icons/heroicons/solid';
 
 import {
@@ -65,6 +66,7 @@ interface ComplianceStatCard {
       heroFunnelSolid,
       heroListBulletSolid,
       heroPlusSolid,
+      heroQueueListSolid,
     }),
   ],
   template: `
@@ -83,7 +85,7 @@ interface ComplianceStatCard {
               Track every statutory due date for ITR, GST, TDS, ROC, and advance tax from one calendar.
             </p>
             <p class="mt-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
-              {{ filteredDeadlines().length }} deadline template(s) loaded · {{ stats().pending }} pending assignment(s)
+              {{ filteredDeadlines().length }} deadline template(s) loaded - {{ stats().pending }} pending assignment(s)
             </p>
           </div>
 
@@ -130,11 +132,11 @@ interface ComplianceStatCard {
             </button>
             <button
               type="button"
-              (click)="activeView.set('list')"
-              [class.is-active]="activeView() === 'list'"
+              (click)="activeView.set('cards')"
+              [class.is-active]="activeView() === 'cards'"
             >
-              <ng-icon name="heroListBulletSolid" size="16"></ng-icon>
-              List
+              <ng-icon name="heroQueueListSolid" size="16"></ng-icon>
+              Cards
             </button>
           </div>
 
@@ -178,7 +180,7 @@ interface ComplianceStatCard {
           ></app-calendar-view>
         }
 
-        @if (activeView() === 'list') {
+        @if (activeView() === 'cards') {
           <app-deadline-list
             [deadlines]="filteredDeadlines()"
             [clientDeadlines]="clientDeadlines()"
@@ -384,7 +386,7 @@ export class ComplianceCalendarComponent implements OnInit {
   private complianceService = inject(ComplianceService);
   private toastService = inject(ToastService);
 
-  activeView = signal<'calendar' | 'list'>('calendar');
+  activeView = signal<'calendar' | 'cards'>('calendar');
   currentMonth = signal(new Date().getMonth());
   currentYear = signal(new Date().getFullYear());
   selectedType = signal<string>('');

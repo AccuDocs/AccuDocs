@@ -23,52 +23,27 @@ import { ClientDeadlineAssignment, ComplianceDeadline } from '@core/services/com
     }),
   ],
   template: `
-    <section class="list-panel">
-      <div class="space-y-3 p-4">
+    <article class="dashboard-panel">
+      <header class="panel-header">
+        <div>
+          <p class="eyebrow">Deadline Queue</p>
+          <h2 class="panel-title">Compliance Cards</h2>
+        </div>
+        <span class="panel-count">{{ sortedDeadlines().length }} template(s)</span>
+      </header>
+
+      <div class="cards-grid">
         @for (deadline of sortedDeadlines(); track deadline.id) {
-          <button type="button" class="deadline-row" [style.border-left-color]="typeAccent(deadline.type)" (click)="deadlineClick.emit(deadline)">
-            <div class="flex min-w-0 items-start gap-3">
-              <div class="type-badge" [ngClass]="typeBadgeClass(deadline.type)">
-                {{ typeLabel(deadline.type) }}
-              </div>
-
-              <div class="min-w-0 flex-1 text-left">
-                <p class="truncate text-sm font-black text-slate-950">{{ deadline.title }}</p>
-                <div class="mt-1 flex flex-wrap items-center gap-2">
-                  <span class="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-600">
-                    {{ formatDate(deadline.dueDate) }}
+          <article class="deadline-card" (click)="deadlineClick.emit(deadline)">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex min-w-0 items-center gap-3">
+                <div class="type-pill" [ngClass]="typeBadgeClass(deadline.type)">{{ typeLabel(deadline.type) }}</div>
+                <div class="min-w-0">
+                  <p class="card-eyebrow">Due {{ formatDate(deadline.dueDate) }}</p>
+                  <span class="mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em]" [ngClass]="countdownChipClass(deadline.dueDate)">
+                    {{ countdownLabel(deadline.dueDate) }}
                   </span>
-                  @if (deadline.recurring) {
-                    <span class="text-[11px] font-semibold text-slate-500">{{ recurringLabel(deadline.recurringPattern) }}</span>
-                  }
-                  @if (deadline.description) {
-                    <span class="truncate text-[11px] font-semibold text-slate-500">{{ deadline.description }}</span>
-                  }
                 </div>
-
-                @if (getAssignedClients(deadline.id).length > 0) {
-                  <div class="mt-3 flex flex-wrap gap-2">
-                    @for (clientDeadline of getAssignedClients(deadline.id); track clientDeadline.id; let index = $index) {
-                      @if (index < 5) {
-                        <span class="status-chip" [ngClass]="statusChipClass(clientDeadline.status)">
-                          <ng-icon [name]="statusIcon(clientDeadline.status)" size="12"></ng-icon>
-                          {{ clientDeadline.client?.user?.name || clientDeadline.client?.code || 'Client' }}
-                        </span>
-                      }
-                    }
-                    @if (getAssignedClients(deadline.id).length > 5) {
-                      <span class="text-[11px] font-black text-slate-500">+{{ getAssignedClients(deadline.id).length - 5 }} more</span>
-                    }
-                  </div>
-                }
-              </div>
-            </div>
-
-            <div class="ml-3 flex shrink-0 items-center gap-3">
-              <div class="text-right">
-                <p class="text-xs font-black uppercase tracking-[0.14em]" [ngClass]="countdownColorClass(deadline.dueDate)">
-                  {{ countdownLabel(deadline.dueDate) }}
-                </p>
               </div>
               <button
                 type="button"
@@ -79,7 +54,56 @@ import { ClientDeadlineAssignment, ComplianceDeadline } from '@core/services/com
                 <ng-icon name="heroUserGroupSolid" size="16"></ng-icon>
               </button>
             </div>
-          </button>
+
+            <div class="mt-4 min-w-0">
+              <p class="truncate text-lg font-black text-slate-950">{{ deadline.title }}</p>
+
+              @if (deadline.description) {
+                <p class="mt-3 line-clamp-2 text-sm font-medium leading-6 text-slate-500">{{ deadline.description }}</p>
+              } @else {
+                <p class="mt-3 text-sm font-medium leading-6 text-slate-400">No description added for this compliance deadline.</p>
+              }
+            </div>
+
+            <div class="mt-5 flex flex-wrap items-center gap-2">
+              @if (deadline.recurring) {
+                <div class="meta-chip">
+                  {{ recurringLabel(deadline.recurringPattern) }}
+                </div>
+              }
+              <div class="meta-chip">
+                {{ getAssignedClients(deadline.id).length }} client(s) assigned
+              </div>
+            </div>
+
+            <div class="mt-5 border-t border-slate-100 pt-4">
+              <div class="flex items-center justify-between gap-3">
+                <p class="card-eyebrow">Assigned Clients</p>
+                <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-black text-slate-600">
+                  {{ getAssignedClients(deadline.id).length }}
+                </span>
+              </div>
+              @if (getAssignedClients(deadline.id).length > 0) {
+                <div class="mt-3 flex flex-wrap gap-2">
+                  @for (clientDeadline of getAssignedClients(deadline.id); track clientDeadline.id; let index = $index) {
+                    @if (index < 4) {
+                      <span class="status-chip" [ngClass]="statusChipClass(clientDeadline.status)">
+                        <ng-icon [name]="statusIcon(clientDeadline.status)" size="12"></ng-icon>
+                        {{ clientDeadline.client?.user?.name || clientDeadline.client?.code || 'Client' }}
+                      </span>
+                    }
+                  }
+                  @if (getAssignedClients(deadline.id).length > 4) {
+                    <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-black text-slate-600">
+                      +{{ getAssignedClients(deadline.id).length - 4 }} more
+                    </span>
+                  }
+                </div>
+              } @else {
+                <p class="mt-3 text-sm font-medium text-slate-500">No clients assigned yet.</p>
+              }
+            </div>
+          </article>
         } @empty {
           <div class="empty-state">
             <p class="text-sm font-black text-slate-950">No deadlines found</p>
@@ -87,47 +111,105 @@ import { ClientDeadlineAssignment, ComplianceDeadline } from '@core/services/com
           </div>
         }
       </div>
-    </section>
+    </article>
   `,
   styles: [`
     :host {
       display: block;
     }
-    .list-panel {
+    .dashboard-panel {
+      min-width: 0;
       overflow: hidden;
       border-radius: 20px;
       border: 1px solid #dbe3ef;
       background: white;
       box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
     }
-    .deadline-row {
+    .panel-header {
       display: flex;
-      width: 100%;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       gap: 16px;
-      border-radius: 18px;
-      border: 1px solid #e2e8f0;
-      border-left-width: 4px;
+      border-bottom: 1px solid #dbe3ef;
+      padding: 16px 18px;
+    }
+    .eyebrow,
+    .card-eyebrow {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
+    .panel-title {
+      margin-top: 2px;
+      font-size: 16px;
+      font-weight: 950;
+      color: #0f172a;
+    }
+    .panel-count {
+      border-radius: 999px;
+      background: #f8fafc;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 900;
+      color: #64748b;
+    }
+    .cards-grid {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+    }
+    @media (min-width: 768px) {
+      .cards-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (min-width: 1280px) {
+      .cards-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    .deadline-card {
+      min-width: 0;
+      min-height: 236px;
+      display: flex;
+      flex-direction: column;
+      border-radius: 16px;
+      border: 1px solid #dbe3ef;
       padding: 16px;
       background: white;
-      transition: background-color .16s ease, border-color .16s ease;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      transition: background-color .16s ease, border-color .16s ease, transform .16s ease, box-shadow .16s ease;
+      cursor: pointer;
     }
-    .deadline-row:hover {
-      border-color: #cfe3f5;
-      background: #f8fbff;
+    .deadline-card:hover {
+      border-color: #c7d2fe;
+      background: #f8faff;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
     }
-    .type-badge {
+    .type-pill {
       display: inline-flex;
-      min-width: 58px;
+      min-width: 64px;
       align-items: center;
       justify-content: center;
-      border-radius: 10px;
-      padding: 10px 8px;
+      border-radius: 12px;
+      padding: 10px 12px;
       font-size: 11px;
       font-weight: 900;
       letter-spacing: 0.12em;
       text-transform: uppercase;
+    }
+    .meta-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      background: #f8fafc;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #64748b;
     }
     .status-chip {
       display: inline-flex;
@@ -140,23 +222,30 @@ import { ClientDeadlineAssignment, ComplianceDeadline } from '@core/services/com
     }
     .assign-button {
       display: grid;
-      height: 38px;
-      width: 38px;
+      height: 40px;
+      width: 40px;
       place-items: center;
-      border-radius: 10px;
-      background: #eff6ff;
+      border-radius: 12px;
+      border: 1px solid #dbe3ef;
+      background: white;
       color: #0369a1;
-      transition: background-color .16s ease;
+      transition: background-color .16s ease, border-color .16s ease;
     }
     .assign-button:hover {
-      background: #dbeafe;
+      border-color: #bfdbfe;
+      background: #eff6ff;
     }
     .empty-state {
+      grid-column: 1 / -1;
       display: grid;
-      min-height: 280px;
+      min-height: 260px;
       place-items: center;
       align-content: center;
       gap: 8px;
+      border-radius: 16px;
+      border: 1px dashed #dbe3ef;
+      background: #fbfdff;
+      padding: 24px;
       text-align: center;
     }
   `],
@@ -212,28 +301,16 @@ export class DeadlineListComponent {
     return `${diff} day(s) ahead`;
   }
 
-  countdownColorClass(dateStr: string): string {
+  countdownChipClass(dateStr: string): string {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const due = new Date(dateStr);
     due.setHours(0, 0, 0, 0);
     const diff = Math.ceil((due.getTime() - today.getTime()) / 86_400_000);
 
-    if (diff < 0) return 'text-rose-700';
-    if (diff <= 7) return 'text-amber-700';
-    return 'text-emerald-700';
-  }
-
-  typeAccent(type: string): string {
-    const colors: Record<string, string> = {
-      GST: '#6366f1',
-      ITR: '#0369a1',
-      TDS: '#d97706',
-      ROC: '#8b5cf6',
-      ADVANCE_TAX: '#db2777',
-      OTHER: '#64748b',
-    };
-    return colors[type] || colors['OTHER'];
+    if (diff < 0) return 'bg-rose-50 text-rose-700';
+    if (diff <= 7) return 'bg-amber-50 text-amber-700';
+    return 'bg-emerald-50 text-emerald-700';
   }
 
   typeBadgeClass(type: string): string {
