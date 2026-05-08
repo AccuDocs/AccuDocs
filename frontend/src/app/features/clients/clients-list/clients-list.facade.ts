@@ -42,9 +42,20 @@ export class ClientsFacade {
     this.pageSize.set(pageSize);
   }
 
+  updateSearch(query: string) {
+    this.searchQuery.set(query);
+    this.pageIndex.set(0);
+  }
+
+  updatePageSize(pageSize: number) {
+    this.pageSize.set(pageSize);
+    this.pageIndex.set(0);
+  }
+
   updateSort(active: string, direction: 'asc' | 'desc' | '') {
     this.sortBy.set(active);
     this.sortOrder.set((direction as 'asc' | 'desc') || 'desc');
+    this.pageIndex.set(0);
   }
 
   reload() {
