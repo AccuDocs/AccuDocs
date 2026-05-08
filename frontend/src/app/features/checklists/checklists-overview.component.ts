@@ -70,7 +70,7 @@ import { ClientService, Client } from '@core/services/client.service';
             </button>
             <button
               type="button"
-              (click)="openBulkModal()"
+              (click)="goToBulkCreatePage()"
               class="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 active:scale-[0.98]"
             >
               <ng-icon name="heroRocketLaunchSolid" size="17"></ng-icon>
@@ -377,7 +377,7 @@ import { ClientService, Client } from '@core/services/client.service';
           <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage document checklists across all clients</p>
         </div>
         <button
-          (click)="openBulkModal()"
+          (click)="goToBulkCreatePage()"
           class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-bold text-sm hover:from-blue-700 hover:to-blue-800 active:scale-[0.97] transition-all shadow-lg shadow-blue-500/25"
         >
           <ng-icon name="heroRocketLaunchSolid" size="18"></ng-icon>
@@ -599,14 +599,12 @@ import { ClientService, Client } from '@core/services/client.service';
 
     <!-- ==================== BULK CREATE MODAL ==================== -->
       @if (showBulkModal) {
-        <!-- Premium Backdrop -->
         <div
-          class="modal-overlay-premium bg-slate-900/40 backdrop-blur-[2px]"
+          class="modal-overlay-premium bg-slate-900/45 backdrop-blur-[3px]"
           (click)="closeBulkModal()"
           aria-hidden="true"
         ></div>
 
-        <!-- Modal Container -->
         <div
           class="fixed inset-0 flex items-center justify-center p-4"
           style="z-index: var(--z-modal);"
@@ -616,60 +614,86 @@ import { ClientService, Client } from '@core/services/client.service';
           (click)="closeBulkModal()"
         >
           <div
-            class="modal-panel-premium max-w-2xl max-h-[90vh] flex flex-col"
+            class="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.18)] dark:border-slate-700/50 dark:bg-slate-900"
             (click)="$event.stopPropagation()"
           >
-            <!-- Modal Header -->
-            <div class="flex items-center justify-between p-6 pb-4 shrink-0">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
-                  <ng-icon name="heroRocketLaunchSolid" size="20"></ng-icon>
+            <div class="shrink-0 border-b border-slate-100 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.10),transparent_34%),linear-gradient(180deg,#fcfdff_0%,#f8fbff_100%)] px-6 py-5 dark:border-slate-800 dark:bg-slate-900">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex min-w-0 items-start gap-4">
+                  <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/20">
+                    <ng-icon name="heroRocketLaunchSolid" size="22"></ng-icon>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-[11px] font-black uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">Checklist Automation</p>
+                    <h3 id="bulkModalTitle" class="mt-2 text-[28px] font-black leading-tight text-slate-950 dark:text-white">Bulk Assign Checklist</h3>
+                    <p class="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-500 dark:text-slate-300">
+                      Create document request checklists for multiple clients in one pass, then optionally notify them on WhatsApp.
+                    </p>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                      <span class="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                        {{ templates().length }} template(s)
+                      </span>
+                      <span class="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        {{ selectedClientIds().size }} client(s) selected
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 id="bulkModalTitle" class="text-lg font-bold text-slate-900 dark:text-white">Bulk Assign Checklist</h3>
-                  <p class="text-xs text-slate-500">Create checklists for selected clients</p>
-                </div>
+
+                <button (click)="closeBulkModal()" class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-transparent text-slate-400 transition hover:border-slate-200 hover:bg-white hover:text-slate-600 dark:hover:border-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200">
+                  <ng-icon name="heroXMarkSolid" size="18"></ng-icon>
+                </button>
               </div>
-              <button (click)="closeBulkModal()" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
-                <ng-icon name="heroXMarkSolid" size="18"></ng-icon>
-              </button>
             </div>
 
-            <!-- Modal Body -->
-            <div class="p-6 pt-0 space-y-5 overflow-y-auto flex-1 custom-scrollbar">
+            <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
 
-              <!-- Step 1: Template Selection -->
-              <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">1. Select Template</label>
-                <div class="grid grid-cols-1 gap-2 max-h-36 overflow-y-auto pr-1 custom-scrollbar">
+              <section class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+                <div class="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Step 1</p>
+                    <h4 class="mt-1 text-base font-black text-slate-950 dark:text-white">Choose a template</h4>
+                  </div>
+                  <span class="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    {{ templates().length }} options
+                  </span>
+                </div>
+                <div class="grid gap-3 md:grid-cols-3">
                   @for (tmpl of templates(); track tmpl.id) {
                     <button
                       (click)="bulkData.templateId = tmpl.id; bulkData.templateName = tmpl.name"
-                      class="flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-200"
+                      class="rounded-2xl border p-4 text-left transition-all duration-200"
                       [ngClass]="{
-                        'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/20': bulkData.templateId === tmpl.id,
-                        'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700': bulkData.templateId !== tmpl.id
+                        'border-blue-500 bg-blue-50 ring-4 ring-blue-100 dark:bg-blue-950/30 dark:ring-blue-950/60': bulkData.templateId === tmpl.id,
+                        'border-slate-200 bg-white hover:-translate-y-0.5 hover:border-blue-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-800 dark:hover:bg-slate-800': bulkData.templateId !== tmpl.id
                       }"
                     >
-                      <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
-                        <ng-icon name="heroClipboardDocumentCheckSolid" size="16" class="text-blue-500"></ng-icon>
+                      <div class="flex items-start gap-3">
+                      <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-blue-600 dark:bg-slate-800 dark:text-blue-300">
+                        <ng-icon name="heroClipboardDocumentCheckSolid" size="18"></ng-icon>
                       </div>
                       <div class="min-w-0">
-                        <div class="text-sm font-semibold text-slate-900 dark:text-white truncate">{{ tmpl.name }}</div>
+                        <div class="truncate text-sm font-black text-slate-950 dark:text-white">{{ tmpl.name }}</div>
                         <div class="text-[10px] text-slate-500 uppercase">{{ tmpl.serviceType }} · {{ tmpl.items.length || 0 }} items</div>
+                      </div>
                       </div>
                     </button>
                   }
                 </div>
-              </div>
+              </section>
 
-              <!-- Step 2: Financial Year + Due Date -->
-              <div class="grid grid-cols-2 gap-4">
+              <section class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+                <div class="mb-4">
+                  <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Step 2</p>
+                  <h4 class="mt-1 text-base font-black text-slate-950 dark:text-white">Assignment settings</h4>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">2. Financial Year</label>
+                  <label class="mb-2 block text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Financial Year</label>
                   <select
                     [(ngModel)]="bulkData.financialYear"
-                    class="w-full p-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                    class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:ring-blue-950"
                   >
                     @for (year of fyYears; track year) {
                       <option [value]="year">{{ year }}</option>
@@ -677,56 +701,59 @@ import { ClientService, Client } from '@core/services/client.service';
                   </select>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Due Date (Optional)</label>
+                  <label class="mb-2 block text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Due Date (Optional)</label>
                   <input
                     type="date"
                     [(ngModel)]="bulkData.dueDate"
-                    class="w-full p-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                    class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:ring-blue-950"
                   />
                 </div>
               </div>
+              </section>
 
-              <!-- Step 3: Client Selection -->
-              <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  3. Select Clients
-                  <span class="text-blue-500 ml-1">({{ selectedClientIds().size }} selected)</span>
-                </label>
+              <section class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+                <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Step 3</p>
+                    <h4 class="mt-1 text-base font-black text-slate-950 dark:text-white">Select clients</h4>
+                    <p class="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-300">
+                      {{ selectedClientIds().size }} selected from {{ allClients().length }} available client(s)
+                    </p>
+                  </div>
 
-                <!-- All/None toggle -->
-                <div class="flex items-center gap-3 mb-3">
+                  <div class="flex flex-wrap gap-2">
                   <button
                     (click)="selectAllClients()"
-                    class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all"
+                    class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black transition-all"
                     [ngClass]="{
-                      'bg-blue-600 text-white': bulkData.assignAll,
-                      'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20': !bulkData.assignAll
+                      'bg-blue-600 text-white shadow-lg shadow-blue-600/20': bulkData.assignAll,
+                      'border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200': !bulkData.assignAll
                     }"
                   >
-                    <ng-icon name="heroUsersSolid" size="14" class="inline mr-1"></ng-icon>
-                    All Clients ({{ allClients().length }})
+                    <ng-icon name="heroUsersSolid" size="14"></ng-icon>
+                    Select all
                   </button>
                   <button
                     (click)="deselectAllClients()"
-                    class="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                    class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                   >
-                    Clear Selection
+                    Clear
                   </button>
                 </div>
 
-                <!-- Client Search -->
-                <div class="relative mb-2">
-                  <ng-icon name="heroMagnifyingGlassSolid" size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></ng-icon>
+                </div>
+
+                <div class="relative mb-3">
+                  <ng-icon name="heroMagnifyingGlassSolid" size="15" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></ng-icon>
                   <input
                     type="text"
                     [(ngModel)]="clientSearch"
                     placeholder="Search clients by name, code, or mobile..."
-                    class="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                    class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:ring-blue-950"
                   />
                 </div>
 
-                <!-- Client List -->
-                <div class="max-h-48 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-xl custom-scrollbar">
+                <div class="max-h-[320px] space-y-2 overflow-y-auto pr-1 custom-scrollbar">
                   @if (clientsLoading()) {
                     <div class="flex justify-center py-6">
                       <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
@@ -735,12 +762,16 @@ import { ClientService, Client } from '@core/services/client.service';
                     @for (client of filteredClients(); track client.id) {
                       <button
                         (click)="toggleClient(client.id)"
-                        class="w-full flex items-center gap-3 px-4 py-2.5 text-left border-b border-slate-100 dark:border-slate-700/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                        class="flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all"
+                        [ngClass]="{
+                          'border-blue-500 bg-blue-50 ring-4 ring-blue-100 dark:bg-blue-950/20 dark:ring-blue-950/50': selectedClientIds().has(client.id),
+                          'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-800 dark:hover:bg-slate-800': !selectedClientIds().has(client.id)
+                        }"
                       >
                         <div
                           class="w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all"
                           [ngClass]="{
-                            'bg-blue-600 border-blue-600': selectedClientIds().has(client.id),
+                            'border-blue-600 bg-blue-600': selectedClientIds().has(client.id),
                             'border-slate-300 dark:border-slate-600': !selectedClientIds().has(client.id)
                           }"
                         >
@@ -748,8 +779,11 @@ import { ClientService, Client } from '@core/services/client.service';
                             <ng-icon name="heroCheckSolid" size="12" class="text-white"></ng-icon>
                           }
                         </div>
+                        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-sm font-black text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                          {{ getClientPickerInitials(client) }}
+                        </div>
                         <div class="min-w-0 flex-1">
-                          <div class="text-sm font-semibold text-slate-900 dark:text-white truncate">{{ client.user.name }}</div>
+                          <div class="truncate text-sm font-black text-slate-950 dark:text-white">{{ client.user.name }}</div>
                           <div class="text-[10px] text-slate-400">
                             <span class="font-mono">{{ client.code }}</span>
                             <span class="mx-1">·</span>
@@ -759,27 +793,29 @@ import { ClientService, Client } from '@core/services/client.service';
                       </button>
                     }
                     @if (filteredClients().length === 0) {
-                      <div class="text-center py-6 text-sm text-slate-400">No clients found</div>
+                      <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm font-semibold text-slate-400 dark:border-slate-700 dark:bg-slate-800/70">No clients found for this search.</div>
                     }
                   }
                 </div>
-              </div>
+              </section>
 
-              <!-- Step 4: WhatsApp Notification -->
-              <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">4. Notify via WhatsApp</label>
+              <section class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+                <div class="mb-4">
+                  <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Step 4</p>
+                  <h4 class="mt-1 text-base font-black text-slate-950 dark:text-white">Notification mode</h4>
+                </div>
                 <button
                   (click)="bulkData.sendWhatsApp = !bulkData.sendWhatsApp"
-                  class="flex items-center gap-3 p-3 rounded-xl border w-full text-left transition-all"
+                  class="flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition-all"
                   [ngClass]="{
-                    'border-green-500 bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500/20': bulkData.sendWhatsApp,
-                    'border-slate-200 dark:border-slate-700 hover:border-green-300': !bulkData.sendWhatsApp
+                    'border-emerald-400 bg-emerald-50 ring-4 ring-emerald-100 dark:bg-emerald-950/20 dark:ring-emerald-950/50': bulkData.sendWhatsApp,
+                    'border-slate-200 bg-white hover:border-emerald-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-emerald-800 dark:hover:bg-slate-800': !bulkData.sendWhatsApp
                   }"
                 >
                   <div
-                    class="w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all"
+                    class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all"
                     [ngClass]="{
-                      'bg-green-600 border-green-600': bulkData.sendWhatsApp,
+                      'bg-emerald-600 border-emerald-600': bulkData.sendWhatsApp,
                       'border-slate-300 dark:border-slate-600': !bulkData.sendWhatsApp
                     }"
                   >
@@ -788,28 +824,28 @@ import { ClientService, Client } from '@core/services/client.service';
                     }
                   </div>
                   <div>
-                    <div class="text-sm font-semibold text-slate-900 dark:text-white">Send WhatsApp Message</div>
-                    <div class="text-[10px] text-slate-500">Send checklist of pending documents to each client via WhatsApp</div>
+                    <div class="text-sm font-black text-slate-950 dark:text-white">Send WhatsApp Message</div>
+                    <div class="mt-1 text-xs font-medium leading-5 text-slate-500 dark:text-slate-300">Send the pending document checklist directly to each selected client via WhatsApp.</div>
                   </div>
                 </button>
-              </div>
+              </section>
 
               <!-- Info -->
-              <div class="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/30">
-                <ng-icon name="heroSparklesSolid" size="18" class="text-blue-500 shrink-0 mt-0.5"></ng-icon>
-                <div class="text-xs text-blue-700 dark:text-blue-300">
-                  <strong>Smart Assign:</strong> Clients who already have a checklist for the same FY and service type will be automatically skipped. No duplicates!
+              <div class="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-4 dark:border-blue-900/40 dark:bg-blue-950/20">
+                <ng-icon name="heroSparklesSolid" size="18" class="mt-0.5 shrink-0 text-blue-500 dark:text-blue-300"></ng-icon>
+                <div class="text-sm font-medium leading-6 text-blue-800 dark:text-blue-200">
+                  <strong>Smart Assign:</strong> Clients who already have a checklist for the same FY and service type will be skipped automatically, so no duplicates are created.
                 </div>
               </div>
 
               <!-- Bulk Result -->
               @if (bulkResult()) {
-                <div class="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800/30">
-                  <ng-icon name="heroCheckCircleSolid" size="18" class="text-green-500 shrink-0 mt-0.5"></ng-icon>
-                  <div class="text-xs text-green-700 dark:text-green-300">
+                <div class="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800/40 dark:bg-emerald-950/20">
+                  <ng-icon name="heroCheckCircleSolid" size="18" class="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-300"></ng-icon>
+                  <div class="text-sm font-medium leading-6 text-emerald-800 dark:text-emerald-200">
                     <strong>Done!</strong> Created <strong>{{ bulkResult()!.created }}</strong> checklists.
                     @if (bulkResult()!.skipped) {
-                      Skipped <strong>{{ bulkResult()!.skipped }}</strong> (already had it).
+                      Skipped <strong>{{ bulkResult()!.skipped }}</strong> because they already had the same assignment.
                     }
                     @if (bulkData.sendWhatsApp && bulkResult()!.whatsappSent) {
                       <br/>📱 Sent WhatsApp to <strong>{{ bulkResult()!.whatsappSent }}</strong> clients.
@@ -819,11 +855,10 @@ import { ClientService, Client } from '@core/services/client.service';
               }
             </div>
 
-            <!-- Modal Footer -->
-            <div class="flex justify-end gap-3 p-6 pt-4 border-t border-slate-100 dark:border-slate-700/50 shrink-0">
+            <div class="flex shrink-0 justify-end gap-3 border-t border-slate-100 px-6 py-5 dark:border-slate-800">
               <button
                 (click)="closeBulkModal()"
-                class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-sm font-medium"
+                class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 {{ bulkResult() ? 'Close' : 'Cancel' }}
               </button>
@@ -831,7 +866,7 @@ import { ClientService, Client } from '@core/services/client.service';
                 <button
                   (click)="executeBulkCreate()"
                   [disabled]="!bulkData.templateId || !bulkData.financialYear || selectedClientIds().size === 0 || bulkLoading()"
-                  class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] transition-all"
+                  class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   @if (bulkLoading()) {
                     <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -1083,6 +1118,10 @@ export class ChecklistsOverviewComponent implements OnInit, OnDestroy {
 
   // ========== BULK CREATE ==========
 
+  goToBulkCreatePage() {
+    this.router.navigate(['/compliance/checklists/create']);
+  }
+
   openBulkModal() {
     this.showBulkModal = true;
     this.bulkResult.set(null);
@@ -1193,6 +1232,16 @@ export class ChecklistsOverviewComponent implements OnInit, OnDestroy {
 
   getClientInitials(cl: any): string {
     const name = this.getClientName(cl);
+    return name
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join('') || 'CL';
+  }
+
+  getClientPickerInitials(client: Client): string {
+    const name = client.user?.name || client.code || 'Client';
     return name
       .split(' ')
       .filter(Boolean)

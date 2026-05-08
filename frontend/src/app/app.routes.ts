@@ -71,9 +71,18 @@ export const routes: Routes = [
           },
           {
             path: 'checklists',
-            loadComponent: () => import('./features/checklists/checklists-overview.component').then(m => m.ChecklistsOverviewComponent),
             canActivate: [roleGuard],
             data: { roles: ['admin'] },
+            children: [
+              {
+                path: '',
+                loadComponent: () => import('./features/checklists/checklists-overview.component').then(m => m.ChecklistsOverviewComponent),
+              },
+              {
+                path: 'create',
+                loadComponent: () => import('./features/checklists/checklist-bulk-create-page.component').then(m => m.ChecklistBulkCreatePageComponent),
+              },
+            ],
           },
           {
             path: 'gst',
