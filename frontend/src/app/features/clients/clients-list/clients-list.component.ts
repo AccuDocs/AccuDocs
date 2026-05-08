@@ -185,12 +185,12 @@ import {
 
       <ng-template #profileTemplate let-row>
         <div class="space-y-2">
-          <div class="flex flex-wrap gap-2">
-            <span class="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em]"
+          <div class="flex flex-wrap gap-2.5">
+            <span class="inline-flex min-h-7 items-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em]"
               [ngClass]="row.gstin ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'">
               {{ row.gstin ? 'GST registered' : 'No GSTIN' }}
             </span>
-            <span class="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">
+            <span class="inline-flex min-h-7 items-center rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">
               {{ row.years?.length || 0 }} FY
             </span>
           </div>
@@ -213,10 +213,10 @@ import {
       </ng-template>
 
       <ng-template #actionsTemplate let-row>
-        <div class="flex items-center justify-end gap-1">
+        <div class="flex items-center justify-end gap-2">
           <button
             [routerLink]="['/workspace', row.id]"
-            class="inline-flex h-9 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 text-xs font-black text-blue-700 transition hover:bg-blue-100"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-100 bg-blue-50 text-blue-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-100 hover:shadow-md"
             title="Open Workspace"
           >
             <ng-icon name="heroFolderOpenSolid" size="16"></ng-icon>
@@ -224,7 +224,7 @@ import {
 
           <button
             (click)="onEdit(row)"
-            class="inline-flex h-9 items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 text-xs font-black text-amber-700 transition hover:bg-amber-100"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-amber-100 bg-amber-50 text-amber-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-100 hover:shadow-md"
             title="Edit Client"
           >
             <ng-icon name="heroPencilSquareSolid" size="16"></ng-icon>
@@ -232,7 +232,7 @@ import {
 
           <button
             (click)="onDelete(row)"
-            class="inline-flex h-9 items-center justify-center rounded-xl border border-rose-100 bg-rose-50 px-3 text-xs font-black text-rose-700 transition hover:bg-rose-100"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-100 bg-rose-50 text-rose-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-rose-100 hover:shadow-md"
             title="Delete Client"
           >
             <ng-icon name="heroTrashSolid" size="16"></ng-icon>
