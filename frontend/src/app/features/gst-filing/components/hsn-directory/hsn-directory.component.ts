@@ -1,1307 +1,593 @@
-import { Component, EventEmitter, Input, Output, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { debounceTime, Subject } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { GstExtendedService, HsnSacCode } from '@core/services/gst-extended.service';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import {
+  heroArrowDownTraySolid,
+  heroArrowPathSolid,
+  heroArrowUpTraySolid,
+  heroBookOpenSolid,
+  heroCheckCircleSolid,
+  heroChevronLeftSolid,
+  heroChevronRightSolid,
+  heroCloudArrowUpSolid,
+  heroFunnelSolid,
+  heroMagnifyingGlassSolid,
+  heroSparklesSolid,
+  heroXMarkSolid,
+} from '@ng-icons/heroicons/solid';
 import { HotToastService } from '@ngneat/hot-toast';
+import { debounceTime, Subject } from 'rxjs';
+import { GstExtendedService, HsnSacCode } from '@core/services/gst-extended.service';
 
 const GST_RATES = [0, 0.25, 1, 1.5, 3, 5, 6, 7.5, 9, 12, 13.8, 14, 18, 28];
+const PAGE_SIZE = 20;
 
 @Component({
   selector: 'app-hsn-directory',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NgIconComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [
+    provideIcons({
+      heroArrowDownTraySolid,
+      heroArrowPathSolid,
+      heroArrowUpTraySolid,
+      heroBookOpenSolid,
+      heroCheckCircleSolid,
+      heroChevronLeftSolid,
+      heroChevronRightSolid,
+      heroCloudArrowUpSolid,
+      heroFunnelSolid,
+      heroMagnifyingGlassSolid,
+      heroSparklesSolid,
+      heroXMarkSolid,
+    }),
+  ],
   template: `
-    <div class="hd-shell" [class.hd-shell--picker]="isPicker">
-      @if (!isPicker) {
-        <section class="hd-hero">
-          <div class="hd-hero-copy">
-            <span class="hd-kicker">GST compliance master</span>
-            <h1>HSN / SAC Directory</h1>
-            <p>
-              Search, validate, import, and reuse GST classification codes across sales, purchases,
-              inventory, billing, and return preparation.
-            </p>
-          </div>
+    <div class="w-full min-w-0 animate-in fade-in duration-500" [class.px-6]="!isPicker" [class.pb-8]="!isPicker" [class.pt-4]="!isPicker">
+      <div class="space-y-5" [class.max-w-[1560px]]="!isPicker">
+        @if (!isPicker) {
+          <section class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+            <div class="relative flex flex-col gap-6 p-6 xl:flex-row xl:items-center xl:justify-between">
+              <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.14),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98),rgba(239,246,255,0.72))]"></div>
 
-          <div class="hd-hero-actions">
-            <button class="hd-action hd-action--ghost" type="button" (click)="downloadTemplate()">
-              Sample CSV
-            </button>
-            <button class="hd-action hd-action--ghost" type="button" (click)="exportVisible()" [disabled]="codes().length === 0">
-              Export visible
-            </button>
-            <button
-              class="hd-action hd-action--live"
-              type="button"
-              [class.hd-action--live-on]="liveMode()"
-              (click)="toggleLiveMode()"
-              title="When enabled, numeric HSN/SAC searches refresh from the public directory cache first"
-            >
-              {{ liveMode() ? 'Live auto on' : 'Live auto off' }}
-            </button>
-            <button
-              class="hd-action hd-action--sync"
-              type="button"
-              (click)="syncVisibleLive()"
-              [disabled]="liveSyncing() || codes().length === 0"
-              title="Refresh visible codes from the public HSN/SAC directory"
-            >
-              @if (liveSyncing()) {
-                <span class="hd-spinner hd-spinner--light"></span>
-                Syncing
-              } @else {
-                Sync visible live
-              }
-            </button>
-            <button
-              class="hd-action hd-action--primary"
-              type="button"
-              (click)="triggerImport()"
-              [disabled]="importing()"
-              title="Import HSN/SAC directory from Excel or CSV"
-            >
-              @if (importing()) {
-                <span class="hd-spinner hd-spinner--light"></span>
-                Importing
-              } @else {
-                Bulk import
-              }
-            </button>
-            <input #fileInput type="file" (change)="onFileSelected($event)" accept=".xlsx,.xls,.csv" class="hidden" />
-          </div>
-        </section>
-
-        <section class="hd-metrics">
-          <article class="hd-metric-card">
-            <span>Total records</span>
-            <strong>{{ total() | number }}</strong>
-            <small>Available in directory</small>
-          </article>
-          <article class="hd-metric-card">
-            <span>Visible HSN</span>
-            <strong>{{ visibleHsnCount() }}</strong>
-            <small>Goods codes in current result</small>
-          </article>
-          <article class="hd-metric-card">
-            <span>Visible SAC</span>
-            <strong>{{ visibleSacCount() }}</strong>
-            <small>Service codes in current result</small>
-          </article>
-          <article class="hd-metric-card">
-            <span>Most common rate</span>
-            <strong>{{ topVisibleRate() }}</strong>
-            <small>Based on visible rows</small>
-          </article>
-        </section>
-      }
-
-      <section class="hd-workspace">
-        <main class="hd-main">
-          <section class="hd-command-panel">
-            <div class="hd-search-row">
-              <div class="hd-search-wrap">
-                <svg class="hd-search-icon" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" />
-                </svg>
-                <input
-                  id="hsn-search-input"
-                  class="hd-search-input"
-                  type="text"
-                  placeholder="Search code, description, chapter, goods, service..."
-                  [(ngModel)]="searchQuery"
-                  (ngModelChange)="onSearchChange($event)"
-                />
-                <div class="hd-search-actions">
-                  @if (searchQuery) {
-                    <button class="hd-search-clear" type="button" (click)="clearSearch()" title="Clear search">Clear</button>
-                  }
-                  @if (canSearchOnline()) {
-                    <button
-                      class="hd-live-sync-btn"
-                      type="button"
-                      (click)="searchOnline()"
-                      [disabled]="isSearchingOnline()"
-                      title="Fetch from the public HSN/SAC directory"
-                    >
-                      @if (isSearchingOnline()) {
-                        <span class="hd-spinner hd-spinner--xs"></span>
-                      }
-                      Fetch live
-                    </button>
-                  }
+              <div class="relative max-w-4xl">
+                <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-700">
+                  <ng-icon name="heroBookOpenSolid" size="14"></ng-icon>
+                  GST code search
+                </div>
+                <h1 class="text-3xl font-black tracking-tight text-slate-950 xl:text-[2.6rem]">Search HSN/SAC Tax Rates</h1>
+                <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                  Search by code, description, chapter, goods, or service keywords, validate GST rates,
+                  and reuse the selected classification across billing, inventory, and return workflows.
+                </p>
+                <div class="mt-4 flex flex-wrap gap-2">
+                  <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 ring-1 ring-slate-200">
+                    Search by code or description
+                  </span>
+                  <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 ring-1 ring-slate-200">
+                    Numeric codes can refresh live
+                  </span>
+                  <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 ring-1 ring-slate-200">
+                    Export current results
+                  </span>
                 </div>
               </div>
 
-              @if (activeFilterCount() > 0) {
-                <button class="hd-reset-btn" type="button" (click)="reset()">Reset {{ activeFilterCount() }} filter(s)</button>
-              }
-            </div>
-
-            <div class="hd-filter-section">
-              <div class="hd-filter-block">
-                <span>Type</span>
-                <div class="hd-filter-group">
-                  <button class="hd-type-btn" type="button" [class.hd-type-btn--active]="!selectedType()" (click)="setType(null)">All</button>
-                  <button class="hd-type-btn" type="button" [class.hd-type-btn--active]="selectedType() === 'HSN'" (click)="setType('HSN')">HSN goods</button>
-                  <button class="hd-type-btn" type="button" [class.hd-type-btn--active]="selectedType() === 'SAC'" (click)="setType('SAC')">SAC services</button>
-                </div>
-              </div>
-
-              <div class="hd-filter-block hd-filter-block--wide">
-                <span>GST rate</span>
-                <div class="hd-rate-chips">
-                  <button class="hd-rate-chip" type="button" [class.hd-rate-chip--active]="!selectedRate()" (click)="setRate(null)">Any rate</button>
-                  @for (rate of gstRates; track rate) {
-                    <button
-                      class="hd-rate-chip"
-                      type="button"
-                      [class.hd-rate-chip--active]="selectedRate() === rate"
-                      (click)="setRate(rate)"
-                    >
-                      {{ rate }}%
-                    </button>
+              <div class="relative flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  (click)="downloadTemplate()"
+                  class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                >
+                  <ng-icon name="heroArrowDownTraySolid" size="16"></ng-icon>
+                  Sample CSV
+                </button>
+                <button
+                  type="button"
+                  (click)="exportVisible()"
+                  [disabled]="codes().length === 0"
+                  class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <ng-icon name="heroArrowDownTraySolid" size="16"></ng-icon>
+                  Export visible
+                </button>
+                <button
+                  type="button"
+                  (click)="toggleLiveMode()"
+                  class="inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-black shadow-sm transition"
+                  [ngClass]="liveMode()
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700'"
+                  title="When enabled, numeric code searches can refresh from the public directory"
+                >
+                  <ng-icon name="heroCloudArrowUpSolid" size="16"></ng-icon>
+                  {{ liveMode() ? 'Live auto on' : 'Live auto off' }}
+                </button>
+                <button
+                  type="button"
+                  (click)="syncVisibleLive()"
+                  [disabled]="liveSyncing() || codes().length === 0"
+                  class="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  @if (liveSyncing()) {
+                    <ng-icon name="heroArrowPathSolid" size="16" class="animate-spin"></ng-icon>
+                    Syncing
+                  } @else {
+                    <ng-icon name="heroArrowPathSolid" size="16"></ng-icon>
+                    Sync visible live
                   }
-                </div>
+                </button>
+                <button
+                  type="button"
+                  (click)="triggerImport()"
+                  [disabled]="importing()"
+                  class="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  @if (importing()) {
+                    <ng-icon name="heroArrowPathSolid" size="16" class="animate-spin"></ng-icon>
+                    Importing
+                  } @else {
+                    <ng-icon name="heroArrowUpTraySolid" size="16"></ng-icon>
+                    Bulk import
+                  }
+                </button>
+                <input id="hsn-sac-file-input" type="file" (change)="onFileSelected($event)" accept=".xlsx,.xls,.csv" class="hidden" />
               </div>
             </div>
           </section>
 
-          <section class="hd-table-card">
-            <div class="hd-table-titlebar">
-              <div>
-                <h2>Directory records</h2>
-                <p>
-                  {{ codes().length }} visible of {{ total() | number }} total records
-                  @if (lastLiveSyncAt()) {
-                    · last live sync {{ lastLiveSyncAt() }}
-                  }
-                </p>
-              </div>
-              <span class="hd-status-chip" [class.hd-status-chip--live]="liveMode()">
-                {{ liveMode() ? 'Live enabled' : 'Local cache' }}
-              </span>
-            </div>
+          <section class="grid grid-cols-2 gap-4 xl:grid-cols-4">
+            <article class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total records</p>
+              <strong class="mt-3 block text-4xl font-black tracking-tight text-slate-950">{{ total() | number }}</strong>
+              <p class="mt-2 text-xs font-semibold text-slate-500">Directory rows available in local cache</p>
+            </article>
+            <article class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Visible HSN</p>
+              <strong class="mt-3 block text-4xl font-black tracking-tight text-slate-950">{{ visibleHsnCount() }}</strong>
+              <p class="mt-2 text-xs font-semibold text-slate-500">Goods codes in the current page result</p>
+            </article>
+            <article class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Visible SAC</p>
+              <strong class="mt-3 block text-4xl font-black tracking-tight text-slate-950">{{ visibleSacCount() }}</strong>
+              <p class="mt-2 text-xs font-semibold text-slate-500">Service codes in the current page result</p>
+            </article>
+            <article class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Most common rate</p>
+              <strong class="mt-3 block text-4xl font-black tracking-tight text-slate-950">{{ topVisibleRate() }}</strong>
+              <p class="mt-2 text-xs font-semibold text-slate-500">Common GST rate across visible rows</p>
+            </article>
+          </section>
+        }
 
-            @if (isLoading()) {
-              <div class="hd-loading">
-                @for (i of [1,2,3,4,5,6,7,8]; track i) {
-                  <div class="hd-skeleton-row">
-                    <div class="hd-skeleton" style="width: 72px"></div>
-                    <div class="hd-skeleton" style="width: 45%"></div>
-                    <div class="hd-skeleton" style="width: 60px"></div>
-                    <div class="hd-skeleton" style="width: 80px"></div>
+        <section class="grid gap-5" [class.xl:grid-cols-[minmax(0,1fr)_340px]]="!isPicker">
+          <main class="space-y-5">
+            <section class="rounded-[28px] border border-slate-200 bg-white shadow-sm">
+              <div class="border-b border-slate-100 px-5 py-4">
+                <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                  <div>
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Directory filters</p>
+                    <h2 class="mt-1 text-2xl font-black tracking-tight text-slate-950">Find the right classification fast</h2>
+                    <p class="mt-1 text-sm text-slate-500">
+                      Search the cached directory first. If you enter a numeric code, you can refresh that code from the public source before using it.
+                    </p>
                   </div>
-                }
-              </div>
-            } @else {
-              <div class="hd-table-scroll">
-                <table class="hd-table">
-                  <thead>
-                    <tr>
-                      <th>Code</th>
-                      <th>Description</th>
-                      <th>Type</th>
-                      <th>GST rate</th>
-                      <th>Chapter</th>
-                      <th class="hd-th-actions">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (code of codes(); track code.id) {
-                      <tr
-                        class="hd-row"
-                        [class.hd-row--selected]="selectedCode()?.id === code.id"
-                        [class.hd-row--clickable]="isPicker"
-                        (click)="onRowClick(code)"
-                      >
-                        <td>
-                          <button class="hd-code-badge" type="button" (click)="copyCode(code); $event.stopPropagation()">
-                            {{ code.code }}
-                          </button>
-                        </td>
-                        <td class="hd-desc-cell">
-                          <strong>{{ code.description }}</strong>
-                          <span>{{ code.type === 'HSN' ? 'Goods classification' : 'Service classification' }}</span>
-                          @if (isPicker) {
-                            <small>Click row to select</small>
-                          }
-                        </td>
-                        <td>
-                          <span class="hd-type-pill" [class.hd-type-pill--hsn]="code.type === 'HSN'" [class.hd-type-pill--sac]="code.type === 'SAC'">
-                            {{ code.type }}
-                          </span>
-                        </td>
-                        <td>
-                          <span [class]="'hd-rate-pill hd-rate-pill--' + rateTone(code.gstRate)">
-                            {{ code.gstRate }}%
-                          </span>
-                        </td>
-                        <td class="hd-muted">{{ chapterLabel(code) }}</td>
-                        <td class="hd-actions-cell">
-                          <button class="hd-row-action" type="button" (click)="selectCode(code); $event.stopPropagation()">
-                            {{ isPicker ? 'Select' : 'View' }}
-                          </button>
-                          <button class="hd-row-action" type="button" (click)="copyCode(code); $event.stopPropagation()">
-                            Copy
-                          </button>
-                        </td>
-                      </tr>
-                    }
 
-                    @if (codes().length === 0) {
-                      <tr>
-                        <td colspan="6" class="hd-empty">
-                          <div class="hd-empty-inner">
-                            <div class="hd-empty-icon">HSN</div>
-                            <h3>No codes found</h3>
-                            <p>Try clearing filters, searching a shorter keyword, or fetching a numeric code from the public directory.</p>
-                            <div class="hd-empty-actions">
-                              <button class="hd-action hd-action--ghost" type="button" (click)="reset()">Clear filters</button>
-                              @if (canSearchOnline()) {
-                                <button class="hd-action hd-action--primary" type="button" (click)="searchOnline()" [disabled]="isSearchingOnline()">
-                                  Fetch live
-                                </button>
-                              }
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
+                  @if (!isPicker) {
+                    <div class="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800 xl:max-w-sm">
+                      Search by HSN code, SAC code, chapter, or description terms like "consulting", "laptop", or "medicaments".
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <div class="space-y-5 p-5">
+                <div class="flex flex-col gap-3 xl:flex-row xl:items-center">
+                  <label class="relative block min-w-0 flex-1">
+                    <ng-icon name="heroMagnifyingGlassSolid" size="17" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></ng-icon>
+                    <input
+                      id="hsn-search-input"
+                      type="search"
+                      [ngModel]="searchQuery()"
+                      (ngModelChange)="onSearchChange($event)"
+                      placeholder="Search code, description, chapter, goods, service..."
+                      class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-32 text-sm font-semibold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                    />
+
+                    <div class="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-2">
+                      @if (searchQuery()) {
+                        <button
+                          type="button"
+                          (click)="clearSearch()"
+                          class="inline-flex h-8 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-500 transition hover:bg-slate-50"
+                        >
+                          <ng-icon name="heroXMarkSolid" size="14"></ng-icon>
+                        </button>
+                      }
+                      @if (canSearchOnline()) {
+                        <button
+                          type="button"
+                          (click)="searchOnline()"
+                          [disabled]="isSearchingOnline()"
+                          class="inline-flex h-8 items-center gap-1.5 rounded-xl bg-emerald-600 px-3 text-xs font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <ng-icon name="heroCloudArrowUpSolid" size="14"></ng-icon>
+                          {{ isSearchingOnline() ? 'Fetching...' : 'Fetch live' }}
+                        </button>
+                      }
+                    </div>
+                  </label>
+
+                  @if (activeFilterCount() > 0) {
+                    <button
+                      type="button"
+                      (click)="reset()"
+                      class="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-600 shadow-sm transition hover:bg-slate-50"
+                    >
+                      <ng-icon name="heroXMarkSolid" size="15"></ng-icon>
+                      Reset {{ activeFilterCount() }} filter{{ activeFilterCount() === 1 ? '' : 's' }}
+                    </button>
+                  }
+                </div>
+
+                <div class="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
+                  <div class="space-y-3">
+                    <div class="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                      <ng-icon name="heroFunnelSolid" size="14"></ng-icon>
+                      Type
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        (click)="setType(null)"
+                        class="rounded-full px-4 py-2 text-sm font-black transition"
+                        [ngClass]="selectedType() === null ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'"
+                      >
+                        All
+                      </button>
+                      <button
+                        type="button"
+                        (click)="setType('HSN')"
+                        class="rounded-full px-4 py-2 text-sm font-black transition"
+                        [ngClass]="selectedType() === 'HSN' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'"
+                      >
+                        HSN goods
+                      </button>
+                      <button
+                        type="button"
+                        (click)="setType('SAC')"
+                        class="rounded-full px-4 py-2 text-sm font-black transition"
+                        [ngClass]="selectedType() === 'SAC' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'"
+                      >
+                        SAC services
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="space-y-3">
+                    <div class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">GST rate</div>
+                    <div class="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        (click)="setRate(null)"
+                        class="rounded-full px-4 py-2 text-sm font-black transition"
+                        [ngClass]="selectedRate() === null ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/10' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'"
+                      >
+                        Any rate
+                      </button>
+                      @for (rate of gstRates; track rate) {
+                        <button
+                          type="button"
+                          (click)="setRate(rate)"
+                          class="rounded-full px-4 py-2 text-sm font-black transition"
+                          [ngClass]="selectedRate() === rate ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'"
+                        >
+                          {{ rate }}%
+                        </button>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Quick search</span>
+                  <button type="button" (click)="quickSearch('accounting services')" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">Accounting services</button>
+                  <button type="button" (click)="quickSearch('laptop')" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">Laptop</button>
+                  <button type="button" (click)="quickSearch('consulting')" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">Consulting</button>
+                  <button type="button" (click)="quickSearch('medicaments')" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">Medicaments</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+              <div class="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h2 class="text-xl font-black tracking-tight text-slate-950">Directory records</h2>
+                  <p class="mt-1 text-sm font-semibold text-slate-500">
+                    {{ codes().length }} visible of {{ total() | number }} total records
+                    @if (lastLiveSyncAt()) {
+                      · last live sync {{ lastLiveSyncAt() }}
                     }
-                  </tbody>
-                </table>
+                  </p>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                  <span class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]" [ngClass]="liveMode() ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'">
+                    {{ liveMode() ? 'Live search enabled' : 'Local cache mode' }}
+                  </span>
+                  @if (selectedType()) {
+                    <span class="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">{{ selectedType() }}</span>
+                  }
+                  @if (selectedRate() !== null) {
+                    <span class="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">{{ selectedRate() }}%</span>
+                  }
+                </div>
+              </div>
+
+              @if (isLoading()) {
+                <div class="space-y-3 p-5">
+                  @for (row of [1,2,3,4,5,6]; track row) {
+                    <div class="h-16 animate-pulse rounded-2xl bg-slate-100"></div>
+                  }
+                </div>
+              } @else if (codes().length === 0) {
+                <div class="px-6 py-16 text-center">
+                  <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-50 text-blue-600">
+                    <ng-icon name="heroBookOpenSolid" size="30"></ng-icon>
+                  </div>
+                  <h3 class="mt-4 text-lg font-black text-slate-900">No HSN/SAC codes found</h3>
+                  <p class="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
+                    Try a shorter keyword, clear some filters, or enter a numeric HSN/SAC code and fetch it live from the public directory.
+                  </p>
+                  <div class="mt-6 flex flex-wrap justify-center gap-3">
+                    <button type="button" (click)="reset()" class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-black text-slate-700 transition hover:bg-slate-50">
+                      Clear filters
+                    </button>
+                    @if (canSearchOnline()) {
+                      <button type="button" (click)="searchOnline()" [disabled]="isSearchingOnline()" class="rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">
+                        Fetch live
+                      </button>
+                    }
+                  </div>
+                </div>
+              } @else {
+                <div class="overflow-x-auto">
+                  <table class="w-full min-w-[1040px] text-left">
+                    <thead class="bg-slate-50 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                      <tr>
+                        <th class="px-4 py-3">Code</th>
+                        <th class="px-4 py-3">Description</th>
+                        <th class="px-4 py-3">Type</th>
+                        <th class="px-4 py-3">GST rate</th>
+                        <th class="px-4 py-3">Chapter</th>
+                        <th class="px-4 py-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      @for (code of codes(); track code.id) {
+                        <tr
+                          class="transition"
+                          [ngClass]="{
+                            'hover:bg-blue-50/40': true,
+                            'bg-blue-50/60': selectedCode()?.id === code.id,
+                            'cursor-pointer': isPicker
+                          }"
+                          (click)="onRowClick(code)"
+                        >
+                          <td class="px-4 py-4">
+                            <button
+                              type="button"
+                              (click)="copyCode(code); $event.stopPropagation()"
+                              class="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-black text-blue-700 transition hover:bg-blue-100"
+                            >
+                              {{ code.code }}
+                            </button>
+                          </td>
+                          <td class="px-4 py-4">
+                            <div class="max-w-[620px]">
+                              <div class="text-sm font-black leading-6 text-slate-900">{{ code.description }}</div>
+                              <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
+                                <span>{{ code.type === 'HSN' ? 'Goods classification' : 'Service classification' }}</span>
+                                <span>Chapter {{ chapterLabel(code) }}</span>
+                                @if (isPicker) {
+                                  <span>Click row to select</span>
+                                }
+                              </div>
+                            </div>
+                          </td>
+                          <td class="px-4 py-4">
+                            <span class="inline-flex rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.16em]" [ngClass]="code.type === 'HSN' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'">
+                              {{ code.type }}
+                            </span>
+                          </td>
+                          <td class="px-4 py-4">
+                            <span class="inline-flex rounded-full px-3 py-1 text-xs font-black" [ngClass]="rateClass(code.gstRate)">
+                              {{ code.gstRate }}%
+                            </span>
+                          </td>
+                          <td class="px-4 py-4 text-sm font-bold text-slate-600">{{ chapterLabel(code) }}</td>
+                          <td class="px-4 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                              <button
+                                type="button"
+                                (click)="selectCode(code); $event.stopPropagation()"
+                                class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                              >
+                                {{ isPicker ? 'Select' : 'View' }}
+                              </button>
+                              <button
+                                type="button"
+                                (click)="copyCode(code); $event.stopPropagation()"
+                                class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                              >
+                                Copy
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </section>
+
+            @if (totalPages() > 1) {
+              <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <div class="text-sm font-semibold text-slate-500">Page {{ currentPage() }} of {{ totalPages() }}</div>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    (click)="goToPage(currentPage() - 1)"
+                    [disabled]="currentPage() === 1"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ng-icon name="heroChevronLeftSolid" size="16"></ng-icon>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="goToPage(currentPage() + 1)"
+                    [disabled]="currentPage() === totalPages()"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ng-icon name="heroChevronRightSolid" size="16"></ng-icon>
+                  </button>
+                </div>
               </div>
             }
-          </section>
+          </main>
 
-          @if (totalPages() > 1) {
-            <div class="hd-pagination">
-              <button class="hd-page-btn" type="button" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">Prev</button>
-              <span>Page {{ currentPage() }} of {{ totalPages() }}</span>
-              <button class="hd-page-btn" type="button" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">Next</button>
-            </div>
-          }
-        </main>
+          @if (!isPicker) {
+            <aside class="space-y-5 xl:sticky xl:top-24 xl:self-start">
+              <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Selected code</p>
+                    <h2 class="mt-1 text-xl font-black tracking-tight text-slate-950">{{ selectedCode()?.code || 'No selection' }}</h2>
+                  </div>
+                  @if (selectedCode()) {
+                    <span class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em]" [ngClass]="selectedCode()!.type === 'HSN' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'">
+                      {{ selectedCode()!.type }}
+                    </span>
+                  }
+                </div>
 
-        @if (!isPicker) {
-          <aside class="hd-side">
-            <section class="hd-detail-card">
-              <span class="hd-card-label">Selected code</span>
-              @if (selectedCode(); as code) {
-                <div class="hd-detail-code">{{ code.code }}</div>
-                <h3>{{ code.description }}</h3>
-                <div class="hd-detail-grid">
-                  <div>
-                    <span>Type</span>
-                    <strong>{{ code.type }}</strong>
+                @if (selectedCode(); as code) {
+                  <p class="mt-4 text-sm leading-6 text-slate-600">{{ code.description }}</p>
+
+                  <div class="mt-5 grid grid-cols-2 gap-3">
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">GST rate</p>
+                      <p class="mt-2 text-lg font-black text-slate-950">{{ code.gstRate }}%</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Chapter</p>
+                      <p class="mt-2 text-lg font-black text-slate-950">{{ chapterLabel(code) }}</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Status</p>
+                      <p class="mt-2 text-lg font-black text-slate-950">{{ code.isActive ? 'Active' : 'Inactive' }}</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Directory</p>
+                      <p class="mt-2 text-lg font-black text-slate-950">{{ code.type === 'HSN' ? 'Goods' : 'Services' }}</p>
+                    </div>
                   </div>
-                  <div>
-                    <span>GST rate</span>
-                    <strong>{{ code.gstRate }}%</strong>
+
+                  <button
+                    type="button"
+                    (click)="copyCode(code)"
+                    class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+                  >
+                    <ng-icon name="heroCheckCircleSolid" size="16"></ng-icon>
+                    {{ copiedCode() === code.id ? 'Copied' : 'Copy code details' }}
+                  </button>
+                } @else {
+                  <p class="mt-4 text-sm leading-6 text-slate-500">Select a code from the table to preview its tax classification details here.</p>
+                }
+              </section>
+
+              <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">GST portal style guidance</p>
+                <div class="mt-4 space-y-4">
+                  <div class="flex items-start gap-3">
+                    <div class="mt-0.5 text-blue-600"><ng-icon name="heroSparklesSolid" size="16"></ng-icon></div>
+                    <div>
+                      <h3 class="text-sm font-black text-slate-900">Search by code or description</h3>
+                      <p class="mt-1 text-sm leading-6 text-slate-500">Use numeric HSN/SAC codes when you know the exact classification, or broad keywords to explore matching goods and services.</p>
+                    </div>
                   </div>
-                  <div>
-                    <span>Chapter</span>
-                    <strong>{{ chapterLabel(code) }}</strong>
+                  <div class="flex items-start gap-3">
+                    <div class="mt-0.5 text-blue-600"><ng-icon name="heroSparklesSolid" size="16"></ng-icon></div>
+                    <div>
+                      <h3 class="text-sm font-black text-slate-900">Fetch live for numeric codes</h3>
+                      <p class="mt-1 text-sm leading-6 text-slate-500">If the code is not in local cache yet, enter the numeric code and use live fetch to refresh it from the public directory.</p>
+                    </div>
                   </div>
-                  <div>
-                    <span>Status</span>
-                    <strong>{{ code.isActive ? 'Active' : 'Inactive' }}</strong>
+                  <div class="flex items-start gap-3">
+                    <div class="mt-0.5 text-blue-600"><ng-icon name="heroSparklesSolid" size="16"></ng-icon></div>
+                    <div>
+                      <h3 class="text-sm font-black text-slate-900">Export the current result set</h3>
+                      <p class="mt-1 text-sm leading-6 text-slate-500">Once you refine the filters, export the visible rows and share the final shortlist with the billing or inventory team.</p>
+                    </div>
                   </div>
                 </div>
-                <button class="hd-copy-wide" type="button" (click)="copyCode(code)">
-                  {{ copiedCode() === code.id ? 'Copied' : 'Copy code details' }}
+              </section>
+
+              <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Live directory status</p>
+                <h3 class="mt-2 text-xl font-black tracking-tight text-slate-950">{{ liveMode() ? 'Auto live refresh enabled' : 'Local cache mode' }}</h3>
+                <p class="mt-2 text-sm leading-6 text-slate-500">
+                  Numeric code searches can refresh from the public directory before results are shown. Use visible sync to refresh the records already on this page.
+                </p>
+
+                <div class="mt-4 grid grid-cols-2 gap-3">
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Provider</p>
+                    <p class="mt-2 text-sm font-black text-slate-950">Public directory cache</p>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Last sync</p>
+                    <p class="mt-2 text-sm font-black text-slate-950">{{ lastLiveSyncAt() || 'Not synced yet' }}</p>
+                  </div>
+                </div>
+
+                @if (liveSyncSummary()) {
+                  <div class="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-semibold leading-6 text-blue-800">
+                    {{ liveSyncSummary() }}
+                  </div>
+                }
+
+                <button
+                  type="button"
+                  (click)="syncVisibleLive()"
+                  [disabled]="liveSyncing() || codes().length === 0"
+                  class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <ng-icon name="heroArrowPathSolid" size="16" [class.animate-spin]="liveSyncing()"></ng-icon>
+                  {{ liveSyncing() ? 'Syncing live data...' : 'Refresh visible codes live' }}
                 </button>
-              } @else {
-                <p class="hd-muted-panel">Select a code to preview classification details.</p>
-              }
-            </section>
-
-            <section class="hd-side-card hd-side-card--live">
-              <span class="hd-card-label">Live directory status</span>
-              <h3>{{ liveMode() ? 'Auto live refresh enabled' : 'Local cache mode' }}</h3>
-              <p>
-                Numeric code searches can refresh from the free public directory before results are shown.
-                Use visible sync to refresh the current page.
-              </p>
-              <div class="hd-live-status-grid">
-                <div>
-                  <span>Provider</span>
-                  <strong>Public directory cache</strong>
-                </div>
-                <div>
-                  <span>Last sync</span>
-                  <strong>{{ lastLiveSyncAt() || 'Not synced' }}</strong>
-                </div>
-              </div>
-              <button class="hd-copy-wide" type="button" (click)="syncVisibleLive()" [disabled]="liveSyncing() || codes().length === 0">
-                {{ liveSyncing() ? 'Syncing live data...' : 'Refresh visible codes live' }}
-              </button>
-              @if (liveSyncSummary()) {
-                <small class="hd-live-note">{{ liveSyncSummary() }}</small>
-              }
-            </section>
-
-            <section class="hd-side-card">
-              <span class="hd-card-label">Smart checks to add</span>
-              <ul class="hd-roadmap-list">
-                <li>Warn when invoice GST rate does not match selected HSN/SAC.</li>
-                <li>Auto-suggest HSN/SAC from inventory category and item name.</li>
-                <li>Maintain firm-approved aliases for frequently used codes.</li>
-                <li>Track code usage in sales, purchases, and GSTR-1 HSN summary.</li>
-              </ul>
-            </section>
-
-            <section class="hd-side-card hd-side-card--accent">
-              <span class="hd-card-label">Recommended integrations</span>
-              <div class="hd-integration-list">
-                <button type="button" (click)="quickSearch('accounting services')">Accounting services</button>
-                <button type="button" (click)="quickSearch('laptop')">Laptop and computers</button>
-                <button type="button" (click)="quickSearch('consulting')">Consulting services</button>
-              </div>
-            </section>
-          </aside>
-        }
-      </section>
+              </section>
+            </aside>
+          }
+        </section>
+      </div>
     </div>
   `,
-  styles: [`
-    .hd-shell {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      width: min(100%, 1560px);
-      padding: 28px 32px;
-    }
-
-    .hd-shell--picker {
-      width: 100%;
-      padding: 0;
-      gap: 12px;
-    }
-
-    .hd-hero {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-      border: 1px solid #dbe7ff;
-      border-radius: 24px;
-      padding: 24px;
-      background:
-        radial-gradient(circle at 8% 0%, rgba(37, 99, 235, 0.12), transparent 34%),
-        linear-gradient(135deg, #ffffff 0%, #f8fbff 55%, #eef6ff 100%);
-      box-shadow: 0 18px 46px rgba(15, 23, 42, 0.06);
-    }
-
-    .hd-kicker,
-    .hd-card-label {
-      display: inline-flex;
-      color: #2563eb;
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-    }
-
-    .hd-hero h1 {
-      margin: 8px 0 6px;
-      color: #0f172a;
-      font-size: clamp(28px, 3vw, 42px);
-      font-weight: 950;
-      letter-spacing: -0.06em;
-    }
-
-    .hd-hero p {
-      max-width: 760px;
-      margin: 0;
-      color: #64748b;
-      font-size: 14px;
-      line-height: 1.65;
-    }
-
-    .hd-hero-actions {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .hd-action,
-    .hd-page-btn,
-    .hd-row-action,
-    .hd-reset-btn,
-    .hd-copy-wide {
-      border: 0;
-      cursor: pointer;
-      font-family: inherit;
-      transition: background 150ms ease, border-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
-    }
-
-    .hd-action {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      min-height: 42px;
-      padding: 0 16px;
-      border-radius: 14px;
-      font-size: 13px;
-      font-weight: 850;
-      white-space: nowrap;
-    }
-
-    .hd-action--ghost {
-      border: 1px solid #dbe3ef;
-      color: #334155;
-      background: #ffffff;
-    }
-
-    .hd-action--ghost:hover:not(:disabled) {
-      color: #2563eb;
-      border-color: #bfdbfe;
-      background: #eff6ff;
-    }
-
-    .hd-action--primary {
-      color: #ffffff;
-      background: linear-gradient(135deg, #2563eb, #0f766e);
-      box-shadow: 0 14px 30px rgba(37, 99, 235, 0.18);
-    }
-
-    .hd-action--primary:hover:not(:disabled) {
-      background: linear-gradient(135deg, #1d4ed8, #0f6b63);
-    }
-
-    .hd-action--sync {
-      color: #ffffff;
-      background: linear-gradient(135deg, #0f766e, #059669);
-      box-shadow: 0 14px 30px rgba(15, 118, 110, 0.18);
-    }
-
-    .hd-action--sync:hover:not(:disabled) {
-      background: linear-gradient(135deg, #0f6b63, #047857);
-    }
-
-    .hd-action--live {
-      border: 1px solid #dbe3ef;
-      color: #475569;
-      background: #ffffff;
-    }
-
-    .hd-action--live:hover:not(:disabled) {
-      color: #2563eb;
-      border-color: #bfdbfe;
-      background: #eff6ff;
-    }
-
-    .hd-action--live-on {
-      border-color: #99f6e4;
-      color: #0f766e;
-      background: #f0fdfa;
-    }
-
-    .hd-action:disabled,
-    .hd-page-btn:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .hd-metrics {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
-    }
-
-    .hd-metric-card {
-      min-height: 104px;
-      border: 1px solid #dbe3ef;
-      border-radius: 20px;
-      padding: 18px;
-      background: #ffffff;
-      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.045);
-    }
-
-    .hd-metric-card span,
-    .hd-filter-block > span {
-      display: block;
-      color: #8a9ab3;
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    .hd-metric-card strong {
-      display: block;
-      margin-top: 8px;
-      color: #0f172a;
-      font-size: 28px;
-      font-weight: 950;
-      letter-spacing: -0.05em;
-    }
-
-    .hd-metric-card small {
-      display: block;
-      margin-top: 4px;
-      color: #64748b;
-      font-size: 12px;
-      font-weight: 650;
-    }
-
-    .hd-workspace {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 340px;
-      gap: 18px;
-      align-items: start;
-    }
-
-    .hd-shell--picker .hd-workspace {
-      grid-template-columns: 1fr;
-    }
-
-    .hd-main {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      min-width: 0;
-    }
-
-    .hd-command-panel,
-    .hd-table-card,
-    .hd-detail-card,
-    .hd-side-card {
-      border: 1px solid #dbe3ef;
-      border-radius: 20px;
-      background: #ffffff;
-      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.045);
-    }
-
-    .hd-command-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      padding: 16px;
-    }
-
-    .hd-search-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .hd-search-wrap {
-      position: relative;
-      display: flex;
-      align-items: center;
-      flex: 1;
-      min-width: 0;
-    }
-
-    .hd-search-icon {
-      position: absolute;
-      left: 14px;
-      width: 17px;
-      height: 17px;
-      color: #94a3b8;
-      pointer-events: none;
-    }
-
-    .hd-search-input {
-      width: 100%;
-      min-height: 46px;
-      padding: 0 148px 0 42px;
-      border: 1px solid #dbe3ef;
-      border-radius: 14px;
-      outline: none;
-      background: #f8fafc;
-      color: #0f172a;
-      font-size: 14px;
-      font-weight: 650;
-    }
-
-    .hd-search-input:focus {
-      border-color: #93c5fd;
-      background: #ffffff;
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
-    }
-
-    .hd-search-actions {
-      position: absolute;
-      right: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .hd-search-clear,
-    .hd-live-sync-btn,
-    .hd-reset-btn {
-      min-height: 30px;
-      border-radius: 10px;
-      padding: 0 10px;
-      font-size: 12px;
-      font-weight: 800;
-    }
-
-    .hd-search-clear,
-    .hd-reset-btn {
-      border: 1px solid #dbe3ef;
-      color: #64748b;
-      background: #ffffff;
-    }
-
-    .hd-search-clear:hover,
-    .hd-reset-btn:hover {
-      color: #2563eb;
-      border-color: #bfdbfe;
-      background: #eff6ff;
-    }
-
-    .hd-live-sync-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      border: 0;
-      color: #ffffff;
-      background: #2563eb;
-      cursor: pointer;
-    }
-
-    .hd-filter-section {
-      display: grid;
-      grid-template-columns: 260px minmax(0, 1fr);
-      gap: 14px;
-      align-items: start;
-    }
-
-    .hd-filter-block {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      min-width: 0;
-    }
-
-    .hd-filter-group,
-    .hd-rate-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .hd-type-btn,
-    .hd-rate-chip {
-      min-height: 32px;
-      border: 1px solid #dbe3ef;
-      border-radius: 999px;
-      padding: 0 13px;
-      color: #64748b;
-      background: #f8fafc;
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
-    }
-
-    .hd-type-btn:hover,
-    .hd-rate-chip:hover {
-      border-color: #bfdbfe;
-      color: #2563eb;
-      background: #eff6ff;
-    }
-
-    .hd-type-btn--active {
-      border-color: #2563eb;
-      color: #ffffff;
-      background: #2563eb;
-    }
-
-    .hd-rate-chip--active {
-      border-color: #0f766e;
-      color: #ffffff;
-      background: #0f766e;
-    }
-
-    .hd-table-card {
-      overflow: hidden;
-    }
-
-    .hd-table-titlebar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 16px 18px;
-      border-bottom: 1px solid #e8eef7;
-      background: #fbfdff;
-    }
-
-    .hd-table-titlebar h2 {
-      margin: 0;
-      color: #0f172a;
-      font-size: 16px;
-      font-weight: 900;
-    }
-
-    .hd-table-titlebar p {
-      margin: 4px 0 0;
-      color: #64748b;
-      font-size: 12px;
-      font-weight: 650;
-    }
-
-    .hd-status-chip {
-      border-radius: 999px;
-      padding: 5px 10px;
-      color: #047857;
-      background: #dcfce7;
-      font-size: 11px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-
-    .hd-status-chip--live {
-      color: #1d4ed8;
-      background: #dbeafe;
-    }
-
-    .hd-table-scroll {
-      overflow-x: auto;
-    }
-
-    .hd-table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 840px;
-    }
-
-    .hd-table th {
-      padding: 12px 16px;
-      border-bottom: 1px solid #e8eef7;
-      color: #718198;
-      background: #f8fafc;
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: 0.1em;
-      text-align: left;
-      text-transform: uppercase;
-      white-space: nowrap;
-    }
-
-    .hd-th-actions,
-    .hd-actions-cell {
-      text-align: right;
-    }
-
-    .hd-row {
-      border-bottom: 1px solid #eef2f7;
-      transition: background 130ms ease;
-    }
-
-    .hd-row:hover,
-    .hd-row--selected {
-      background: #f0f7ff;
-    }
-
-    .hd-row--clickable {
-      cursor: pointer;
-    }
-
-    .hd-table td {
-      padding: 13px 16px;
-      color: #243044;
-      font-size: 13px;
-      vertical-align: middle;
-    }
-
-    .hd-code-badge {
-      display: inline-flex;
-      border: 1px solid #dbeafe;
-      border-radius: 9px;
-      padding: 5px 10px;
-      color: #1d4ed8;
-      background: #eff6ff;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 12px;
-      font-weight: 900;
-      cursor: pointer;
-    }
-
-    .hd-code-badge:hover {
-      border-color: #93c5fd;
-      background: #dbeafe;
-    }
-
-    .hd-desc-cell strong {
-      display: block;
-      color: #1e293b;
-      font-size: 13px;
-      font-weight: 750;
-      line-height: 1.35;
-    }
-
-    .hd-desc-cell span,
-    .hd-desc-cell small,
-    .hd-muted {
-      display: block;
-      margin-top: 3px;
-      color: #8492a6;
-      font-size: 11px;
-      font-weight: 700;
-    }
-
-    .hd-type-pill,
-    .hd-rate-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 24px;
-      border-radius: 999px;
-      padding: 0 10px;
-      font-size: 11px;
-      font-weight: 900;
-      white-space: nowrap;
-    }
-
-    .hd-type-pill--hsn {
-      color: #047857;
-      background: #dcfce7;
-    }
-
-    .hd-type-pill--sac {
-      color: #b45309;
-      background: #fef3c7;
-    }
-
-    .hd-rate-pill--zero {
-      color: #475569;
-      background: #f1f5f9;
-    }
-
-    .hd-rate-pill--low {
-      color: #047857;
-      background: #dcfce7;
-    }
-
-    .hd-rate-pill--mid {
-      color: #1d4ed8;
-      background: #dbeafe;
-    }
-
-    .hd-rate-pill--standard {
-      color: #6d28d9;
-      background: #ede9fe;
-    }
-
-    .hd-rate-pill--high {
-      color: #be123c;
-      background: #ffe4e6;
-    }
-
-    .hd-actions-cell {
-      white-space: nowrap;
-    }
-
-    .hd-row-action {
-      min-height: 30px;
-      border: 1px solid #dbe3ef;
-      border-radius: 10px;
-      padding: 0 10px;
-      color: #475569;
-      background: #ffffff;
-      font-size: 12px;
-      font-weight: 800;
-      margin-left: 6px;
-    }
-
-    .hd-row-action:hover {
-      color: #2563eb;
-      border-color: #bfdbfe;
-      background: #eff6ff;
-    }
-
-    .hd-loading {
-      display: flex;
-      flex-direction: column;
-      padding: 14px 18px;
-    }
-
-    .hd-skeleton-row {
-      display: flex;
-      gap: 24px;
-      padding: 14px 0;
-      border-bottom: 1px solid #eef2f7;
-    }
-
-    .hd-skeleton {
-      height: 16px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.3s infinite linear;
-    }
-
-    @keyframes shimmer {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-
-    .hd-empty {
-      padding: 52px 24px !important;
-      text-align: center;
-    }
-
-    .hd-empty-inner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .hd-empty-icon {
-      display: grid;
-      place-items: center;
-      width: 58px;
-      height: 58px;
-      border-radius: 18px;
-      color: #2563eb;
-      background: #eff6ff;
-      font-size: 13px;
-      font-weight: 950;
-    }
-
-    .hd-empty h3 {
-      margin: 0;
-      color: #0f172a;
-      font-size: 18px;
-      font-weight: 900;
-    }
-
-    .hd-empty p {
-      max-width: 420px;
-      margin: 0;
-      color: #64748b;
-      font-size: 13px;
-      line-height: 1.55;
-    }
-
-    .hd-empty-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-top: 8px;
-    }
-
-    .hd-pagination {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 12px;
-      color: #64748b;
-      font-size: 13px;
-      font-weight: 750;
-    }
-
-    .hd-page-btn {
-      min-height: 36px;
-      border: 1px solid #dbe3ef;
-      border-radius: 12px;
-      padding: 0 14px;
-      color: #334155;
-      background: #ffffff;
-      font-weight: 850;
-    }
-
-    .hd-page-btn:hover:not(:disabled) {
-      color: #2563eb;
-      border-color: #bfdbfe;
-      background: #eff6ff;
-    }
-
-    .hd-side {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      min-width: 0;
-      position: sticky;
-      top: 18px;
-    }
-
-    .hd-detail-card,
-    .hd-side-card {
-      padding: 18px;
-    }
-
-    .hd-detail-code {
-      display: inline-flex;
-      margin-top: 12px;
-      border-radius: 14px;
-      padding: 10px 14px;
-      color: #1d4ed8;
-      background: #eff6ff;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 24px;
-      font-weight: 950;
-      letter-spacing: -0.04em;
-    }
-
-    .hd-detail-card h3 {
-      margin: 14px 0;
-      color: #0f172a;
-      font-size: 15px;
-      line-height: 1.45;
-      font-weight: 850;
-    }
-
-    .hd-detail-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin: 14px 0;
-    }
-
-    .hd-detail-grid div {
-      border: 1px solid #e8eef7;
-      border-radius: 14px;
-      padding: 12px;
-      background: #f8fafc;
-    }
-
-    .hd-detail-grid span {
-      display: block;
-      color: #8a9ab3;
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    .hd-detail-grid strong {
-      display: block;
-      margin-top: 5px;
-      color: #0f172a;
-      font-size: 13px;
-      font-weight: 900;
-    }
-
-    .hd-copy-wide {
-      width: 100%;
-      min-height: 42px;
-      border-radius: 14px;
-      color: #ffffff;
-      background: #0f172a;
-      font-size: 13px;
-      font-weight: 850;
-    }
-
-    .hd-copy-wide:hover {
-      background: #1e293b;
-    }
-
-    .hd-muted-panel {
-      margin: 14px 0 0;
-      color: #64748b;
-      font-size: 13px;
-      line-height: 1.55;
-    }
-
-    .hd-roadmap-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 0;
-      margin: 14px 0 0;
-      list-style: none;
-    }
-
-    .hd-roadmap-list li {
-      position: relative;
-      padding-left: 18px;
-      color: #475569;
-      font-size: 13px;
-      line-height: 1.45;
-      font-weight: 700;
-    }
-
-    .hd-roadmap-list li::before {
-      content: '';
-      position: absolute;
-      top: 8px;
-      left: 0;
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      background: #2563eb;
-    }
-
-    .hd-side-card--accent {
-      background:
-        radial-gradient(circle at top right, rgba(16, 185, 129, 0.16), transparent 44%),
-        #ffffff;
-    }
-
-    .hd-side-card--live {
-      background:
-        radial-gradient(circle at top right, rgba(37, 99, 235, 0.14), transparent 42%),
-        #ffffff;
-    }
-
-    .hd-side-card--live h3 {
-      margin: 12px 0 6px;
-      color: #0f172a;
-      font-size: 16px;
-      font-weight: 900;
-    }
-
-    .hd-side-card--live p {
-      margin: 0;
-      color: #64748b;
-      font-size: 12px;
-      line-height: 1.55;
-      font-weight: 650;
-    }
-
-    .hd-live-status-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin: 14px 0;
-    }
-
-    .hd-live-status-grid div {
-      border: 1px solid #dbeafe;
-      border-radius: 12px;
-      padding: 10px;
-      background: #eff6ff;
-    }
-
-    .hd-live-status-grid span {
-      display: block;
-      color: #64748b;
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
-    .hd-live-status-grid strong {
-      display: block;
-      margin-top: 4px;
-      color: #1e3a8a;
-      font-size: 12px;
-      font-weight: 900;
-    }
-
-    .hd-live-note {
-      display: block;
-      margin-top: 10px;
-      color: #64748b;
-      font-size: 11px;
-      font-weight: 700;
-      line-height: 1.45;
-    }
-
-    .hd-integration-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 14px;
-    }
-
-    .hd-integration-list button {
-      min-height: 38px;
-      border: 1px solid #dbe3ef;
-      border-radius: 12px;
-      color: #334155;
-      background: #ffffff;
-      font-size: 12px;
-      font-weight: 850;
-      text-align: left;
-      padding: 0 12px;
-      cursor: pointer;
-    }
-
-    .hd-integration-list button:hover {
-      color: #0f766e;
-      border-color: #99f6e4;
-      background: #f0fdfa;
-    }
-
-    .hd-spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid currentColor;
-      border-top-color: transparent;
-      border-radius: 999px;
-      animation: spin 0.8s linear infinite;
-    }
-
-    .hd-spinner--xs {
-      width: 12px;
-      height: 12px;
-      border-width: 1.5px;
-    }
-
-    .hd-spinner--light {
-      color: #ffffff;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    @media (max-width: 1200px) {
-      .hd-workspace {
-        grid-template-columns: 1fr;
-      }
-
-      .hd-side {
-        position: static;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        display: grid;
-      }
-    }
-
-    @media (max-width: 900px) {
-      .hd-shell {
-        padding: 18px;
-      }
-
-      .hd-hero,
-      .hd-search-row {
-        align-items: stretch;
-        flex-direction: column;
-      }
-
-      .hd-metrics,
-      .hd-filter-section,
-      .hd-side {
-        grid-template-columns: 1fr;
-      }
-
-      .hd-search-input {
-        padding-right: 104px;
-      }
-    }
-  `],
 })
 export class HsnDirectoryComponent {
   @Input() isPicker = false;
   @Output() select = new EventEmitter<HsnSacCode>();
 
-  private gstService = inject(GstExtendedService);
-  private toast = inject(HotToastService);
+  private readonly gstService = inject(GstExtendedService);
+  private readonly toast = inject(HotToastService);
 
   readonly gstRates = GST_RATES;
 
-  searchQuery = '';
+  readonly searchQuery = signal('');
   readonly selectedType = signal<'HSN' | 'SAC' | null>(null);
   readonly selectedRate = signal<number | null>(null);
   readonly currentPage = signal(1);
@@ -1318,24 +604,26 @@ export class HsnDirectoryComponent {
   readonly lastLiveSyncAt = signal<string | null>(null);
   readonly liveSyncSummary = signal<string | null>(null);
 
-  readonly totalPages = computed(() => Math.ceil(this.total() / 20));
+  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / PAGE_SIZE)));
   readonly visibleHsnCount = computed(() => this.codes().filter((code) => code.type === 'HSN').length);
   readonly visibleSacCount = computed(() => this.codes().filter((code) => code.type === 'SAC').length);
   readonly activeFilterCount = computed(() => {
     let count = 0;
-    if (this.searchQuery.trim()) count += 1;
+    if (this.searchQuery().trim()) count += 1;
     if (this.selectedType()) count += 1;
     if (this.selectedRate() !== null) count += 1;
     return count;
   });
   readonly topVisibleRate = computed(() => {
     const counts = new Map<number, number>();
+
     for (const code of this.codes()) {
       counts.set(code.gstRate, (counts.get(code.gstRate) ?? 0) + 1);
     }
 
     let bestRate: number | null = null;
     let bestCount = 0;
+
     counts.forEach((count, rate) => {
       if (count > bestCount) {
         bestCount = count;
@@ -1343,15 +631,17 @@ export class HsnDirectoryComponent {
       }
     });
 
-    return bestRate === null ? '-' : `${bestRate}%`;
+    if (bestRate === null) return '-';
+    const rate = Number(bestRate);
+    return `${Number.isInteger(rate) ? rate.toFixed(0) : rate}%`;
   });
 
-  canSearchOnline = computed(() => {
-    const query = this.searchQuery.trim();
+  readonly canSearchOnline = computed(() => {
+    const query = this.searchQuery().trim();
     return query.length >= 4 && /^\d+$/.test(query);
   });
 
-  private searchSubject = new Subject<string>();
+  private readonly searchSubject = new Subject<string>();
 
   constructor() {
     this.searchSubject
@@ -1361,107 +651,108 @@ export class HsnDirectoryComponent {
     this.loadCodes();
   }
 
-  onSearchChange(_: string) {
+  onSearchChange(value: string): void {
+    this.searchQuery.set(value);
     this.currentPage.set(1);
-    this.searchSubject.next(this.searchQuery);
+    this.searchSubject.next(value);
   }
 
-  clearSearch() {
-    this.searchQuery = '';
+  clearSearch(): void {
+    this.searchQuery.set('');
     this.currentPage.set(1);
     this.loadCodes();
   }
 
-  setType(type: 'HSN' | 'SAC' | null) {
+  setType(type: 'HSN' | 'SAC' | null): void {
     this.selectedType.set(type);
     this.currentPage.set(1);
     this.loadCodes();
   }
 
-  setRate(rate: number | null) {
+  setRate(rate: number | null): void {
     this.selectedRate.set(rate);
     this.currentPage.set(1);
     this.loadCodes();
   }
 
-  goToPage(page: number) {
+  goToPage(page: number): void {
     this.currentPage.set(page);
     this.loadCodes();
   }
 
-  triggerImport() {
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    if (input) input.click();
+  triggerImport(): void {
+    const input = document.getElementById('hsn-sac-file-input') as HTMLInputElement | null;
+    input?.click();
   }
 
-  onFileSelected(event: Event) {
+  onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
 
     this.importing.set(true);
-    const toast = this.toast.loading('Importing HSN/SAC directory...', { duration: 0 });
+    const toastRef = this.toast.loading('Importing HSN/SAC directory...', { duration: 0 });
 
     this.gstService.importHsnSacExcel(file).subscribe({
-      next: (res: any) => {
+      next: (response: any) => {
         this.importing.set(false);
-        toast.close();
-        this.toast.success(`Successfully imported ${res.data?.succeeded ?? 0} codes`);
+        toastRef.close();
+        this.toast.success(`Successfully imported ${response.data?.succeeded ?? 0} code(s)`);
         this.loadData();
         input.value = '';
       },
-      error: (err: any) => {
+      error: (error: any) => {
         this.importing.set(false);
-        toast.close();
-        this.toast.error('Import failed: ' + (err.error?.message || err.message));
+        toastRef.close();
+        this.toast.error(`Import failed: ${error.error?.message || error.message}`);
         input.value = '';
-      }
+      },
     });
   }
 
-  searchOnline() {
-    const code = this.searchQuery.trim();
+  searchOnline(): void {
+    const code = this.searchQuery().trim();
     if (!code) return;
 
     this.isSearchingOnline.set(true);
-    const toast = this.toast.loading('Searching public HSN/SAC directory...', { duration: 0 });
+    const toastRef = this.toast.loading('Searching public HSN/SAC directory...', { duration: 0 });
 
     this.gstService.lookupOnlineHsn(code).subscribe({
-      next: (res: any) => {
+      next: (response: any) => {
         this.isSearchingOnline.set(false);
-        toast.close();
-        this.toast.success(`Found and saved: ${(res.data?.description ?? code).substring(0, 50)}`);
+        toastRef.close();
+        this.toast.success(`Found and saved: ${(response.data?.description ?? code).substring(0, 50)}`);
         this.lastLiveSyncAt.set(this.formatLiveTime(new Date()));
-        this.liveSyncSummary.set(`Code ${code} refreshed from live provider.`);
+        this.liveSyncSummary.set(`Code ${code} refreshed from the live provider.`);
         this.loadCodes();
       },
-      error: (err: any) => {
+      error: (error: any) => {
         this.isSearchingOnline.set(false);
-        toast.close();
-        this.toast.error(err.error?.message || 'Code not found in public directory.');
-      }
+        toastRef.close();
+        this.toast.error(error.error?.message || 'Code not found in public directory.');
+      },
     });
   }
 
-  toggleLiveMode() {
+  toggleLiveMode(): void {
     this.liveMode.update((value) => !value);
-    this.toast.success(this.liveMode() ? 'Live auto-refresh enabled for numeric code searches' : 'Using local HSN/SAC cache');
+    this.toast.success(this.liveMode() ? 'Live auto-refresh enabled for numeric searches' : 'Using local HSN/SAC cache');
     this.loadCodes();
   }
 
-  syncVisibleLive() {
+  syncVisibleLive(): void {
     const visibleCodes = this.codes().map((code) => code.code);
     if (visibleCodes.length === 0) return;
 
     this.liveSyncing.set(true);
-    const toast = this.toast.loading('Refreshing visible HSN/SAC codes from live provider...', { duration: 0 });
+    const toastRef = this.toast.loading('Refreshing visible HSN/SAC codes from live provider...', { duration: 0 });
 
     this.gstService.syncLiveHsnSac(visibleCodes).subscribe({
-      next: (res) => {
+      next: (response) => {
         this.liveSyncing.set(false);
-        toast.close();
+        toastRef.close();
 
-        const result = res.data;
+        const result = response.data;
         this.lastLiveSyncAt.set(this.formatLiveTime(new Date(result?.refreshedAt || Date.now())));
         this.liveSyncSummary.set(`${result?.succeeded ?? 0} updated, ${result?.notFound ?? 0} not found, ${result?.failed ?? 0} failed.`);
 
@@ -1476,51 +767,51 @@ export class HsnDirectoryComponent {
 
         this.loadCodes();
       },
-      error: (err) => {
+      error: (error) => {
         this.liveSyncing.set(false);
-        toast.close();
-        this.toast.error(err.error?.message || 'Live sync failed');
+        toastRef.close();
+        this.toast.error(error.error?.message || 'Live sync failed');
       },
     });
   }
 
-  loadData() {
-    this.searchQuery = '';
+  loadData(): void {
+    this.searchQuery.set('');
     this.selectedType.set(null);
     this.selectedRate.set(null);
     this.currentPage.set(1);
     this.loadCodes();
   }
 
-  reset() {
+  reset(): void {
     this.loadData();
   }
 
-  quickSearch(query: string) {
-    this.searchQuery = query;
+  quickSearch(query: string): void {
+    this.searchQuery.set(query);
     this.currentPage.set(1);
     this.loadCodes();
   }
 
-  onRowClick(code: HsnSacCode) {
+  onRowClick(code: HsnSacCode): void {
     this.selectCode(code);
   }
 
-  selectCode(code: HsnSacCode) {
+  selectCode(code: HsnSacCode): void {
     this.selectedCode.set(code);
     if (this.isPicker) {
       this.select.emit(code);
     }
   }
 
-  copyCode(code: HsnSacCode) {
+  copyCode(code: HsnSacCode): void {
     const text = `${code.code} - ${code.description} | ${code.type} | GST ${code.gstRate}% | Chapter ${this.chapterLabel(code)}`;
     this.copyToClipboard(text, `Copied ${code.code}`);
     this.copiedCode.set(code.id);
     window.setTimeout(() => this.copiedCode.set(null), 1400);
   }
 
-  downloadTemplate() {
+  downloadTemplate(): void {
     const rows = [
       ['code', 'description', 'type', 'gstRate', 'chapter'],
       ['8471', 'Automatic data processing machines', 'HSN', '18', '84'],
@@ -1529,8 +820,9 @@ export class HsnDirectoryComponent {
     this.downloadCsv('hsn-sac-import-template.csv', rows);
   }
 
-  exportVisible() {
+  exportVisible(): void {
     if (this.codes().length === 0) return;
+
     const rows = [
       ['code', 'description', 'type', 'gstRate', 'chapter'],
       ...this.codes().map((code) => [
@@ -1541,37 +833,39 @@ export class HsnDirectoryComponent {
         this.chapterLabel(code),
       ]),
     ];
+
     this.downloadCsv('hsn-sac-visible-codes.csv', rows);
   }
 
-  chapterLabel(code: HsnSacCode) {
+  chapterLabel(code: HsnSacCode): string {
     return code.chapter || code.code?.slice(0, 2) || '-';
   }
 
-  rateTone(rate: number) {
-    if (rate === 0) return 'zero';
-    if (rate <= 5) return 'low';
-    if (rate <= 12) return 'mid';
-    if (rate < 18) return 'standard';
-    return 'high';
+  rateClass(rate: number): string {
+    if (rate === 0) return 'bg-slate-100 text-slate-600';
+    if (rate <= 5) return 'bg-emerald-100 text-emerald-700';
+    if (rate <= 12) return 'bg-blue-100 text-blue-700';
+    if (rate < 18) return 'bg-violet-100 text-violet-700';
+    return 'bg-rose-100 text-rose-700';
   }
 
-  private loadCodes() {
+  private loadCodes(): void {
     this.isLoading.set(true);
+
     this.gstService
       .searchHsnSac({
-        q: this.searchQuery || undefined,
+        q: this.searchQuery().trim() || undefined,
         type: this.selectedType() ?? undefined,
         rate: this.selectedRate() ?? undefined,
         page: this.currentPage(),
-        limit: 20,
+        limit: PAGE_SIZE,
         live: this.liveMode(),
       })
       .subscribe({
-        next: (res) => {
-          const rows = (res as any).data ?? [];
+        next: (response) => {
+          const rows = (response as any).data ?? [];
           this.codes.set(rows);
-          this.total.set((res as any).meta?.total ?? rows.length ?? 0);
+          this.total.set((response as any).meta?.total ?? rows.length ?? 0);
           this.isLoading.set(false);
 
           if (!this.isPicker) {
@@ -1588,7 +882,7 @@ export class HsnDirectoryComponent {
       });
   }
 
-  private copyToClipboard(text: string, successMessage: string) {
+  private copyToClipboard(text: string, successMessage: string): void {
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(text)
         .then(() => this.toast.success(successMessage))
@@ -1599,7 +893,7 @@ export class HsnDirectoryComponent {
     this.fallbackCopy(text, successMessage);
   }
 
-  private fallbackCopy(text: string, successMessage: string) {
+  private fallbackCopy(text: string, successMessage: string): void {
     const textarea = document.createElement('textarea');
     textarea.value = text;
     textarea.style.position = 'fixed';
@@ -1611,7 +905,7 @@ export class HsnDirectoryComponent {
     this.toast.success(successMessage);
   }
 
-  private downloadCsv(filename: string, rows: string[][]) {
+  private downloadCsv(filename: string, rows: string[][]): void {
     const csv = rows
       .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(','))
       .join('\n');
@@ -1624,7 +918,7 @@ export class HsnDirectoryComponent {
     URL.revokeObjectURL(url);
   }
 
-  private formatLiveTime(date: Date) {
+  private formatLiveTime(date: Date): string {
     return date.toLocaleString('en-IN', {
       day: '2-digit',
       month: 'short',
