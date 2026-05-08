@@ -813,9 +813,10 @@ export class HsnDirectoryComponent {
 
   downloadTemplate(): void {
     const rows = [
-      ['code', 'description', 'type', 'gstRate', 'chapter'],
-      ['8471', 'Automatic data processing machines', 'HSN', '18', '84'],
-      ['9982', 'Legal and accounting services', 'SAC', '18', '99'],
+      ['Code', 'Description', 'Type', 'GST Rate (%)', 'Chapter', 'Status', 'Directory'],
+      ['0101', 'Live horses', 'Goods', '0', '1', 'Active', 'Goods'],
+      ['8471', 'Automatic data processing machines', 'Goods', '18', '84', 'Active', 'Goods'],
+      ['9982', 'Legal and accounting services', 'Services', '18', '99', 'Active', 'Services'],
     ];
     this.downloadCsv('hsn-sac-import-template.csv', rows);
   }
@@ -824,13 +825,15 @@ export class HsnDirectoryComponent {
     if (this.codes().length === 0) return;
 
     const rows = [
-      ['code', 'description', 'type', 'gstRate', 'chapter'],
+      ['Code', 'Description', 'Type', 'GST Rate (%)', 'Chapter', 'Status', 'Directory'],
       ...this.codes().map((code) => [
         code.code,
         code.description,
-        code.type,
+        code.type === 'HSN' ? 'Goods' : 'Services',
         String(code.gstRate),
         this.chapterLabel(code),
+        code.isActive ? 'Active' : 'Inactive',
+        code.type === 'HSN' ? 'Goods' : 'Services',
       ]),
     ];
 

@@ -2,10 +2,19 @@ import { Op } from 'sequelize';
 import { sequelize } from '../../../../config/database.config';
 import { HsnSac } from '../../../../models/hsn-sac.model';
 import { AppError } from '../../../../utils/errors';
-import ExcelJS from 'exceljs';
+import * as XLSX from 'xlsx';
 import { PublicHsnSacDirectoryService, PublicHsnSacEntry } from './PublicHsnSacDirectoryService';
 
 const publicDirectoryService = new PublicHsnSacDirectoryService();
+
+type ImportEntry = {
+  code: string;
+  description: string;
+  gstRate: number;
+  type: 'HSN' | 'SAC';
+  chapter?: string | null;
+  isActive?: boolean;
+};
 
 export class HsnSacService {
   /**
@@ -71,16 +80,17 @@ export class HsnSacService {
   /**
    * Bulk upsert — used by the data import module or admin seeding.
    */
-  async bulkUpsert(entries: Array<{ code: string; description: string; gstRate: number; type: 'HSN' | 'SAC'; chapter?: string | null }>) {
+  async bulkUpsert(entries: ImportEntry[]) {
     const results = await Promise.allSettled(
       entries.map((entry) =>
         sequelize.query(
           `INSERT INTO hsn_sac_codes (id, code, description, gst_rate, type, chapter, is_active)
-           VALUES (gen_random_uuid(), :code, :description, :gstRate, :type, :chapter, TRUE)
+           VALUES (gen_random_uuid(), :code, :description, :gstRate, :type, :chapter, :isActive)
            ON CONFLICT (code, type) DO UPDATE
              SET description = EXCLUDED.description,
                  gst_rate    = EXCLUDED.gst_rate,
-                 chapter     = EXCLUDED.chapter`,
+                 chapter     = EXCLUDED.chapter,
+                 is_active   = EXCLUDED.is_active`,
           {
             replacements: {
               code: entry.code,
@@ -88,6 +98,7 @@ export class HsnSacService {
               gstRate: entry.gstRate,
               type: entry.type,
               chapter: entry.chapter ?? null,
+              isActive: entry.isActive ?? true,
             },
           }
         )
@@ -99,63 +110,79 @@ export class HsnSacService {
   }
 
   async importExcelFromBuffer(buffer: Buffer) {
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(buffer as any);
-    const worksheet = workbook.worksheets[0]; 
+    const workbook = XLSX.read(buffer, { type: 'buffer', raw: false, cellDates: false });
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json<Array<string | number>>(worksheet, {
+      header: 1,
+      defval: '',
+      raw: false,
+      blankrows: false,
+    });
 
-    const entries: any[] = [];
-    let headers: Record<string, number> = {};
+    const headerRowIndex = rows.findIndex((row) => {
+      const normalized = row.map((value) => this.normalizeHeader(value));
+      return normalized.some((key) => key.includes('code') || key.includes('hsn') || key.includes('sac'))
+        && normalized.some((key) => key.includes('description'));
+    });
 
-    for (let r = 1; r <= 5; r++) {
-      const row = worksheet.getRow(r);
-      const rowValues = row.values as any[];
-      if (!rowValues) continue;
-
-      const keys = rowValues.map(v => String(v || '').toLowerCase().trim());
-      if (keys.some(k => k.includes('hsn') || k.includes('code') || k.includes('description'))) {
-        keys.forEach((k, i) => { if (k) headers[k] = i; });
-        break;
-      }
+    if (headerRowIndex === -1) {
+      throw new AppError('Invalid import format: could not find header row with Code and Description columns', 400);
     }
 
-    const getCol = (keywords: string[]) => {
-      for (const [key, index] of Object.entries(headers)) {
-        if (keywords.some(kw => key.includes(kw))) return index;
+    const headerRow = rows[headerRowIndex];
+    const headers = new Map<string, number>();
+    headerRow.forEach((value, index) => {
+      const key = this.normalizeHeader(value);
+      if (key) headers.set(key, index);
+    });
+
+    const findColumn = (...keywords: string[]) => {
+      for (const [key, index] of headers.entries()) {
+        if (keywords.some((keyword) => key.includes(keyword))) {
+          return index;
+        }
       }
       return -1;
     };
 
-    const codeCol = getCol(['hsn', 'sac', 'code']);
-    const descCol = getCol(['description', 'item', 'nature']);
-    const rateCol = getCol(['rate', 'gst', 'tax']);
-    const chapterCol = getCol(['chapter', 'group']);
+    const codeCol = findColumn('code', 'hsn', 'sac');
+    const descCol = findColumn('description', 'item', 'nature');
+    const typeCol = findColumn('type');
+    const rateCol = findColumn('gstrate', 'rate', 'tax');
+    const chapterCol = findColumn('chapter', 'group');
+    const statusCol = findColumn('status', 'active');
+    const directoryCol = findColumn('directory');
 
     if (codeCol === -1 || descCol === -1) {
-      throw new AppError('Invalid Excel format: Could not find "Code" or "Description" columns', 400);
+      throw new AppError('Invalid import format: could not find "Code" or "Description" columns', 400);
     }
 
-    worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber <= 1) return;
-      const rowValues = row.values as any[];
-      if (!rowValues) return;
+    const entries: ImportEntry[] = [];
 
-      const codeValue = String(rowValues[codeCol] || '').trim();
-      const descValue = String(rowValues[descCol] || '').trim();
-      const rateValue = parseFloat(rowValues[rateCol]) || 18.00;
-      const chapterValue = chapterCol !== -1 ? String(rowValues[chapterCol] || '').trim() : codeValue.substring(0, 2);
+    rows.slice(headerRowIndex + 1).forEach((row) => {
+      const codeRaw = this.readCell(row, codeCol);
+      const description = this.readCell(row, descCol);
+      const code = codeRaw.replace(/[^0-9]/g, '');
 
-      if (codeValue && descValue) {
-        entries.push({
-          code: codeValue.replace(/[^0-9]/g, ''),
-          description: descValue,
-          gstRate: rateValue,
-          type: codeValue.startsWith('99') ? 'SAC' : 'HSN',
-          chapter: chapterValue
-        });
-      }
+      if (!code || !description) return;
+
+      const typeValue = this.readCell(row, typeCol);
+      const directoryValue = this.readCell(row, directoryCol);
+      const statusValue = this.readCell(row, statusCol);
+      const chapterValue = this.readCell(row, chapterCol);
+      const parsedRate = this.parseRate(this.readCell(row, rateCol));
+
+      entries.push({
+        code,
+        description,
+        gstRate: parsedRate,
+        type: this.resolveType(code, typeValue, directoryValue),
+        chapter: chapterValue || code.slice(0, 2) || null,
+        isActive: this.parseStatus(statusValue),
+      });
     });
 
-    if (entries.length === 0) throw new AppError('No valid data found in Excel', 400);
+    if (entries.length === 0) throw new AppError('No valid rows found in the uploaded file', 400);
     return this.bulkUpsert(entries);
   }
 
@@ -250,5 +277,42 @@ export class HsnSacService {
 
     await this.bulkUpsert([entry]);
     return entry;
+  }
+
+  private normalizeHeader(value: unknown) {
+    return String(value || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '')
+      .trim();
+  }
+
+  private readCell(row: Array<string | number>, index: number) {
+    if (index < 0 || index >= row.length) return '';
+    return String(row[index] ?? '').trim();
+  }
+
+  private parseRate(value: string) {
+    const cleaned = value.replace(/[^0-9.]/g, '');
+    if (!cleaned) return 0;
+
+    const parsed = Number(cleaned);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private resolveType(code: string, typeValue: string, directoryValue: string): 'HSN' | 'SAC' {
+    const source = `${typeValue} ${directoryValue}`.toLowerCase();
+
+    if (source.includes('sac') || source.includes('service')) return 'SAC';
+    if (source.includes('hsn') || source.includes('good')) return 'HSN';
+
+    return code.startsWith('99') ? 'SAC' : 'HSN';
+  }
+
+  private parseStatus(statusValue: string) {
+    if (!statusValue) return true;
+
+    const normalized = statusValue.trim().toLowerCase();
+    if (['inactive', 'disabled', 'false', '0'].includes(normalized)) return false;
+    return true;
   }
 }
