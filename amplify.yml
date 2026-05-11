@@ -1,0 +1,19 @@
+version: 1
+applications:
+  - appRoot: frontend
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm install --cache .npm --prefer-offline --legacy-peer-deps
+        build:
+          commands:
+            - npm run build:prod
+      artifacts:
+        baseDirectory: dist/accudocs/browser
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - .npm/**/*
+          - node_modules/**/*
