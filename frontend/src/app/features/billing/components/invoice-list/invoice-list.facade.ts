@@ -32,7 +32,7 @@ export class InvoiceListFacade {
 
   invoicesResource = rxResource({
     request: this.queryParams,
-    loader: ({ request }) => this.invoiceService.getInvoices(request),
+    loader: ({ request }) => this.invoiceService.getInvoices(request, { silenceErrors: true }),
   });
 
   invoices = computed(() => this.invoicesResource.value()?.data ?? []);

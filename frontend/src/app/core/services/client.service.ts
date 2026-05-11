@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@environments/environment';
+import { SKIP_ERROR_TOAST } from '@core/interceptors/error.interceptor';
 
 export interface Client {
   id: string;
@@ -105,7 +106,8 @@ export class ClientService {
     limit: number = 10,
     search?: string,
     sortBy?: string,
-    sortOrder?: 'asc' | 'desc'
+    sortOrder?: 'asc' | 'desc',
+    options?: { silenceErrors?: boolean }
   ): Observable<PaginatedResponse<Client>> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -115,7 +117,10 @@ export class ClientService {
     if (sortBy) params = params.set('sortBy', sortBy);
     if (sortOrder) params = params.set('sortOrder', sortOrder);
 
-    return this.http.get<PaginatedResponse<Client>>(this.baseUrl, { params });
+    return this.http.get<PaginatedResponse<Client>>(this.baseUrl, {
+      params,
+      context: this.buildContext(options?.silenceErrors),
+    });
   }
 
   getClient(id: string): Observable<any> {
@@ -168,5 +173,9 @@ export class ClientService {
       }
     });
     return formData;
+  }
+
+  private buildContext(silenceErrors?: boolean): HttpContext | undefined {
+    return silenceErrors ? new HttpContext().set(SKIP_ERROR_TOAST, true) : undefined;
   }
 }

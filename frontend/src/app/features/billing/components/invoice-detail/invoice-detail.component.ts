@@ -3,22 +3,12 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } 
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatNativeDateModule } from '@angular/material/core';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSelectModule } from '@angular/material/select';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatTableModule } from '@angular/material/table';
 import { HotToastService } from '@ngneat/hot-toast';
 import { AuthService, User } from '@core/services/auth.service';
 import { Invoice, InvoiceStatus } from '../../models/invoice.model';
 import { Payment, PaymentMode } from '../../models/payment.model';
-import { InvoiceService } from '../../services/invoice.service';
 import { InrCurrencyPipe } from '../../pipes/inr-currency.pipe';
+import { InvoiceService } from '../../services/invoice.service';
 
 interface BillingOrganization {
   name: string;
@@ -44,7 +34,7 @@ const DEFAULT_ORGANIZATION: BillingOrganization = {
   gstin: '24AABCS9999A1Z3',
   pan: 'AABCS9999A',
   addressLine1: 'A-201, Shyamal Cross Roads',
-  addressLine2: 'Satellite, Ahmedabad — 380015',
+  addressLine2: 'Satellite, Ahmedabad - 380015',
   stateCode: '24',
 };
 
@@ -58,30 +48,42 @@ function formatDateInput(date: Date): string {
 @Component({
   selector: 'app-invoice-detail',
   standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatButtonModule,
-    MatCardModule,
-    MatDatepickerModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatNativeDateModule,
-    MatProgressBarModule,
-    MatSelectModule,
-    MatTabsModule,
-    MatTableModule,
-    InrCurrencyPipe,
-  ],
+  imports: [CommonModule, ReactiveFormsModule, InrCurrencyPipe],
   templateUrl: './invoice-detail.component.html',
   styles: [
     `
+      :host {
+        display: block;
+        min-height: 100%;
+      }
+
+      .invoice-tab-active {
+        box-shadow: 0 18px 40px rgba(37, 99, 235, 0.16);
+      }
+
+      .ledger-surface {
+        background:
+          linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(255, 255, 255, 1)),
+          repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 31px,
+            rgba(226, 232, 240, 0.72) 31px,
+            rgba(226, 232, 240, 0.72) 32px
+          );
+      }
+
       @media print {
         .billing-screen-only {
           display: none !important;
         }
 
-        .billing-preview {
+        .billing-print-shell {
+          padding: 0 !important;
+        }
+
+        .billing-preview,
+        .billing-print-card {
           box-shadow: none !important;
           border: none !important;
           margin: 0 !important;
@@ -93,18 +95,22 @@ function formatDateInput(date: Date): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InvoiceDetailComponent {
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  private fb = inject(FormBuilder);
-  private invoiceService = inject(InvoiceService);
-  private authService = inject(AuthService);
-  private toast = inject(HotToastService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
+  private readonly invoiceService = inject(InvoiceService);
+  private readonly authService = inject(AuthService);
+  private readonly toast = inject(HotToastService);
 
   readonly invoiceId = signal(this.route.snapshot.paramMap.get('id') ?? '');
   readonly selectedTabIndex = signal(this.initialTabIndex());
   readonly isSubmittingPayment = signal(false);
+  readonly tabItems = [
+    { label: 'Invoice Preview', blurb: 'Voucher print view' },
+    { label: 'Payments', blurb: 'Receipt ledger' },
+    { label: 'Timeline', blurb: 'Audit trail' },
+  ] as const;
 
-  readonly paymentColumns = ['date', 'mode', 'reference', 'amount', 'recordedBy'];
   readonly paymentModes: Array<{ value: PaymentMode; label: string }> = [
     { value: 'cash', label: 'Cash' },
     { value: 'cheque', label: 'Cheque' },
@@ -138,7 +144,55 @@ export class InvoiceDetailComponent {
   });
   readonly payments = computed(() => this.invoice()?.payments ?? []);
   readonly timelineEvents = computed(() => this.buildTimeline(this.invoice()));
+  readonly totalReceived = computed(() => {
+    const invoice = this.invoice();
+    if (!invoice) {
+      return 0;
+    }
 
+    return invoice.amountPaid ?? Math.max(invoice.totalAmount - invoice.balanceDue, 0);
+  });
+  readonly paymentProgress = computed(() => {
+    const invoice = this.invoice();
+    if (!invoice?.totalAmount) {
+      return 0;
+    }
+
+    return Math.max(0, Math.min(100, Math.round((this.totalReceived() / invoice.totalAmount) * 100)));
+  });
+  readonly totalTax = computed(() => {
+    const invoice = this.invoice();
+    return (invoice?.cgstAmount ?? 0) + (invoice?.sgstAmount ?? 0) + (invoice?.igstAmount ?? 0);
+  });
+  readonly lineItemCount = computed(() => this.invoice()?.lineItems?.length ?? 0);
+  readonly dueLabel = computed(() => this.getDueLabel(this.invoice()));
+  readonly ageLabel = computed(() => this.getAgeLabel(this.invoice()));
+  readonly latestPayment = computed(() =>
+    [...this.payments()].sort(
+      (left, right) =>
+        this.getTimestamp(right.paymentDate || right.createdAt) -
+        this.getTimestamp(left.paymentDate || left.createdAt)
+    )[0] ?? null
+  );
+  readonly receiptCount = computed(() => this.payments().length);
+  readonly paymentStatusNote = computed(() => {
+    const invoice = this.invoice();
+    if (!invoice) {
+      return 'No billing data loaded.';
+    }
+
+    if (invoice.status === 'paid') {
+      return 'Voucher settled in full.';
+    }
+    if (invoice.status === 'partially_paid') {
+      return 'Part collection posted, balance still open.';
+    }
+    if (invoice.status === 'issued' || invoice.status === 'overdue') {
+      return 'Collection entry can be posted against this voucher.';
+    }
+
+    return 'Issue the voucher before posting collections.';
+  });
   readonly isOverpaid = computed(() => {
     const amount = this.paymentForm.controls.amount.value ?? 0;
     const balance = this.invoice()?.balanceDue ?? 0;
@@ -148,15 +202,21 @@ export class InvoiceDetailComponent {
   constructor() {
     effect(() => {
       const invoice = this.invoice();
-      if (invoice) {
-        this.paymentForm.controls.amount.setValidators([
-          Validators.required,
-          Validators.min(0.01),
-          Validators.max(invoice.balanceDue),
-        ]);
-        this.paymentForm.controls.amount.updateValueAndValidity({ emitEvent: false });
+      if (!invoice) {
+        return;
       }
+
+      this.paymentForm.controls.amount.setValidators([
+        Validators.required,
+        Validators.min(0.01),
+        Validators.max(invoice.balanceDue),
+      ]);
+      this.paymentForm.controls.amount.updateValueAndValidity({ emitEvent: false });
     });
+  }
+
+  setTab(index: number): void {
+    this.selectedTabIndex.set(index);
   }
 
   onTabChange(index: number): void {
@@ -168,7 +228,11 @@ export class InvoiceDetailComponent {
   }
 
   canRecordPayment(invoice: Invoice | null): boolean {
-    return invoice?.status === 'issued' || invoice?.status === 'partially_paid' || invoice?.status === 'overdue';
+    return (
+      invoice?.status === 'issued' ||
+      invoice?.status === 'partially_paid' ||
+      invoice?.status === 'overdue'
+    );
   }
 
   canSend(invoice: Invoice | null): boolean {
@@ -318,36 +382,97 @@ export class InvoiceDetailComponent {
     window.print();
   }
 
+  goToRegister(): void {
+    void this.router.navigate(['/billing/invoices']);
+  }
+
+  openBillingSuite(): void {
+    void this.router.navigate(['/billing/firm']);
+  }
+
   statusLabel(status: InvoiceStatus | undefined): string {
-    return status ? status.replace(/_/g, ' ') : 'draft';
+    return status
+      ? status
+          .split('_')
+          .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+          .join(' ')
+      : 'Draft';
   }
 
   statusClasses(status: InvoiceStatus | undefined): string {
-    const fallback = 'bg-gray-100 text-gray-600 border border-gray-200';
+    const fallback = 'border border-slate-200 bg-slate-100 text-slate-600';
     if (!status) {
       return fallback;
     }
 
     const classes: Record<InvoiceStatus, string> = {
-      draft: 'bg-gray-100 text-gray-600 border border-gray-200',
-      issued: 'bg-blue-100 text-blue-700 border border-blue-200',
-      partially_paid: 'bg-amber-100 text-amber-700 border border-amber-200',
-      paid: 'bg-green-100 text-green-700 border border-green-200',
-      overdue: 'bg-red-100 text-red-700 border border-red-200',
-      cancelled: 'bg-gray-100 text-gray-400 border border-gray-200 line-through',
+      draft: 'border border-slate-200 bg-slate-100 text-slate-600',
+      issued: 'border border-blue-200 bg-blue-50 text-blue-700',
+      partially_paid: 'border border-amber-200 bg-amber-50 text-amber-700',
+      paid: 'border border-emerald-200 bg-emerald-50 text-emerald-700',
+      overdue: 'border border-rose-200 bg-rose-50 text-rose-700',
+      cancelled: 'border border-slate-200 bg-slate-100 text-slate-400 line-through',
     };
 
     return classes[status] ?? fallback;
   }
 
+  dueClasses(invoice: Invoice | null): string {
+    if (!invoice) {
+      return 'border border-slate-200 bg-slate-100 text-slate-500';
+    }
+
+    if (invoice.status === 'paid') {
+      return 'border border-emerald-200 bg-emerald-50 text-emerald-700';
+    }
+
+    if (invoice.status === 'cancelled') {
+      return 'border border-slate-200 bg-slate-100 text-slate-500';
+    }
+
+    const dueDate = this.parseDate(invoice.dueDate);
+    if (!dueDate) {
+      return 'border border-slate-200 bg-slate-100 text-slate-500';
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    dueDate.setHours(0, 0, 0, 0);
+
+    const days = Math.round((dueDate.getTime() - today.getTime()) / 86400000);
+    if (days < 0) {
+      return 'border border-rose-200 bg-rose-50 text-rose-700';
+    }
+    if (days <= 7) {
+      return 'border border-amber-200 bg-amber-50 text-amber-700';
+    }
+
+    return 'border border-blue-200 bg-blue-50 text-blue-700';
+  }
+
+  timelineDotClasses(event: TimelineEvent): string {
+    const title = event.title.toLowerCase();
+    if (title.includes('paid') || title.includes('payment')) {
+      return 'bg-emerald-500 ring-emerald-100';
+    }
+    if (title.includes('cancel')) {
+      return 'bg-rose-500 ring-rose-100';
+    }
+    if (title.includes('issue') || title.includes('whatsapp')) {
+      return 'bg-blue-500 ring-blue-100';
+    }
+
+    return 'bg-amber-500 ring-amber-100';
+  }
+
   displayDate(value: string | undefined): string {
     if (!value) {
-      return '—';
+      return '--';
     }
 
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
-      return '—';
+      return '--';
     }
 
     return new Intl.DateTimeFormat('en-IN', {
@@ -359,12 +484,12 @@ export class InvoiceDetailComponent {
 
   displayDateTime(value: string | undefined): string {
     if (!value) {
-      return '—';
+      return '--';
     }
 
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
-      return '—';
+      return '--';
     }
 
     return new Intl.DateTimeFormat('en-IN', {
@@ -378,6 +503,10 @@ export class InvoiceDetailComponent {
 
   paymentModeLabel(mode: string): string {
     return this.paymentModes.find((entry) => entry.value === mode)?.label ?? mode;
+  }
+
+  receiptNumberPreview(): number {
+    return this.receiptCount() + 1;
   }
 
   private initialTabIndex(): number {
@@ -423,7 +552,7 @@ export class InvoiceDetailComponent {
       events.push({
         title: 'Payment Received',
         timestamp: payment.paymentDate || payment.createdAt,
-        description: `${this.paymentModeLabel(payment.paymentMode)} · ${payment.amount} · ${
+        description: `${this.paymentModeLabel(payment.paymentMode)} - ${this.formatCurrency(payment.amount)} - ${
           payment.referenceNumber || 'No reference'
         }`,
       });
@@ -444,6 +573,76 @@ export class InvoiceDetailComponent {
       });
     }
 
-    return [...events].sort((left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime());
+    return [...events].sort(
+      (left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime()
+    );
+  }
+
+  private getDueLabel(invoice: Invoice | null): string {
+    if (!invoice) {
+      return 'Due status unavailable';
+    }
+
+    if (invoice.status === 'paid') {
+      return 'Settled';
+    }
+    if (invoice.status === 'cancelled') {
+      return 'Voucher cancelled';
+    }
+
+    const dueDate = this.parseDate(invoice.dueDate);
+    if (!dueDate) {
+      return 'Due date pending';
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    dueDate.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((dueDate.getTime() - today.getTime()) / 86400000);
+
+    if (diffDays < 0) {
+      return `${Math.abs(diffDays)} day overdue`;
+    }
+    if (diffDays === 0) {
+      return 'Due today';
+    }
+
+    return `Due in ${diffDays} day${diffDays === 1 ? '' : 's'}`;
+  }
+
+  private getAgeLabel(invoice: Invoice | null): string {
+    if (!invoice) {
+      return '--';
+    }
+
+    const createdAt = this.parseDate(invoice.createdAt);
+    if (!createdAt) {
+      return '--';
+    }
+
+    const ageDays = Math.max(0, Math.floor((Date.now() - createdAt.getTime()) / 86400000));
+    return `${ageDays} day${ageDays === 1 ? '' : 's'} live`;
+  }
+
+  private parseDate(value?: string): Date | null {
+    if (!value) {
+      return null;
+    }
+
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  private getTimestamp(value?: string): number {
+    const date = this.parseDate(value);
+    return date ? date.getTime() : 0;
+  }
+
+  private formatCurrency(value: number): string {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 2,
+    }).format(value);
   }
 }

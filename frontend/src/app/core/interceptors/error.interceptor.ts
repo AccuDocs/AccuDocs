@@ -1,9 +1,11 @@
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { HttpContextToken, HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { ToastService } from '../services/toast.service';
 import { AuthService } from '../services/auth.service';
 import { extractBackendErrorMessage } from '../utils/api-message.util';
+
+export const SKIP_ERROR_TOAST = new HttpContextToken<boolean>(() => false);
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const toast = inject(ToastService);
@@ -49,7 +51,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         authService.logout();
       }
 
-      toast.error(errorMessage);
+      if (!req.context.get(SKIP_ERROR_TOAST)) {
+        toast.error(errorMessage);
+      }
 
       return throwError(() => withBackendMessage(error, errorMessage));
     })

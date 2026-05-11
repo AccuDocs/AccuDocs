@@ -1,6 +1,7 @@
-import { HttpBackend, HttpClient, HttpParams } from '@angular/common/http';
+import { HttpBackend, HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, Observable, of } from 'rxjs';
+import { SKIP_ERROR_TOAST } from '@core/interceptors/error.interceptor';
 import { ApiResponse, PaginatedApiResponse } from '@core/services/workspace.service';
 import { environment } from '@environments/environment';
 import {
@@ -139,9 +140,13 @@ export class InvoiceService {
   private rawHttp = new HttpClient(this.httpBackend);
   private base = `${environment.apiUrl}/billing`;
 
-  getInvoices(params: InvoiceListParams = {}): Observable<PaginatedApiResponse<Invoice>> {
+  getInvoices(
+    params: InvoiceListParams = {},
+    options?: { silenceErrors?: boolean }
+  ): Observable<PaginatedApiResponse<Invoice>> {
     return this.http.get<PaginatedApiResponse<Invoice>>(`${this.base}/invoices`, {
       params: this.toHttpParams(params),
+      context: this.buildContext(options?.silenceErrors),
     });
   }
 
@@ -212,8 +217,10 @@ export class InvoiceService {
     return this.http.get<ApiResponse<{ url: string }>>(`${this.base}/invoices/${id}/pdf`);
   }
 
-  getMetrics(): Observable<ApiResponse<BillingMetrics>> {
-    return this.http.get<ApiResponse<BillingMetrics>>(`${this.base}/metrics`);
+  getMetrics(options?: { silenceErrors?: boolean }): Observable<ApiResponse<BillingMetrics>> {
+    return this.http.get<ApiResponse<BillingMetrics>>(`${this.base}/metrics`, {
+      context: this.buildContext(options?.silenceErrors),
+    });
   }
 
   getServiceTemplates(clientId?: string | null): Observable<ApiResponse<ServiceTemplate[]>> {
@@ -232,10 +239,12 @@ export class InvoiceService {
   }
 
   getRecurringTemplates(
-    params: RecurringTemplateListParams = {}
+    params: RecurringTemplateListParams = {},
+    options?: { silenceErrors?: boolean }
   ): Observable<ApiResponse<RecurringTemplate[]>> {
     return this.http.get<ApiResponse<RecurringTemplate[]>>(`${this.base}/recurring-templates`, {
       params: this.toHttpParams(params),
+      context: this.buildContext(options?.silenceErrors),
     });
   }
 
@@ -317,5 +326,9 @@ export class InvoiceService {
     }
 
     return httpParams;
+  }
+
+  private buildContext(silenceErrors?: boolean): HttpContext | undefined {
+    return silenceErrors ? new HttpContext().set(SKIP_ERROR_TOAST, true) : undefined;
   }
 }

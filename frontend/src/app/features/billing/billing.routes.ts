@@ -4,6 +4,11 @@ import { roleGuard } from '../../core/guards/role.guard';
 export const billingRoutes: Routes = [
   {
     path: '',
+    pathMatch: 'full',
+    redirectTo: 'firm',
+  },
+  {
+    path: 'firm',
     loadComponent: () =>
       import('./components/billing-dashboard/billing-dashboard.component').then(
         (module) => module.BillingDashboardComponent

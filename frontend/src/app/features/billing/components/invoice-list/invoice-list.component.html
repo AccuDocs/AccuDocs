@@ -1,233 +1,509 @@
-<div class="animate-in fade-in slide-in-from-bottom-4 p-6 duration-500 bg-[#f8fafd] min-h-screen">
-  <div class="space-y-6">
-    <!-- Tally Header -->
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b-2 border-[#0f2540] pb-4">
-      <div class="space-y-1">
-        <div class="inline-flex items-center gap-2 rounded bg-[#0f2540] px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#7ec8f0]">
-          Revenue Register
+<div class="w-full min-w-0 animate-in fade-in px-6 pb-8 pt-4 duration-500">
+  <div class="space-y-5">
+    <section class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+      <div class="relative flex flex-col gap-6 p-6 xl:flex-row xl:items-center xl:justify-between">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.14),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98),rgba(239,246,255,0.72))]"></div>
+
+        <div class="relative max-w-4xl">
+          <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Revenue register
+          </div>
+          <h1 class="text-3xl font-black tracking-tight text-slate-950 xl:text-[2.6rem]">Invoice Register</h1>
+          <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            Review issued, draft, partial, paid, and overdue professional invoices raised by the
+            firm for its clients. Search the register, narrow by billing period, and act on the
+            current page quickly.
+          </p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 ring-1 ring-slate-200">
+              {{ currentStatusLabel() }}
+            </span>
+            <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 ring-1 ring-slate-200">
+              {{ rangeLabel() }}
+            </span>
+            <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 ring-1 ring-slate-200">
+              {{ totalResults() }} total records
+            </span>
+          </div>
         </div>
-        <h1 class="text-2xl font-black tracking-tight text-[#0f2540] uppercase">Voucher List: Sales</h1>
-      </div>
 
-      <div class="flex items-center gap-3">
-        <button
-          type="button"
-          class="inline-flex items-center gap-2 rounded bg-[#1a3a5c] px-6 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-md transition-all hover:bg-[#0f2540] active:scale-[0.97]"
-          (click)="newInvoice()"
-        >
-          [F2] Add Invoice
-        </button>
-      </div>
-    </div>
-
-    <!-- Tally Main Content Layout -->
-    <div class="flex flex-col xl:flex-row gap-6">
-      
-      <!-- Left Column: Filter & Table -->
-      <div class="flex-1 space-y-6">
-        
-        <!-- Filter Bar (Tally Style) -->
-        <form
-          [formGroup]="filterForm"
-          class="flex flex-wrap items-center gap-4 rounded border border-[#d0dde8] bg-[#dde8f2] p-3 shadow-sm"
-        >
-          <div class="relative min-w-[200px] flex-1">
-            <input
-              type="text"
-              formControlName="search"
-              placeholder="Search (No., Client, GSTIN)..."
-              class="w-full rounded border border-[#b8c9d9] bg-white px-3 py-1.5 text-xs font-bold text-[#0f2540] outline-none placeholder:text-slate-400 focus:border-[#1a3a5c]"
-            />
-          </div>
-
-          <div class="flex items-center gap-2">
-            <span class="text-[10px] font-bold uppercase text-[#5a7a9a]">Status:</span>
-            <select
-              formControlName="status"
-              class="rounded border border-[#b8c9d9] bg-white px-2 py-1.5 text-xs font-bold text-[#0f2540] outline-none"
-            >
-              @for (option of statusOptions; track option.value) {
-                <option [value]="option.value">{{ option.label }}</option>
-              }
-            </select>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <span class="text-[10px] font-bold uppercase text-[#5a7a9a]">Period:</span>
-            <input
-              type="date"
-              formControlName="dateFrom"
-              class="rounded border border-[#b8c9d9] bg-white px-2 py-1.5 text-xs font-bold text-[#0f2540]"
-            />
-            <span class="text-slate-400">-</span>
-            <input
-              type="date"
-              formControlName="dateTo"
-              class="rounded border border-[#b8c9d9] bg-white px-2 py-1.5 text-xs font-bold text-[#0f2540]"
-            />
-          </div>
-
+        <div class="relative flex flex-wrap items-center gap-3">
           <button
             type="button"
-            class="text-[10px] font-bold uppercase text-[#1a3a5c] hover:underline"
+            class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+            (click)="router.navigate(['/billing/firm'])"
+          >
+            Back to suite
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
             (click)="clearFilters()"
           >
-            Clear Filters
+            Reset filters
           </button>
-        </form>
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+            (click)="newInvoice()"
+          >
+            New invoice
+          </button>
+        </div>
+      </div>
+    </section>
 
-        <!-- Table Container -->
-        <div class="overflow-hidden rounded border border-[#d0dde8] bg-white shadow-sm">
+    @if (hasLoadError()) {
+      <section class="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800 shadow-sm">
+        Invoice data could not be loaded from the backend right now. The register layout is still
+        available, but records will stay empty until the API responds again.
+      </section>
+    }
+
+    <section class="grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <article class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Visible invoices</p>
+        <strong class="mt-3 block text-4xl font-black tracking-tight text-slate-950">{{ facade.invoices().length }}</strong>
+        <p class="mt-2 text-xs font-semibold text-slate-500">Current register page rows</p>
+      </article>
+      <article class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Draft and issued</p>
+        <strong class="mt-3 block text-4xl font-black tracking-tight text-slate-950">{{ draftInView() + issuedInView() }}</strong>
+        <p class="mt-2 text-xs font-semibold text-slate-500">{{ draftInView() }} draft, {{ issuedInView() }} issued</p>
+      </article>
+      <article class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total billed</p>
+        <strong class="mt-3 block text-4xl font-black tracking-tight text-slate-950">{{ totalAmountInView() | inrCurrency }}</strong>
+        <p class="mt-2 text-xs font-semibold text-slate-500">Page total for visible invoices</p>
+      </article>
+      <article class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Outstanding</p>
+        <strong class="mt-3 block text-4xl font-black tracking-tight text-slate-950">{{ totalOutstandingInView() | inrCurrency }}</strong>
+        <p class="mt-2 text-xs font-semibold text-slate-500">{{ outstandingCount() }} invoice(s) still open</p>
+      </article>
+    </section>
+
+    <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <main class="space-y-5">
+        <section class="rounded-[28px] border border-slate-200 bg-white shadow-sm">
+          <div class="border-b border-slate-100 px-5 py-4">
+            <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Register filters</p>
+                <h2 class="mt-1 text-2xl font-black tracking-tight text-slate-950">Find the right invoices fast</h2>
+                <p class="mt-1 text-sm text-slate-500">
+                  Search invoice number, client, GSTIN, status, or date range to narrow the
+                  working register before taking billing actions.
+                </p>
+              </div>
+
+              <div class="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800 xl:max-w-sm">
+                Use status, period, and sort controls together before exporting or collecting from the visible invoices.
+              </div>
+            </div>
+          </div>
+
+          <form [formGroup]="filterForm" class="space-y-5 p-5">
+            <div class="flex flex-col gap-3 xl:flex-row xl:items-center">
+              <label class="relative block min-w-0 flex-1">
+                <input
+                  type="search"
+                  formControlName="search"
+                  placeholder="Search invoice number, client, GSTIN..."
+                  class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 pr-32 text-sm font-semibold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                />
+
+                @if (filterForm.controls.search.value) {
+                  <button
+                    type="button"
+                    (click)="filterForm.controls.search.setValue('')"
+                    class="absolute right-2 top-1/2 inline-flex h-8 -translate-y-1/2 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-500 transition hover:bg-slate-50"
+                  >
+                    Clear
+                  </button>
+                }
+              </label>
+
+              @if (activeFilterCount() > 0) {
+                <button
+                  type="button"
+                  (click)="clearFilters()"
+                  class="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-600 shadow-sm transition hover:bg-slate-50"
+                >
+                  Reset {{ activeFilterCount() }} filter{{ activeFilterCount() === 1 ? '' : 's' }}
+                </button>
+              }
+            </div>
+
+            <div class="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)_220px]">
+              <div class="space-y-3">
+                <div class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Status</div>
+                <select
+                  formControlName="status"
+                  class="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                >
+                  @for (option of statusOptions; track option.value) {
+                    <option [value]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="space-y-3">
+                <div class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Billing period</div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <input
+                    type="date"
+                    formControlName="dateFrom"
+                    class="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                  />
+                  <input
+                    type="date"
+                    formControlName="dateTo"
+                    class="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                  />
+                </div>
+              </div>
+
+              <div class="space-y-3">
+                <div class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Page size</div>
+                <select
+                  class="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                  [value]="facade.pageSize()"
+                  (change)="updatePageSize($event)"
+                >
+                  @for (size of [10, 20, 50, 100]; track size) {
+                    <option [value]="size">{{ size }} rows</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Sort by</span>
+              @for (column of ['invoiceDate', 'dueDate', 'invoiceNumber', 'totalAmount', 'status']; track column) {
+                <button
+                  type="button"
+                  (click)="toggleSort(column)"
+                  class="rounded-full px-4 py-2 text-sm font-black transition"
+                  [class]="
+                    facade.sortBy() === column
+                      ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/10'
+                      : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                  "
+                >
+                  {{ sortChipLabel(column) }}
+                </button>
+              }
+            </div>
+          </form>
+        </section>
+
+        <section class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+          <div class="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 class="text-xl font-black tracking-tight text-slate-950">Invoice records</h2>
+              <p class="mt-1 text-sm font-semibold text-slate-500">
+                {{ pageStart() }}-{{ pageEnd() }} of {{ totalResults() }} records visible in the current query.
+              </p>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <span class="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                {{ currentStatusLabel() }}
+              </span>
+              <span class="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+                {{ paidInView() }} paid
+              </span>
+              <span class="rounded-full bg-rose-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-rose-700">
+                {{ overdueInView() }} overdue
+              </span>
+            </div>
+          </div>
+
           @if (facade.isLoading()) {
-            <div class="flex flex-col items-center justify-center p-20 gap-4">
-              <div class="h-10 w-10 animate-spin rounded-full border-4 border-[#dde8f2] border-t-[#1a3a5c]"></div>
-              <p class="text-xs font-bold uppercase tracking-widest text-[#1a3a5c]">Fetching Ledgers...</p>
+            <div class="space-y-3 p-5">
+              @for (row of [1, 2, 3, 4, 5, 6]; track row) {
+                <div class="h-16 animate-pulse rounded-2xl bg-slate-100"></div>
+              }
             </div>
           } @else if (facade.invoices().length === 0) {
-            <div class="flex flex-col items-center justify-center py-20 text-center">
-              <p class="text-sm font-bold text-slate-400 uppercase tracking-widest">No Vouchers Found</p>
-              <button (click)="clearFilters()" class="mt-4 text-xs font-bold text-[#1a3a5c] hover:underline">Reset All Filters</button>
+            <div class="flex flex-col items-center justify-center px-6 py-16 text-center">
+              <p class="text-sm font-black uppercase tracking-[0.2em] text-slate-400">No invoices found</p>
+              <p class="mt-2 max-w-md text-sm text-slate-500">
+                Try widening the date range, clearing the status filter, or searching with a client name or invoice number.
+              </p>
+              <button
+                type="button"
+                (click)="clearFilters()"
+                class="mt-5 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+              >
+                Reset all filters
+              </button>
             </div>
           } @else {
             <div class="overflow-x-auto">
-              <table class="w-full min-w-[1200px] text-left border-collapse">
+              <table class="min-w-[1320px] w-full divide-y divide-slate-100">
                 <thead>
-                  <tr class="bg-[#2a5a84] text-white">
-                    <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-r border-white/10 w-12">#</th>
-                    <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-r border-white/10 w-40">
-                      <button (click)="toggleSort('invoiceNumber')" class="hover:text-[#7ec8f0]">Invoice No {{ sortIndicator('invoiceNumber') }}</button>
-                    </th>
-                    <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-r border-white/10">Client / GSTIN</th>
-                    <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-r border-white/10">Services Rendered</th>
-                    <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-r border-white/10 w-28 text-center">Date</th>
-                    <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-r border-white/10 w-32 text-right">Amount (₹)</th>
-                    <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-r border-white/10 w-32 text-right text-[#9be49b]">Paid (₹)</th>
-                    <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-r border-white/10 w-32 text-right text-[#ffb4b4]">Due (₹)</th>
-                    <th class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest w-24 text-center">Status</th>
+                  <tr class="text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    <th class="px-4 py-3">#</th>
+                    <th class="px-4 py-3">Invoice no</th>
+                    <th class="px-4 py-3">Client</th>
+                    <th class="px-4 py-3">Service summary</th>
+                    <th class="px-4 py-3">Invoice date</th>
+                    <th class="px-4 py-3">Due status</th>
+                    <th class="px-4 py-3 text-right">Total</th>
+                    <th class="px-4 py-3 text-right">Paid</th>
+                    <th class="px-4 py-3 text-right">Balance</th>
+                    <th class="px-4 py-3">Status</th>
+                    <th class="px-4 py-3">Actions</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-[#eef3f9]">
+                <tbody class="divide-y divide-slate-100">
                   @for (invoice of facade.invoices(); track invoice.id; let index = $index) {
-                    <tr
-                      class="group cursor-pointer hover:bg-[#e8f4fd] transition-colors"
-                      [class.bg-[#fcfdff]]="index % 2 === 0"
-                      (click)="openInvoice(invoice.id)"
-                    >
-                      <td class="px-4 py-3 text-[11px] font-bold text-slate-400 border-r border-[#eef3f9]">{{ rowNumber(index) }}</td>
-                      <td class="px-4 py-3 border-r border-[#eef3f9]">
-                        <div class="font-mono text-xs font-black text-[#1a3a5c]">{{ invoice.invoiceNumber }}</div>
+                    <tr class="cursor-pointer transition hover:bg-slate-50" (click)="openInvoice(invoice.id)">
+                      <td class="px-4 py-4 text-sm font-black text-slate-400">{{ rowNumber(index) }}</td>
+                      <td class="px-4 py-4">
+                        <p class="font-mono text-sm font-black text-slate-900">{{ invoice.invoiceNumber }}</p>
                       </td>
-                      <td class="px-4 py-3 border-r border-[#eef3f9]">
-                        <div class="font-bold text-[#0f2540] text-xs truncate max-w-[200px]">{{ invoice.client?.name }}</div>
-                        <div class="text-[9px] font-bold text-slate-400 uppercase leading-none mt-0.5">{{ invoice.client?.gstin || 'NO-GSTIN' }}</div>
+                      <td class="px-4 py-4">
+                        <p class="text-sm font-semibold text-slate-800">{{ invoice.client?.name || 'Client unavailable' }}</p>
+                        <p class="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{{ invoice.client?.gstin || 'No GSTIN' }}</p>
                       </td>
-                      <td class="px-4 py-3 border-r border-[#eef3f9]">
-                        <div class="text-xs text-slate-600 font-medium truncate max-w-[250px]">{{ serviceSummary(invoice) }}</div>
+                      <td class="px-4 py-4 text-sm text-slate-600">{{ serviceSummary(invoice) }}</td>
+                      <td class="px-4 py-4 text-sm text-slate-500">{{ displayDate(invoice.invoiceDate) }}</td>
+                      <td class="px-4 py-4">
+                        <span
+                          class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em]"
+                          [class]="isDueSoon(invoice) ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'"
+                        >
+                          {{ dueStatus(invoice) }}
+                        </span>
                       </td>
-                      <td class="px-4 py-3 text-center border-r border-[#eef3f9] text-[11px] font-bold text-slate-500">
-                        {{ displayDate(invoice.invoiceDate) }}
-                      </td>
-                      <td class="px-4 py-3 text-right border-r border-[#eef3f9] font-mono font-bold text-xs text-[#0f2540]" style="font-family: 'Courier New', Courier, monospace;">
-                        {{ invoice.totalAmount | inrCurrency }}
-                      </td>
-                      <td class="px-4 py-3 text-right border-r border-[#eef3f9] font-mono font-bold text-xs text-[#1a6e1a]" style="font-family: 'Courier New', Courier, monospace;">
-                        {{ invoice.amountPaid | inrCurrency }}
-                      </td>
-                      <td class="px-4 py-3 text-right border-r border-[#eef3f9] font-mono font-bold text-xs text-[#b91c1c]" style="font-family: 'Courier New', Courier, monospace;">
-                        {{ balanceDueAmount(invoice) | inrCurrency }}
-                      </td>
-                      <td class="px-4 py-3 text-center">
-                        <span class="inline-block px-2 py-0.5 text-[9px] font-black uppercase rounded border" [class]="statusClasses(invoice.status)">
+                      <td class="px-4 py-4 text-right text-sm font-black text-slate-900">{{ invoice.totalAmount | inrCurrency }}</td>
+                      <td class="px-4 py-4 text-right text-sm font-black text-emerald-700">{{ invoice.amountPaid | inrCurrency }}</td>
+                      <td class="px-4 py-4 text-right text-sm font-black text-rose-700">{{ balanceDueAmount(invoice) | inrCurrency }}</td>
+                      <td class="px-4 py-4">
+                        <span class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em]" [class]="statusClasses(invoice.status)">
                           {{ statusLabel(invoice.status) }}
                         </span>
+                      </td>
+                      <td class="px-4 py-4">
+                        <div class="flex flex-wrap gap-2" (click)="$event.stopPropagation()">
+                          <button
+                            type="button"
+                            class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-black text-slate-600 transition hover:bg-slate-50"
+                            (click)="editInvoice(invoice.id, $event)"
+                          >
+                            Edit
+                          </button>
+                          @if (canRecordPayment(invoice.status)) {
+                            <button
+                              type="button"
+                              class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-black text-emerald-700 transition hover:bg-emerald-100"
+                              (click)="recordPayment(invoice.id, $event)"
+                            >
+                              Payment
+                            </button>
+                          }
+                          @if (canDownload(invoice.status)) {
+                            <button
+                              type="button"
+                              class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] font-black text-blue-700 transition hover:bg-blue-100"
+                              (click)="downloadPdf(invoice.id, $event)"
+                            >
+                              PDF
+                            </button>
+                          }
+                        </div>
                       </td>
                     </tr>
                   }
                 </tbody>
-                <!-- Sticky Footer Totals -->
-                <tfoot class="sticky bottom-0 bg-[#dde8f2] border-t-2 border-[#1a3a5c]">
+                <tfoot class="border-t border-slate-100 bg-slate-50">
                   <tr>
-                    <td colspan="5" class="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#1a3a5c] text-right">Page Totals:</td>
-                    <td class="px-4 py-2 text-right font-mono font-black text-xs text-[#0f2540]" style="font-family: 'Courier New', Courier, monospace;">
-                      {{ totalAmountInView() | inrCurrency }}
+                    <td colspan="6" class="px-4 py-3 text-right text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+                      Page totals
                     </td>
-                    <td class="px-4 py-2 text-right font-mono font-black text-xs text-[#1a6e1a]" style="font-family: 'Courier New', Courier, monospace;">
-                      {{ totalPaidInView() | inrCurrency }}
-                    </td>
-                    <td class="px-4 py-2 text-right font-mono font-black text-xs text-[#b91c1c]" style="font-family: 'Courier New', Courier, monospace;">
-                      {{ totalOutstandingInView() | inrCurrency }}
-                    </td>
-                    <td></td>
+                    <td class="px-4 py-3 text-right text-sm font-black text-slate-900">{{ totalAmountInView() | inrCurrency }}</td>
+                    <td class="px-4 py-3 text-right text-sm font-black text-emerald-700">{{ totalPaidInView() | inrCurrency }}</td>
+                    <td class="px-4 py-3 text-right text-sm font-black text-rose-700">{{ totalOutstandingInView() | inrCurrency }}</td>
+                    <td colspan="2"></td>
                   </tr>
                 </tfoot>
               </table>
             </div>
           }
-        </div>
+        </section>
 
-        <!-- Pagination (Tally Style) -->
-        <div class="flex items-center justify-between px-2">
-          <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            Records {{ pageStart() }} - {{ pageEnd() }} of {{ facade.total() }}
+        <section class="flex flex-col gap-3 rounded-[28px] border border-slate-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div class="text-sm font-semibold text-slate-500">
+            Showing {{ pageStart() }}-{{ pageEnd() }} of {{ totalResults() }} invoice record(s)
           </div>
-          <div class="flex items-center gap-4">
+
+          <div class="flex items-center gap-3">
             <button
+              type="button"
               (click)="previousPage()"
               [disabled]="facade.currentPage() === 0"
-              class="text-[10px] font-black uppercase tracking-widest text-[#1a3a5c] hover:underline disabled:text-slate-300"
+              class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              [PgUp] Previous
+              Previous
             </button>
-            <span class="text-xs font-black text-[#0f2540]">{{ facade.currentPage() + 1 }} / {{ totalPages() }}</span>
+            <span class="text-sm font-black text-slate-900">{{ facade.currentPage() + 1 }} / {{ totalPages() }}</span>
             <button
+              type="button"
               (click)="nextPage()"
               [disabled]="pageEnd() >= facade.total()"
-              class="text-[10px] font-black uppercase tracking-widest text-[#1a3a5c] hover:underline disabled:text-slate-300"
+              class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              [PgDn] Next
+              Next
             </button>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
 
-      <!-- Right Column: Summary Panel (Tally Style) -->
-      <div class="w-full xl:w-72 space-y-6">
-        <div class="rounded border border-[#d0dde8] bg-white overflow-hidden shadow-sm">
-          <div class="bg-[#1a3a5c] px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white">
-            Register Summary
+      <aside class="space-y-5 xl:sticky xl:top-24 xl:self-start">
+        <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Register snapshot</p>
+          @if (selectedInvoicePreview(); as invoice) {
+            <h2 class="mt-1 text-xl font-black tracking-tight text-slate-950">{{ invoice.invoiceNumber }}</h2>
+            <p class="mt-4 text-sm leading-6 text-slate-600">{{ invoice.client?.name || 'Client unavailable' }}</p>
+
+            <div class="mt-5 grid grid-cols-2 gap-3">
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Status</p>
+                <p class="mt-2 text-sm font-black text-slate-950">{{ statusLabel(invoice.status) }}</p>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Due</p>
+                <p class="mt-2 text-sm font-black text-slate-950">{{ dueStatus(invoice) }}</p>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Total</p>
+                <p class="mt-2 text-sm font-black text-slate-950">{{ invoice.totalAmount | inrCurrency }}</p>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Balance</p>
+                <p class="mt-2 text-sm font-black text-slate-950">{{ balanceDueAmount(invoice) | inrCurrency }}</p>
+              </div>
+            </div>
+
+            <div class="mt-5 space-y-2">
+              <button
+                type="button"
+                class="inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+                (click)="openInvoice(invoice.id)"
+              >
+                Open invoice
+              </button>
+              <button
+                type="button"
+                class="inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+                (click)="editInvoice(invoice.id)"
+              >
+                Edit invoice
+              </button>
+              @if (canRecordPayment(invoice.status)) {
+                <button
+                  type="button"
+                  class="inline-flex w-full items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700 transition hover:bg-emerald-100"
+                  (click)="recordPayment(invoice.id)"
+                >
+                  Record payment
+                </button>
+              }
+              <div class="grid grid-cols-2 gap-2">
+                @if (canDownload(invoice.status)) {
+                  <button
+                    type="button"
+                    class="inline-flex items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-black text-blue-700 transition hover:bg-blue-100"
+                    (click)="downloadPdf(invoice.id)"
+                  >
+                    Download PDF
+                  </button>
+                }
+                @if (canSend(invoice.status)) {
+                  <button
+                    type="button"
+                    class="inline-flex items-center justify-center rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-black text-violet-700 transition hover:bg-violet-100"
+                    (click)="sendWhatsApp(invoice.id)"
+                  >
+                    WhatsApp
+                  </button>
+                }
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                @if (invoice.status === 'draft') {
+                  <button
+                    type="button"
+                    class="inline-flex items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700 transition hover:bg-emerald-100"
+                    (click)="issueInvoice(invoice.id)"
+                  >
+                    Issue
+                  </button>
+                }
+                @if (canCancel(invoice.status)) {
+                  <button
+                    type="button"
+                    class="inline-flex items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-black text-rose-700 transition hover:bg-rose-100"
+                    (click)="cancelInvoice(invoice.id)"
+                  >
+                    Cancel
+                  </button>
+                }
+              </div>
+              <button
+                type="button"
+                class="inline-flex w-full items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-black text-rose-700 transition hover:bg-rose-100"
+                (click)="confirmDelete(invoice)"
+              >
+                Delete invoice
+              </button>
+            </div>
+          } @else {
+            <h2 class="mt-1 text-xl font-black tracking-tight text-slate-950">No invoice</h2>
+            <p class="mt-4 text-sm leading-6 text-slate-500">A quick preview will appear here when the register has visible rows.</p>
+          }
+        </section>
+
+        <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Register summary</p>
+          <div class="mt-4 space-y-4">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Total invoiced</p>
+              <p class="mt-2 text-xl font-black text-slate-950">{{ totalAmountInView() | inrCurrency }}</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Collected</p>
+              <p class="mt-2 text-xl font-black text-emerald-700">{{ totalPaidInView() | inrCurrency }}</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Outstanding</p>
+              <p class="mt-2 text-xl font-black text-rose-700">{{ totalOutstandingInView() | inrCurrency }}</p>
+              <p class="mt-1 text-xs font-semibold text-slate-500">{{ outstandingCount() }} open invoice(s)</p>
+            </div>
           </div>
-          <div class="p-4 space-y-4">
-            <div>
-              <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Total Invoiced</p>
-              <p class="font-mono font-black text-lg text-[#0f2540]" style="font-family: 'Courier New', Courier, monospace;">
-                {{ totalAmountInView() | inrCurrency }}
-              </p>
+        </section>
+
+        <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Billing notes</p>
+          <div class="mt-4 space-y-4">
+            <div class="flex items-start gap-3">
+              <span class="mt-1 h-2.5 w-2.5 rounded-full bg-blue-600"></span>
+              <p class="text-sm leading-6 text-slate-500">Review overdue and partial invoices together before collection follow-up calls.</p>
             </div>
-            <div class="pt-3 border-t border-[#eef3f9]">
-              <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Total Collected</p>
-              <p class="font-mono font-black text-lg text-[#1a6e1a]" style="font-family: 'Courier New', Courier, monospace;">
-                {{ totalPaidInView() | inrCurrency }}
-              </p>
+            <div class="flex items-start gap-3">
+              <span class="mt-1 h-2.5 w-2.5 rounded-full bg-blue-600"></span>
+              <p class="text-sm leading-6 text-slate-500">Use invoice detail view when payment history, PDF generation, or WhatsApp proof is needed.</p>
             </div>
-            <div class="pt-3 border-t-2 border-[#1a3a5c]">
-              <p class="text-[9px] font-bold text-[#b91c1c] uppercase tracking-widest">Outstanding (Baki)</p>
-              <p class="font-mono font-black text-xl text-[#b91c1c]" style="font-family: 'Courier New', Courier, monospace;">
-                {{ totalOutstandingInView() | inrCurrency }}
-              </p>
-              <p class="text-[10px] font-bold text-slate-500 mt-1 italic">{{ outstandingCount() }} Pending Vouchers</p>
+            <div class="flex items-start gap-3">
+              <span class="mt-1 h-2.5 w-2.5 rounded-full bg-blue-600"></span>
+              <p class="text-sm leading-6 text-slate-500">Keep this register for firm-to-client billing only, separate from client sales workflows.</p>
             </div>
           </div>
-        </div>
-
-        <div class="rounded border border-[#d0dde8] bg-[#dde8f2] p-4">
-          <p class="text-[10px] font-black uppercase tracking-widest text-[#1a3a5c] mb-2">Internal Notes</p>
-          <ul class="space-y-2 text-[11px] font-medium text-slate-600 list-disc pl-4 italic">
-            <li>Review overdue draft every Monday.</li>
-            <li>Issue GST invoices before 15th.</li>
-          </ul>
-        </div>
-      </div>
-
-    </div>
+        </section>
+      </aside>
+    </section>
   </div>
 </div>

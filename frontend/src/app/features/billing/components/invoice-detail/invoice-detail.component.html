@@ -1,415 +1,837 @@
-<div class="p-6 space-y-6">
+<div class="billing-print-shell w-full min-w-0 animate-in fade-in px-6 pb-8 pt-4 duration-500">
   @if (invoiceResource.isLoading()) {
-    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-  }
-
-  @if (invoice(); as currentInvoice) {
-    <mat-card class="billing-screen-only rounded-2xl border border-gray-200 bg-white shadow-sm">
-      <div class="flex flex-col gap-4 p-6 xl:flex-row xl:items-start xl:justify-between">
-        <div class="space-y-2">
-          <div class="flex flex-wrap items-center gap-3">
-            <h1 class="font-mono text-xl font-semibold text-gray-900">{{ currentInvoice.invoiceNumber }}</h1>
-            <span class="rounded-full px-2.5 py-1 text-xs font-medium capitalize" [class]="statusClasses(currentInvoice.status)">
-              {{ statusLabel(currentInvoice.status) }}
-            </span>
-          </div>
-          <p class="text-sm text-gray-600">
-            {{ currentInvoice.client?.name || 'Client unavailable' }} · Due:
-            {{ displayDate(currentInvoice.dueDate) }}
-          </p>
-        </div>
-
-        <div class="flex flex-wrap gap-2">
-          @if (canIssue(currentInvoice)) {
-            <button mat-flat-button type="button" class="!bg-amber-600 !text-white" (click)="issueInvoice()">
-              Issue
-            </button>
-          }
-          @if (canRecordPayment(currentInvoice)) {
-            <button mat-stroked-button type="button" class="!border-gray-300 !text-gray-700" (click)="onTabChange(1)">
-              Record Payment
-            </button>
-          }
-          @if (canSend(currentInvoice)) {
-            <button mat-stroked-button type="button" class="!border-gray-300 !text-gray-700" (click)="sendWhatsApp()">
-              Send WhatsApp
-            </button>
-          }
-          @if (canDownloadPdf(currentInvoice)) {
-            <button mat-stroked-button type="button" class="!border-gray-300 !text-gray-700" (click)="downloadPdf()">
-              PDF
-            </button>
-          }
-          @if (canEdit(currentInvoice)) {
-            <button mat-stroked-button type="button" class="!border-gray-300 !text-gray-700" (click)="editInvoice()">
-              Edit
-            </button>
-          }
-          @if (canCancel(currentInvoice)) {
-            <button mat-stroked-button type="button" class="!border-red-300 !text-red-700" (click)="cancelInvoice()">
-              Cancel
-            </button>
-          }
+    <section class="flex min-h-[480px] items-center justify-center rounded-[28px] border border-slate-200 bg-white shadow-sm">
+      <div class="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-6 py-4 text-slate-700">
+        <div class="h-10 w-10 rounded-full border-4 border-blue-100 border-t-blue-600 animate-spin"></div>
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Firm Billing Suite</p>
+          <p class="mt-1 text-base font-black text-slate-950">Loading voucher workspace...</p>
         </div>
       </div>
-    </mat-card>
+    </section>
+  } @else {
+    @if (invoice(); as currentInvoice) {
+      <div class="space-y-5">
+      <section class="billing-screen-only overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+        <div class="relative p-6 lg:p-7">
+          <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.14),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98),rgba(239,246,255,0.72))]"></div>
 
-    <mat-card class="rounded-2xl border border-gray-200 bg-white shadow-sm">
-      <mat-tab-group [selectedIndex]="selectedTabIndex()" (selectedIndexChange)="onTabChange($event)">
-        <mat-tab label="Invoice Preview">
-          <div class="space-y-4 p-6">
-            <div class="billing-screen-only flex justify-end">
-              <button mat-stroked-button type="button" class="!border-gray-300 !text-gray-700" (click)="printInvoice()">
-                Print
-              </button>
+          <div class="relative flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+            <div class="max-w-4xl">
+              <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-700">
+                <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+                Tally-style voucher desk
+              </div>
+
+              <div class="flex flex-wrap items-center gap-3">
+                <h1 class="font-mono text-3xl font-black tracking-tight text-slate-950 xl:text-[2.3rem]">
+                  {{ currentInvoice.invoiceNumber }}
+                </h1>
+                <span class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]" [class]="statusClasses(currentInvoice.status)">
+                  {{ statusLabel(currentInvoice.status) }}
+                </span>
+                <span class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]" [class]="dueClasses(currentInvoice)">
+                  {{ dueLabel() }}
+                </span>
+              </div>
+
+              <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+                {{ currentInvoice.client?.name || currentInvoice.receiverName || 'Client unavailable' }}
+                · Invoice {{ displayDate(currentInvoice.invoiceDate) }}
+                · Due {{ displayDate(currentInvoice.dueDate) }}
+                · {{ ageLabel() }}
+              </p>
+
+              <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <article class="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Voucher total</p>
+                  <p class="mt-3 font-mono text-2xl font-black text-slate-950">{{ currentInvoice.totalAmount | inrCurrency }}</p>
+                  <p class="mt-1 text-xs font-semibold text-slate-500">Gross invoice value</p>
+                </article>
+                <article class="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Collected</p>
+                  <p class="mt-3 font-mono text-2xl font-black text-emerald-700">{{ totalReceived() | inrCurrency }}</p>
+                  <p class="mt-1 text-xs font-semibold text-slate-500">{{ paymentProgress() }}% recovery</p>
+                </article>
+                <article class="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Open balance</p>
+                  <p class="mt-3 font-mono text-2xl font-black text-amber-700">{{ currentInvoice.balanceDue | inrCurrency }}</p>
+                  <p class="mt-1 text-xs font-semibold text-slate-500">{{ paymentStatusNote() }}</p>
+                </article>
+                <article class="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Ledger lines</p>
+                  <p class="mt-3 text-2xl font-black text-slate-950">{{ lineItemCount() }}</p>
+                  <p class="mt-1 text-xs font-semibold text-slate-500">{{ receiptCount() }} receipt(s) posted</p>
+                </article>
+              </div>
             </div>
 
-            <div class="billing-preview mx-auto max-w-5xl rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-              <div class="space-y-6">
-                <div class="flex items-start justify-between gap-6 border-b border-gray-200 pb-6">
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gray-500">Tax Invoice</p>
-                    <h2 class="mt-2 text-2xl font-semibold text-gray-900">{{ organization().name }}</h2>
-                    <p class="text-sm text-gray-600">Chartered Accountants</p>
-                    <p class="mt-2 text-sm text-gray-600">GSTIN: {{ organization().gstin }}</p>
-                  </div>
-                  <div class="space-y-1 text-right text-sm text-gray-600">
-                    <p class="font-mono text-base font-semibold text-gray-900">{{ currentInvoice.invoiceNumber }}</p>
-                    <p>Date: {{ displayDate(currentInvoice.invoiceDate) }}</p>
-                    <p>Due: {{ displayDate(currentInvoice.dueDate) }}</p>
-                  </div>
+            <div class="flex flex-wrap items-center gap-3 xl:max-w-[420px] xl:justify-end">
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                (click)="goToRegister()"
+              >
+                Invoice register
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                (click)="openBillingSuite()"
+              >
+                Firm suite
+              </button>
+              @if (canIssue(currentInvoice)) {
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-2xl bg-amber-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-amber-600/20 transition hover:bg-amber-700"
+                  (click)="issueInvoice()"
+                >
+                  Issue voucher
+                </button>
+              }
+              @if (canRecordPayment(currentInvoice)) {
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700 shadow-sm transition hover:bg-emerald-100"
+                  (click)="setTab(1)"
+                >
+                  Record payment
+                </button>
+              }
+              @if (canSend(currentInvoice)) {
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                  (click)="sendWhatsApp()"
+                >
+                  Send WhatsApp
+                </button>
+              }
+              @if (canDownloadPdf(currentInvoice)) {
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                  (click)="downloadPdf()"
+                >
+                  PDF
+                </button>
+              }
+              @if (canEdit(currentInvoice)) {
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                  (click)="editInvoice()"
+                >
+                  Edit
+                </button>
+              }
+              @if (canCancel(currentInvoice)) {
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-black text-rose-700 shadow-sm transition hover:bg-rose-100"
+                  (click)="cancelInvoice()"
+                >
+                  Cancel
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <main class="space-y-5">
+          <section class="billing-screen-only rounded-[28px] border border-slate-200 bg-white shadow-sm">
+            <div class="border-b border-slate-100 px-5 py-4">
+              <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                <div>
+                  <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Voucher workspace</p>
+                  <h2 class="mt-1 text-2xl font-black tracking-tight text-slate-950">Run billing and collections from one screen</h2>
+                  <p class="mt-1 text-sm text-slate-500">
+                    Preview the tax invoice, post receipt vouchers, and review the audit trail in a cleaner accounting layout.
+                  </p>
                 </div>
 
-                <div class="grid gap-6 md:grid-cols-2">
-                  <div class="rounded-xl border border-gray-200 p-4">
-                    <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Bill To</p>
-                    <p class="mt-2 font-semibold text-gray-900">{{ currentInvoice.client?.name || 'Client' }}</p>
-                    <p class="text-sm text-gray-600">{{ currentInvoice.client?.gstin || currentInvoice.clientGstin || 'No GSTIN' }}</p>
-                    <p class="text-sm text-gray-600">{{ currentInvoice.client?.mobile || 'No mobile on file' }}</p>
-                  </div>
-
-                  <div class="rounded-xl border border-gray-200 p-4">
-                    <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Place of Supply</p>
-                    <p class="mt-2 font-semibold text-gray-900">{{ currentInvoice.placeOfSupply || organization().stateCode }}</p>
-                    <p class="text-sm text-gray-600">GST Type: {{ currentInvoice.gstType }}</p>
-                  </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                  <table class="min-w-full border border-gray-200 text-sm">
-                    <thead class="bg-gray-50">
-                      <tr>
-                        <th class="border border-gray-200 px-3 py-2 text-left">#</th>
-                        <th class="border border-gray-200 px-3 py-2 text-left">Description</th>
-                        <th class="border border-gray-200 px-3 py-2 text-left">SAC</th>
-                        <th class="border border-gray-200 px-3 py-2 text-left">Qty</th>
-                        <th class="border border-gray-200 px-3 py-2 text-left">Rate</th>
-                        <th class="border border-gray-200 px-3 py-2 text-left">Amt</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (item of currentInvoice.lineItems ?? []; track item.id; let index = $index) {
-                        <tr>
-                          <td class="border border-gray-200 px-3 py-2">{{ index + 1 }}</td>
-                          <td class="border border-gray-200 px-3 py-2">{{ item.description }}</td>
-                          <td class="border border-gray-200 px-3 py-2">{{ item.sacCode }}</td>
-                          <td class="border border-gray-200 px-3 py-2">{{ item.quantity }}</td>
-                          <td class="border border-gray-200 px-3 py-2 font-mono">{{ item.unitRate | inrCurrency }}</td>
-                          <td class="border border-gray-200 px-3 py-2 font-mono">{{ item.amount | inrCurrency }}</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-
-                <div class="ml-auto max-w-sm space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm">
-                  <div class="flex items-center justify-between">
-                    <span>Subtotal</span>
-                    <span class="font-mono">{{ currentInvoice.subtotal | inrCurrency }}</span>
-                  </div>
-                  @if (currentInvoice.gstType === 'CGST_SGST') {
-                    <div class="flex items-center justify-between">
-                      <span>CGST (9%)</span>
-                      <span class="font-mono">{{ currentInvoice.cgstAmount | inrCurrency }}</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                      <span>SGST (9%)</span>
-                      <span class="font-mono">{{ currentInvoice.sgstAmount | inrCurrency }}</span>
-                    </div>
-                  } @else {
-                    <div class="flex items-center justify-between">
-                      <span>IGST (18%)</span>
-                      <span class="font-mono">{{ currentInvoice.igstAmount | inrCurrency }}</span>
-                    </div>
-                  }
-                  <div class="flex items-center justify-between">
-                    <span>Round Off</span>
-                    <span class="font-mono">{{ currentInvoice.roundOff | inrCurrency }}</span>
-                  </div>
-                  <div class="border-t border-gray-200 pt-3">
-                    <div class="flex items-center justify-between">
-                      <span class="font-medium text-gray-700">TOTAL</span>
-                      <span class="font-mono text-xl font-bold text-gray-900">{{ currentInvoice.totalAmount | inrCurrency }}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="rounded-xl border border-gray-200 p-4 text-sm text-gray-700">
-                  <p class="font-medium text-gray-900">Bank: HDFC Bank · IFSC: HDFC0001234</p>
-                  <p class="mt-2">{{ currentInvoice.notes || 'Payment within 30 days.' }}</p>
-                </div>
-
-                <div class="flex justify-end pt-8">
-                  <div class="text-right">
-                    <p class="font-medium text-gray-900">For {{ organization().name }}</p>
-                    <div class="mt-10 border-t border-gray-400 pt-2 text-sm text-gray-600">Authorised Signatory</div>
-                  </div>
+                <div class="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800 xl:max-w-sm">
+                  This invoice is part of the CA firm billing suite and stays separate from the client's own sales billing.
                 </div>
               </div>
             </div>
-          </div>
-        </mat-tab>
 
-        <mat-tab label="Payments">
-          <div class="space-y-6 p-6">
-            @if ((currentInvoice.status === 'paid' || currentInvoice.status === 'partially_paid') && payments().length > 0) {
-              <mat-card class="rounded-2xl border border-gray-200 bg-white shadow-sm">
-                <div class="overflow-x-auto">
-                  <table mat-table [dataSource]="payments()" class="min-w-full">
-                    <ng-container matColumnDef="date">
-                      <th mat-header-cell *matHeaderCellDef>Date</th>
-                      <td mat-cell *matCellDef="let payment">{{ displayDate(payment.paymentDate || payment.createdAt) }}</td>
-                    </ng-container>
+            <div class="p-5">
+              <div class="grid gap-3 md:grid-cols-3">
+                @for (tab of tabItems; track tab.label; let index = $index) {
+                  <button
+                    type="button"
+                    class="rounded-[24px] border px-4 py-4 text-left transition"
+                    [class]="selectedTabIndex() === index ? 'invoice-tab-active border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700'"
+                    (click)="setTab(index)"
+                  >
+                    <p class="text-sm font-black">{{ tab.label }}</p>
+                    <p class="mt-1 text-xs font-semibold" [class]="selectedTabIndex() === index ? 'text-blue-100' : 'text-slate-400'">
+                      {{ tab.blurb }}
+                    </p>
+                  </button>
+                }
+              </div>
+            </div>
+          </section>
 
-                    <ng-container matColumnDef="mode">
-                      <th mat-header-cell *matHeaderCellDef>Mode</th>
-                      <td mat-cell *matCellDef="let payment">{{ paymentModeLabel(payment.paymentMode) }}</td>
-                    </ng-container>
-
-                    <ng-container matColumnDef="reference">
-                      <th mat-header-cell *matHeaderCellDef>Reference #</th>
-                      <td mat-cell *matCellDef="let payment">{{ payment.referenceNumber || '—' }}</td>
-                    </ng-container>
-
-                    <ng-container matColumnDef="amount">
-                      <th mat-header-cell *matHeaderCellDef>Amount</th>
-                      <td mat-cell *matCellDef="let payment" class="font-mono">{{ payment.amount | inrCurrency }}</td>
-                    </ng-container>
-
-                    <ng-container matColumnDef="recordedBy">
-                      <th mat-header-cell *matHeaderCellDef>Recorded By</th>
-                      <td mat-cell *matCellDef="let payment">{{ payment.recordedBy }}</td>
-                    </ng-container>
-
-                    <tr mat-header-row *matHeaderRowDef="paymentColumns"></tr>
-                    <tr mat-row *matRowDef="let row; columns: paymentColumns"></tr>
-                  </table>
+          @if (selectedTabIndex() === 0) {
+            <section class="space-y-5">
+              <div class="billing-screen-only flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                <div>
+                  <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Invoice preview</p>
+                  <p class="mt-1 text-sm font-semibold text-slate-600">Tally-inspired voucher presentation with live GST and receivable totals.</p>
                 </div>
-              </mat-card>
-            }
 
-            @if (canRecordPayment(currentInvoice)) {
-              <div class="overflow-hidden border border-slate-200 bg-white shadow-lg rounded-2xl @container">
-                <div class="flex flex-col xl:flex-row divide-y xl:divide-y-0 xl:divide-x divide-slate-100">
-                  <!-- Payment Context Info (Tally Navy Side) -->
-                  <div class="xl:w-1/3 bg-[#0f2540] p-8 space-y-8 text-white">
-                    <div>
-                      <h3 class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7ec8f0] mb-2">Billing Gateway</h3>
-                      <p class="text-2xl font-black tracking-tight">Record Collection</p>
-                      <p class="mt-1 text-xs text-[#8ab8d4]">Gateway to Ledger & Outstanding Management</p>
+                <div class="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                    (click)="printInvoice()"
+                  >
+                    Print voucher
+                  </button>
+                  @if (canDownloadPdf(currentInvoice)) {
+                    <button
+                      type="button"
+                      class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+                      (click)="downloadPdf()"
+                    >
+                      Download PDF
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <article class="billing-preview billing-print-card overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm">
+                <div class="grid gap-0 xl:grid-cols-[320px_minmax(0,1fr)]">
+                  <aside class="billing-screen-only border-b border-slate-800 bg-[#102542] p-6 text-white xl:border-b-0 xl:border-r xl:border-r-slate-800">
+                    <p class="text-[10px] font-black uppercase tracking-[0.24em] text-sky-200">Firm billing suite</p>
+                    <h3 class="mt-3 text-3xl font-black tracking-tight">{{ organization().name }}</h3>
+                    <p class="mt-2 text-sm text-sky-100">Chartered Accountants</p>
+
+                    <div class="mt-6 space-y-4 border-t border-white/10 pt-6">
+                      <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">GSTIN</p>
+                        <p class="mt-1 text-sm font-semibold text-white">{{ currentInvoice.firmGstin || organization().gstin }}</p>
+                      </div>
+                      <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">PAN</p>
+                        <p class="mt-1 text-sm font-semibold text-white">{{ organization().pan }}</p>
+                      </div>
+                      <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">Office</p>
+                        <p class="mt-1 text-sm leading-6 text-sky-100">
+                          {{ organization().addressLine1 }}<br />
+                          {{ organization().addressLine2 }}
+                        </p>
+                      </div>
                     </div>
 
-                    <div class="space-y-6 pt-6 border-t border-white/10">
-                      <div class="space-y-1 group cursor-pointer" (click)="fillRemainingBalance()">
-                        <p class="text-[10px] font-bold uppercase tracking-widest text-[#8ab8d4]">Outstanding (Baki)</p>
-                        <div class="flex items-baseline gap-2">
-                          <p class="text-3xl font-bold tracking-tighter" style="font-family: 'Courier New', Courier, monospace;">
-                            {{ currentInvoice.balanceDue | inrCurrency }}
+                    <div class="mt-8 rounded-3xl border border-white/10 bg-white/5 p-5">
+                      <p class="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">Voucher facts</p>
+                      <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                        <div>
+                          <p class="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">Type</p>
+                          <p class="mt-1 text-sm font-semibold text-white">
+                            {{ (currentInvoice.invoiceType || 'tax_invoice').replace('_', ' ') }}
                           </p>
-                          <span class="text-[10px] font-bold text-[#7ec8f0] uppercase tracking-tighter group-hover:underline">Fill Max</span>
+                        </div>
+                        <div>
+                          <p class="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">Receipt progress</p>
+                          <p class="mt-1 text-sm font-semibold text-white">{{ paymentProgress() }}% collected</p>
+                        </div>
+                        <div>
+                          <p class="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">Line items</p>
+                          <p class="mt-1 text-sm font-semibold text-white">{{ lineItemCount() }} ledger row(s)</p>
+                        </div>
+                        <div>
+                          <p class="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">Receipts</p>
+                          <p class="mt-1 text-sm font-semibold text-white">{{ receiptCount() }} posted receipt(s)</p>
+                        </div>
+                      </div>
+                    </div>
+                  </aside>
+
+                  <div class="p-6 lg:p-8">
+                    <div class="flex flex-col gap-6 border-b border-slate-200 pb-6 lg:flex-row lg:items-start lg:justify-between">
+                      <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Tax invoice</p>
+                        <h2 class="mt-2 text-3xl font-black tracking-tight text-slate-950">{{ currentInvoice.invoiceNumber }}</h2>
+                        <p class="mt-2 text-sm text-slate-500">
+                          Client-facing professional billing voucher generated by the firm.
+                        </p>
+                      </div>
+
+                      <div class="grid gap-3 sm:grid-cols-2 lg:min-w-[320px]">
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Invoice date</p>
+                          <p class="mt-2 font-mono text-lg font-black text-slate-950">{{ displayDate(currentInvoice.invoiceDate) }}</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Due date</p>
+                          <p class="mt-2 font-mono text-lg font-black text-slate-950">{{ displayDate(currentInvoice.dueDate) }}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="mt-6 grid gap-4 lg:grid-cols-3">
+                      <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Bill to</p>
+                        <p class="mt-2 text-lg font-black text-slate-950">
+                          {{ currentInvoice.client?.name || currentInvoice.receiverName || 'Client unavailable' }}
+                        </p>
+                        <p class="mt-1 text-sm text-slate-600">
+                          {{ currentInvoice.client?.gstin || currentInvoice.clientGstin || 'GSTIN not added' }}
+                        </p>
+                        <p class="mt-1 text-sm text-slate-600">
+                          {{ currentInvoice.client?.mobile || 'Contact number not added' }}
+                        </p>
+                        @if (currentInvoice.receiverAddress) {
+                          <p class="mt-1 text-sm text-slate-600">{{ currentInvoice.receiverAddress }}</p>
+                        }
+                      </div>
+
+                      <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Place of supply</p>
+                        <p class="mt-2 text-lg font-black text-slate-950">{{ currentInvoice.placeOfSupply || organization().stateCode }}</p>
+                        <p class="mt-1 text-sm text-slate-600">
+                          {{ currentInvoice.gstType === 'CGST_SGST' ? 'Intra-state billing' : 'Inter-state billing' }}
+                        </p>
+                        <p class="mt-1 text-sm text-slate-600">GST type: {{ currentInvoice.gstType }}</p>
+                      </div>
+
+                      <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Collection status</p>
+                        <p class="mt-2 text-lg font-black text-slate-950">{{ paymentProgress() }}% collected</p>
+                        <p class="mt-1 text-sm text-slate-600">{{ totalReceived() | inrCurrency }} received</p>
+                        <p class="mt-1 text-sm text-slate-600">{{ currentInvoice.balanceDue | inrCurrency }} still open</p>
+                      </div>
+                    </div>
+
+                    <div class="mt-6 overflow-hidden rounded-[24px] border border-slate-200">
+                      <table class="min-w-full text-sm">
+                        <thead class="bg-slate-50 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                          <tr>
+                            <th class="px-4 py-3">#</th>
+                            <th class="px-4 py-3">Description</th>
+                            <th class="px-4 py-3">SAC</th>
+                            <th class="px-4 py-3 text-right">Qty</th>
+                            <th class="px-4 py-3 text-right">Rate</th>
+                            <th class="px-4 py-3 text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 bg-white">
+                          @for (item of currentInvoice.lineItems ?? []; track item.id; let index = $index) {
+                            <tr>
+                              <td class="px-4 py-4 font-semibold text-slate-500">{{ index + 1 }}</td>
+                              <td class="px-4 py-4">
+                                <p class="font-semibold text-slate-900">{{ item.description }}</p>
+                              </td>
+                              <td class="px-4 py-4 font-mono text-slate-700">{{ item.sacCode }}</td>
+                              <td class="px-4 py-4 text-right font-mono text-slate-700">{{ item.quantity }}</td>
+                              <td class="px-4 py-4 text-right font-mono text-slate-700">{{ item.unitRate | inrCurrency }}</td>
+                              <td class="px-4 py-4 text-right font-mono font-black text-slate-900">{{ item.amount | inrCurrency }}</td>
+                            </tr>
+                          } @empty {
+                            <tr>
+                              <td colspan="6" class="px-4 py-8 text-center text-sm text-slate-500">
+                                No line items are available for this invoice yet.
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div class="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+                      <div class="space-y-4">
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Notes and bank details</p>
+                          <p class="mt-3 text-sm font-semibold text-slate-900">
+                            Bank: HDFC Bank · IFSC: HDFC0001234
+                          </p>
+                          <p class="mt-2 text-sm leading-6 text-slate-600">
+                            {{ currentInvoice.notes || 'Payment due within agreed credit period. Please quote the invoice number while remitting the amount.' }}
+                          </p>
+                        </div>
+
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                          <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Authorisation</p>
+                          <div class="mt-10 flex justify-end">
+                            <div class="min-w-[220px] border-t border-slate-300 pt-2 text-right text-sm font-semibold text-slate-600">
+                              For {{ organization().name }}<br />
+                              Authorised signatory
+                            </div>
+                          </div>
                         </div>
                       </div>
 
-                      <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-0.5">
-                          <p class="text-[9px] font-bold uppercase tracking-widest text-[#8ab8d4]">Invoiced</p>
-                          <p class="text-sm font-bold" style="font-family: 'Courier New', Courier, monospace;">{{ currentInvoice.totalAmount | inrCurrency }}</p>
+                      <div class="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Ledger totals</p>
+                        <div class="mt-4 space-y-3">
+                          <div class="flex items-center justify-between text-sm text-slate-600">
+                            <span>Subtotal</span>
+                            <span class="font-mono font-black text-slate-900">{{ currentInvoice.subtotal | inrCurrency }}</span>
+                          </div>
+                          @if (currentInvoice.gstType === 'CGST_SGST') {
+                            <div class="flex items-center justify-between text-sm text-slate-600">
+                              <span>CGST (9%)</span>
+                              <span class="font-mono font-black text-slate-900">{{ currentInvoice.cgstAmount | inrCurrency }}</span>
+                            </div>
+                            <div class="flex items-center justify-between text-sm text-slate-600">
+                              <span>SGST (9%)</span>
+                              <span class="font-mono font-black text-slate-900">{{ currentInvoice.sgstAmount | inrCurrency }}</span>
+                            </div>
+                          } @else {
+                            <div class="flex items-center justify-between text-sm text-slate-600">
+                              <span>IGST (18%)</span>
+                              <span class="font-mono font-black text-slate-900">{{ currentInvoice.igstAmount | inrCurrency }}</span>
+                            </div>
+                          }
+                          <div class="flex items-center justify-between text-sm text-slate-600">
+                            <span>Total tax</span>
+                            <span class="font-mono font-black text-slate-900">{{ totalTax() | inrCurrency }}</span>
+                          </div>
+                          <div class="flex items-center justify-between text-sm text-slate-600">
+                            <span>Round off</span>
+                            <span class="font-mono font-black text-slate-900">{{ currentInvoice.roundOff | inrCurrency }}</span>
+                          </div>
                         </div>
-                        <div class="space-y-0.5">
-                          <p class="text-[9px] font-bold uppercase tracking-widest text-[#8ab8d4]">Collected</p>
-                          <p class="text-sm font-bold text-[#d4edda]" style="font-family: 'Courier New', Courier, monospace;">{{ currentInvoice.totalAmount - currentInvoice.balanceDue | inrCurrency }}</p>
-                        </div>
-                      </div>
 
-                      <div class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
-                        <p class="text-[10px] font-bold text-[#7ec8f0] flex items-center gap-1.5 uppercase tracking-wider">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                          </svg>
-                          Tally Ledger Sync
-                        </p>
-                        <p class="text-[11px] text-[#8ab8d4] leading-relaxed">
-                          Collection entries are finalized immediately. Status will shift to <b>Paid</b> or <b>Partial</b> upon submission.
-                        </p>
+                        <div class="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
+                          <div class="flex items-center justify-between">
+                            <span class="text-sm font-black uppercase tracking-[0.12em] text-slate-400">Grand total</span>
+                            <span class="font-mono text-2xl font-black text-slate-950">{{ currentInvoice.totalAmount | inrCurrency }}</span>
+                          </div>
+                          <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
+                              <p class="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Collected</p>
+                              <p class="mt-2 font-mono text-lg font-black text-emerald-700">{{ totalReceived() | inrCurrency }}</p>
+                            </div>
+                            <div class="rounded-2xl border border-amber-200 bg-amber-50 p-3">
+                              <p class="text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">Balance</p>
+                              <p class="mt-2 font-mono text-lg font-black text-amber-700">{{ currentInvoice.balanceDue | inrCurrency }}</p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
+                </div>
+              </article>
+            </section>
+          }
 
-                  <!-- Form Area (Steel Blue Theme) -->
-                  <div class="flex-1 p-8 bg-[#f8fafe]">
-                    <div class="mb-6 flex items-center justify-between border-b border-slate-200 pb-4">
-                      <h4 class="text-sm font-bold uppercase tracking-widest text-[#1a3a5c]">Voucher Entry</h4>
-                      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Receipt #{{ currentInvoice.payments?.length || 0 + 1 }}</span>
-                    </div>
+          @if (selectedTabIndex() === 1) {
+            <section class="space-y-5">
+              <div class="grid gap-4 sm:grid-cols-3">
+                <article class="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Receipt ledger</p>
+                  <p class="mt-3 font-mono text-2xl font-black text-slate-950">{{ totalReceived() | inrCurrency }}</p>
+                  <p class="mt-1 text-xs font-semibold text-slate-500">{{ receiptCount() }} collection entry(s)</p>
+                </article>
+                <article class="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Latest receipt</p>
+                  <p class="mt-3 text-base font-black text-slate-950">
+                    {{ latestPayment() ? displayDate(latestPayment()!.paymentDate || latestPayment()!.createdAt) : '--' }}
+                  </p>
+                  <p class="mt-1 text-xs font-semibold text-slate-500">
+                    {{ latestPayment() ? paymentModeLabel(latestPayment()!.paymentMode) : 'No receipts yet' }}
+                  </p>
+                </article>
+                <article class="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Open balance</p>
+                  <p class="mt-3 font-mono text-2xl font-black text-amber-700">{{ currentInvoice.balanceDue | inrCurrency }}</p>
+                  <p class="mt-1 text-xs font-semibold text-slate-500">{{ paymentStatusNote() }}</p>
+                </article>
+              </div>
 
-                    <form [formGroup]="paymentForm" class="space-y-5">
-                      <div class="grid gap-5 md:grid-cols-2">
-                        <!-- Amount Field -->
-                        <div class="md:col-span-2 space-y-1.5">
-                          <label class="text-[10px] font-bold uppercase tracking-widest text-[#2a5a84] ml-1">Receipt Amount</label>
-                          <div class="relative group">
-                            <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#1a3a5c] transition-colors font-bold">₹</div>
+              @if (payments().length > 0) {
+                <section class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+                  <div class="border-b border-slate-100 px-5 py-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Payment register</p>
+                    <h3 class="mt-1 text-xl font-black text-slate-950">Posted receipt entries</h3>
+                  </div>
+
+                  <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                      <thead class="bg-slate-50 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                        <tr>
+                          <th class="px-4 py-3">Date</th>
+                          <th class="px-4 py-3">Mode</th>
+                          <th class="px-4 py-3">Reference</th>
+                          <th class="px-4 py-3 text-right">Amount</th>
+                          <th class="px-4 py-3">Recorded by</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-100 bg-white">
+                        @for (payment of payments(); track payment.id) {
+                          <tr>
+                            <td class="px-4 py-4 font-semibold text-slate-700">{{ displayDate(payment.paymentDate || payment.createdAt) }}</td>
+                            <td class="px-4 py-4 text-slate-600">{{ paymentModeLabel(payment.paymentMode) }}</td>
+                            <td class="px-4 py-4 text-slate-600">{{ payment.referenceNumber || '--' }}</td>
+                            <td class="px-4 py-4 text-right font-mono font-black text-slate-900">{{ payment.amount | inrCurrency }}</td>
+                            <td class="px-4 py-4 text-slate-600">{{ payment.recordedBy }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              }
+
+              @if (canRecordPayment(currentInvoice)) {
+                <section class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+                  <div class="grid gap-0 xl:grid-cols-[320px_minmax(0,1fr)]">
+                    <aside class="border-b border-slate-800 bg-[#102542] p-6 text-white xl:border-b-0 xl:border-r xl:border-r-slate-800">
+                      <p class="text-[10px] font-black uppercase tracking-[0.22em] text-sky-200">Receipt posting desk</p>
+                      <h3 class="mt-3 text-3xl font-black tracking-tight">Record Collection</h3>
+                      <p class="mt-2 text-sm leading-6 text-sky-100">
+                        Post the receipt straight against the voucher and keep the outstanding ledger current.
+                      </p>
+
+                      <div class="mt-6 space-y-5 border-t border-white/10 pt-6">
+                        <div class="cursor-pointer rounded-3xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10" (click)="fillRemainingBalance()">
+                          <p class="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">Outstanding</p>
+                          <p class="mt-3 font-mono text-3xl font-black text-white">{{ currentInvoice.balanceDue | inrCurrency }}</p>
+                          <p class="mt-2 text-xs font-semibold text-sky-100">Click to fill the remaining balance automatically.</p>
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                          <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">Invoiced</p>
+                            <p class="mt-1 font-mono text-lg font-black text-white">{{ currentInvoice.totalAmount | inrCurrency }}</p>
+                          </div>
+                          <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">Collected</p>
+                            <p class="mt-1 font-mono text-lg font-black text-emerald-200">{{ totalReceived() | inrCurrency }}</p>
+                          </div>
+                          <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">Receipt no.</p>
+                            <p class="mt-1 font-mono text-lg font-black text-white">RCP {{ receiptNumberPreview() }}</p>
+                          </div>
+                          <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">Status</p>
+                            <p class="mt-1 text-sm font-semibold text-white">{{ paymentStatusNote() }}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </aside>
+
+                    <div class="bg-[#f8fbff] p-6">
+                      <div class="mb-6 flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Voucher entry</p>
+                          <h3 class="mt-1 text-xl font-black text-slate-950">Post receipt against this invoice</h3>
+                        </div>
+                        <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                          {{ currentInvoice.invoiceNumber }}
+                        </span>
+                      </div>
+
+                      <form [formGroup]="paymentForm" class="space-y-5">
+                        <div class="space-y-2">
+                          <label class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Receipt amount</label>
+                          <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-black text-slate-400">Rs</span>
                             <input
                               type="number"
                               min="0.01"
                               formControlName="amount"
                               placeholder="0.00"
-                              class="w-full pl-10 pr-4 py-4 bg-white border border-slate-200 rounded-xl text-2xl font-bold text-slate-900 focus:border-[#1a3a5c] focus:ring-4 focus:ring-[#1a3a5c]/5 focus:outline-none transition-all placeholder:text-slate-200"
-                              [class.border-red-500]="isOverpaid() || (paymentForm.get('amount')?.invalid && paymentForm.get('amount')?.touched)"
-                              style="font-family: 'Courier New', Courier, monospace;"
+                              class="h-16 w-full rounded-2xl border bg-white pl-14 pr-4 text-2xl font-black text-slate-950 outline-none transition placeholder:text-slate-300 focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                              [class]="isOverpaid() || (paymentForm.controls.amount.invalid && paymentForm.controls.amount.touched) ? 'border-rose-300' : 'border-slate-200'"
                             />
-                            @if (isOverpaid()) {
-                              <div class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-red-600 animate-pulse">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                                </svg>
-                                <span class="text-[10px] font-black uppercase">Overpayment</span>
-                              </div>
-                            }
                           </div>
                           @if (isOverpaid()) {
-                            <p class="text-[10px] font-bold text-red-600 ml-1 mt-1">Rule R10: Amount cannot exceed remaining balance ({{ currentInvoice.balanceDue | inrCurrency }})</p>
+                            <p class="text-xs font-black text-rose-600">
+                              Receipt amount cannot exceed the balance due of {{ currentInvoice.balanceDue | inrCurrency }}.
+                            </p>
+                          } @else if (paymentForm.controls.amount.invalid && paymentForm.controls.amount.touched) {
+                            <p class="text-xs font-black text-rose-600">Enter a valid collection amount.</p>
                           }
                         </div>
 
-                        <!-- Date Picker -->
-                        <div class="space-y-1.5">
-                          <label class="text-[10px] font-bold uppercase tracking-widest text-[#2a5a84] ml-1">Instrument Date</label>
-                          <div class="relative group">
+                        <div class="grid gap-5 md:grid-cols-2">
+                          <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Instrument date</label>
                             <input
-                              matInput
-                              [matDatepicker]="paymentDatePicker"
+                              type="date"
                               formControlName="paymentDate"
-                              class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:border-[#1a3a5c] focus:outline-none transition-all cursor-pointer"
-                              (click)="paymentDatePicker.open()"
-                              readonly
+                              class="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                             />
-                            <mat-datepicker #paymentDatePicker></mat-datepicker>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
+                          </div>
+
+                          <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Collection mode</label>
+                            <select
+                              formControlName="paymentMode"
+                              class="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                            >
+                              @for (mode of paymentModes; track mode.value) {
+                                <option [value]="mode.value">{{ mode.label }}</option>
+                              }
+                            </select>
+                          </div>
+
+                          <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Ref / UTR / Cheque no.</label>
+                            <input
+                              type="text"
+                              formControlName="referenceNumber"
+                              placeholder="Optional reference"
+                              class="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 outline-none transition placeholder:text-slate-300 focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                            />
+                          </div>
+
+                          <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Narration</label>
+                            <input
+                              type="text"
+                              formControlName="notes"
+                              placeholder="Internal narration"
+                              class="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 outline-none transition placeholder:text-slate-300 focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                            />
                           </div>
                         </div>
 
-                        <!-- Payment Mode -->
-                        <div class="space-y-1.5">
-                          <label class="text-[10px] font-bold uppercase tracking-widest text-[#2a5a84] ml-1">Collection Mode</label>
-                          <mat-select formControlName="paymentMode" class="custom-select-trigger text-sm font-bold bg-white border border-slate-200 rounded-xl px-4 py-3.5 focus-within:border-[#1a3a5c] transition-all">
-                            @for (mode of paymentModes; track mode.value) {
-                              <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
-                            }
-                          </mat-select>
-                        </div>
+                        <div class="flex flex-col gap-4 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Ledger impact</p>
+                            <p class="mt-1 text-sm font-black" [class]="isOverpaid() ? 'text-rose-600' : 'text-emerald-700'">
+                              @if (isOverpaid()) {
+                                Invalid receipt: amount exceeds balance.
+                              } @else {
+                                New balance: {{ currentInvoice.balanceDue - (paymentForm.value.amount || 0) | inrCurrency }}
+                              }
+                            </p>
+                          </div>
 
-                        <!-- Reference -->
-                        <div class="space-y-1.5">
-                          <label class="text-[10px] font-bold uppercase tracking-widest text-[#2a5a84] ml-1">Ref / UTR / Cheque #</label>
-                          <input
-                            type="text"
-                            formControlName="referenceNumber"
-                            placeholder="Optional reference"
-                            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:border-[#1a3a5c] focus:outline-none transition-all placeholder:text-slate-100"
-                          />
-                        </div>
-
-                        <!-- Notes -->
-                        <div class="space-y-1.5">
-                          <label class="text-[10px] font-bold uppercase tracking-widest text-[#2a5a84] ml-1">Narration</label>
-                          <input
-                            type="text"
-                            formControlName="notes"
-                            placeholder="Internal narration..."
-                            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:border-[#1a3a5c] focus:outline-none transition-all placeholder:text-slate-100"
-                          />
-                        </div>
-                      </div>
-
-                      <div class="pt-4 flex items-center justify-between border-t border-slate-200/60">
-                        <div class="space-y-1">
-                          <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Ledger Impact</p>
-                          <p class="text-[10px] font-black" [class]="isOverpaid() ? 'text-red-600' : 'text-[#1a6e1a]'">
-                            @if (isOverpaid()) {
-                              INVALID: Amount > Baki
+                          <button
+                            type="button"
+                            class="inline-flex items-center justify-center gap-3 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-black uppercase tracking-[0.16em] text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                            (click)="recordPayment()"
+                            [disabled]="isSubmittingPayment() || paymentForm.invalid"
+                          >
+                            @if (isSubmittingPayment()) {
+                              <span class="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></span>
+                              Posting voucher
                             } @else {
-                              NEW BALANCE: {{ currentInvoice.balanceDue - (paymentForm.value.amount || 0) | inrCurrency }}
+                              Record payment
                             }
-                          </p>
+                          </button>
                         </div>
-
-                        <button
-                          type="button"
-                          class="px-8 py-3 rounded-xl bg-[#1a3a5c] hover:bg-[#0f2540] disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-bold tracking-widest uppercase transition-all shadow-lg shadow-[#1a3a5c]/20 flex items-center gap-3"
-                          (click)="recordPayment()"
-                          [disabled]="isSubmittingPayment() || paymentForm.invalid"
-                        >
-                          @if (isSubmittingPayment()) {
-                            <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            Voucher Posting...
-                          } @else {
-                            <span>[F8] Record Payment</span>
-                          }
-                        </button>
-                      </div>
-                    </form>
+                      </form>
+                    </div>
                   </div>
-                </div>
-              </div>
-            } @else {
-              <div class="rounded-2xl border border-dashed border-slate-200 p-10 text-center bg-slate-50/50">
-                <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Ledger Entry Locked</p>
-                <p class="mt-2 text-sm text-slate-500">Payments can only be recorded for issued or partially paid vouchers.</p>
-              </div>
-            }
-          </div>
-        </mat-tab>
+                </section>
+              } @else {
+                <section class="rounded-[28px] border border-dashed border-slate-200 bg-white p-12 text-center shadow-sm">
+                  <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Ledger entry locked</p>
+                  <p class="mt-2 text-base font-black text-slate-950">Payment posting opens after the voucher is issued.</p>
+                  <p class="mt-2 text-sm text-slate-500">
+                    Draft and cancelled vouchers cannot receive collection entries.
+                  </p>
+                </section>
+              }
+            </section>
+          }
 
-        <mat-tab label="Timeline">
-          <div class="p-6">
-            <div class="space-y-6">
-              @for (event of timelineEvents(); track event.title + event.timestamp) {
-                <div class="flex gap-4">
-                  <div class="mt-1 flex h-3 w-3 shrink-0 rounded-full bg-amber-500"></div>
-                  <div class="space-y-1">
-                    <p class="font-medium text-gray-900">{{ event.title }}</p>
-                    <p class="text-sm text-gray-600">{{ displayDateTime(event.timestamp) }}</p>
-                    @if (event.description) {
-                      <p class="text-sm text-gray-500">{{ event.description }}</p>
+          @if (selectedTabIndex() === 2) {
+            <section class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+              <div class="border-b border-slate-100 px-5 py-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Audit trail</p>
+                <h3 class="mt-1 text-xl font-black text-slate-950">Voucher movement timeline</h3>
+                <p class="mt-1 text-sm text-slate-500">Every stage from creation to payment appears here for accounting review.</p>
+              </div>
+
+              <div class="p-5">
+                @if (timelineEvents().length > 0) {
+                  <div class="space-y-4">
+                    @for (event of timelineEvents(); track event.title + event.timestamp) {
+                      <div class="flex gap-4 rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                        <div class="relative flex w-10 justify-center">
+                          <span class="mt-1 h-4 w-4 rounded-full ring-4" [class]="timelineDotClasses(event)"></span>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <p class="text-base font-black text-slate-950">{{ event.title }}</p>
+                            <span class="text-xs font-semibold text-slate-500">{{ displayDateTime(event.timestamp) }}</span>
+                          </div>
+                          @if (event.description) {
+                            <p class="mt-2 text-sm leading-6 text-slate-600">{{ event.description }}</p>
+                          }
+                        </div>
+                      </div>
                     }
                   </div>
+                } @else {
+                  <div class="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-sm text-slate-500">
+                    No timeline events are available for this invoice yet.
+                  </div>
+                }
+              </div>
+            </section>
+          }
+        </main>
+
+        <aside class="billing-screen-only space-y-5 xl:sticky xl:top-4">
+          <section class="rounded-[28px] border border-slate-200 bg-white shadow-sm">
+            <div class="border-b border-slate-100 px-5 py-4">
+              <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Voucher control</p>
+              <h3 class="mt-1 text-xl font-black text-slate-950">Collection summary</h3>
+            </div>
+
+            <div class="space-y-5 p-5">
+              <div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="font-semibold text-slate-600">Recovery progress</span>
+                  <span class="font-black text-slate-950">{{ paymentProgress() }}%</span>
                 </div>
-              } @empty {
-                <div class="rounded-xl border border-dashed border-gray-300 p-6 text-sm text-gray-500">
-                  No timeline events are available for this invoice yet.
+                <div class="mt-3 h-3 overflow-hidden rounded-full bg-slate-100">
+                  <div class="h-full rounded-full bg-gradient-to-r from-blue-600 to-emerald-500" [style.width.%]="paymentProgress()"></div>
+                </div>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Total amount</p>
+                  <p class="mt-2 font-mono text-xl font-black text-slate-950">{{ currentInvoice.totalAmount | inrCurrency }}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Open balance</p>
+                  <p class="mt-2 font-mono text-xl font-black text-amber-700">{{ currentInvoice.balanceDue | inrCurrency }}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Collected</p>
+                  <p class="mt-2 font-mono text-xl font-black text-emerald-700">{{ totalReceived() | inrCurrency }}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Due state</p>
+                  <p class="mt-2 text-sm font-black text-slate-950">{{ dueLabel() }}</p>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-3">
+                <button
+                  type="button"
+                  class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+                  (click)="printInvoice()"
+                >
+                  Print voucher
+                </button>
+                @if (canRecordPayment(currentInvoice)) {
+                  <button
+                    type="button"
+                    class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700 transition hover:bg-emerald-100"
+                    (click)="setTab(1)"
+                  >
+                    Open receipt desk
+                  </button>
+                }
+              </div>
+            </div>
+          </section>
+
+          <section class="rounded-[28px] border border-slate-200 bg-white shadow-sm">
+            <div class="border-b border-slate-100 px-5 py-4">
+              <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Ledger snapshot</p>
+              <h3 class="mt-1 text-xl font-black text-slate-950">Voucher facts</h3>
+            </div>
+
+            <div class="space-y-4 p-5">
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Client</p>
+                <p class="mt-2 text-lg font-black text-slate-950">{{ currentInvoice.client?.name || currentInvoice.receiverName || 'Client unavailable' }}</p>
+                <p class="mt-1 text-sm text-slate-600">{{ currentInvoice.client?.gstin || currentInvoice.clientGstin || 'GSTIN not added' }}</p>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">GST type</p>
+                  <p class="mt-2 text-sm font-black text-slate-950">{{ currentInvoice.gstType }}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Supply state</p>
+                  <p class="mt-2 text-sm font-black text-slate-950">{{ currentInvoice.placeOfSupply || organization().stateCode }}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Created</p>
+                  <p class="mt-2 text-sm font-black text-slate-950">{{ displayDateTime(currentInvoice.createdAt) }}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Updated</p>
+                  <p class="mt-2 text-sm font-black text-slate-950">{{ displayDateTime(currentInvoice.updatedAt) }}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="rounded-[28px] border border-slate-200 bg-white shadow-sm">
+            <div class="border-b border-slate-100 px-5 py-4">
+              <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Payment narrative</p>
+              <h3 class="mt-1 text-xl font-black text-slate-950">Collection notes</h3>
+            </div>
+
+            <div class="space-y-4 p-5">
+              @if (latestPayment()) {
+                <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                  <p class="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">Latest receipt</p>
+                  <p class="mt-2 text-sm font-black text-emerald-800">
+                    {{ paymentModeLabel(latestPayment()!.paymentMode) }} · {{ latestPayment()!.amount | inrCurrency }}
+                  </p>
+                  <p class="mt-1 text-xs font-semibold text-emerald-700">
+                    {{ displayDate(latestPayment()!.paymentDate || latestPayment()!.createdAt) }}
+                  </p>
+                </div>
+              } @else {
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p class="text-sm font-semibold text-slate-600">No collections have been posted yet.</p>
                 </div>
               }
+
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">WhatsApp delivery</p>
+                <p class="mt-2 text-sm font-black text-slate-950">
+                  {{ currentInvoice.whatsappSentAt ? 'Sent' : 'Not sent yet' }}
+                </p>
+                <p class="mt-1 text-xs font-semibold text-slate-500">
+                  {{ currentInvoice.whatsappSentAt ? displayDateTime(currentInvoice.whatsappSentAt) : 'Use the send action when the voucher is issued.' }}
+                </p>
+              </div>
+
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Internal note</p>
+                <p class="mt-2 text-sm leading-6 text-slate-600">
+                  {{ currentInvoice.notes || 'No internal note saved against this voucher.' }}
+                </p>
+              </div>
             </div>
-          </div>
-        </mat-tab>
-      </mat-tab-group>
-    </mat-card>
-  } @else if (!invoiceResource.isLoading()) {
-    <mat-card class="rounded-2xl border border-dashed border-gray-300 bg-white shadow-sm">
-      <div class="p-8 text-center text-sm text-gray-500">Invoice not found.</div>
-    </mat-card>
+          </section>
+        </aside>
+      </section>
+      </div>
+    } @else {
+      <section class="flex min-h-[420px] items-center justify-center rounded-[28px] border border-dashed border-slate-300 bg-white shadow-sm">
+        <div class="max-w-md text-center">
+          <p class="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Voucher unavailable</p>
+          <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-950">Invoice not found</h2>
+          <p class="mt-2 text-sm leading-6 text-slate-500">
+            The requested billing voucher could not be loaded. It may have been deleted, moved, or never created.
+          </p>
+          <button
+            type="button"
+            class="mt-5 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+            (click)="goToRegister()"
+          >
+            Back to invoice register
+          </button>
+        </div>
+      </section>
+    }
   }
 </div>

@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { Op } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
 import { container } from 'tsyringe';
 import { BillingService } from '../../application/services/BillingService';
 import { sendSuccess, sendCreated, sendPaginated } from '../../../../utils/response';
@@ -446,13 +446,39 @@ export class BillingController {
 
   static getRecurringTemplates = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { search, isActive } = req.query;
+    const templateColumns = await sequelize.query<{ column_name: string }>(
+      `
+        select column_name
+        from information_schema.columns
+        where table_schema = current_schema()
+          and table_name = 'recurring_invoice_templates'
+      `,
+      { type: QueryTypes.SELECT }
+    );
+
+    const columnSet = new Set(templateColumns.map((column) => column.column_name));
+    const nameExpr = columnSet.has('template_name') ? 'rit.template_name' : 'rit.name';
+    const frequencyExpr = columnSet.has('recurring_frequency') ? 'rit.recurring_frequency' : 'rit.frequency';
+    const nextRunExpr = columnSet.has('next_invoice_date') ? 'rit.next_invoice_date' : 'rit.next_run_date';
+    const dueDaysExpr = columnSet.has('due_date_offset')
+      ? 'rit.due_date_offset'
+      : columnSet.has('default_due_days')
+        ? 'rit.default_due_days'
+        : '30';
+    const subtotalExpr = columnSet.has('subtotal') ? 'rit.subtotal' : '0';
+    const serviceCategoryExpr = columnSet.has('service_category') ? 'rit.service_category' : "''";
+    const advanceNoticeExpr = columnSet.has('advance_notice_days') ? 'rit.advance_notice_days' : '5';
+    const lineItemsExpr = columnSet.has('line_items_snapshot') ? 'rit.line_items_snapshot' : 'null';
+    const defaultNotesExpr = columnSet.has('default_notes') ? 'rit.default_notes' : 'null';
+    const totalGeneratedExpr = columnSet.has('total_generated') ? 'rit.total_generated' : '0';
+
     const filters: string[] = ['rit.organization_id = :organizationId', 'rit.deleted_at is null'];
     const replacements: Record<string, unknown> = {
       organizationId: req.user!.organizationId,
     };
 
     if (typeof search === 'string' && search.trim()) {
-      filters.push('(rit.template_name ilike :search or c.name ilike :search)');
+      filters.push(`(${nameExpr} ilike :search or c.name ilike :search)`);
       replacements.search = `%${search.trim()}%`;
     }
 
@@ -467,21 +493,25 @@ export class BillingController {
           rit.id,
           rit.organization_id as "organizationId",
           rit.client_id as "clientId",
-          rit.template_name as name,
-          rit.recurring_frequency as frequency,
-          rit.next_invoice_date as "nextRunDate",
+          ${nameExpr} as name,
+          ${frequencyExpr} as frequency,
+          ${nextRunExpr} as "nextRunDate",
           rit.auto_issue as "autoIssue",
           rit.is_active as "isActive",
-          rit.due_date_offset as "defaultDueDays",
-          rit.subtotal,
-          rit.service_category as "serviceCategory",
+          ${dueDaysExpr} as "defaultDueDays",
+          ${advanceNoticeExpr} as "advanceNoticeDays",
+          ${subtotalExpr} as subtotal,
+          ${serviceCategoryExpr} as "serviceCategory",
+          ${lineItemsExpr} as "lineItemsSnapshot",
+          ${defaultNotesExpr} as "defaultNotes",
+          ${totalGeneratedExpr} as "totalGenerated",
           rit.created_at as "createdAt",
           c.id as "client.id",
           c.name as "client.name"
         from recurring_invoice_templates rit
         left join clients c on c.id = rit.client_id and c.organization_id = :organizationId
         where ${filters.join(' and ')}
-        order by rit.next_invoice_date asc, rit.created_at desc
+        order by ${nextRunExpr} asc, rit.created_at desc
       `,
       { replacements }
     );
@@ -499,20 +529,25 @@ export class BillingController {
       name: String(row.name),
       frequency: mapFrequency(String(row.frequency)),
       nextRunDate: String(row.nextRunDate),
-      advanceNoticeDays: 5,
+      advanceNoticeDays: toNumber(row.advanceNoticeDays) || 5,
       isActive: Boolean(row.isActive),
       autoIssue: Boolean(row.autoIssue),
-      lineItemsSnapshot: [
-        {
-          description: String(row.name),
-          sacCode: sacCodeForCategory(row.serviceCategory ? String(row.serviceCategory) : ''),
-          quantity: 1,
-          unitRate: toNumber(row.subtotal),
-        },
-      ],
-      defaultNotes: `${String(row.name)} recurring billing plan`,
-      defaultDueDays: toNumber(row.defaultDueDays),
-      totalGenerated: 0,
+      lineItemsSnapshot:
+        Array.isArray(row.lineItemsSnapshot) && row.lineItemsSnapshot.length > 0
+          ? row.lineItemsSnapshot
+          : [
+              {
+                description: String(row.name),
+                sacCode: sacCodeForCategory(row.serviceCategory ? String(row.serviceCategory) : ''),
+                quantity: 1,
+                unitRate: toNumber(row.subtotal),
+              },
+            ],
+      defaultNotes: row.defaultNotes
+        ? String(row.defaultNotes)
+        : `${String(row.name)} recurring billing plan`,
+      defaultDueDays: toNumber(row.defaultDueDays) || 30,
+      totalGenerated: toNumber(row.totalGenerated),
       createdAt: String(row.createdAt),
     }));
 

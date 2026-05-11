@@ -1,206 +1,873 @@
-<div class="p-6 space-y-6">
-  <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-    <div>
-      <h1 class="text-2xl font-semibold text-gray-900">Billing Dashboard</h1>
-      <p class="text-sm text-gray-500">Track invoices, collections, and recurring billing in one place.</p>
-    </div>
-    <button
-      mat-flat-button
-      type="button"
-      class="!bg-amber-600 !text-white"
-      (click)="newInvoice()"
-    >
-      + New Invoice
-    </button>
-  </div>
-
+<div class="w-full min-w-0 animate-in fade-in px-6 pb-8 pt-4 duration-500">
   @if (isLoading()) {
-    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-  }
-
-  @if (!isLoading() && !hasInvoices()) {
-    <mat-card class="rounded-2xl border border-dashed border-gray-300 bg-white shadow-sm">
-      <div class="flex flex-col items-center gap-4 px-6 py-12 text-center">
-        <div class="flex h-20 w-20 items-center justify-center rounded-full bg-amber-50 text-3xl text-amber-600">
-          ₹
-        </div>
+    <div class="flex min-h-[68vh] items-center justify-center">
+      <div class="flex w-full max-w-md items-center gap-4 rounded-[28px] border border-slate-200 bg-white px-6 py-7 shadow-sm">
+        <div class="billing-spinner h-12 w-12 rounded-full border-4 border-slate-200 border-t-indigo-600"></div>
         <div class="space-y-1">
-          <h2 class="text-xl font-semibold text-gray-900">No invoices yet</h2>
-          <p class="text-sm text-gray-500">Create your first invoice to get started.</p>
+          <p class="text-lg font-semibold text-slate-900">Loading workspace...</p>
+          <p class="text-sm text-slate-500">Preparing the CA firm billing suite for your team.</p>
         </div>
-        <button
-          mat-flat-button
-          type="button"
-          class="!bg-amber-600 !text-white"
-          (click)="newInvoice()"
-        >
-          + Create Invoice
-        </button>
       </div>
-    </mat-card>
-  } @else {
-    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <mat-card class="rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div class="space-y-2 p-5">
-          <p class="text-xs text-gray-500">Total Billed</p>
-          <p class="font-mono text-2xl font-semibold text-gray-900">
-            {{ metrics().billedThisMonth | inrCurrency }}
-          </p>
-          <p class="text-xs text-gray-500">{{ metrics().totalInvoices }} invoices overall</p>
-        </div>
-      </mat-card>
-
-      <mat-card class="rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div class="space-y-2 p-5">
-          <p class="text-xs text-gray-500">Collected This Month</p>
-          <p class="font-mono text-2xl font-semibold text-gray-900">
-            {{ metrics().collectedThisMonth | inrCurrency }}
-          </p>
-          <p class="text-xs text-gray-500">{{ metrics().paidCount }} paid invoices</p>
-        </div>
-      </mat-card>
-
-      <mat-card class="rounded-2xl border border-amber-200 bg-amber-50 shadow-sm">
-        <div class="space-y-2 p-5">
-          <p class="text-xs text-amber-700">Outstanding</p>
-          <p class="font-mono text-2xl font-semibold text-gray-900">
-            {{ metrics().totalOutstanding | inrCurrency }}
-          </p>
-          <p class="text-xs text-amber-800">{{ pendingCollectionCount() }} invoices pending</p>
-        </div>
-      </mat-card>
-
-      <mat-card class="rounded-2xl border border-red-200 bg-red-50 shadow-sm">
-        <div class="space-y-2 p-5">
-          <p class="text-xs text-red-700">Overdue</p>
-          <p class="font-mono text-2xl font-semibold text-gray-900">
-            {{ metrics().totalOverdue | inrCurrency }}
-          </p>
-          <p class="text-xs text-red-800">{{ metrics().overdueCount }} overdue invoices</p>
-        </div>
-      </mat-card>
     </div>
+  } @else {
+    <div class="space-y-5 pb-8">
+      <section class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+        <div class="relative flex flex-col gap-6 p-6 xl:flex-row xl:items-center xl:justify-between">
+          <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.14),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98),rgba(239,246,255,0.72))]"></div>
 
-    <mat-card class="rounded-2xl border border-gray-200 bg-white shadow-sm">
-      <div class="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
-        <mat-chip-listbox class="flex flex-wrap gap-2" aria-label="Invoice quick filters">
-          <mat-chip-option selected (click)="navigateToList('')">All</mat-chip-option>
-          <mat-chip-option (click)="navigateToList('draft')">Draft ({{ metrics().draftCount }})</mat-chip-option>
-          <mat-chip-option (click)="navigateToList('issued')">Issued ({{ metrics().issuedCount }})</mat-chip-option>
-          <mat-chip-option (click)="navigateToList('overdue')">Overdue ({{ metrics().overdueCount }})</mat-chip-option>
-          <mat-chip-option (click)="navigateToList('paid')">Paid ({{ metrics().paidCount }})</mat-chip-option>
-        </mat-chip-listbox>
-
-        <button
-          mat-stroked-button
-          type="button"
-          class="!border-gray-300 !text-gray-700"
-          routerLink="/billing/invoices"
-        >
-          View All Invoices
-        </button>
-      </div>
-    </mat-card>
-
-    <div class="grid gap-6 xl:grid-cols-[3fr_2fr]">
-      <mat-card class="rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div class="space-y-4 p-5">
-          <div class="flex items-center justify-between">
-            <h2 class="text-base font-medium text-gray-700">Recent Invoices</h2>
-            <a routerLink="/billing/invoices" class="text-sm font-medium text-amber-700 hover:text-amber-800">
-              View All →
-            </a>
+          <div class="relative max-w-4xl">
+            <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-700">
+              <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+              CA firm billing
+            </div>
+            <h1 class="text-3xl font-black tracking-tight text-slate-950 xl:text-[2.6rem]">Firm Billing Suite</h1>
+            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              Built for CA and accounting firm billing to your clients, separate from your clients'
+              own customer billing. Manage invoicing, collections, recurring retainers, GST and TDS
+              follow-ups from one place.
+            </p>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 ring-1 ring-slate-200">
+                {{ fyLabel() }}
+              </span>
+              <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 ring-1 ring-slate-200">
+                {{ headerPeriod() }}
+              </span>
+              <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 ring-1 ring-slate-200">
+                Client-facing firm billing only
+              </span>
+            </div>
           </div>
 
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead>
-                <tr class="text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  <th class="px-4 py-3">Invoice #</th>
-                  <th class="px-4 py-3">Client</th>
-                  <th class="px-4 py-3">Amount</th>
-                  <th class="px-4 py-3">Status</th>
-                  <th class="px-4 py-3">Due Date</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100">
-                @for (invoice of recentInvoices(); track invoice.id) {
-                  <tr
-                    class="cursor-pointer hover:bg-gray-50"
-                    (click)="openInvoice(invoice.id)"
-                  >
-                    <td class="px-4 py-3">
-                      <div class="font-mono text-sm text-gray-600">{{ invoice.invoiceNumber }}</div>
-                    </td>
-                    <td class="px-4 py-3 text-sm text-gray-800">
-                      {{ invoice.client?.name || 'Client unavailable' }}
-                    </td>
-                    <td class="px-4 py-3 font-mono text-sm text-gray-900">
-                      {{ invoice.totalAmount | inrCurrency }}
-                    </td>
-                    <td class="px-4 py-3">
-                      <span class="rounded-full px-2.5 py-1 text-xs font-medium capitalize" [class]="statusClasses(invoice.status)">
-                        {{ statusLabel(invoice.status) }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-3 text-sm text-gray-600">
-                      {{ formatDate(invoice.dueDate) }}
-                    </td>
-                  </tr>
-                } @empty {
-                  <tr>
-                    <td colspan="5" class="px-4 py-10 text-center text-sm text-gray-500">
-                      No invoices to show yet.
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+          <div class="relative flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              (click)="navigateToList('')"
+              class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+            >
+              Invoice register
+            </button>
+            <button
+              type="button"
+              (click)="openRecurring()"
+              class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+            >
+              Recurring billing
+            </button>
+            <button
+              type="button"
+              (click)="openBulkGenerate()"
+              class="inline-flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700 shadow-sm transition hover:bg-emerald-100"
+            >
+              Bulk generate
+            </button>
+            <button
+              type="button"
+              (click)="newInvoice()"
+              class="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+            >
+              New invoice
+            </button>
           </div>
         </div>
-      </mat-card>
+      </section>
 
-      <div class="space-y-6">
-        <mat-card class="rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div class="space-y-5 p-5">
-            <h2 class="text-base font-medium text-gray-700">Quick Stats</h2>
+      @if (hasLoadError()) {
+        <section class="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800 shadow-sm">
+          Billing data could not be loaded from the backend right now. The layout is still available,
+          but live metrics and records will stay empty until the API responds again.
+        </section>
+      }
 
-            <div class="space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-4">
-              <p class="text-xs text-gray-500">Draft invoices value</p>
-              <p class="font-mono text-lg font-semibold text-gray-900">{{ metrics().draftValue | inrCurrency }}</p>
-              <p class="text-xs text-gray-500">{{ metrics().draftCount }} invoices</p>
+      <section class="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <article class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Monthly billed</p>
+          <strong class="mt-3 block text-4xl font-black tracking-tight text-slate-950">
+            {{ formatCompactInr(metrics().billedThisMonth) }}
+          </strong>
+          <p class="mt-2 text-xs font-semibold text-slate-500">{{ billedGrowthLabel() }}</p>
+        </article>
+        <article class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Collected</p>
+          <strong class="mt-3 block text-4xl font-black tracking-tight text-slate-950">
+            {{ formatCompactInr(metrics().collectedThisMonth) }}
+          </strong>
+          <p class="mt-2 text-xs font-semibold text-slate-500">{{ metrics().paidCount }} paid invoice(s)</p>
+        </article>
+        <article class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Outstanding</p>
+          <strong class="mt-3 block text-4xl font-black tracking-tight text-slate-950">
+            {{ formatCompactInr(metrics().totalOutstanding) }}
+          </strong>
+          <p class="mt-2 text-xs font-semibold text-slate-500">{{ pendingCollectionCount() }} invoice(s) pending</p>
+        </article>
+        <article class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Overdue exposure</p>
+          <strong class="mt-3 block text-4xl font-black tracking-tight text-slate-950">
+            {{ formatCompactInr(metrics().totalOverdue) }}
+          </strong>
+          <p class="mt-2 text-xs font-semibold text-slate-500">{{ metrics().overdueCount }} overdue account(s)</p>
+        </article>
+      </section>
+
+      <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <main class="space-y-5">
+          <section class="rounded-[28px] border border-slate-200 bg-white shadow-sm">
+            <div class="border-b border-slate-100 px-5 py-4">
+              <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                <div>
+                  <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Billing workspace</p>
+                  <h2 class="mt-1 text-2xl font-black tracking-tight text-slate-950">{{ workspaceHeading() }}</h2>
+                  <p class="mt-1 text-sm text-slate-500">{{ workspaceDescription() }}</p>
+                </div>
+
+                <div class="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800 xl:max-w-sm">
+                  {{ workspaceNote() }}
+                </div>
+              </div>
             </div>
 
-            <div class="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-4">
-              <p class="text-xs text-amber-700">Pending collection</p>
-              <p class="font-mono text-lg font-semibold text-gray-900">
-                {{ metrics().totalOutstanding | inrCurrency }}
-              </p>
-              <p class="text-xs text-amber-800">{{ pendingCollectionCount() }} invoices</p>
+            <div class="space-y-5 p-5">
+              <div class="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
+                @for (tab of tabs; track tab.id) {
+                  <button
+                    type="button"
+                    class="rounded-2xl px-4 py-3 text-left text-sm font-black transition"
+                    [class]="
+                      activeTab() === tab.id
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                        : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    "
+                    (click)="setTab(tab.id)"
+                  >
+                    <p>{{ tab.label }}</p>
+                    <p class="mt-1 text-xs font-semibold" [class]="activeTab() === tab.id ? 'text-blue-100' : 'text-slate-400'">
+                      {{ tab.blurb }}
+                    </p>
+                  </button>
+                }
+              </div>
+
+              @if (activeTab() === 'overview') {
+                <div class="flex flex-wrap gap-2">
+                  <button type="button" (click)="navigateToList('overdue')" class="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-black text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+                    Overdue follow-up
+                  </button>
+                  <button type="button" (click)="setTab('clients')" class="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-black text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+                    Client accounts
+                  </button>
+                  <button type="button" (click)="openRecurring()" class="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-black text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+                    Retainer alerts
+                  </button>
+                  <button type="button" (click)="setTab('reports')" class="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-black text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+                    GST reports
+                  </button>
+                </div>
+              }
+
+              @if (activeTab() === 'invoices') {
+                <div class="flex flex-wrap gap-2">
+                  @for (chip of invoiceStatusChips(); track chip.id) {
+                    <button
+                      type="button"
+                      (click)="setInvoiceFilter(chip.id)"
+                      class="rounded-full px-4 py-2 text-sm font-black transition"
+                      [class]="
+                        invoiceFilter() === chip.id
+                          ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/10'
+                          : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                      "
+                    >
+                      {{ chip.label }} ({{ chip.count }})
+                    </button>
+                  }
+                </div>
+              }
+
+              @if (activeTab() === 'clients') {
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Top accounts</span>
+                  @for (client of clientSummaries().slice(0, 4); track client.id) {
+                    <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-600">
+                      {{ client.name }} · {{ client.outstanding | inrCurrency }}
+                    </span>
+                  }
+                  <button type="button" (click)="openClientDirectory()" class="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-700 transition hover:bg-blue-100">
+                    Open client master
+                  </button>
+                </div>
+              }
+
+              @if (activeTab() === 'create') {
+                <div class="flex flex-wrap gap-2">
+                  <button type="button" (click)="newInvoice()" class="rounded-full bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
+                    Start invoice
+                  </button>
+                  <button type="button" (click)="openRecurring()" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-600 transition hover:bg-slate-50">
+                    Recurring retainers
+                  </button>
+                  <button type="button" (click)="openBulkGenerate()" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-600 transition hover:bg-slate-50">
+                    Periodic batch billing
+                  </button>
+                </div>
+              }
+
+              @if (activeTab() === 'tds') {
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">
+                    Estimated Sec 194J watchlist
+                  </span>
+                  <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 ring-1 ring-slate-200">
+                    Threshold Rs 30,000
+                  </span>
+                  <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 ring-1 ring-slate-200">
+                    Net receivable after TDS holdback
+                  </span>
+                </div>
+              }
+
+              @if (activeTab() === 'reports') {
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">
+                    GST liability
+                  </span>
+                  <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 ring-1 ring-slate-200">
+                    Revenue mix
+                  </span>
+                  <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 ring-1 ring-slate-200">
+                    Ageing buckets
+                  </span>
+                </div>
+              }
+            </div>
+          </section>
+
+          <section class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+            <div class="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 class="text-xl font-black tracking-tight text-slate-950">{{ recordsHeading() }}</h2>
+                <p class="mt-1 text-sm font-semibold text-slate-500">{{ recordsDescription() }}</p>
+              </div>
+
+              <div class="flex flex-wrap gap-2">
+                <span class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]" [class]="hasLoadError() ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'">
+                  {{ hasLoadError() ? 'Backend unavailable' : 'Live billing data' }}
+                </span>
+                <span class="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                  {{ headerPeriod() }}
+                </span>
+              </div>
             </div>
 
-            <div class="space-y-2 rounded-xl border-l-4 border-red-500 bg-red-50 p-4">
-              <p class="text-xs text-red-700">Overdue &gt; 30 days</p>
-              <p class="font-mono text-lg font-semibold text-gray-900">
-                {{ metrics().totalOverdue | inrCurrency }}
-              </p>
-              <p class="text-xs text-red-800">{{ metrics().overdueCount }} invoices</p>
-            </div>
-          </div>
-        </mat-card>
+            <div class="p-5">
+              @if (activeTab() === 'overview') {
+                <div class="space-y-5">
+                  <div class="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_340px]">
+                    <article class="rounded-[22px] border border-slate-200 bg-slate-50 p-5">
+                      <div class="flex items-center justify-between gap-3">
+                        <div>
+                          <h3 class="text-lg font-black text-slate-950">Revenue trend</h3>
+                          <p class="mt-1 text-sm text-slate-500">Billed value and realised collections across the last six months.</p>
+                        </div>
+                        <div class="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                          GST dashboard style chart
+                        </div>
+                      </div>
 
-        <mat-card class="rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div class="flex items-center justify-between p-5">
-            <div class="space-y-1">
-              <p class="text-xs text-gray-500">Recurring Templates Active</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ activeRecurringCount() }}</p>
+                      <div class="mt-6 h-72 rounded-[20px] border border-slate-200 bg-white p-4">
+                        <canvas id="billingRevenueTrendChart"></canvas>
+                      </div>
+                    </article>
+
+                    <article class="rounded-[22px] border border-slate-200 bg-slate-50 p-5">
+                      <div class="flex items-center justify-between gap-3">
+                        <div>
+                          <h3 class="text-lg font-black text-slate-950">Debtors ageing</h3>
+                          <p class="mt-1 text-sm text-slate-500">Open balances bucketed by due date.</p>
+                        </div>
+                        <span class="rounded-full bg-rose-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-rose-700">
+                          {{ metrics().overdueCount }} overdue
+                        </span>
+                      </div>
+
+                      <div class="mt-5 space-y-4">
+                        @for (bucket of agingSummary(); track bucket.label) {
+                          <div class="space-y-2">
+                            <div class="flex items-center justify-between text-sm">
+                              <span class="font-semibold text-slate-600">{{ bucket.label }}</span>
+                              <span class="font-black text-slate-900">{{ bucket.amount > 0 ? (bucket.amount | inrCurrency) : '--' }}</span>
+                            </div>
+                            <div class="h-2 overflow-hidden rounded-full" [class]="getToneTrackClass(bucket.tone)">
+                              <div class="h-full rounded-full" [class]="getToneFillClass(bucket.tone)" [style.width.%]="bucket.share"></div>
+                            </div>
+                          </div>
+                        }
+                      </div>
+
+                      @if (agingRows().length > 0) {
+                        <div class="mt-5 rounded-2xl border border-rose-100 bg-rose-50 p-4 text-sm font-semibold text-rose-800">
+                          {{ agingRows()[0].clientName }} has the highest open balance at
+                          {{ agingRows()[0].total | inrCurrency }}.
+                        </div>
+                      } @else {
+                        <div class="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">
+                          No overdue buckets yet. Collections are under control.
+                        </div>
+                      }
+                    </article>
+                  </div>
+
+                  <article class="rounded-[22px] border border-slate-200 bg-white">
+                    <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h3 class="text-lg font-black text-slate-950">Recent invoices</h3>
+                        <p class="mt-1 text-sm text-slate-500">Latest firm-to-client billing activity.</p>
+                      </div>
+                      <button type="button" (click)="navigateToList('')" class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 transition hover:bg-slate-50">
+                        View invoice register
+                      </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                      <table class="min-w-full divide-y divide-slate-100">
+                        <thead>
+                          <tr class="text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                            <th class="px-4 py-3">Invoice</th>
+                            <th class="px-4 py-3">Client</th>
+                            <th class="px-4 py-3">Date</th>
+                            <th class="px-4 py-3">Due</th>
+                            <th class="px-4 py-3 text-right">Amount</th>
+                            <th class="px-4 py-3 text-right">Balance</th>
+                            <th class="px-4 py-3">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                          @for (invoice of recentInvoices(); track invoice.id) {
+                            <tr class="cursor-pointer transition hover:bg-slate-50" (click)="openInvoice(invoice.id)">
+                              <td class="px-4 py-4">
+                                <p class="font-mono text-sm font-black text-slate-900">{{ invoice.invoiceNumber }}</p>
+                              </td>
+                              <td class="px-4 py-4 text-sm font-semibold text-slate-800">{{ invoice.client?.name || 'Client unavailable' }}</td>
+                              <td class="px-4 py-4 text-sm text-slate-500">{{ formatDate(invoice.invoiceDate) }}</td>
+                              <td class="px-4 py-4 text-sm text-slate-500">{{ formatDate(invoice.dueDate) }}</td>
+                              <td class="px-4 py-4 text-right text-sm font-black text-slate-900">{{ invoice.totalAmount | inrCurrency }}</td>
+                              <td class="px-4 py-4 text-right text-sm font-black text-amber-600">{{ invoice.balanceDue | inrCurrency }}</td>
+                              <td class="px-4 py-4">
+                                <span class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em]" [class]="getStatusClasses(invoice.status)">
+                                  {{ getStatusLabel(invoice.status) }}
+                                </span>
+                              </td>
+                            </tr>
+                          } @empty {
+                            <tr>
+                              <td colspan="7" class="px-4 py-12 text-center text-sm text-slate-500">
+                                No recent invoices are available yet.
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  </article>
+                </div>
+              }
+
+              @if (activeTab() === 'invoices') {
+                <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-slate-100">
+                    <thead>
+                      <tr class="text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                        <th class="px-4 py-3">Invoice no</th>
+                        <th class="px-4 py-3">Client</th>
+                        <th class="px-4 py-3">Invoice date</th>
+                        <th class="px-4 py-3">Due date</th>
+                        <th class="px-4 py-3 text-right">Taxable</th>
+                        <th class="px-4 py-3 text-right">Total</th>
+                        <th class="px-4 py-3 text-right">Balance</th>
+                        <th class="px-4 py-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      @for (invoice of filteredInvoices(); track invoice.id) {
+                        <tr class="cursor-pointer transition hover:bg-slate-50" (click)="openInvoice(invoice.id)">
+                          <td class="px-4 py-4">
+                            <p class="font-mono text-sm font-black text-slate-900">{{ invoice.invoiceNumber }}</p>
+                          </td>
+                          <td class="px-4 py-4">
+                            <p class="text-sm font-semibold text-slate-800">{{ invoice.client?.name || 'Client unavailable' }}</p>
+                            <p class="mt-1 text-xs font-semibold text-slate-400">{{ invoice.clientGstin || invoice.client?.gstin || 'GSTIN pending' }}</p>
+                          </td>
+                          <td class="px-4 py-4 text-sm text-slate-500">{{ formatDate(invoice.invoiceDate) }}</td>
+                          <td class="px-4 py-4 text-sm text-slate-500">{{ formatDate(invoice.dueDate) }}</td>
+                          <td class="px-4 py-4 text-right text-sm font-black text-slate-700">{{ invoice.subtotal | inrCurrency }}</td>
+                          <td class="px-4 py-4 text-right text-sm font-black text-slate-900">{{ invoice.totalAmount | inrCurrency }}</td>
+                          <td class="px-4 py-4 text-right text-sm font-black text-amber-600">{{ invoice.balanceDue | inrCurrency }}</td>
+                          <td class="px-4 py-4">
+                            <span class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em]" [class]="getStatusClasses(invoice.status)">
+                              {{ getStatusLabel(invoice.status) }}
+                            </span>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="8" class="px-4 py-12 text-center text-sm text-slate-500">
+                            No invoices match this filter yet.
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+
+              @if (activeTab() === 'clients') {
+                <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-slate-100">
+                    <thead>
+                      <tr class="text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                        <th class="px-4 py-3">Client</th>
+                        <th class="px-4 py-3">GSTIN</th>
+                        <th class="px-4 py-3">State</th>
+                        <th class="px-4 py-3 text-right">Billed</th>
+                        <th class="px-4 py-3 text-right">Collected</th>
+                        <th class="px-4 py-3 text-right">Outstanding</th>
+                        <th class="px-4 py-3 text-right">Collection rate</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      @for (client of clientSummaries(); track client.id) {
+                        <tr class="transition hover:bg-slate-50">
+                          <td class="px-4 py-4">
+                            <p class="text-sm font-black text-slate-900">{{ client.name }}</p>
+                            <p class="mt-1 text-xs font-semibold text-slate-400">{{ client.invoiceCount }} invoice(s)</p>
+                          </td>
+                          <td class="px-4 py-4 text-sm text-slate-500">{{ client.gstin }}</td>
+                          <td class="px-4 py-4 text-sm text-slate-500">{{ client.stateLabel }}</td>
+                          <td class="px-4 py-4 text-right text-sm font-black text-slate-900">{{ client.totalBilled | inrCurrency }}</td>
+                          <td class="px-4 py-4 text-right text-sm font-black text-emerald-700">{{ client.collected | inrCurrency }}</td>
+                          <td class="px-4 py-4 text-right text-sm font-black text-amber-600">{{ client.outstanding | inrCurrency }}</td>
+                          <td class="px-4 py-4 text-right text-sm font-black text-slate-900">{{ formatPercent(client.collectionRate) }}</td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="7" class="px-4 py-12 text-center text-sm text-slate-500">
+                            No client billing accounts are available yet.
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+
+              @if (activeTab() === 'create') {
+                <div class="space-y-5">
+                  <div class="grid gap-4 xl:grid-cols-3">
+                    <article class="rounded-[22px] border border-slate-200 bg-slate-50 p-5">
+                      <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Action 01</p>
+                      <h3 class="mt-2 text-xl font-black tracking-tight text-slate-950">New professional invoice</h3>
+                      <p class="mt-2 text-sm leading-6 text-slate-500">
+                        Raise a GST-compliant invoice for audit, tax, ROC, advisory, or bookkeeping services.
+                      </p>
+                      <button type="button" (click)="newInvoice()" class="mt-5 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
+                        Start invoice
+                      </button>
+                    </article>
+
+                    <article class="rounded-[22px] border border-slate-200 bg-slate-50 p-5">
+                      <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Action 02</p>
+                      <h3 class="mt-2 text-xl font-black tracking-tight text-slate-950">Recurring retainer cycle</h3>
+                      <p class="mt-2 text-sm leading-6 text-slate-500">
+                        Manage monthly retainers, repeat assignments, and scheduled billing dates.
+                      </p>
+                      <button type="button" (click)="openRecurring()" class="mt-5 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50">
+                        Open recurring billing
+                      </button>
+                    </article>
+
+                    <article class="rounded-[22px] border border-slate-200 bg-slate-50 p-5">
+                      <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Action 03</p>
+                      <h3 class="mt-2 text-xl font-black tracking-tight text-slate-950">Bulk client billing</h3>
+                      <p class="mt-2 text-sm leading-6 text-slate-500">
+                        Generate periodic billing batches for repeated filing and compliance work.
+                      </p>
+                      <button type="button" (click)="openBulkGenerate()" class="mt-5 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50">
+                        Open bulk generation
+                      </button>
+                    </article>
+                  </div>
+
+                  <article class="rounded-[22px] border border-slate-200 bg-white p-5">
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Firm billing guardrails</p>
+                    <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-700">CGST + SGST for intra-state, IGST for inter-state billing.</div>
+                      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-700">Invoice numbering should align with {{ fyLabel() }} financial year logic.</div>
+                      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-700">Track professional fee TDS separately from pure collection receipts.</div>
+                      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-700">Keep firm-to-client billing separate from client-to-customer books.</div>
+                    </div>
+                  </article>
+                </div>
+              }
+
+              @if (activeTab() === 'tds') {
+                <div class="space-y-5">
+                  <div class="grid gap-4 md:grid-cols-3">
+                    <article class="rounded-[22px] border border-slate-200 bg-slate-50 p-5">
+                      <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Estimated TDS</p>
+                      <strong class="mt-3 block text-3xl font-black tracking-tight text-slate-950">{{ estimatedTdsTotal() | inrCurrency }}</strong>
+                      <p class="mt-2 text-xs font-semibold text-slate-500">{{ tdsWatchlist().length }} invoice(s) under watch</p>
+                    </article>
+                    <article class="rounded-[22px] border border-slate-200 bg-slate-50 p-5">
+                      <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Open TDS follow-up</p>
+                      <strong class="mt-3 block text-3xl font-black tracking-tight text-slate-950">{{ estimatedOpenTds() | inrCurrency }}</strong>
+                      <p class="mt-2 text-xs font-semibold text-slate-500">Monitor unsettled professional fees</p>
+                    </article>
+                    <article class="rounded-[22px] border border-slate-200 bg-slate-50 p-5">
+                      <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Net receivable</p>
+                      <strong class="mt-3 block text-3xl font-black tracking-tight text-slate-950">{{ metrics().totalOutstanding - estimatedOpenTds() | inrCurrency }}</strong>
+                      <p class="mt-2 text-xs font-semibold text-slate-500">After estimated TDS holdback</p>
+                    </article>
+                  </div>
+
+                  <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-100">
+                      <thead>
+                        <tr class="text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                          <th class="px-4 py-3">Invoice</th>
+                          <th class="px-4 py-3">Client</th>
+                          <th class="px-4 py-3 text-right">Taxable</th>
+                          <th class="px-4 py-3 text-right">Est. TDS</th>
+                          <th class="px-4 py-3 text-right">Net</th>
+                          <th class="px-4 py-3">Quarter</th>
+                          <th class="px-4 py-3">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-100">
+                        @for (item of tdsWatchlist(); track item.id) {
+                          <tr class="transition hover:bg-slate-50">
+                            <td class="px-4 py-4">
+                              <p class="font-mono text-sm font-black text-slate-900">{{ item.invoiceNumber }}</p>
+                            </td>
+                            <td class="px-4 py-4 text-sm font-semibold text-slate-800">{{ item.clientName }}</td>
+                            <td class="px-4 py-4 text-right text-sm font-black text-slate-700">{{ item.taxableAmount | inrCurrency }}</td>
+                            <td class="px-4 py-4 text-right text-sm font-black text-blue-700">{{ item.estimatedTds | inrCurrency }}</td>
+                            <td class="px-4 py-4 text-right text-sm font-black text-emerald-700">{{ item.netReceivable | inrCurrency }}</td>
+                            <td class="px-4 py-4 text-sm text-slate-500">{{ item.quarter }}</td>
+                            <td class="px-4 py-4">
+                              <span class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em]" [class]="getToneBadgeClass(item.tone)">
+                                {{ item.statusLabel }}
+                              </span>
+                            </td>
+                          </tr>
+                        } @empty {
+                          <tr>
+                            <td colspan="7" class="px-4 py-12 text-center text-sm text-slate-500">
+                              No invoices currently fall into the TDS watchlist.
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              }
+
+              @if (activeTab() === 'reports') {
+                <div class="space-y-5">
+                  <div class="grid gap-5 xl:grid-cols-2">
+                    <article class="rounded-[22px] border border-slate-200 bg-slate-50 p-5">
+                      <div class="flex items-center justify-between gap-3">
+                        <div>
+                          <h3 class="text-lg font-black text-slate-950">GST liability snapshot</h3>
+                          <p class="mt-1 text-sm text-slate-500">Based on currently loaded firm invoices.</p>
+                        </div>
+                        <span class="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">
+                          GSTR-1 view
+                        </span>
+                      </div>
+
+                      <div class="mt-5 space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-200 pb-3 text-sm">
+                          <span class="font-semibold text-slate-500">Taxable turnover</span>
+                          <span class="font-black text-slate-900">{{ gstSummary().taxable | inrCurrency }}</span>
+                        </div>
+                        <div class="flex items-center justify-between border-b border-slate-200 pb-3 text-sm">
+                          <span class="font-semibold text-slate-500">CGST 9%</span>
+                          <span class="font-black text-blue-700">{{ gstSummary().cgst | inrCurrency }}</span>
+                        </div>
+                        <div class="flex items-center justify-between border-b border-slate-200 pb-3 text-sm">
+                          <span class="font-semibold text-slate-500">SGST 9%</span>
+                          <span class="font-black text-blue-700">{{ gstSummary().sgst | inrCurrency }}</span>
+                        </div>
+                        <div class="flex items-center justify-between border-b border-slate-200 pb-3 text-sm">
+                          <span class="font-semibold text-slate-500">IGST 18%</span>
+                          <span class="font-black text-violet-700">{{ gstSummary().igst | inrCurrency }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                          <span class="font-semibold text-slate-700">Gross billed</span>
+                          <span class="text-lg font-black text-slate-900">{{ gstSummary().total | inrCurrency }}</span>
+                        </div>
+                      </div>
+                    </article>
+
+                    <article class="rounded-[22px] border border-slate-200 bg-slate-50 p-5">
+                      <h3 class="text-lg font-black text-slate-950">Revenue mix</h3>
+                      <p class="mt-1 text-sm text-slate-500">Service-led breakup from the current billing records.</p>
+
+                      <div class="mt-5 space-y-4">
+                        @for (service of serviceMix(); track service.label) {
+                          <div class="space-y-2">
+                            <div class="flex items-center justify-between text-sm">
+                              <span class="font-semibold text-slate-600">{{ service.label }}</span>
+                              <span class="font-black text-slate-900">{{ service.amount | inrCurrency }} ({{ formatPercent(service.share) }})</span>
+                            </div>
+                            <div class="h-2 overflow-hidden rounded-full" [class]="getToneTrackClass(service.tone)">
+                              <div class="h-full rounded-full" [class]="getToneFillClass(service.tone)" [style.width.%]="service.share"></div>
+                            </div>
+                          </div>
+                        } @empty {
+                          <div class="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
+                            Service mix will appear once invoices are available.
+                          </div>
+                        }
+                      </div>
+                    </article>
+                  </div>
+
+                  <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-100">
+                      <thead>
+                        <tr class="text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                          <th class="px-4 py-3">Client</th>
+                          <th class="px-4 py-3 text-right">0-30</th>
+                          <th class="px-4 py-3 text-right">31-60</th>
+                          <th class="px-4 py-3 text-right">61-90</th>
+                          <th class="px-4 py-3 text-right">90+</th>
+                          <th class="px-4 py-3 text-right">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-100">
+                        @for (row of agingRows(); track row.clientName) {
+                          <tr>
+                            <td class="px-4 py-4 text-sm font-black text-slate-900">{{ row.clientName }}</td>
+                            <td class="px-4 py-4 text-right text-sm text-slate-600">{{ row.bucket0to30 | inrCurrency }}</td>
+                            <td class="px-4 py-4 text-right text-sm text-slate-600">{{ row.bucket31to60 | inrCurrency }}</td>
+                            <td class="px-4 py-4 text-right text-sm text-slate-600">{{ row.bucket61to90 | inrCurrency }}</td>
+                            <td class="px-4 py-4 text-right text-sm text-slate-600">{{ row.bucket90Plus | inrCurrency }}</td>
+                            <td class="px-4 py-4 text-right text-sm font-black text-slate-900">{{ row.total | inrCurrency }}</td>
+                          </tr>
+                        } @empty {
+                          <tr>
+                            <td colspan="6" class="px-4 py-12 text-center text-sm text-slate-500">
+                              No ageing balances are open right now.
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              }
             </div>
-            <a routerLink="/billing/recurring" class="text-sm font-medium text-amber-700 hover:text-amber-800">
-              Manage →
-            </a>
-          </div>
-        </mat-card>
-      </div>
+          </section>
+        </main>
+
+        <aside class="space-y-5 xl:sticky xl:top-24 xl:self-start">
+          <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            @if (activeTab() === 'invoices') {
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Selected invoice</p>
+              @if (highlightedInvoice(); as invoice) {
+                <h2 class="mt-1 text-xl font-black tracking-tight text-slate-950">{{ invoice.invoiceNumber }}</h2>
+                <p class="mt-4 text-sm leading-6 text-slate-600">{{ invoice.client?.name || 'Client unavailable' }}</p>
+                <div class="mt-5 grid grid-cols-2 gap-3">
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Total</p>
+                    <p class="mt-2 text-lg font-black text-slate-950">{{ invoice.totalAmount | inrCurrency }}</p>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Balance</p>
+                    <p class="mt-2 text-lg font-black text-slate-950">{{ invoice.balanceDue | inrCurrency }}</p>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Invoice date</p>
+                    <p class="mt-2 text-lg font-black text-slate-950">{{ formatDate(invoice.invoiceDate) }}</p>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Status</p>
+                    <p class="mt-2 text-lg font-black text-slate-950">{{ getStatusLabel(invoice.status) }}</p>
+                  </div>
+                </div>
+              } @else {
+                <h2 class="mt-1 text-xl font-black tracking-tight text-slate-950">No selection</h2>
+                <p class="mt-4 text-sm leading-6 text-slate-500">Invoice details will appear here once records are available.</p>
+              }
+            } @else if (activeTab() === 'tds') {
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Selected TDS focus</p>
+              @if (highlightedTdsItem(); as item) {
+                <h2 class="mt-1 text-xl font-black tracking-tight text-slate-950">{{ item.invoiceNumber }}</h2>
+                <p class="mt-4 text-sm leading-6 text-slate-600">{{ item.clientName }}</p>
+                <div class="mt-5 grid grid-cols-2 gap-3">
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Taxable</p>
+                    <p class="mt-2 text-lg font-black text-slate-950">{{ item.taxableAmount | inrCurrency }}</p>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Est. TDS</p>
+                    <p class="mt-2 text-lg font-black text-slate-950">{{ item.estimatedTds | inrCurrency }}</p>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Quarter</p>
+                    <p class="mt-2 text-sm font-black text-slate-950">{{ item.quarter }}</p>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Action</p>
+                    <p class="mt-2 text-sm font-black text-slate-950">{{ item.statusLabel }}</p>
+                  </div>
+                </div>
+              } @else {
+                <h2 class="mt-1 text-xl font-black tracking-tight text-slate-950">No selection</h2>
+                <p class="mt-4 text-sm leading-6 text-slate-500">TDS follow-up details will appear here once qualifying invoices are available.</p>
+              }
+            } @else if (activeTab() === 'reports') {
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Selected report focus</p>
+              @if (primaryServiceMix(); as service) {
+                <h2 class="mt-1 text-xl font-black tracking-tight text-slate-950">{{ service.label }}</h2>
+                <p class="mt-4 text-sm leading-6 text-slate-600">Top service contribution in the currently loaded billing records.</p>
+                <div class="mt-5 grid grid-cols-2 gap-3">
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Revenue</p>
+                    <p class="mt-2 text-lg font-black text-slate-950">{{ service.amount | inrCurrency }}</p>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Share</p>
+                    <p class="mt-2 text-lg font-black text-slate-950">{{ formatPercent(service.share) }}</p>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Gross billed</p>
+                    <p class="mt-2 text-lg font-black text-slate-950">{{ gstSummary().total | inrCurrency }}</p>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">GST total</p>
+                    <p class="mt-2 text-lg font-black text-slate-950">{{ gstSummary().cgst + gstSummary().sgst + gstSummary().igst | inrCurrency }}</p>
+                  </div>
+                </div>
+              } @else {
+                <h2 class="mt-1 text-xl font-black tracking-tight text-slate-950">No selection</h2>
+                <p class="mt-4 text-sm leading-6 text-slate-500">Report summaries will appear here once invoices are available.</p>
+              }
+            } @else if (activeTab() === 'create') {
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Suggested flow</p>
+              <h2 class="mt-1 text-xl font-black tracking-tight text-slate-950">Pick the right launch path</h2>
+              <div class="mt-4 space-y-4">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <h3 class="text-sm font-black text-slate-900">1. One-time billing</h3>
+                  <p class="mt-1 text-sm leading-6 text-slate-500">Use new invoice when a single engagement or milestone needs billing.</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <h3 class="text-sm font-black text-slate-900">2. Monthly retainers</h3>
+                  <p class="mt-1 text-sm leading-6 text-slate-500">Use recurring templates for repeat bookkeeping, GST, or advisory cycles.</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <h3 class="text-sm font-black text-slate-900">3. Periodic campaigns</h3>
+                  <p class="mt-1 text-sm leading-6 text-slate-500">Use bulk generation when many clients need the same billing period run together.</p>
+                </div>
+              </div>
+            } @else {
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Selected account</p>
+              @if (highlightedClient(); as client) {
+                <h2 class="mt-1 text-xl font-black tracking-tight text-slate-950">{{ client.name }}</h2>
+                <p class="mt-4 text-sm leading-6 text-slate-600">{{ client.gstin }}</p>
+                <div class="mt-5 grid grid-cols-2 gap-3">
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">State</p>
+                    <p class="mt-2 text-sm font-black text-slate-950">{{ client.stateLabel }}</p>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Invoices</p>
+                    <p class="mt-2 text-sm font-black text-slate-950">{{ client.invoiceCount }}</p>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Collected</p>
+                    <p class="mt-2 text-sm font-black text-slate-950">{{ client.collected | inrCurrency }}</p>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Outstanding</p>
+                    <p class="mt-2 text-sm font-black text-slate-950">{{ client.outstanding | inrCurrency }}</p>
+                  </div>
+                </div>
+                <button type="button" (click)="openClientDirectory()" class="mt-5 inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800">
+                  Open client master
+                </button>
+              } @else {
+                <h2 class="mt-1 text-xl font-black tracking-tight text-slate-950">No selection</h2>
+                <p class="mt-4 text-sm leading-6 text-slate-500">Client billing details will appear here once accounts are available.</p>
+              }
+            }
+          </section>
+
+          <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Billing playbook</p>
+            <div class="mt-4 space-y-4">
+              <div class="flex items-start gap-3">
+                <span class="mt-1 h-2.5 w-2.5 rounded-full bg-blue-600"></span>
+                <div>
+                  <h3 class="text-sm font-black text-slate-900">Separate firm billing from client sales</h3>
+                  <p class="mt-1 text-sm leading-6 text-slate-500">This suite is for the CA firm billing its clients, not for a client’s downstream customer invoices.</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <span class="mt-1 h-2.5 w-2.5 rounded-full bg-blue-600"></span>
+                <div>
+                  <h3 class="text-sm font-black text-slate-900">Review GST split before issue</h3>
+                  <p class="mt-1 text-sm leading-6 text-slate-500">Validate intra-state versus inter-state GST treatment before sending the invoice.</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <span class="mt-1 h-2.5 w-2.5 rounded-full bg-blue-600"></span>
+                <div>
+                  <h3 class="text-sm font-black text-slate-900">Watch TDS and ageing together</h3>
+                  <p class="mt-1 text-sm leading-6 text-slate-500">Outstanding balances can look healthy until TDS holdbacks and overdue buckets are reviewed side by side.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Suite status</p>
+            <h3 class="mt-2 text-xl font-black tracking-tight text-slate-950">
+              {{ hasLoadError() ? 'Backend connection interrupted' : 'Live billing workspace ready' }}
+            </h3>
+            <p class="mt-2 text-sm leading-6 text-slate-500">
+              Use this rail to keep an eye on current period activity, recurring schedules, and collection pressure.
+            </p>
+
+            <div class="mt-4 grid grid-cols-2 gap-3">
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Period</p>
+                <p class="mt-2 text-sm font-black text-slate-950">{{ headerPeriod() }}</p>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Recurring</p>
+                <p class="mt-2 text-sm font-black text-slate-950">{{ activeRecurringCount() }}</p>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Pending cases</p>
+                <p class="mt-2 text-sm font-black text-slate-950">{{ pendingCollectionCount() }}</p>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Clients</p>
+                <p class="mt-2 text-sm font-black text-slate-950">{{ clientSummaries().length }}</p>
+              </div>
+            </div>
+
+            <div class="mt-4 rounded-2xl border px-4 py-4 text-sm font-semibold leading-6" [class]="hasLoadError() ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-emerald-100 bg-emerald-50 text-emerald-700'">
+              {{ hasLoadError()
+                ? 'Some API requests are currently unavailable. The page will refill automatically when the backend responds again.'
+                : 'Live data is connected. Use the tabs and filters to drill into invoice, client, TDS, and report detail.' }}
+            </div>
+          </section>
+        </aside>
+      </section>
     </div>
   }
 </div>

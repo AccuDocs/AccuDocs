@@ -56,8 +56,23 @@ export class InvoiceListComponent implements OnInit {
   });
 
   readonly totalResults = computed(() => this.facade.total());
+  readonly hasLoadError = computed(() => this.facade.hasError());
+  readonly activeFilterCount = computed(() => {
+    let count = 0;
+    if (this.filterForm.controls.search.value.trim()) count += 1;
+    if (this.filterForm.controls.status.value) count += 1;
+    if (this.filterForm.controls.dateFrom.value) count += 1;
+    if (this.filterForm.controls.dateTo.value) count += 1;
+    return count;
+  });
   readonly draftInView = computed(() =>
     this.facade.invoices().filter((invoice) => invoice.status === 'draft').length
+  );
+  readonly issuedInView = computed(() =>
+    this.facade.invoices().filter((invoice) => invoice.status === 'issued').length
+  );
+  readonly paidInView = computed(() =>
+    this.facade.invoices().filter((invoice) => invoice.status === 'paid').length
   );
   readonly overdueInView = computed(() =>
     this.facade.invoices().filter((invoice) => invoice.status === 'overdue').length
@@ -91,6 +106,25 @@ export class InvoiceListComponent implements OnInit {
   readonly totalPages = computed(() =>
     Math.max(1, Math.ceil(this.facade.total() / this.facade.pageSize()))
   );
+  readonly selectedInvoicePreview = computed(() => this.facade.invoices()[0] ?? null);
+  readonly currentStatusLabel = computed(() => {
+    const status = this.filterForm.controls.status.value;
+    return status ? this.statusLabel(status) : 'All statuses';
+  });
+  readonly rangeLabel = computed(() => {
+    const from = this.filterForm.controls.dateFrom.value;
+    const to = this.filterForm.controls.dateTo.value;
+    if (from && to) {
+      return `${this.displayDate(from)} - ${this.displayDate(to)}`;
+    }
+    if (from) {
+      return `From ${this.displayDate(from)}`;
+    }
+    if (to) {
+      return `Until ${this.displayDate(to)}`;
+    }
+    return 'Current register';
+  });
 
   ngOnInit(): void {
     const status = this.route.snapshot.queryParamMap.get('status');
@@ -245,6 +279,19 @@ export class InvoiceListComponent implements OnInit {
     return this.facade.sortOrder() === 'asc' ? 'ASC' : 'DESC';
   }
 
+  sortChipLabel(column: string): string {
+    const labels: Record<string, string> = {
+      invoiceNumber: 'Invoice no',
+      invoiceDate: 'Invoice date',
+      dueDate: 'Due date',
+      totalAmount: 'Amount',
+      status: 'Status',
+    };
+
+    const indicator = this.sortIndicator(column);
+    return indicator ? `${labels[column] ?? column} ${indicator}` : labels[column] ?? column;
+  }
+
   clearFilters(): void {
     this.filterForm.reset({
       search: '',
@@ -274,6 +321,41 @@ export class InvoiceListComponent implements OnInit {
     };
 
     return classes[status];
+  }
+
+  dueStatus(invoice: Invoice): string {
+    if (invoice.status === 'paid') {
+      return 'Settled';
+    }
+    if (invoice.status === 'cancelled') {
+      return 'Cancelled';
+    }
+
+    if (!invoice.dueDate) {
+      return 'Due date pending';
+    }
+
+    const dueDate = new Date(invoice.dueDate);
+    if (Number.isNaN(dueDate.getTime())) {
+      return 'Due date pending';
+    }
+
+    const today = new Date();
+    dueDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / 86400000);
+
+    if (diffDays < 0) {
+      return `${Math.abs(diffDays)}d overdue`;
+    }
+    if (diffDays === 0) {
+      return 'Due today';
+    }
+    if (diffDays <= 7) {
+      return `Due in ${diffDays}d`;
+    }
+
+    return `Due in ${diffDays}d`;
   }
 
   displayDate(value: string | undefined): string {
