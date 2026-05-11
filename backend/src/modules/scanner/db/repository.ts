@@ -441,6 +441,8 @@ export const getScannerSummaryRows = async (
 
 export const ensureScannerSchema = async (): Promise<void> => {
   const candidates = [
+    path.resolve(__dirname, 'schema.sql'),
+    path.resolve(process.cwd(), 'dist/modules/scanner/db/schema.sql'),
     path.resolve(process.cwd(), 'src/modules/scanner/db/schema.sql'),
     path.resolve(process.cwd(), 'backend/src/modules/scanner/db/schema.sql'),
   ];
