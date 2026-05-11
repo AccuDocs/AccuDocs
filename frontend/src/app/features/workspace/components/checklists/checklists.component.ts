@@ -3,6 +3,7 @@ import { Component, Input, OnChanges, SimpleChanges, inject, signal } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChecklistService, Checklist, ChecklistTemplate } from '@core/services/checklist.service';
+import { LoadingStateComponent } from '@shared/components/loading-state/loading-state.component';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   heroPlusSolid,
@@ -17,7 +18,7 @@ import { ChecklistDetailComponent } from '../checklist-detail/checklist-detail.c
 @Component({
   selector: 'app-checklists',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgIconComponent, ChecklistDetailComponent],
+  imports: [CommonModule, FormsModule, NgIconComponent, ChecklistDetailComponent, LoadingStateComponent],
   template: `
     @if (selectedChecklist()) {
       <app-checklist-detail 
@@ -84,10 +85,7 @@ import { ChecklistDetailComponent } from '../checklist-detail/checklist-detail.c
       <!-- Checklist List -->
       <div class="grid gap-4">
         @if (loading()) {
-          <div class="flex flex-col items-center justify-center p-12">
-            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
-            <p class="text-slate-500 font-medium">Loading checklists...</p>
-          </div>
+          <app-loading-state label="Loading checklists..." minHeight="260px"></app-loading-state>
         } @else if (checklists().length === 0) {
           <div class="flex flex-col items-center justify-center py-16 bg-white dark:bg-slate-800/50 rounded-lg border border-dashed border-slate-300 dark:border-slate-700">
             <div class="p-4 bg-slate-50 dark:bg-slate-800 rounded-full mb-4">

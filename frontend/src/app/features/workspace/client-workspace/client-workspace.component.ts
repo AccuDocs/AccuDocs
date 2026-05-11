@@ -10,6 +10,7 @@ import { ToastService } from '@core/services/toast.service';
 import { ButtonComponent } from '@ui/atoms/button.component';
 import { CardComponent } from '@ui/molecules/card.component';
 import { LoaderComponent } from '@ui/atoms/loader.component';
+import { LoadingStateComponent } from '@shared/components/loading-state/loading-state.component';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   heroFolderSolid,
@@ -66,6 +67,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
     ButtonComponent,
     CardComponent,
     LoaderComponent,
+    LoadingStateComponent,
     NgIconComponent,
     FileViewToolbarComponent,
     FileGridComponent,
@@ -123,9 +125,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
 
       <!-- Loading State -->
       @if (isLoading()) {
-        <div class="py-20">
-          <app-loader size="lg" label="Loading workspace..."></app-loader>
-        </div>
+        <app-loading-state label="Loading workspace..."></app-loading-state>
       } @else if (workspace()) {
       <!-- Workspace Path Breadcrumbs -->
       <section class="mb-2 shrink-0">

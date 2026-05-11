@@ -1,14 +1,16 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { HotToastService } from '@ngneat/hot-toast';
 import type { Toast, ToastType } from '@shared/ui/molecules/toast.component';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ToastService {
+  private hotToast = inject(HotToastService);
   private toasts = signal<Toast[]>([]);
   private defaultDuration = 5000;
 
-  // Public readonly signal
+  // Kept for the legacy toast container API. Hot Toast now renders notifications globally.
   readonly activeToasts = computed(() => this.toasts());
 
   /**
@@ -49,32 +51,30 @@ export class ToastService {
     duration?: number;
     dismissible?: boolean;
   }): string {
-    const id = this.generateId();
-    const toast: Toast = {
+    const content = this.formatMessage(options.title, options.message);
+    const id = this.toastId(options.type, content);
+    const toastOptions = {
       id,
-      type: options.type,
-      title: options.title,
-      message: options.message,
-      duration: options.duration ?? this.defaultDuration,
+      duration: options.duration ?? this.durationFor(options.type),
       dismissible: options.dismissible ?? true,
     };
 
-    this.toasts.update((toasts) => [...toasts, toast]);
+    const ref = options.type === 'success'
+      ? this.hotToast.success(content, toastOptions)
+      : options.type === 'error'
+        ? this.hotToast.error(content, toastOptions)
+        : options.type === 'warning'
+          ? this.hotToast.warning(content, toastOptions)
+          : this.hotToast.info(content, toastOptions);
 
-    // Auto-dismiss after duration
-    if (toast.duration && toast.duration > 0) {
-      setTimeout(() => {
-        this.dismiss(id);
-      }, toast.duration);
-    }
-
-    return id;
+    return ref.getToast().id;
   }
 
   /**
    * Dismiss a specific toast
    */
   dismiss(id: string): void {
+    this.hotToast.close(id);
     this.toasts.update((toasts) => toasts.filter((t) => t.id !== id));
   }
 
@@ -82,10 +82,35 @@ export class ToastService {
    * Dismiss all toasts
    */
   dismissAll(): void {
+    this.hotToast.close();
     this.toasts.set([]);
   }
 
-  private generateId(): string {
-    return `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  private durationFor(type: ToastType): number {
+    return type === 'error' ? 8000 : this.defaultDuration;
+  }
+
+  private formatMessage(title: string, message?: string): string {
+    const primary = title?.trim();
+    const secondary = message?.trim();
+
+    if (primary && secondary) {
+      return `${primary}: ${secondary}`;
+    }
+
+    return primary || secondary || 'Notification';
+  }
+
+  private toastId(type: ToastType, message: string): string {
+    return `toast-${type}-${this.hash(message)}`;
+  }
+
+  private hash(value: string): string {
+    let hash = 0;
+    for (let index = 0; index < value.length; index += 1) {
+      hash = ((hash << 5) - hash + value.charCodeAt(index)) | 0;
+    }
+
+    return Math.abs(hash).toString(36);
   }
 }

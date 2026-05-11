@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, injec
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ComplianceService, ClientDeadlineAssignment } from '@core/services/compliance.service';
+import { LoadingStateComponent } from '@shared/components/loading-state/loading-state.component';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   heroClockSolid,
@@ -17,7 +18,7 @@ import { WorkspaceTab } from '../../client-workspace/client-workspace.component'
 @Component({
   selector: 'app-client-deadlines',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgIconComponent],
+  imports: [CommonModule, FormsModule, NgIconComponent, LoadingStateComponent],
   template: `
     <div class=" space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <!-- Header -->
@@ -71,10 +72,7 @@ import { WorkspaceTab } from '../../client-workspace/client-workspace.component'
       <!-- Deadline List -->
       <div class="grid gap-4">
         @if (loading()) {
-          <div class="flex flex-col items-center justify-center p-12">
-            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600 mb-4"></div>
-            <p class="text-slate-500 font-medium">Loading deadlines...</p>
-          </div>
+          <app-loading-state label="Loading deadlines..." minHeight="260px"></app-loading-state>
         } @else if (deadlines().length === 0) {
           <div class="flex flex-col items-center justify-center py-16 bg-white dark:bg-slate-800/50 rounded-lg border border-dashed border-slate-300 dark:border-slate-700">
             <div class="p-4 bg-slate-50 dark:bg-slate-800 rounded-full mb-4">

@@ -11,6 +11,7 @@ import { AuthService } from '@core/services/auth.service';
 import { ButtonComponent } from '@ui/atoms/button.component';
 import { CardComponent } from '@ui/molecules/card.component';
 import { LoaderComponent } from '@ui/atoms/loader.component';
+import { LoadingStateComponent } from '@shared/components/loading-state/loading-state.component';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   heroFolderSolid,
@@ -53,6 +54,7 @@ import { MatSelectModule } from '@angular/material/select';
     ButtonComponent,
     CardComponent,
     LoaderComponent,
+    LoadingStateComponent,
     NgIconComponent,
     FileViewToolbarComponent,
     FileGridComponent,
@@ -88,9 +90,7 @@ import { MatSelectModule } from '@angular/material/select';
     <div class="p-6 h-full flex flex-col">
       <!-- Loading State -->
       @if (isLoading()) {
-        <div class="py-20">
-          <app-loader size="lg" label="Loading files..."></app-loader>
-        </div>
+        <app-loading-state label="Loading files..."></app-loading-state>
       } @else {
         <!-- Header Section -->
         <section class="mb-4">

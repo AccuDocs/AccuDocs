@@ -606,6 +606,38 @@ button {
   --mdc-snackbar-container-shape: var(--radius-md);
 }
 
+.accudocs-hot-toast {
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-lg) !important;
+  background: color-mix(in srgb, var(--surface-color) 94%, white 6%) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--shadow-dropdown) !important;
+  font-family: var(--font-sans) !important;
+  font-size: var(--text-sm) !important;
+  line-height: 1.45 !important;
+  max-width: min(420px, calc(100vw - 32px)) !important;
+}
+
+.dark .accudocs-hot-toast {
+  background: color-mix(in srgb, var(--surface-elevated) 92%, white 8%) !important;
+}
+
+.accudocs-hot-toast-success {
+  border-left: 4px solid var(--success) !important;
+}
+
+.accudocs-hot-toast-error {
+  border-left: 4px solid var(--danger) !important;
+}
+
+.accudocs-hot-toast-warning {
+  border-left: 4px solid var(--warning) !important;
+}
+
+.accudocs-hot-toast-info {
+  border-left: 4px solid var(--info) !important;
+}
+
 // Global Menu Styles
 .mat-mdc-menu-panel {
   --mdc-menu-container-shape: var(--radius-lg);

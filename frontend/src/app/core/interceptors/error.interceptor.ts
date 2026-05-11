@@ -1,31 +1,29 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
-import { NotificationService } from '../services/notification.service';
+import { ToastService } from '../services/toast.service';
 import { AuthService } from '../services/auth.service';
+import { extractBackendErrorMessage } from '../utils/api-message.util';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
-  const router = inject(Router);
-  const notificationService = inject(NotificationService);
+  const toast = inject(ToastService);
   const authService = inject(AuthService);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      let errorMessage = 'An error occurred';
+      const isAuthEndpoint = isAuthenticationEndpoint(req.url);
+      const isSuperAdminRequest = req.url.includes('/super-admin');
+      let errorMessage = extractBackendErrorMessage(error.error);
 
       if (error.error instanceof ErrorEvent) {
-        // Client-side error
         errorMessage = error.error.message;
-      } else {
-        // Server-side error
+      } else if (!errorMessage || errorMessage === 'An error occurred') {
         switch (error.status) {
           case 400:
-            errorMessage = error.error?.message || 'Bad request';
+            errorMessage = 'Bad request';
             break;
           case 401:
             errorMessage = 'Session expired. Please login again.';
-            authService.logout();
             break;
           case 403:
             errorMessage = 'Access denied';
@@ -34,13 +32,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             errorMessage = 'Resource not found';
             break;
           case 422:
-            // Validation error - show specific field errors
-            if (error.error?.errors) {
-              const errors = Object.values(error.error.errors).flat();
-              errorMessage = errors.join(', ');
-            } else {
-              errorMessage = error.error?.message || 'Validation failed';
-            }
+            errorMessage = 'Validation failed';
             break;
           case 429:
             errorMessage = 'Too many requests. Please try again later.';
@@ -49,16 +41,48 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             errorMessage = 'Server error. Please try again later.';
             break;
           default:
-            errorMessage = error.error?.message || 'An error occurred';
+            errorMessage = error.message || 'An error occurred';
         }
       }
 
-      // Don't show notification for 401 (handled by logout)
-      if (error.status !== 401) {
-        notificationService.error(errorMessage);
+      if (error.status === 401 && !isAuthEndpoint && !isSuperAdminRequest) {
+        authService.logout();
       }
 
-      return throwError(() => error);
+      toast.error(errorMessage);
+
+      return throwError(() => withBackendMessage(error, errorMessage));
     })
   );
 };
+
+function isAuthenticationEndpoint(url: string): boolean {
+  return /\/auth\/(admin-login|login|logout|refresh|refresh-token|send-otp|verify-otp)/.test(url);
+}
+
+function withBackendMessage(error: HttpErrorResponse, message: string): HttpErrorResponse {
+  const enrichedError = error as HttpErrorResponse & { userMessage?: string };
+  enrichedError.userMessage = message;
+
+  try {
+    Object.defineProperty(enrichedError, 'message', {
+      value: message,
+      configurable: true,
+    });
+  } catch {
+    // HttpErrorResponse.message is readonly in TypeScript; keep userMessage as fallback.
+  }
+
+  if (enrichedError.error && typeof enrichedError.error === 'object' && !('message' in enrichedError.error)) {
+    try {
+      Object.defineProperty(enrichedError.error, 'message', {
+        value: message,
+        configurable: true,
+      });
+    } catch {
+      // Some payloads are not extensible; userMessage/message still carry the display text.
+    }
+  }
+
+  return enrichedError;
+}

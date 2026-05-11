@@ -4,7 +4,6 @@ import { RouterOutlet } from '@angular/router';
 import { NavigationService } from '../../core/navigation.service';
 import { KeyboardShortcutsService } from '../../core/keyboard-shortcuts.service';
 import { ThemeService } from '../../core/services/theme.service';
-import { ToastContainerComponent } from '../../shared/components/toast-container/toast-container.component';
 
 import { HubRailComponent } from '../hub-rail/hub-rail.component';
 import { ModuleSidebarComponent } from '../module-sidebar/module-sidebar.component';
@@ -23,7 +22,6 @@ import { CommandPaletteComponent } from '../command-palette/command-palette.comp
     SidebarCollapsedStripComponent,
     TopBarComponent,
     CommandPaletteComponent,
-    ToastContainerComponent,
   ],
   template: `
     <div
@@ -60,8 +58,6 @@ import { CommandPaletteComponent } from '../command-palette/command-palette.comp
         <app-command-palette />
       }
 
-      <!-- Toast Notifications -->
-      <app-toast-container></app-toast-container>
     </div>
   `,
   styles: [`
