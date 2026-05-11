@@ -60,7 +60,7 @@ const envSchema = z.object({
   LOG_LEVEL: z.string().default('debug'),
   LOG_DIR: z.string().default('logs'),
 
-  CORS_ORIGIN: z.string().default('http://localhost:4200,https://siddharth971.github.io'),
+  CORS_ORIGIN: z.string().default('http://localhost:4200,https://siddharth971.github.io,https://main.d2af6r1ivn8w83.amplifyapp.com'),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
