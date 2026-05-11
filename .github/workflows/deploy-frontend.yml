@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
@@ -32,6 +35,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
         working-directory: frontend
@@ -39,7 +44,12 @@ jobs:
 
       - name: Build Angular app for production
         working-directory: frontend
-        run: npx ng build --configuration production --base-href /AccuDocs/
+        run: npx ng build --configuration production --base-href "/${{ github.event.repository.name }}/"
+
+      - name: Prepare SPA fallback for GitHub Pages
+        run: |
+          cp frontend/dist/accudocs/browser/index.html frontend/dist/accudocs/browser/404.html
+          touch frontend/dist/accudocs/browser/.nojekyll
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

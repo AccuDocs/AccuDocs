@@ -4,9 +4,19 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'backend/**'
+      - 'database/**'
+      - 'docker-compose.yml'
+      - 'nginx/**'
   pull_request:
     branches:
       - main
+    paths:
+      - 'backend/**'
+      - 'database/**'
+      - 'docker-compose.yml'
+      - 'nginx/**'
 
 env:
   NODE_VERSION: "18.x"
