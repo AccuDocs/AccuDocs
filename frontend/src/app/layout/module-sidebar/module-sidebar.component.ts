@@ -1,6 +1,8 @@
 import { Component, inject, ChangeDetectionStrategy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { filter, map, startWith } from 'rxjs';
 import { NavigationService } from '../../core/navigation.service';
 import { AuthService } from '../../core/services/auth.service';
 import {
@@ -13,6 +15,12 @@ import {
 } from '../../core/module-registry';
 import { NavRowButtonComponent } from '@ui/molecules/nav-row-button.component';
 import { IconComponent } from '@ui/atoms/icon.component';
+
+interface BillingShortcutItem {
+  iconName: string;
+  label: string;
+  route: string;
+}
 
 @Component({
   selector: 'app-module-sidebar',
@@ -156,6 +164,41 @@ import { IconComponent } from '@ui/atoms/icon.component';
                   }
                 </div>
               }
+              @if (showBillingShortcuts(module.id)) {
+                <div
+                  style="
+                    padding: 6px 0 12px 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                  "
+                >
+                  <div
+                    style="
+                      font-size: 10px;
+                      font-weight: 700;
+                      letter-spacing: 0.08em;
+                      text-transform: uppercase;
+                      color: var(--color-text-dim);
+                      padding: 4px 16px 4px 44px;
+                    "
+                  >
+                    Quick Actions
+                  </div>
+                  @for (shortcut of billingShortcuts; track shortcut.route) {
+                    <app-nav-row-button
+                      [iconName]="shortcut.iconName"
+                      [label]="shortcut.label"
+                      [active]="isBillingShortcutActive(shortcut.route)"
+                      [accentColor]="getHubColor()"
+                      [paddingLeft]="28"
+                      [muted]="true"
+                      [ariaLabel]="shortcut.label"
+                      (clicked)="openBillingShortcut(shortcut.route)"
+                    />
+                  }
+                </div>
+              }
             }
           </div>
         }
@@ -294,12 +337,27 @@ import { IconComponent } from '@ui/atoms/icon.component';
 export class ModuleSidebarComponent {
   nav = inject(NavigationService);
   authService = inject(AuthService);
+  private router = inject(Router);
   private workspaceContext = inject(ClientWorkspaceContextService);
 
   hubData = this.nav.activeHubData;
   clientWorkspaceTabs = this.workspaceContext.workspaceTabs;
   hasActiveClientSelection = this.workspaceContext.hasActiveClientSelection;
   selectedWorkspaceTab = this.workspaceContext.selectedWorkspaceTab;
+  currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects),
+      startWith(this.router.url)
+    ),
+    { initialValue: this.router.url }
+  );
+  billingShortcuts: ReadonlyArray<BillingShortcutItem> = [
+    { iconName: 'heroDocumentTextSolid', label: 'Invoice register', route: '/billing/invoices' },
+    { iconName: 'heroArrowPathSolid', label: 'Recurring billing', route: '/billing/recurring' },
+    { iconName: 'heroBoltSolid', label: 'Bulk generate', route: '/billing/bulk-generate' },
+    { iconName: 'heroPlusSolid', label: 'New invoice', route: '/billing/invoices/new' },
+  ];
 
   grouped = computed(() => {
     const modules = getHubModules(this.nav.activeHub());
@@ -316,11 +374,36 @@ export class ModuleSidebarComponent {
       && this.hasActiveClientSelection();
   }
 
+  showBillingShortcuts(moduleId: string): boolean {
+    return this.nav.activeHub() === 'billing' && moduleId === 'billing_invoices';
+  }
+
   openClientWorkspaceTab(tab: ClientWorkspaceShortcutTab): void {
     this.workspaceContext.openWorkspaceTab(tab);
   }
 
   isClientWorkspaceTabActive(tab: ClientWorkspaceShortcutTab): boolean {
     return this.selectedWorkspaceTab() === tab;
+  }
+
+  openBillingShortcut(route: string): void {
+    void this.router.navigateByUrl(route);
+  }
+
+  isBillingShortcutActive(route: string): boolean {
+    const url = this.currentUrl();
+
+    switch (route) {
+      case '/billing/invoices/new':
+        return url.startsWith('/billing/invoices/new');
+      case '/billing/invoices':
+        return url.startsWith('/billing/invoices') && !url.startsWith('/billing/invoices/new');
+      case '/billing/recurring':
+        return url.startsWith('/billing/recurring');
+      case '/billing/bulk-generate':
+        return url.startsWith('/billing/bulk-generate');
+      default:
+        return url === route || url.startsWith(`${route}/`);
+    }
   }
 }

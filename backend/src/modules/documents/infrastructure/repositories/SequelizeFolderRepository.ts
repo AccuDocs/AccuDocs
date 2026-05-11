@@ -27,7 +27,10 @@ export class SequelizeFolderRepository implements IFolderRepository {
   }
 
   async findByClientId(clientId: string, organizationId: string): Promise<Folder[]> {
-    const folders = await FolderModel.findAll({ where: { clientId, organizationId } });
+    const folders = await FolderModel.findAll({
+      where: { clientId, organizationId },
+      order: [['created_at', 'ASC'], ['id', 'ASC']]
+    });
     return folders.map(FolderMapper.toDomain);
   }
 
@@ -37,7 +40,10 @@ export class SequelizeFolderRepository implements IFolderRepository {
   }
 
   async findByParentId(parentFolderId: string, organizationId: string): Promise<Folder[]> {
-    const folders = await FolderModel.findAll({ where: { parentFolderId, organizationId } });
+    const folders = await FolderModel.findAll({
+      where: { parentFolderId, organizationId },
+      order: [['created_at', 'ASC'], ['id', 'ASC']]
+    });
     return folders.map(FolderMapper.toDomain);
   }
 
@@ -65,7 +71,8 @@ export class SequelizeFolderRepository implements IFolderRepository {
         clientId, 
         parentFolderId: null, 
         organizationId 
-      } 
+      },
+      order: [['created_at', 'ASC'], ['id', 'ASC']]
     });
     if (!folder) return null;
     return FolderMapper.toDomain(folder);

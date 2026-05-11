@@ -60,7 +60,6 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
   })],
   template: `
     <div class="client-inventory-shell w-full min-w-0 max-w-none animate-in fade-in duration-500">
-      @if (activeView() !== 'overview') {
       <!-- Sub-Navigation Tabs -->
       <div class="inventory-tabs no-scrollbar mb-6 flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-slate-100/80 p-1 shadow-sm">
         <button (click)="activeView.set('overview')"
@@ -106,8 +105,6 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
       </div>
 
       <!-- ═══ OVERVIEW TAB ═══ -->
-      }
-
       @if (activeView() === 'overview') {
         <section class="inventory-overview space-y-5">
           <app-dashboard-toolbar

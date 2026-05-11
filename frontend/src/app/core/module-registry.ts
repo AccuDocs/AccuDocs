@@ -51,7 +51,7 @@ export const MODULE_REGISTRY: AppModule[] = ([
   { id: 'documents_scanner', hub: 'core', label: 'Document Scanner', icon: 'SCAN', iconName: 'heroDocumentMagnifyingGlassSolid', desc: 'OCR capture for receipts and bills', status: 'live', badge: null, route: '/documents/scanner', pinned: true },
 
   // BILLING
-  { id: 'billing_invoices', hub: 'billing', label: 'Firm Billing Suite', icon: 'BILL', iconName: 'heroDocumentTextSolid', desc: 'Firm billing, GST & collections', status: 'live', badge: 12, route: '/billing/firm', pinned: true },
+  { id: 'billing_invoices', hub: 'billing', label: 'Firm Billing Suite', icon: 'BILL', iconName: 'heroDocumentTextSolid', desc: 'Firm billing, GST & collections', status: 'live', badge: 12, route: '/billing', pinned: true },
 
   // COMPLIANCE
   { id: 'calendar', hub: 'compliance', label: 'Compliance Calendar', icon: 'CAL', iconName: 'heroCalendarDaysSolid', desc: 'All filing deadlines', status: 'live', badge: 3, route: '/compliance/calendar', pinned: true },

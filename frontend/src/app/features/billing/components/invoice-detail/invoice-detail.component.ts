@@ -387,7 +387,7 @@ export class InvoiceDetailComponent {
   }
 
   openBillingSuite(): void {
-    void this.router.navigate(['/billing/firm']);
+    void this.router.navigate(['/billing']);
   }
 
   statusLabel(status: InvoiceStatus | undefined): string {

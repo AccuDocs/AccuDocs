@@ -138,6 +138,21 @@ const BILLING_TABS: BillingTabItem[] = [
       .billing-tab-active {
         box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
       }
+
+      .billing-tab-strip {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      .billing-tab-strip::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+      }
+
+      .billing-tab-button {
+        min-height: 40px;
+      }
     `,
   ],
 })

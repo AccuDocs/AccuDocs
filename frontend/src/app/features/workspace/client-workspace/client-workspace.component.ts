@@ -1049,6 +1049,8 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   private sanitizer = inject(DomSanitizer);
   public viewService = inject(ViewPreferenceService);
   private destroy$ = new Subject<void>();
+  private loadedClientId: string | null = null;
+  private activeWorkspaceRequest = 0;
 
   // View state
   viewState$ = this.viewService.state$;
@@ -1257,16 +1259,33 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  loadWorkspace(clientId: string) {
-    this.isLoading.set(true);
+  loadWorkspace(clientId: string, force = false) {
+    if (!force && this.loadedClientId === clientId && this.workspace()) {
+      return;
+    }
+
+    const requestId = ++this.activeWorkspaceRequest;
+    if (!this.workspace() || this.loadedClientId !== clientId) {
+      this.isLoading.set(true);
+    }
+
     this.workspaceService.getClientWorkspace(clientId)
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.isLoading.set(false))
+        finalize(() => {
+          if (requestId === this.activeWorkspaceRequest) {
+            this.isLoading.set(false);
+          }
+        })
       )
       .subscribe({
         next: (response) => {
+          if (requestId !== this.activeWorkspaceRequest) {
+            return;
+          }
+
           this.workspaceContext.rememberClient(clientId);
+          this.loadedClientId = clientId;
           this.workspace.set(response.data);
           this.currentFolder.set(response.data.rootFolder);
           this.breadcrumbs.set([]);
@@ -1275,6 +1294,10 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
+          if (requestId !== this.activeWorkspaceRequest) {
+            return;
+          }
+
           this.toast.error('Failed to load workspace', error.message);
         }
       });
@@ -1305,7 +1328,7 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   refresh() {
     const clientId = this.route.snapshot.paramMap.get('clientId');
     if (clientId) {
-      this.loadWorkspace(clientId);
+      this.loadWorkspace(clientId, true);
     }
   }
 
@@ -1600,9 +1623,11 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   }
 
   loadThumbnails(files: FileNode[]) {
-    files.forEach(file => {
+    files
+      .filter(file => this.isImage(file.mimeType) && !this.thumbnails()[file.id])
+      .slice(0, 12)
+      .forEach(file => {
       // Only load thumbnails for images that don't have one yet
-      if (this.isImage(file.mimeType) && !this.thumbnails()[file.id]) {
         this.workspaceService.getFileDownloadUrl(file.id, true) // Pass true for preview mode (skip log)
           .pipe(takeUntil(this.destroy$))
           .subscribe({
@@ -1614,7 +1639,6 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
               // Silently fail for thumbnails
             }
           });
-      }
     });
   }
 

@@ -49,6 +49,9 @@ export class NavigationService {
     // Load pins from localStorage
     this.loadPins();
 
+    // Align the initial URL with the active hub/module before the first user interaction.
+    this.syncRouteToState(this.router.url);
+
     // Sync navigation when route changes
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))

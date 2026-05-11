@@ -97,18 +97,35 @@ export class DocumentService {
     const client = await this.clientRepository.findById(clientId, organizationId);
     if (!client) throw new NotFoundError('Client not found');
 
-    const folders = await this.folderRepository.findByClientId(clientId, organizationId);
+    let folders = await this.folderRepository.findByClientId(clientId, organizationId);
     
     // Find the root folder (parentId is null/empty)
-    const rootFolderEntity = folders.find(f => !f.parentId || f.parentId === '');
+    let rootFolderEntity = folders.find(f => !f.parentId || f.parentId === '');
+
+    if (!rootFolderEntity) {
+      await this.folderInitializer.initializeClientWorkspace(organizationId, clientId, client.code);
+      folders = await this.folderRepository.findByClientId(clientId, organizationId);
+      rootFolderEntity = folders.find(f => !f.parentId || f.parentId === '');
+    }
+
     if (!rootFolderEntity) throw new NotFoundError('Root workspace folder not found');
+
+    const foldersByParentId = new Map<string, Folder[]>();
+    for (const folder of folders) {
+      if (!folder.parentId) continue;
+      const parentId = String(folder.parentId);
+      const siblings = foldersByParentId.get(parentId);
+      if (siblings) {
+        siblings.push(folder);
+      } else {
+        foldersByParentId.set(parentId, [folder]);
+      }
+    }
 
     // Build recursive tree
     const buildTree = (parent: Folder): any => {
       const parentIdString = String(parent.id);
-      const children = folders
-        .filter(f => f.parentId && String(f.parentId) === parentIdString)
-        .map(child => buildTree(child));
+      const children = (foldersByParentId.get(parentIdString) ?? []).map(child => buildTree(child));
 
       return {
         id: parent.id,
@@ -135,15 +152,6 @@ export class DocumentService {
   }
 
   async getFolders(organizationId: string, clientId: string) {
-    // 1. Dynamic maintenance check in background (non-blocking)
-    const client = await this.clientRepository.findById(clientId, organizationId);
-    if (client) {
-      setImmediate(() => {
-        this.folderInitializer.initializeClientWorkspace(organizationId, clientId, client.code)
-          .catch((err: any) => console.error(`Background maintenance failed: ${err.message}`));
-      });
-    }
-    
     return this.getClientWorkspace(organizationId, clientId);
   }
 

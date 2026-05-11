@@ -1,6 +1,7 @@
 import { injectable, inject } from "tsyringe";
 import { IFolderRepository } from "../../domain/repositories/IFolderRepository";
 import { Folder } from "../../domain/entities/Folder";
+import { sequelize } from "../../../../config/database.config";
 import { logger } from "../../../../utils/logger";
 import { v4 as uuidv4 } from "uuid";
 
@@ -48,7 +49,29 @@ export class FolderInitializerService {
   }
 
   public async initializeClientWorkspace(organizationId: string, clientId: string, clientCode: string, transaction?: any): Promise<void> {
+    const ownsTransaction = !transaction;
+    const activeTransaction = transaction ?? await sequelize.transaction();
+
     try {
+      await sequelize.query(
+        'SELECT pg_advisory_xact_lock(hashtext(:lockKey))',
+        {
+          replacements: {
+            lockKey: `workspace-init:${organizationId}:${clientId}`,
+          },
+          transaction: activeTransaction,
+        }
+      );
+
+      const existingRoot = await this.folderRepository.findRootByClient(clientId, organizationId);
+      if (existingRoot) {
+        if (ownsTransaction) {
+          await activeTransaction.commit();
+        }
+        logger.info(`Workspace already exists for ${clientCode}; skipping initialization`);
+        return;
+      }
+
       const { fyString, months } = this.getFiscalYearData();
       const recentThreeFYs = this.getPastFiscalYears(3);
 
@@ -161,10 +184,17 @@ export class FolderInitializerService {
       const allFolders: Folder[] = [rootFolder];
       this.collectFolders(organizationId, clientId, clientCode, rootFolder.id, `/${clientCode}`, structure, allFolders);
 
-      await this.folderRepository.bulkSave(allFolders, { transaction });
+      await this.folderRepository.bulkSave(allFolders, { transaction: activeTransaction });
+
+      if (ownsTransaction) {
+        await activeTransaction.commit();
+      }
 
       logger.info(`Workspace initialized for ${clientCode} with ${allFolders.length} folders`);
     } catch (error: any) {
+      if (ownsTransaction) {
+        await activeTransaction.rollback();
+      }
       logger.error(`Failed to initialize workspace for client ${clientCode}: ${error.message}`);
       throw error;
     }
