@@ -102,7 +102,7 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
           [ngClass]="{
             'bg-blue-50 text-blue-700': row.invoiceType === 'B2B',
             'bg-purple-50 text-purple-700': row.invoiceType === 'B2C',
-            'bg-teal-50 text-teal-700': row.invoiceType === 'EXPORT',
+            'bg-primary-50 text-primary-700': row.invoiceType === 'EXPORT',
             'bg-slate-100 text-slate-600': row.invoiceType === 'NIL'
           }"
         >{{ row.invoiceType }}</span>

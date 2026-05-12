@@ -143,13 +143,13 @@ interface NavItem {
       font-size: 32px;
       height: 32px;
       width: 32px;
-      color: #667eea;
+      color: var(--ad-teal);
     }
 
     .logo-text {
       font-size: 1.5rem;
       font-weight: 700;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--ad-teal);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -160,16 +160,16 @@ interface NavItem {
 
     mat-nav-list a {
       margin: 0.25rem 0.5rem;
-      border-radius: 9px;
+      border-radius: 8px;
     }
 
     mat-nav-list a.active {
       background: rgba(102, 126, 234, 0.1);
-      color: #667eea;
+      color: var(--ad-teal);
     }
 
     mat-nav-list a.active mat-icon {
-      color: #667eea;
+      color: var(--ad-teal);
     }
 
     .sidenav-footer {
@@ -197,7 +197,7 @@ interface NavItem {
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--ad-teal);
       color: white;
       display: flex;
       align-items: center;

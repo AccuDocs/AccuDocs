@@ -187,9 +187,9 @@ Chart.register(...registerables);
                 <p class="font-mono text-sm font-black text-slate-950">INR {{ summary()!.salesBreakdown.b2c.value | number:'1.0-0' }}</p>
               </div>
 
-              <div class="breakdown-row bg-teal-50">
+              <div class="breakdown-row bg-primary-50">
                 <div class="flex items-center gap-3">
-                  <span class="breakdown-pill bg-teal-100 text-teal-700">Export</span>
+                  <span class="breakdown-pill bg-primary-100 text-primary-700">Export</span>
                   <p class="text-sm font-bold text-slate-700">{{ summary()!.salesBreakdown.export.count }} invoices</p>
                 </div>
                 <p class="font-mono text-sm font-black text-slate-950">INR {{ summary()!.salesBreakdown.export.value | number:'1.0-0' }}</p>

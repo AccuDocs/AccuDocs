@@ -30,7 +30,7 @@ import {
   template: `
     <div class="flex min-h-screen bg-white">
       <!-- Left Column: Decorative Panel (Hidden on mobile) -->
-      <div class="hidden lg:flex w-1/2 bg-[#0f172a] relative overflow-hidden flex-col justify-center px-12 xl:px-20">
+      <div class="hidden lg:flex w-1/2 bg-[#0F1E35] relative overflow-hidden flex-col justify-center px-12 xl:px-20">
         <!-- Abstract Grid Pattern -->
         <div class="absolute inset-0 opacity-10 pointer-events-none">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -45,22 +45,22 @@ import {
 
         <div class="relative z-10">
           <div class="flex items-center gap-4 mb-12">
-            <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-indigo-500/40 rotate-3">
+            <div class="w-16 h-16 bg-primary-600 rounded-xl flex items-center justify-center text-white shadow-2xl shadow-primary/20">
               <ng-icon name="heroShieldCheckSolid" size="36"></ng-icon>
             </div>
             <div>
-              <h1 class="text-4xl font-black text-white tracking-tight">AccuDocs</h1>
-              <p class="text-indigo-400 font-bold uppercase tracking-[0.2em] text-xs mt-1">Document Management Portal</p>
+              <h1 class="text-4xl font-semibold text-white">AccuDocs</h1>
+              <p class="text-primary-300 font-medium uppercase tracking-[0.12em] text-xs mt-1">Smart Accounting. Clear Books.</p>
             </div>
           </div>
 
           <h2 class="text-3xl font-bold text-slate-200 mb-8 leading-tight">
-            Your Professional <br/> Document Ecosystem.
+            Smart accounting workflows for clear books.
           </h2>
 
           <div class="space-y-6">
             <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-indigo-400">
+              <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-primary-300">
                 <ng-icon name="heroCheckCircleSolid" size="20"></ng-icon>
               </div>
               <div>
@@ -69,7 +69,7 @@ import {
               </div>
             </div>
             <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-indigo-400">
+              <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-primary-300">
                 <ng-icon name="heroCheckCircleSolid" size="20"></ng-icon>
               </div>
               <div>
@@ -78,7 +78,7 @@ import {
               </div>
             </div>
             <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-indigo-400">
+              <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-primary-300">
                 <ng-icon name="heroCheckCircleSolid" size="20"></ng-icon>
               </div>
               <div>
@@ -91,7 +91,7 @@ import {
 
         <!-- Footer Decoration -->
         <div class="absolute bottom-12 left-12 xl:left-20 text-slate-500 text-sm font-medium">
-          &copy; 2026 AccuDocs Platform • Secure & Encrypted
+          &copy; 2026 AccuDocs Platform | Secure & Encrypted
         </div>
       </div>
 
@@ -107,7 +107,7 @@ import {
             <div>
               <label class="block text-sm font-bold text-slate-700 mb-2">Email or Phone</label>
               <div class="relative group">
-                <ng-icon name="heroEnvelopeSolid" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors"></ng-icon>
+                <ng-icon name="heroEnvelopeSolid" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-600 transition-colors"></ng-icon>
                 <input 
                   id="identifier"
                   name="identifier"
@@ -115,7 +115,7 @@ import {
                   autocomplete="username"
                   [(ngModel)]="facade.form.value().identifier"
                   placeholder="name@company.com or phone"
-                  class="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 transition-all font-medium text-slate-900"
+                  class="w-full h-12 pl-12 pr-4 bg-white border border-[#D0D7DE] rounded-md outline-none focus:border-primary-600 focus:ring-4 focus:ring-[rgba(29,78,216,0.12)] transition-all font-medium text-slate-900"
                   [class.border-red-500]="facade.form.errors().identifier"
                 />
               </div>
@@ -129,17 +129,17 @@ import {
             <div>
               <div class="flex items-center justify-between mb-2">
                 <label class="block text-sm font-bold text-slate-700">Password</label>
-                <a href="#" class="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors">Forgot password?</a>
+                <a href="#" class="text-xs font-bold text-primary-600 hover:text-primary-700 transition-colors">Forgot password?</a>
               </div>
               <div class="relative group">
-                <ng-icon name="heroLockClosedSolid" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors"></ng-icon>
+                <ng-icon name="heroLockClosedSolid" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-600 transition-colors"></ng-icon>
                 <input 
                   id="password"
                   name="password"
                   [type]="facade.hidePassword() ? 'password' : 'text'" 
                   [(ngModel)]="facade.form.value().password"
                   placeholder="••••••••"
-                  class="w-full h-12 pl-12 pr-12 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 transition-all font-medium text-slate-900"
+                  class="w-full h-12 pl-12 pr-12 bg-white border border-[#D0D7DE] rounded-md outline-none focus:border-primary-600 focus:ring-4 focus:ring-[rgba(29,78,216,0.12)] transition-all font-medium text-slate-900"
                   [class.border-red-500]="facade.form.errors().password"
                 />
                 <button 
@@ -162,7 +162,7 @@ import {
                 id="remember" 
                 name="remember"
                 type="checkbox" 
-                class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600/20 cursor-pointer"
+                class="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-600/20 cursor-pointer"
               />
               <label for="remember" class="text-sm font-medium text-slate-600 cursor-pointer select-none">Remember me</label>
             </div>
@@ -170,7 +170,7 @@ import {
             <button 
               type="submit" 
               [disabled]="facade.form.isSubmitting()"
-              class="w-full h-12 bg-indigo-600 text-white rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-indigo-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-indigo-600/20"
+              class="w-full h-12 bg-primary-600 text-white rounded-md font-medium flex items-center justify-center gap-3 hover:bg-[#1E3A8A] active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-primary/20"
             >
               @if (!facade.form.isSubmitting()) {
                 <span>Sign In to Portal</span>

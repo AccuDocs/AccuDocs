@@ -119,11 +119,11 @@ import { IconComponent } from '@ui/atoms/icon.component';
                     display: flex;
                     align-items: center;
                     gap: 2px;
-                    border-radius: 9px;
+                    border-radius: var(--radius-sm);
                     transition: all 0.15s;
                     margin-bottom: 4px;
                   "
-                  class="hover:bg-gray-900"
+                  class="hover:bg-primary-50"
                 >
                   @if (module.iconName) {
                     <app-icon [name]="module.iconName" size="xs" tone="current" ariaLabel=""></app-icon>
@@ -160,7 +160,7 @@ import { IconComponent } from '@ui/atoms/icon.component';
                   gap: 12px;
                   transition: all 0.15s;
                 "
-                class="hover:bg-gray-900"
+                class="hover:bg-primary-50"
               >
                 <!-- Icon square -->
                 <div

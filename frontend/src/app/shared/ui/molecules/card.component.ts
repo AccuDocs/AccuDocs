@@ -11,18 +11,18 @@ export type CardVariant = 'default' | 'elevated' | 'bordered' | 'filled';
     <article [class]="cardClasses()" [attr.aria-labelledby]="title() ? cardId + '-title' : null">
       <!-- Card Header -->
       @if (title() || hasHeaderActions) {
-        <header class="flex items-start justify-between gap-4 px-4 py-4 border-b border-border-subtle">
+        <header class="flex items-start justify-between gap-4 px-5 py-4 border-b border-border-subtle">
           <div class="flex-1 min-w-0">
             @if (title()) {
               <h3 
                 [id]="cardId + '-title'"
-                class="text-lg font-semibold text-text-primary truncate"
+                class="text-sm font-medium text-text-primary truncate"
               >
                 {{ title() }}
               </h3>
             }
             @if (subtitle()) {
-              <p class="mt-0.5 text-sm text-text-secondary">{{ subtitle() }}</p>
+              <p class="mt-0.5 text-sm text-text-muted">{{ subtitle() }}</p>
             }
           </div>
           
@@ -40,7 +40,7 @@ export type CardVariant = 'default' | 'elevated' | 'bordered' | 'filled';
 
       <!-- Card Footer -->
       @if (hasFooter) {
-        <footer class="px-4 py-4 border-t border-border-subtle bg-secondary-50/50 dark:bg-secondary-900/30">
+        <footer class="px-5 py-4 border-t border-border-subtle bg-[#FAFCFF] dark:bg-secondary-900/30">
           <ng-content select="[card-footer]"></ng-content>
         </footer>
       }
@@ -73,26 +73,26 @@ export class CardComponent {
   // Computed card classes
   cardClasses = computed(() => {
     const baseClasses = [
-      'bg-surface-color',
+      'bg-surface',
       'overflow-hidden',
       'transition-all duration-200',
     ].join(' ');
 
     const variantClasses: Record<CardVariant, string> = {
       default: [
-        'rounded-lg border border-border-color',
-        'shadow-card',
+        'rounded-xl border border-border-color',
+        'shadow-xs',
       ].join(' '),
       elevated: [
-        'rounded-lg',
+        'rounded-xl',
         'shadow-lg',
         'dark:border dark:border-secondary-700',
       ].join(' '),
       bordered: [
-        'rounded-lg border-2 border-border-color',
+        'rounded-xl border border-border-color',
       ].join(' '),
       filled: [
-        'rounded-lg',
+        'rounded-xl',
         'bg-secondary-50 dark:bg-secondary-900',
       ].join(' '),
     };
@@ -117,7 +117,7 @@ export class CardComponent {
 
   // Computed content classes
   contentClasses = computed(() => {
-    const base = this.padding() ? 'p-4' : '';
+    const base = this.padding() ? 'p-5' : '';
     const height = this.fullHeight() ? 'flex-1 flex flex-col min-h-0' : '';
     return `${base} ${height}`.trim();
   });

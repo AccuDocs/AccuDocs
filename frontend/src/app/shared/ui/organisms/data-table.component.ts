@@ -53,7 +53,7 @@ export interface TablePagination {
           <div class="overflow-x-auto">
             <table class="w-full">
               <!-- Table Head -->
-              <thead class="bg-secondary-50 dark:bg-secondary-900/50 border-b border-border-color">
+              <thead class="bg-[#F5F9FF] dark:bg-secondary-900/50 border-b border-border-color">
                 <tr>
                   <!-- Checkbox column -->
                   @if (selectable()) {
@@ -69,7 +69,7 @@ export interface TablePagination {
                     </th>
                   }
 
-                  @for (col of columns(); track col.field) {
+                  @for (col of columns(); track col.field; let colIndex = $index) {
                     <th
                       scope="col"
                       [class]="headerCellClasses(col)"
@@ -80,7 +80,7 @@ export interface TablePagination {
                       } @else if (col.sortable) {
                         <button
                           type="button"
-                          class="group inline-flex items-center gap-1.5 font-semibold hover:text-text-primary transition-colors"
+                          class="group inline-flex items-center gap-1.5 font-medium hover:text-text-primary transition-colors"
                           (click)="onSort(col.field)"
                         >
                           {{ col.header }}
@@ -110,7 +110,7 @@ export interface TablePagination {
 
                   <!-- Actions column -->
                   @if (showActions()) {
-                    <th scope="col" class="w-20 px-4 py-3 text-right text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                    <th scope="col" class="w-20 px-4 py-3 text-right text-[11px] font-medium text-text-muted uppercase tracking-[0.06em]">
                       Actions
                     </th>
                   }
@@ -137,8 +137,8 @@ export interface TablePagination {
                       </td>
                     }
 
-                    @for (col of columns(); track col.field) {
-                      <td [class]="cellClasses(col)">
+                    @for (col of columns(); track col.field; let colIndex = $index) {
+                      <td [class]="cellClasses(col, colIndex)">
                         @if (col.template) {
                           <ng-container *ngTemplateOutlet="col.template; context: { $implicit: row, column: col, index: idx }"></ng-container>
                         } @else {
@@ -175,7 +175,7 @@ export interface TablePagination {
 
           <!-- Loading overlay -->
           @if (loading() && data().length) {
-            <div class="absolute inset-0 bg-surface-color/60 flex items-center justify-center z-10">
+            <div class="absolute inset-0 bg-white/70 flex items-center justify-center z-10">
               <ui-loader size="lg" label="Loading..."></ui-loader>
             </div>
           }
@@ -187,13 +187,13 @@ export interface TablePagination {
         <div class="flex items-center justify-between gap-4 mt-4 px-2">
           <!-- Info -->
           <p class="text-sm text-text-secondary">
-            Showing 
+            Showing
             <span class="font-medium text-text-primary">{{ paginationStart() }}</span>
-            to 
+            -
             <span class="font-medium text-text-primary">{{ paginationEnd() }}</span>
-            of 
+            of
             <span class="font-medium text-text-primary">{{ pagination()?.total }}</span>
-            results
+            records
           </p>
 
           <!-- Page buttons -->
@@ -203,8 +203,9 @@ export interface TablePagination {
               [disabled]="!canGoPrev()"
               (click)="onPageChange(pagination()!.page - 1)"
               class="px-3 py-1.5 text-sm font-medium rounded-md border border-border-color bg-white text-text-primary hover:bg-secondary-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors dark:bg-secondary-800 dark:border-secondary-700"
+              aria-label="Previous page"
             >
-              Previous
+              &larr;
             </button>
             
             @for (pageNum of pageNumbers(); track pageNum) {
@@ -226,8 +227,9 @@ export interface TablePagination {
               [disabled]="!canGoNext()"
               (click)="onPageChange(pagination()!.page + 1)"
               class="px-3 py-1.5 text-sm font-medium rounded-md border border-border-color bg-white text-text-primary hover:bg-secondary-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors dark:bg-secondary-800 dark:border-secondary-700"
+              aria-label="Next page"
             >
-              Next
+              &rarr;
             </button>
           </div>
         </div>
@@ -250,7 +252,7 @@ export class DataTableComponent {
   showHeader = input<boolean>(true);
   showActions = input<boolean>(false);
   showPagination = input<boolean>(true);
-  striped = input<boolean>(false);
+  striped = input<boolean>(true);
   hoverable = input<boolean>(true);
   bordered = input<boolean>(true);
   compact = input<boolean>(false);
@@ -345,17 +347,17 @@ export class DataTableComponent {
 
   // Classes
   containerClasses = computed(() => {
-    const classes = ['relative', 'bg-surface-color'];
+    const classes = ['relative', 'bg-surface'];
 
     if (this.bordered()) {
-      classes.push('border border-border-color rounded-lg overflow-hidden');
+      classes.push('border border-border-color rounded-xl overflow-hidden');
     }
 
     return classes.join(' ');
   });
 
   headerCellClasses(col: TableColumn): string {
-    const align = col.align || 'left';
+    const align = col.align || (this.isNumericColumn(col) ? 'right' : 'left');
     const alignClass = {
       left: 'text-left',
       center: 'text-center',
@@ -365,13 +367,14 @@ export class DataTableComponent {
     return [
       'px-6',
       this.compact() ? 'py-2' : 'py-3',
-      'text-xs font-semibold text-text-secondary uppercase tracking-wider',
+      'text-[11px] font-medium text-text-muted uppercase tracking-[0.06em]',
       alignClass,
     ].join(' ');
   }
 
-  cellClasses(col: TableColumn): string {
-    const align = col.align || 'left';
+  cellClasses(col: TableColumn, index = 0): string {
+    const numeric = this.isNumericColumn(col);
+    const align = col.align || (numeric ? 'right' : 'left');
     const alignClass = {
       left: 'text-left',
       center: 'text-center',
@@ -380,8 +383,9 @@ export class DataTableComponent {
 
     return [
       'px-6',
-      this.compact() ? 'py-2' : 'py-4',
-      'text-sm text-text-primary',
+      this.compact() ? 'py-2 h-10' : 'py-3 h-12',
+      index === 0 ? 'text-sm font-medium text-text-primary' : 'text-[13px] font-normal text-text-secondary',
+      numeric ? 'font-mono font-medium text-text-primary' : '',
       alignClass,
     ].join(' ');
   }
@@ -390,11 +394,11 @@ export class DataTableComponent {
     const classes = ['transition-colors'];
 
     if (this.striped() && idx % 2 === 1) {
-      classes.push('bg-secondary-50/50 dark:bg-secondary-900/30');
+      classes.push('bg-[#FAFCFF] dark:bg-secondary-900/30');
     }
 
     if (this.hoverable()) {
-      classes.push('hover:bg-primary-50/50 dark:hover:bg-primary-900/10 cursor-pointer');
+      classes.push('hover:bg-[#F5F9FF] dark:hover:bg-primary-900/10 cursor-pointer');
     }
 
     if (this.isSelected(row)) {
@@ -402,6 +406,11 @@ export class DataTableComponent {
     }
 
     return classes.join(' ');
+  }
+
+  private isNumericColumn(col: TableColumn): boolean {
+    const name = `${col.field} ${col.header}`.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+    return /\b(amount|total|balance|tax|gst|rate|price|qty|quantity|percent|percentage|debit|credit|paid|due|outstanding)\b/.test(name);
   }
 
   sortIconClasses(field: string): string {

@@ -24,9 +24,9 @@ import { CommonModule } from '@angular/common';
     .skeleton {
       background: linear-gradient(
         90deg,
-        var(--border-subtle) 25%,
-        var(--surface-color) 50%,
-        var(--border-subtle) 75%
+        #F0F2F4 25%,
+        #E4E7EA 50%,
+        #F0F2F4 75%
       );
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;
@@ -97,7 +97,7 @@ export class SkeletonComponent {
   standalone: true,
   imports: [CommonModule, SkeletonComponent],
   template: `
-    <div class="bg-surface-color border border-border-color rounded-lg p-6 space-y-4">
+    <div class="bg-surface border border-border-color rounded-xl p-5 space-y-4">
       <!-- Header -->
       <div class="flex items-center gap-4">
         <ui-skeleton variant="circle" width="48px"></ui-skeleton>
@@ -137,7 +137,7 @@ export class SkeletonCardComponent {
   template: `
     <div class="overflow-hidden">
       <!-- Header -->
-      <div class="bg-secondary-50 dark:bg-secondary-900 px-6 py-4 flex gap-4">
+      <div class="bg-[#F5F9FF] dark:bg-secondary-900 px-6 py-3 flex gap-4">
         @for (col of columnsArray(); track $index) {
           <ui-skeleton height="16px" [width]="getColumnWidth($index)"></ui-skeleton>
         }

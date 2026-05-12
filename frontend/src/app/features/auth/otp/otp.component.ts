@@ -98,7 +98,7 @@ import { NotificationService } from '@core/services/notification.service';
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--ad-sidebar-bg);
       padding: 1rem;
     }
 
@@ -106,7 +106,7 @@ import { NotificationService } from '@core/services/notification.service';
       width: 100%;
       max-width: 400px;
       padding: 2rem;
-      border-radius: 9px;
+      border-radius: 12px;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     }
 
@@ -124,7 +124,7 @@ import { NotificationService } from '@core/services/notification.service';
       font-size: 56px;
       height: 56px;
       width: 56px;
-      color: #667eea;
+      color: var(--ad-teal);
     }
 
     .header-content h2 {
@@ -159,7 +159,7 @@ import { NotificationService } from '@core/services/notification.service';
     button[type="submit"] {
       height: 48px;
       font-size: 1rem;
-      border-radius: 9px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;

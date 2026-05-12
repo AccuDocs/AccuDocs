@@ -1,7 +1,7 @@
 import { Component, input, ChangeDetectionStrategy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-export type BadgeVariant = 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+export type BadgeVariant = 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info' | 'partial';
 export type BadgeSize = 'sm' | 'md' | 'lg';
 
 @Component({
@@ -37,7 +37,7 @@ export class BadgeComponent {
   size = input<BadgeSize>('md');
   dot = input<boolean>(false);
   icon = input<boolean>(false);
-  pill = input<boolean>(true);
+  pill = input<boolean>(false);
   role = input<string>('status');
 
   // Computed dot classes
@@ -58,6 +58,7 @@ export class BadgeComponent {
       warning: 'bg-warning-500',
       danger: 'bg-danger-500',
       info: 'bg-info-500',
+      partial: 'bg-[#E65100]',
     };
 
     return [
@@ -77,9 +78,9 @@ export class BadgeComponent {
     ].join(' ');
 
     const sizeClasses: Record<BadgeSize, string> = {
-      sm: 'px-2 py-0.5 text-xs',
-      md: 'px-2.5 py-0.5 text-xs',
-      lg: 'px-3 py-1 text-sm',
+      sm: 'px-2 py-[3px] text-[11px]',
+      md: 'px-2 py-[3px] text-[11px]',
+      lg: 'px-3 py-1 text-xs',
     };
 
     const variantClasses: Record<BadgeVariant, string> = {
@@ -96,24 +97,28 @@ export class BadgeComponent {
         'dark:bg-secondary-800 dark:text-secondary-400',
       ].join(' '),
       success: [
-        'bg-success-100 text-success-700',
-        'dark:bg-success-900/30 dark:text-success-400',
+        'bg-[#DCFCE7] text-[#166534]',
+        'dark:bg-success-900/30 dark:text-success-200',
       ].join(' '),
       warning: [
-        'bg-warning-100 text-warning-700',
-        'dark:bg-warning-900/30 dark:text-warning-400',
+        'bg-[#FEF3CD] text-[#856404]',
+        'dark:bg-warning-900/30 dark:text-warning-200',
       ].join(' '),
       danger: [
-        'bg-danger-100 text-danger-700',
-        'dark:bg-danger-900/30 dark:text-danger-400',
+        'bg-[#FDECEA] text-[#C53030]',
+        'dark:bg-danger-900/30 dark:text-danger-200',
       ].join(' '),
       info: [
-        'bg-info-100 text-info-700',
-        'dark:bg-info-900/30 dark:text-info-400',
+        'bg-[#DBEAFE] text-[#1D4ED8]',
+        'dark:bg-info-900/30 dark:text-info-200',
+      ].join(' '),
+      partial: [
+        'bg-[#FFF3E0] text-[#E65100]',
+        'dark:bg-warning-900/30 dark:text-warning-200',
       ].join(' '),
     };
 
-    const radiusClass = this.pill() ? 'rounded-full' : 'rounded-md';
+    const radiusClass = this.pill() ? 'rounded-full' : 'rounded-sm';
 
     return [
       baseClasses,

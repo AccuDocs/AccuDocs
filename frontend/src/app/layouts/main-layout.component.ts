@@ -46,12 +46,12 @@ import {
         <div class="h-full flex flex-col">
           <!-- Logo -->
           <div class="flex items-center gap-3 px-8 py-10">
-            <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-100 rotate-2">
+            <div class="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
               <ng-icon name="heroQueueListSolid" size="28"></ng-icon>
             </div>
             <div class="flex flex-col">
               <span class="text-2xl font-black text-slate-900 leading-none">AccuDocs</span>
-              <span class="text-[10px] font-bold text-blue-600 uppercase tracking-tighter mt-1">Professional Edition</span>
+              <span class="text-[10px] font-medium text-primary-600 uppercase tracking-[0.12em] mt-1">Professional Edition</span>
             </div>
           </div>
 
@@ -60,9 +60,9 @@ import {
             @for (item of navItems(); track item.route) {
               <a
                 [routerLink]="item.route"
-                routerLinkActive="bg-blue-50 text-blue-700 shadow-sm !border-blue-100"
+                routerLinkActive="bg-primary-50 text-primary-700 shadow-sm !border-primary-100"
                 [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
-                class="flex items-center gap-3 px-6 py-4 rounded-2xl text-slate-500 border border-transparent hover:bg-slate-50 hover:text-slate-900 transition-all group font-bold text-sm"
+                class="flex items-center gap-3 px-6 py-3 rounded-md text-slate-500 border border-transparent hover:bg-slate-50 hover:text-slate-900 transition-all group font-medium text-sm"
               >
                 <ng-icon [name]="item.icon" size="20" class="group-hover:scale-110 transition-transform"></ng-icon>
                 <span>{{ item.label }}</span>
@@ -75,29 +75,29 @@ import {
             <div class="relative">
               <button 
                 (click)="userMenuOpen.set(!userMenuOpen())"
-                class="w-full flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all group shadow-sm"
+                class="w-full flex items-center gap-3 p-3 rounded-md bg-white border border-slate-200 hover:border-primary-300 hover:shadow-md transition-all group shadow-sm"
               >
-                <div class="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center font-black text-lg">
+                <div class="w-10 h-10 bg-primary-600 text-white rounded-md flex items-center justify-center font-semibold text-lg">
                   {{ authService.currentUser()?.name?.charAt(0) }}
                 </div>
                 <div class="flex-1 text-left">
                   <p class="text-sm font-bold text-slate-900 truncate leading-tight">{{ authService.currentUser()?.name }}</p>
-                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{{ authService.currentUser()?.role }}</p>
+                  <p class="text-[10px] font-medium text-slate-400 uppercase tracking-[0.12em] mt-0.5">{{ authService.currentUser()?.role }}</p>
                 </div>
-                <ng-icon name="heroChevronDownSolid" size="14" class="text-slate-400 group-hover:text-blue-600 transition-colors" [class.rotate-180]="userMenuOpen()"></ng-icon>
+                <ng-icon name="heroChevronDownSolid" size="14" class="text-slate-400 group-hover:text-primary-600 transition-colors" [class.rotate-180]="userMenuOpen()"></ng-icon>
               </button>
 
               <!-- Dropdown Menu -->
               @if (userMenuOpen()) {
                 <div class="absolute bottom-full left-0 w-full mb-3 bg-white border border-slate-200 rounded-[9px] shadow-2xl shadow-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-4 z-[60]">
                   <div class="p-2 space-y-1">
-                    <button (click)="themeService.toggleTheme()" class="w-full flex items-center gap-3 px-4 py-4 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-2xl transition-all">
+                    <button (click)="themeService.toggleTheme()" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-md transition-all">
                       <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
                         <ng-icon [name]="themeService.isDarkMode() ? 'heroSunSolid' : 'heroMoonSolid'" size="18"></ng-icon>
                       </div>
                       {{ themeService.isDarkMode() ? 'Light Mode' : 'Dark Mode' }}
                     </button>
-                    <button (click)="logout()" class="w-full flex items-center gap-3 px-4 py-4 text-sm font-bold text-red-600 hover:bg-red-50 rounded-2xl transition-all">
+                    <button (click)="logout()" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-all">
                       <div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
                         <ng-icon name="heroArrowLeftStartOnRectangleSolid" size="18"></ng-icon>
                       </div>
@@ -115,14 +115,14 @@ import {
       <div class="flex-1 flex flex-col min-h-screen">
         <!-- Mobile Header -->
         <header class="lg:hidden flex items-center justify-between px-6 py-5 bg-white border-b border-slate-200">
-          <button (click)="sidebarOpen.set(true)" class="p-3 bg-slate-50 rounded-2xl text-slate-600 active:scale-90 transition-transform">
+          <button (click)="sidebarOpen.set(true)" class="p-3 bg-slate-50 rounded-md text-slate-600 active:scale-90 transition-transform">
             <ng-icon name="heroBars3Solid" size="24"></ng-icon>
           </button>
           <div class="flex items-center gap-2">
-            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+            <div class="w-8 h-8 bg-primary-600 rounded-md flex items-center justify-center text-white">
               <ng-icon name="heroQueueListSolid" size="18"></ng-icon>
             </div>
-            <span class="font-black text-slate-900 tracking-tight">AccuDocs</span>
+            <span class="font-semibold text-slate-900">AccuDocs</span>
           </div>
           <div class="w-12"></div> <!-- Spacer -->
         </header>

@@ -44,7 +44,7 @@ import {
                 +{{ stats()?.organizations?.new_this_month || 0 }} this month
               </p>
             </div>
-            <div class="w-12 h-12 rounded-2xl bg-teal-50 flex items-center justify-center text-teal-600 group-hover:scale-110 transition-transform duration-300">
+            <div class="w-12 h-12 rounded-2xl bg-primary-50 flex items-center justify-center text-primary-600 group-hover:scale-110 transition-transform duration-300">
               <ng-icon name="heroBuildingOffice2Solid" size="24"></ng-icon>
             </div>
           </div>

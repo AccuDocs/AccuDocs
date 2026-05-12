@@ -32,8 +32,8 @@ export interface StatItem {
 
       <!-- Content -->
       <div class="min-w-0 flex-1">
-        <p class="text-sm font-medium text-text-secondary truncate">{{ label() }}</p>
-        <p class="mt-1 text-3xl font-bold text-text-primary tracking-tight">{{ formattedValue() }}</p>
+        <p class="text-[11px] font-medium uppercase tracking-[0.06em] text-text-muted truncate">{{ label() }}</p>
+        <p class="mt-2 font-mono text-[28px] leading-9 font-semibold text-text-primary">{{ formattedValue() }}</p>
         
         <!-- Change indicator -->
         @if (showChange() && change() !== undefined) {
@@ -52,7 +52,7 @@ export interface StatItem {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14" />
                 </svg>
               }
-              <span class="text-sm font-medium">{{ change() }}%</span>
+              <span class="text-xs font-medium">{{ change() }}%</span>
             </span>
             @if (changeLabel()) {
               <span class="text-xs text-text-muted">{{ changeLabel() }}</span>
@@ -99,10 +99,10 @@ export class StatsCardComponent {
   cardClasses = computed(() => {
     const base = [
       'flex items-start gap-4',
-      'p-6',
-      'bg-surface-color',
+      'px-5 py-4',
+      'bg-surface',
       'border border-border-color',
-      'rounded-lg',
+      'rounded-xl',
       'transition-all duration-200',
     ];
 
@@ -123,7 +123,7 @@ export class StatsCardComponent {
       info: 'bg-info-100 text-info-600 dark:bg-info-900/30 dark:text-info-400',
     };
 
-    return `shrink-0 w-12 h-12 rounded-lg flex items-center justify-center ${variantClasses[this.variant()]}`;
+    return `shrink-0 w-10 h-10 rounded-md flex items-center justify-center ${variantClasses[this.variant()]}`;
   });
 
   trendClasses = computed(() => {
@@ -160,6 +160,6 @@ export class StatsGridComponent {
       4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
     };
 
-    return `grid gap-6 ${colClasses[this.columns()]}`;
+    return `grid gap-4 ${colClasses[this.columns()]}`;
   });
 }

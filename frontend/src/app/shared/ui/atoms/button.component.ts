@@ -105,19 +105,19 @@ export class ButtonComponent {
     const variantClasses: Record<ButtonVariant, string> = {
       primary: [
         'bg-primary-600 text-white',
-        'hover:bg-primary-700',
+        'hover:bg-[#1E3A8A]',
         'focus-visible:ring-primary-500',
-        'shadow-button hover:shadow-button-hover',
+        'shadow-button hover:shadow-primary',
         'dark:bg-primary-500 dark:hover:bg-primary-400',
       ].join(' '),
       secondary: [
-        'bg-primary-50 text-primary-700',
-        'border border-primary-100',
-        'hover:bg-primary-100 hover:border-primary-200',
+        'bg-white text-text-secondary',
+        'border border-[#D0D7DE]',
+        'hover:bg-background hover:border-border-color',
         'focus-visible:ring-primary-500',
         'shadow-xs',
-        'dark:bg-primary-950/40 dark:text-primary-200 dark:border-primary-900/50',
-        'dark:hover:bg-primary-900/40',
+        'dark:bg-secondary-800 dark:text-secondary-100 dark:border-secondary-700',
+        'dark:hover:bg-secondary-700',
       ].join(' '),
       success: [
         'bg-success-600 text-white',
@@ -138,10 +138,10 @@ export class ButtonComponent {
         'shadow-button hover:shadow-danger',
       ].join(' '),
       ghost: [
-        'bg-transparent text-secondary-700',
-        'hover:bg-secondary-100 hover:text-text-primary',
+        'bg-transparent text-primary-600',
+        'hover:bg-primary-100 hover:text-primary-700',
         'focus-visible:ring-primary-500',
-        'dark:text-secondary-300 dark:hover:bg-secondary-800 dark:hover:text-white',
+        'dark:text-primary-300 dark:hover:bg-primary-900/30 dark:hover:text-primary-100',
       ].join(' '),
       link: [
         'bg-transparent text-primary-600',
@@ -154,9 +154,9 @@ export class ButtonComponent {
 
     const sizeClasses: Record<ButtonSize, string> = {
       xs: 'px-2.5 py-1 text-xs rounded-sm min-h-[28px]',
-      sm: 'px-3 py-1.5 text-sm rounded-md min-h-[34px]',
+      sm: 'px-3 py-1.5 text-xs rounded-md min-h-[32px]',
       md: 'px-4 py-2 text-sm rounded-md min-h-[40px]',
-      lg: 'px-5 py-2.5 text-base rounded-md min-h-[44px]',
+      lg: 'px-5 py-3 text-sm rounded-md min-h-[48px]',
     };
 
     return [

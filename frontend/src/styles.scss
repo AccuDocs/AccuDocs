@@ -6,19 +6,75 @@
 // ==========================================
 
 :root {
+  // AccuDocs Blue Theme v2 tokens. New code can use the short names; existing
+  // AccuDocs components keep working through the --ad-* compatibility aliases.
+  --sb-bg: #0F1E35;
+  --sb2-bg: #FFFFFF;
+  --accent: #1D4ED8;
+  --accent-hover: #1E3A8A;
+  --icon-active: #60A5FA;
+  --page-bg: #F0F5FF;
+  --card-bg: #FFFFFF;
+  --card-border: #E2EDFF;
+  --header-border: #E2E8F0;
+  --text-primary-token: #0F1E35;
+  --text-body: #2D4A6A;
+  --text-muted-token: #7A90B0;
+  --text-hint: #B0C0D4;
+
+  --ad-sidebar-bg: var(--sb-bg);
+  --ad-sidebar-active: rgba(96, 165, 250, 0.15);
+  --ad-sidebar-hover: rgba(255, 255, 255, 0.05);
+  --ad-header-bg: #FFFFFF;
+  --ad-header-border: var(--header-border);
+  --ad-page-bg: var(--page-bg);
+  --ad-card-bg: var(--card-bg);
+  --ad-card-border: var(--card-border);
+  --ad-teal: var(--accent);
+  --ad-teal-hover: var(--accent-hover);
+  --ad-teal-light: #EFF6FF;
+  --ad-teal-icon: var(--icon-active);
+  --ad-text-primary: var(--text-primary-token);
+  --ad-text-secondary: var(--text-body);
+  --ad-text-muted: var(--text-muted-token);
+  --ad-text-hint: var(--text-hint);
+  --ad-success: #166534;
+  --ad-success-bg: #DCFCE7;
+  --ad-success-text: #166534;
+  --ad-warning: #E1A800;
+  --ad-warning-bg: #FEF3CD;
+  --ad-warning-text: #856404;
+  --ad-danger: #C53030;
+  --ad-danger-bg: #FDECEA;
+  --ad-info: var(--accent);
+  --ad-info-bg: #DBEAFE;
+  --ad-info-text: var(--accent);
+  --ad-partial-bg: #FFF3E0;
+  --ad-partial-text: #E65100;
+
+  --brand-sidebar: var(--sb-bg);
+  --brand-sidebar-border: rgba(255, 255, 255, 0.07);
+  --brand-accent: var(--accent);
+  --brand-accent-hover: var(--accent-hover);
+  --brand-accent-soft: #EFF6FF;
+  --brand-accent-bright: var(--icon-active);
   // Background & Surface layers
   --color-bg: var(--background-color);
   --color-bg-raised: var(--border-subtle);
   --color-surface: var(--surface-color);
   --color-surface-hover: var(--border-subtle);
+  --color-background-primary: var(--surface-color);
+    --color-background-secondary: var(--background-color);
 
   // Borders & Dividers
   --color-border: var(--border-color);
   --color-border-mid: var(--border-strong);
+  --color-border-secondary: var(--border-color);
+    --color-border-tertiary: var(--border-subtle);
 
   // Accent colors (hub specific)
-  --color-gold: var(--primary);
-  --color-gold-bright: var(--primary-500);
+  --color-gold: var(--brand-accent);
+    --color-gold-bright: var(--brand-accent-bright);
   --color-gold-faint: var(--primary-50);
 
   // Text colors
@@ -32,11 +88,19 @@
   --color-orange: var(--warning);
   --color-blue: var(--info);
 
+  // Shell
+  --sidebar-bg: var(--ad-sidebar-bg);
+  --sidebar-border: var(--brand-sidebar-border);
+  --sidebar-text: rgba(255, 255, 255, 0.78);
+  --sidebar-text-muted: rgba(255, 255, 255, 0.55);
+  --sidebar-text-dim: rgba(255, 255, 255, 0.28);
+  --sidebar-hover: var(--ad-sidebar-hover);
+  --sidebar-active: var(--ad-sidebar-active);
   // Typography
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --font-size-base: 14px;
-  --line-height-base: 1.5;
+  --line-height-base: 1.6;
 }
 
 // Dark mode (default)
@@ -69,12 +133,12 @@ body {
 }
 
 .hub-rail {
-  width: 58px;
+  width: 60px;
   flex-shrink: 0;
 }
 
 .module-sidebar {
-  width: 220px;
+  width: 196px;
   flex-shrink: 0;
 }
 
@@ -123,7 +187,7 @@ body {
     @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none;
     @apply active:scale-[0.97];
     @apply bg-primary-600 text-white;
-    @apply hover:bg-primary-700;
+    @apply hover:bg-[#1E3A8A];
     @apply focus-visible:ring-primary-500;
     @apply shadow-button hover:shadow-primary;
     @apply dark:bg-primary-500 dark:hover:bg-primary-400;
@@ -138,13 +202,13 @@ body {
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
     @apply active:scale-[0.97];
-    @apply bg-primary-50 text-primary-700;
-    @apply border border-primary-100;
-    @apply hover:bg-primary-100 hover:border-primary-200;
+    @apply bg-white text-text-secondary;
+      @apply border border-[#D0D7DE];
+      @apply hover:bg-background hover:border-border-color;
     @apply focus-visible:ring-primary-500;
     @apply shadow-xs;
-    @apply dark:bg-primary-950/40 dark:text-primary-200 dark:border-primary-900/50;
-    @apply dark:hover:bg-primary-900/40;
+    @apply dark:bg-secondary-800 dark:text-secondary-100 dark:border-secondary-700;
+      @apply dark:hover:bg-secondary-700;
   }
 
   // Danger button
@@ -172,8 +236,8 @@ body {
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
     @apply active:scale-[0.97];
     @apply bg-success-600 text-white;
-    @apply hover:bg-green-700;
-    @apply focus-visible:ring-green-500;
+    @apply hover:bg-success-700;
+      @apply focus-visible:ring-success-500;
     @apply shadow-button hover:shadow-success;
   }
 
@@ -186,8 +250,8 @@ body {
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
     @apply active:scale-[0.97];
-    @apply bg-transparent text-slate-700;
-    @apply hover:bg-slate-100 hover:text-slate-900;
+    @apply bg-transparent text-primary-600;
+      @apply hover:bg-primary-100 hover:text-primary-700;
     @apply focus-visible:ring-primary-500;
     @apply dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white;
   }
@@ -225,57 +289,58 @@ body {
   // COLOR TOKENS
   // ===================
   // Primary Brand
-  --primary-50: #eef2ff;
-  --primary-100: #e0e7ff;
-  --primary-200: #c7d2fe;
-  --primary-300: #a5b4fc;
-  --primary-400: #818cf8;
-  --primary-500: #6366f1;
-  --primary-600: #4f46e5;
-  --primary-700: #4338ca;
-  --primary-800: #3730a3;
-  --primary-900: #312e81;
-  --primary: #4f46e5;
+  --primary-50: #EFF6FF;
+  --primary-100: #DBEAFE;
+  --primary-200: #BFDBFE;
+  --primary-300: #93C5FD;
+  --primary-400: #60A5FA;
+  --primary-500: #3B82F6;
+  --primary-600: #1D4ED8;
+  --primary-700: #1E40AF;
+  --primary-800: #1E3A8A;
+  --primary-900: #0F1E35;
+  --primary-950: #081529;
+  --primary: #1D4ED8;
 
   // Surface & Background
-  --background-color: #f8fafc;
-  --surface-color: #ffffff;
+  --background-color: var(--ad-page-bg);
+    --surface-color: var(--ad-card-bg);
   --surface-elevated: #ffffff;
-  --surface-overlay: rgba(255, 255, 255, 0.82);
+  --surface-overlay: var(--ad-header-bg);
 
   // Text Colors
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  --text-disabled: #cbd5e1;
+  --text-primary: var(--ad-text-primary);
+    --text-secondary: var(--ad-text-secondary);
+    --text-muted: var(--ad-text-muted);
+    --text-disabled: var(--ad-text-hint);
   --text-inverse: #ffffff;
 
   // Border Colors
-  --border-color: #e2e8f0;
-  --border-subtle: #f1f5f9;
-  --border-strong: #cbd5e1;
+  --border-color: var(--ad-card-border);
+  --border-subtle: #F0F6FF;
+  --border-strong: #CBD5E1;
 
   // Semantic Colors
-  --success: #16a34a;
-  --success-bg: #f0fdf4;
-  --success-border: #bbf7d0;
-  --warning: #f59e0b;
-  --warning-bg: #fffbeb;
-  --warning-border: #fde68a;
-  --danger: #dc2626;
-  --danger-bg: #fef2f2;
-  --danger-border: #fecaca;
-  --info: #0284c7;
-  --info-bg: #f0f9ff;
-  --info-border: #bae6fd;
+  --success: var(--ad-success);
+  --success-bg: var(--ad-success-bg);
+  --success-border: #BBF7D0;
+    --warning: var(--ad-warning);
+    --warning-bg: var(--ad-warning-bg);
+    --warning-border: #fae29a;
+    --danger: var(--ad-danger);
+    --danger-bg: var(--ad-danger-bg);
+    --danger-border: #f4aaa2;
+    --info: var(--ad-info);
+    --info-bg: var(--ad-info-bg);
+  --info-border: #BFDBFE;
 
   // Accent
-  --accent-color: #4f46e5;
-  --accent-hover: #4338ca;
-  --accent-active: #3730a3;
+  --accent-color: var(--accent);
+  --accent-hover: #1E3A8A;
+  --accent-active: #1E40AF;
 
   // Focus Ring
-  --ring-color: rgba(79, 70, 229, 0.18);
+  --ring-color: rgba(29, 78, 216, 0.18);
   --ring-offset: 2px;
 
   // ===================
@@ -309,8 +374,8 @@ body {
   // ===================
   // TYPOGRAPHY
   // ===================
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   // Font Sizes
   --text-xs: 12px;
@@ -334,18 +399,18 @@ body {
   // Line Heights
   --leading-tight: 1.1;
   --leading-snug: 1.25;
-  --leading-normal: 1.5;
-  --leading-relaxed: 1.625;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.6;
 
   // ===================
   // BORDER RADIUS
   // ===================
   --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-2xl: 20px;
+  --radius-md: 8px;
+    --radius-lg: 10px;
+    --radius-xl: 12px;
+    --radius-2xl: 16px;
   --radius-full: 9999px;
 
   // ===================
@@ -372,11 +437,11 @@ body {
   // ===================
   // LAYOUT
   // ===================
-  --sidebar-width: 80px;
-  --sidebar-expanded-width: 240px;
+  --sidebar-width: 60px;
+  --sidebar-expanded-width: 196px;
   --header-height: 60px;
   --container-max: 1440px;
-  --content-max: 1280px;
+  --content-max: 1200px;
 }
 
 // ==========================================
@@ -384,17 +449,17 @@ body {
 // ==========================================
 .dark {
   // Surface & Background
-  --background-color: #0f172a;
-  --surface-color: #1e293b;
-  --surface-elevated: #334155;
-  --surface-overlay: rgba(30, 41, 59, 0.95);
+  --background-color: #0B1729;
+  --surface-color: #10213A;
+  --surface-elevated: #172B48;
+  --surface-overlay: #10213A;
 
   // Text Colors
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --text-disabled: #475569;
-  --text-inverse: #0f172a;
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #7A90B0;
+  --text-disabled: #64748B;
+  --text-inverse: #0F1E35;
 
   // Border Colors
   --border-color: #334155;
@@ -402,17 +467,17 @@ body {
   --border-strong: #475569;
 
   // Semantic Colors (adjusted for dark mode)
-  --success-bg: rgba(22, 163, 74, 0.15);
-  --success-border: rgba(22, 163, 74, 0.3);
-  --warning-bg: rgba(217, 119, 6, 0.15);
-  --warning-border: rgba(217, 119, 6, 0.3);
-  --danger-bg: rgba(220, 38, 38, 0.15);
-  --danger-border: rgba(220, 38, 38, 0.3);
-  --info-bg: rgba(2, 132, 199, 0.15);
-  --info-border: rgba(2, 132, 199, 0.3);
+  --success-bg: rgba(22, 101, 52, 0.18);
+  --success-border: rgba(74, 222, 128, 0.32);
+  --warning-bg: rgba(225, 168, 0, 0.16);
+  --warning-border: rgba(225, 168, 0, 0.34);
+  --danger-bg: rgba(197, 48, 48, 0.16);
+  --danger-border: rgba(197, 48, 48, 0.34);
+  --info-bg: rgba(29, 78, 216, 0.18);
+  --info-border: rgba(96, 165, 250, 0.34);
 
   // Focus Ring
-  --ring-color: rgba(129, 140, 248, 0.28);
+  --ring-color: rgba(96, 165, 250, 0.28);
 
   // Shadows (deeper in dark mode)
   --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.25);
@@ -470,7 +535,7 @@ h6 {
   font-weight: 600;
   line-height: var(--leading-tight);
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 h1 {
@@ -497,11 +562,90 @@ h6 {
   font-size: var(--text-sm);
 }
 
+.content-area {
+  background: var(--background-color);
+}
+
+.content-area :where(article, section, .premium-card, .sa-card) {
+  border-color: var(--border-color);
+}
+
+.content-area :where(table) {
+  color: var(--text-primary);
+}
+
+.content-area :where(thead) {
+  background: #F5F9FF;
+}
+
+.content-area :where(th) {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.content-area :where(tbody tr:nth-child(even)) {
+  background: #FAFCFF;
+}
+
+.content-area :where(tbody tr:hover) {
+  background: #F5F9FF;
+}
+
+.content-area :where(td) {
+  border-color: var(--border-subtle);
+}
 p {
   line-height: var(--leading-relaxed);
   color: var(--text-secondary);
 }
 
+.ad-page {
+  margin-inline: auto;
+  max-width: var(--content-max);
+  padding: 24px;
+  width: 100%;
+}
+
+.ad-label,
+.table-label {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.ad-money,
+.ad-number,
+.amount,
+.currency,
+.numeric {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-weight: 500;
+  text-align: right;
+}
+
+.ad-money--positive,
+.amount-positive {
+  color: var(--success);
+}
+
+.ad-money--negative,
+.amount-negative {
+  color: var(--danger);
+}
+
+.ad-table-total {
+  background: #FAFCFF;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-weight: 600;
+}
 a {
   color: var(--primary);
   text-decoration: none;
@@ -938,9 +1082,9 @@ button {
 // ==========================================
 .skeleton {
   background: linear-gradient(90deg,
-      var(--border-color) 25%,
-      var(--border-subtle) 37%,
-      var(--border-color) 63%);
+      #F0F2F4 25%,
+      #E4E7EA 37%,
+      #F0F2F4 63%);
   background-size: 300% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: var(--radius-sm);

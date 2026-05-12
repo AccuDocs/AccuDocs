@@ -13,8 +13,9 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
       style="
         width: 24px;
         height: 100vh;
-        background: var(--color-surface);
-        border-right: 1px solid var(--color-border);
+        background: var(--sb2-bg);
+        border-right: 1px solid var(--card-border);
+        box-shadow: 2px 0 12px rgba(29, 78, 216, 0.04);
         cursor: pointer;
         transition: all 0.3s;
       "

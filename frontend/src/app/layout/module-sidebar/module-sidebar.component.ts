@@ -25,23 +25,38 @@ import { IconComponent } from '@ui/atoms/icon.component';
     <aside
       class="module-sidebar flex flex-col"
       style="
-        width: 220px;
+        width: 196px;
         height: 100vh;
         overflow-y: auto;
         overflow-x: hidden;
-        background: var(--color-surface);
-        border-right: 1px solid var(--color-border);
+        background: var(--sb2-bg);
+        border-right: 1px solid var(--card-border);
+        box-shadow: 2px 0 12px rgba(29, 78, 216, 0.06);
+        --nav-row-active-bg: #EFF6FF;
+        --nav-row-hover-bg-token: #F0F5FF;
+        --nav-row-active-color: var(--accent);
+        --nav-row-color-base: var(--text-muted);
+        --nav-row-muted: var(--text-hint);
+        --nav-row-hover-color-token: var(--text-body);
+        --nav-row-active-dot: var(--accent);
+        --nav-row-active-shadow: inset 3px 0 0 var(--accent);
+        --nav-row-badge-bg: #DBEAFE;
+        --nav-row-badge-color: var(--accent);
+        --nav-row-badge-border: #FFFFFF;
       "
     >
       <!-- Hub Header -->
       <div
-        class="hub-header p-4 border-b"
+        class="hub-header border-b"
         style="
-          border-color: var(--color-border);
+          border-color: var(--card-border);
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 8px;
+          min-height: 60px;
+          padding: 12px 16px;
+          background: linear-gradient(135deg, #EFF6FF 0%, #FFFFFF 100%);
         "
       >
         <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
@@ -49,10 +64,9 @@ import { IconComponent } from '@ui/atoms/icon.component';
             <div
               style="
                 align-items: center;
-                background: var(--color-bg-raised);
-                border: 1px solid var(--color-border);
-                border-radius: 10px;
-                color: var(--color-text);
+                background: #DBEAFE;
+                border-radius: 8px;
+                color: var(--accent);
                 display: flex;
                 height: 32px;
                 justify-content: center;
@@ -62,13 +76,13 @@ import { IconComponent } from '@ui/atoms/icon.component';
               <app-icon [name]="hub.iconName" size="sm" tone="current" ariaLabel=""></app-icon>
             </div>
             <div>
-              <div style="font-weight: 600; font-size: 14px; color: var(--color-text);">
+              <div style="font-weight: 700; font-size: 13px; color: var(--text-primary);">
                 {{ hub.label }}
               </div>
               <div
                 style="
                   font-size: 12px;
-                  color: var(--color-text-sub);
+                  color: var(--text-muted);
                   line-height: 1;
                   margin-top: 2px;
                 "
@@ -83,16 +97,16 @@ import { IconComponent } from '@ui/atoms/icon.component';
           style="
             background: transparent;
             border: none;
-            color: var(--color-text-sub);
+            color: var(--text-muted);
             cursor: pointer;
             font-size: 16px;
             padding: 4px 8px;
             border-radius: 9px;
             transition: all 0.2s;
           "
-          class="hover:bg-gray-700"
+          class="hover:bg-blue-50"
         >
-          ‹
+          &lt;
         </button>
       </div>
 
@@ -104,13 +118,13 @@ import { IconComponent } from '@ui/atoms/icon.component';
             <div
               class="px-4 py-2 text-xs uppercase tracking-wider"
               style="
-                color: var(--color-text-dim);
+                color: var(--text-hint);
                 display: flex;
                 align-items: center;
                 gap: 6px;
               "
             >
-              <span style="width: 6px; height: 6px; border-radius: 9px; background: #3D9E6A;"></span>
+              <span style="width: 6px; height: 6px; border-radius: 9px; background: var(--icon-active);"></span>
               Ready
             </div>
             @for (module of grouped().live; track module.id) {
@@ -180,14 +194,14 @@ import { IconComponent } from '@ui/atoms/icon.component';
             <div
               class="px-4 py-2 text-xs uppercase tracking-wider"
               style="
-                color: var(--color-text-dim);
+                color: var(--text-hint);
                 display: flex;
                 align-items: center;
                 gap: 6px;
                 margin-top: 8px;
               "
             >
-              <span style="width: 6px; height: 6px; border-radius: 9px; background: #C87C2A;"></span>
+              <span style="width: 6px; height: 6px; border-radius: 9px; background: var(--warning);"></span>
               Beta
             </div>
             @for (module of grouped().beta; track module.id) {
@@ -212,14 +226,14 @@ import { IconComponent } from '@ui/atoms/icon.component';
             <div
               class="px-4 py-2 text-xs uppercase tracking-wider"
               style="
-                color: var(--color-text-dim);
+                color: var(--text-hint);
                 display: flex;
                 align-items: center;
                 gap: 6px;
                 margin-top: 8px;
               "
             >
-              <span style="width: 6px; height: 6px; border-radius: 9px; background: #7A8898;"></span>
+              <span style="width: 6px; height: 6px; border-radius: 9px; background: var(--text-hint);"></span>
               Coming Soon
             </div>
             @for (module of grouped().soon; track module.id) {
@@ -232,7 +246,7 @@ import { IconComponent } from '@ui/atoms/icon.component';
                   background: transparent;
                   border: none;
                   cursor: pointer;
-                  color: var(--color-text);
+                  color: var(--text-muted);
                   font-size: 14px;
                   display: flex;
                   align-items: center;
@@ -259,7 +273,7 @@ import { IconComponent } from '@ui/atoms/icon.component';
       <div
         class="border-t p-4"
         style="
-          border-color: var(--color-border);
+          border-color: var(--card-border);
           display: flex;
           align-items: center;
           gap: 8px;
@@ -270,8 +284,8 @@ import { IconComponent } from '@ui/atoms/icon.component';
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: var(--color-gold);
-            color: var(--color-bg);
+            background: #DBEAFE;
+            color: var(--accent);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -282,13 +296,13 @@ import { IconComponent } from '@ui/atoms/icon.component';
           {{ authService.currentUser()?.name?.charAt(0) || 'CA' }}
         </div>
         <div style="flex: 1; min-width: 0;">
-          <div style="font-weight: 600; font-size: 13px; color: var(--color-text);" class="truncate">
+          <div style="font-weight: 600; font-size: 13px; color: var(--text-primary);" class="truncate">
             {{ authService.currentUser()?.name || 'Firm Name' }}
           </div>
           <div
             style="
               font-size: 11px;
-              color: var(--color-text-sub);
+              color: var(--text-muted);
               display: flex;
               align-items: center;
               gap: 4px;
@@ -296,7 +310,7 @@ import { IconComponent } from '@ui/atoms/icon.component';
               text-transform: capitalize;
             "
           >
-            <span style="width: 6px; height: 6px; border-radius: 50%; background: #3D9E6A;"></span>
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--icon-active);"></span>
             {{ authService.currentUser()?.role || 'Admin' }}
           </div>
         </div>
@@ -330,7 +344,7 @@ export class ModuleSidebarComponent {
   });
 
   getHubColor(): string {
-    return this.nav.activeHubData()?.color || '#C9943A';
+    return 'var(--accent)';
   }
 
   showClientWorkspaceShortcuts(moduleId: string): boolean {

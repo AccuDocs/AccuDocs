@@ -57,7 +57,7 @@ export interface PageAction {
       <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <!-- Title Section -->
         <div class="min-w-0 flex-1">
-          <h1 class="text-[22px] leading-7 font-semibold text-text-primary tracking-tight">
+          <h1 class="text-xl leading-[1.3] font-semibold text-text-primary">
             {{ title() }}
           </h1>
           @if (subtitle()) {

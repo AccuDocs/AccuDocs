@@ -10,6 +10,7 @@ import { IconComponent } from '../atoms/icon.component';
     <button
       type="button"
       class="nav-row-button"
+      [class.nav-row-button--active]="active()"
       [disabled]="disabled()"
       [attr.aria-label]="ariaLabel() || label()"
       [attr.title]="title() || label()"
@@ -40,19 +41,23 @@ import { IconComponent } from '../atoms/icon.component';
     }
 
     .nav-row-button {
-      width: 100%;
+      width: calc(100% - 20px);
+      min-height: 36px;
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 16px 10px var(--nav-row-padding-left);
+      gap: 8px;
+      margin: 1px 10px;
+      padding: 0 10px 0 var(--nav-row-padding-left);
       text-align: left;
       background: var(--nav-row-bg);
       border: none;
-      border-left: 3px solid var(--nav-row-border);
+      border-radius: 8px;
       color: var(--nav-row-color);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
+      box-shadow: var(--nav-row-shadow, none);
       cursor: pointer;
+      position: relative;
       transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
     }
 
@@ -62,8 +67,18 @@ import { IconComponent } from '../atoms/icon.component';
     }
 
     .nav-row-button:focus-visible {
-      outline: 2px solid var(--ring-color);
+      outline: 2px solid color-mix(in srgb, var(--brand-accent-bright) 50%, transparent);
       outline-offset: -2px;
+    }
+
+    .nav-row-button--active::after {
+      background: var(--nav-row-active-dot, var(--brand-accent-bright));
+      border-radius: 999px;
+      content: '';
+      height: 5px;
+      position: absolute;
+      right: 9px;
+      width: 5px;
     }
 
     .nav-row-button:disabled {
@@ -84,15 +99,21 @@ import { IconComponent } from '../atoms/icon.component';
     .nav-row-button__label {
       flex: 1;
       min-width: 0;
+      line-height: 1.25;
+    }
+
+    .nav-row-button--active .nav-row-button__label {
+      padding-right: 10px;
     }
 
     .nav-row-button__badge {
-      background: var(--color-red);
-      color: white;
+      background: var(--nav-row-badge-bg, var(--color-red));
+      color: var(--nav-row-badge-color, white);
       font-size: 11px;
       font-weight: 700;
       padding: 2px 6px;
       border-radius: var(--radius-full);
+      border: 2px solid var(--nav-row-badge-border, var(--color-surface));
       flex-shrink: 0;
     }
   `],
@@ -117,16 +138,23 @@ export class NavRowButtonComponent {
   iconSize = computed<'sm'>(() => 'sm');
 
   buttonVars = computed(() => {
-    const inactiveColor = this.muted() ? 'var(--color-text-sub)' : 'var(--color-text)';
-    const hoverColor = this.disabled() ? inactiveColor : 'var(--color-text)';
+    const inactiveColor = this.muted()
+      ? 'var(--nav-row-muted, var(--color-text-sub))'
+      : 'var(--nav-row-color-base, var(--color-text))';
+    const hoverColor = this.disabled()
+      ? inactiveColor
+      : 'var(--nav-row-hover-color-token, var(--color-text))';
 
     return {
       '--nav-row-padding-left': `${this.paddingLeft()}px`,
-      '--nav-row-bg': this.active() ? 'var(--color-gold-faint)' : 'transparent',
-      '--nav-row-hover-bg': this.active() ? 'var(--color-gold-faint)' : 'var(--color-bg-raised)',
-      '--nav-row-color': this.active() ? 'var(--color-text)' : inactiveColor,
+      '--nav-row-bg': this.active() ? 'var(--nav-row-active-bg, var(--color-gold-faint))' : 'transparent',
+      '--nav-row-hover-bg': this.active()
+        ? 'var(--nav-row-active-bg, var(--color-gold-faint))'
+        : 'var(--nav-row-hover-bg-token, var(--color-bg-raised))',
+      '--nav-row-color': this.active() ? 'var(--nav-row-active-color, var(--color-text))' : inactiveColor,
       '--nav-row-hover-color': hoverColor,
       '--nav-row-border': this.active() ? this.accentColor() : 'transparent',
+      '--nav-row-shadow': this.active() ? 'var(--nav-row-active-shadow, none)' : 'none',
       '--nav-row-disabled-opacity': `${this.disabledOpacity()}`,
     };
   });

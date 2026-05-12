@@ -100,7 +100,7 @@ export type InputSize = 'sm' | 'md' | 'lg';
       @if (hasError() && errorMessage()) {
         <p 
           [id]="inputId() + '-error'"
-          class="mt-1.5 text-sm text-danger-600 flex items-center gap-1"
+          class="mt-1.5 text-xs text-danger-600 flex items-center gap-1"
           role="alert"
         >
           <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -111,7 +111,7 @@ export type InputSize = 'sm' | 'md' | 'lg';
       } @else if (hint()) {
         <p 
           [id]="inputId() + '-hint'"
-          class="mt-1.5 text-sm text-text-muted"
+          class="mt-1.5 text-xs text-text-muted"
         >
           {{ hint() }}
         </p>
@@ -194,25 +194,25 @@ export class InputComponent implements ControlValueAccessor {
   inputClasses = computed(() => {
     const baseClasses = [
       'block w-full',
-      'rounded-sm border bg-surface-color text-text-primary',
+      'rounded-md border bg-surface text-text-primary',
       'font-normal',
-      'shadow-xs',
+      'shadow-none',
       'transition-all duration-200',
-      'placeholder:text-text-muted',
+      'placeholder:text-[#B0C0D4]',
       'focus:outline-none focus:ring-2 focus:ring-offset-0',
       'disabled:bg-secondary-50 disabled:text-text-muted disabled:cursor-not-allowed',
       'dark:bg-secondary-800 dark:text-secondary-100',
     ].join(' ');
 
     const sizeClasses: Record<InputSize, string> = {
-      sm: 'px-3 py-1.5 text-sm min-h-[34px]',
-      md: 'px-3 py-2 text-sm min-h-[38px]',
-      lg: 'px-4 py-2.5 text-base min-h-[42px]',
+      sm: 'px-3 py-1.5 text-sm min-h-[32px]',
+      md: 'px-3 py-2 text-sm min-h-[40px]',
+      lg: 'px-4 py-3 text-sm min-h-[48px]',
     };
 
     const stateClasses = this.hasError()
-      ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-100 dark:border-danger-600'
-      : 'border-border-color hover:border-secondary-300 focus:border-primary-600 focus:ring-primary-100 dark:border-secondary-600 dark:focus:border-primary-400';
+      ? 'border-danger-500 focus:border-danger-500 focus:ring-danger-100 dark:border-danger-600'
+      : 'border-[#D0D7DE] hover:border-border-color focus:border-primary-600 focus:ring-[rgba(29,78,216,0.12)] dark:border-secondary-600 dark:focus:border-primary-400';
 
     const paddingAdjust = [];
     if (this.prefixIcon()) {

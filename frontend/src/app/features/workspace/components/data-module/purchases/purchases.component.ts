@@ -38,9 +38,9 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
             <div>
               <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Purchases</p>
               <h3 class="text-2xl font-bold text-slate-900">₹{{ totalPurchases() | number:'1.0-0' }}</h3>
-              <p class="text-xs font-bold text-teal-600 mt-2">{{ entries().length }} entries</p>
+              <p class="text-xs font-bold text-primary-600 mt-2">{{ entries().length }} entries</p>
             </div>
-            <div class="w-11 h-11 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600 group-hover:scale-110 transition-transform duration-300">
+            <div class="w-11 h-11 rounded-lg bg-primary-50 flex items-center justify-center text-primary-600 group-hover:scale-110 transition-transform duration-300">
               <ng-icon name="heroCurrencyRupeeSolid" size="22"></ng-icon>
             </div>
           </div>

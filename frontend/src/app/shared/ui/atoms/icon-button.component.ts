@@ -133,9 +133,9 @@ export class IconButtonComponent {
 
   buttonVars = computed(() => {
     const sizeMap: Record<IconButtonSize, string> = {
-      sm: '34px',
-      md: '40px',
-      lg: '44px',
+      sm: '30px',
+      md: '34px',
+      lg: '40px',
     };
 
     const toneMap: Record<Exclude<IconTone, 'current'>, string> = {
@@ -159,8 +159,8 @@ export class IconButtonComponent {
       ? 'var(--background-color)'
       : 'transparent';
     const hoverBackground = this.variant() === 'soft'
-      ? 'var(--border-subtle)'
-      : 'var(--background-color)';
+      ? '#EFF6FF'
+      : '#F0F5FF';
 
     return {
       '--icon-button-size': sizeMap[this.size()],

@@ -14,7 +14,7 @@ import { IconComponent } from '@ui/atoms/icon.component';
         type="button"
         class="rail-button rail-logo"
         [class.active]="nav.activeHub() === 'core'"
-        style="--hub-accent: #C9943A"
+        style="--hub-accent: var(--icon-active)"
         title="Home"
         aria-label="Home"
         (click)="nav.setActiveHub('core')"
@@ -28,7 +28,7 @@ import { IconComponent } from '@ui/atoms/icon.component';
             type="button"
             class="rail-button"
             [class.active]="nav.activeHub() === hub.id"
-            [style.--hub-accent]="hub.color"
+            style="--hub-accent: var(--icon-active)"
             [attr.title]="hub.label"
             [attr.aria-label]="hub.label"
             (click)="nav.setActiveHub(hub.id)"
@@ -58,21 +58,20 @@ import { IconComponent } from '@ui/atoms/icon.component';
   styles: [`
     :host {
       display: block;
-      flex: 0 0 58px;
+      flex: 0 0 60px;
     }
 
     .hub-rail {
       align-items: center;
-      background: var(--color-surface);
-      border-right: 1px solid var(--color-border);
+      background: var(--sidebar-bg);
       display: flex;
       flex-direction: column;
       height: 100vh;
       justify-content: space-between;
       overflow-y: auto;
-      padding: 12px 0;
+      padding: 14px 0 12px;
       scrollbar-width: none;
-      width: 58px;
+      width: 60px;
     }
 
     .hub-rail::-webkit-scrollbar {
@@ -85,7 +84,7 @@ import { IconComponent } from '@ui/atoms/icon.component';
       flex: 1;
       flex-direction: column;
       gap: 8px;
-      margin-top: 22px;
+      margin-top: 18px;
       width: 100%;
     }
 
@@ -94,8 +93,8 @@ import { IconComponent } from '@ui/atoms/icon.component';
       align-items: center;
       background: transparent;
       border: 1px solid transparent;
-      border-radius: 12px;
-      color: #64748b;
+      border-radius: 8px;
+      color: rgba(255, 255, 255, 0.38);
       cursor: pointer;
       display: inline-flex;
       justify-content: center;
@@ -104,36 +103,47 @@ import { IconComponent } from '@ui/atoms/icon.component';
         background 180ms ease,
         border-color 180ms ease,
         color 180ms ease;
-      width: 42px;
-      height: 42px;
+      width: 36px;
+      height: 36px;
     }
 
     .rail-button:hover {
-      background: #f8fafc;
-      border-color: color-mix(in srgb, var(--hub-accent) 26%, #e2e8f0);
-      color: var(--hub-accent);
+      background: var(--sidebar-hover);
+      border-color: transparent;
+      color: rgba(255, 255, 255, 0.70);
     }
 
     .rail-button.active {
-      background: color-mix(in srgb, var(--hub-accent) 12%, #ffffff);
-      border-color: color-mix(in srgb, var(--hub-accent) 22%, #ffffff);
-      color: var(--hub-accent);
+      background: var(--sidebar-active);
+      border-color: transparent;
+      color: var(--icon-active);
     }
 
     .rail-button.active::before {
-      background: var(--hub-accent);
+      background: var(--icon-active);
       border-radius: 999px;
       content: '';
-      height: 24px;
-      left: -10px;
+      height: 5px;
+      left: auto;
+      right: -7px;
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      width: 3px;
+      width: 5px;
     }
 
     .rail-logo {
-      color: #64748b;
+      background: linear-gradient(135deg, #1D4ED8, #60A5FA);
+      border-color: transparent;
+      color: #ffffff;
+      height: 32px;
+      width: 32px;
+    }
+
+    .rail-logo:hover,
+    .rail-logo.active {
+      background: linear-gradient(135deg, #1D4ED8, #60A5FA);
+      color: #ffffff;
     }
 
     .rail-search {
@@ -142,8 +152,8 @@ import { IconComponent } from '@ui/atoms/icon.component';
 
     .rail-badge {
       align-items: center;
-      background: #ef4444;
-      border: 2px solid var(--color-surface);
+      background: var(--danger);
+      border: 2px solid var(--sidebar-bg);
       border-radius: 999px;
       color: #ffffff;
       display: inline-flex;

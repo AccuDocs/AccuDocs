@@ -217,16 +217,16 @@ import {
                     @let status3 = getReturnStatus(row.month, 'GSTR-3B');
                     <div class="flex items-center justify-center gap-2">
                       @if (status3) {
-                        <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer bg-teal-50 text-teal-700 hover:bg-teal-100"
+                        <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer bg-primary-50 text-primary-700 hover:bg-primary-100"
                           (click)="openForm('GSTR-3B', status3)">
                           <ng-icon [name]="status3.status === 'filed' ? 'heroDocumentCheckSolid' : 'heroClockSolid'"></ng-icon>
                           {{ status3.status }}
                         </div>
-                        <button (click)="downloadReturnJson(status3)" class="text-slate-400 hover:text-teal-600 transition-colors p-1" title="Download JSON">
+                        <button (click)="downloadReturnJson(status3)" class="text-slate-400 hover:text-primary-600 transition-colors p-1" title="Download JSON">
                           <ng-icon name="heroArrowDownTraySolid" size="16"></ng-icon>
                         </button>
                       } @else {
-                        <button (click)="generateAndSaveReturn(row.month, 'GSTR-3B')" class="text-teal-600 hover:text-teal-800 transition-colors bg-teal-50 p-1.5 rounded-lg flex items-center gap-1" title="Generate & Save to Workspace">
+                        <button (click)="generateAndSaveReturn(row.month, 'GSTR-3B')" class="text-primary-600 hover:text-primary-800 transition-colors bg-primary-50 p-1.5 rounded-lg flex items-center gap-1" title="Generate & Save to Workspace">
                           <ng-icon name="heroBoltSolid" size="16"></ng-icon>
                           <span class="text-[10px] font-bold uppercase">Generate</span>
                         </button>

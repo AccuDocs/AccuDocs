@@ -15,25 +15,24 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
       class="top-bar"
       style="
         height: var(--header-height);
-        background: var(--surface-overlay);
-        border-bottom: 1px solid var(--color-border);
-        backdrop-filter: blur(14px) saturate(160%);
+        background: var(--ad-header-bg);
+        border-bottom: 1px solid var(--ad-header-border);
         display: flex;
         align-items: center;
         padding: 0 24px;
-        gap: 24px;
+        gap: 12px;
         flex-shrink: 0;
       "
     >
       <!-- Breadcrumb (left) -->
       <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
         @if (nav.activeHubData(); as hub) {
-          <span style="color: var(--color-text-sub); font-size: 13px;">
+          <span style="color: var(--text-muted); font-size: 12px; font-weight: 400;">
             {{ hub.label }}
           </span>
           @if (nav.activeModuleData(); as module) {
-            <span style="color: var(--color-text-sub); font-size: 13px;"> / </span>
-            <span style="color: var(--color-text); font-size: 13px; font-weight: 500;">
+            <span style="color: var(--text-hint); font-size: 12px;"> / </span>
+            <span style="color: var(--text-primary); font-size: 12px; font-weight: 600;">
               {{ module.label }}
             </span>
           }
@@ -47,12 +46,12 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
           flex: 0.8;
           max-width: 400px;
           min-width: 200px;
-          background: var(--background-color);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-sm);
+          background: #F8FAFF;
+          border: 1px solid var(--card-border);
+          border-radius: var(--radius-md);
           padding: 8px 12px;
-          color: var(--color-text-sub);
-          font-size: 13px;
+          color: var(--text-muted);
+          font-size: 12px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -68,15 +67,15 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
         </span>
         <span
           style="
-            background: var(--color-border);
+          background: var(--card-border);
             padding: 2px 6px;
             border-radius: var(--radius-sm);
             font-size: 11px;
-            color: var(--color-text-dim);
+            color: var(--text-muted);
             font-weight: 500;
           "
         >
-          ⌘K
+          Ctrl K
         </span>
       </button>
 
@@ -140,8 +139,8 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
                 width: 28px;
                 height: 28px;
                 border-radius: 50%;
-                background: var(--primary);
-                color: white;
+                background: var(--brand-accent-soft);
+                color: var(--brand-accent);
                 display: flex;
                 align-items: center;
                 justify-content: center;
