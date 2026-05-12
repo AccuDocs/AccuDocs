@@ -56,33 +56,48 @@ const EMPTY_DASHBOARD: VendorDashboard = {
     }),
   ],
   template: `
-    <div class="vendor-page min-h-full w-full space-y-5 px-6 pb-8 pt-4">
-      <section class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <div class="relative flex flex-col gap-6 p-6 xl:flex-row xl:items-center xl:justify-between">
-          <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.16),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98),rgba(255,247,237,0.76))] dark:bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.18),transparent_34%),linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.98),rgba(67,20,7,0.28))]"></div>
+    <div
+      class="vendor-page min-h-full w-full min-w-0 max-w-none space-y-5 animate-in fade-in duration-500"
+      [class.px-6]="!isClientScoped()"
+      [class.pb-8]="!isClientScoped()"
+      [class.pt-4]="!isClientScoped()"
+    >
+      <section class="overflow-hidden rounded-3xl border border-primary-200 bg-gradient-to-br from-white via-primary-50/40 to-white p-5 shadow-sm dark:border-slate-700 dark:bg-none dark:bg-slate-900">
+        <div class="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div class="relative max-w-4xl">
-            <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-orange-700 dark:bg-orange-500/15 dark:text-orange-200">
+            <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary-100 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-primary-700 dark:bg-primary-500/15 dark:text-primary-200">
               <ng-icon name="heroTruckSolid" size="14"></ng-icon>
-              Vendor management
+              {{ isClientScoped() ? 'Client vendor workspace' : 'Vendor management' }}
             </div>
-            <h1 class="text-3xl font-black tracking-tight text-slate-950 dark:text-white xl:text-[2.6rem]">{{ title() }}</h1>
-            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+            <h1 class="font-black tracking-tight text-slate-950 dark:text-white" [ngClass]="isClientScoped() ? 'text-2xl' : 'text-3xl xl:text-[2.6rem]'">{{ title() }}</h1>
+            <p class="mt-1 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-300">
               {{ subtitle() }}
             </p>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 ring-1 ring-slate-200 dark:bg-slate-800/90 dark:text-slate-300 dark:ring-slate-700">
+                Vendor master
+              </span>
+              <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 ring-1 ring-slate-200 dark:bg-slate-800/90 dark:text-slate-300 dark:ring-slate-700">
+                PO to payment
+              </span>
+              <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 ring-1 ring-slate-200 dark:bg-slate-800/90 dark:text-slate-300 dark:ring-slate-700">
+                AP aging
+              </span>
+            </div>
           </div>
 
           <div class="relative flex flex-wrap items-center gap-3">
-            <button type="button" (click)="refresh()" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+            <button type="button" (click)="refresh()" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-primary-500/50 dark:hover:bg-primary-500/15 dark:hover:text-primary-200">
               <ng-icon name="heroArrowPathSolid" size="16" [class.animate-spin]="isLoading()"></ng-icon>
               Refresh
             </button>
             @if (isClientScoped()) {
-              <button type="button" (click)="setVendorView('add')" class="inline-flex items-center gap-2 rounded-2xl bg-orange-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-orange-600/20 transition hover:bg-orange-700">
+              <button type="button" (click)="setVendorView('add')" class="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-primary-700">
                 <ng-icon name="heroPlusSolid" size="16"></ng-icon>
                 Add vendor
               </button>
             } @else {
-              <a routerLink="/vendors/add" class="inline-flex items-center gap-2 rounded-2xl bg-orange-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-orange-600/20 transition hover:bg-orange-700">
+              <a routerLink="/vendors/add" class="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-primary-700">
                 <ng-icon name="heroPlusSolid" size="16"></ng-icon>
                 Add vendor
               </a>
@@ -91,14 +106,14 @@ const EMPTY_DASHBOARD: VendorDashboard = {
         </div>
       </section>
 
-      <nav class="flex flex-wrap gap-2 rounded-3xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <nav class="vendor-tabs no-scrollbar flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-slate-100/80 p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
         @for (tab of tabs; track tab.route) {
           @if (isClientScoped()) {
             <button
               type="button"
               (click)="setVendorView(tab.view)"
-              class="inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-black transition"
-              [ngClass]="view() === tab.view ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/20' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'"
+              class="inline-flex min-h-9 items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-[12px] font-bold transition-all"
+              [ngClass]="view() === tab.view ? 'bg-white text-primary-600 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:text-primary-300 dark:ring-slate-700' : 'text-slate-500 hover:bg-white/70 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'"
             >
               <ng-icon [name]="tab.icon" size="16"></ng-icon>
               {{ tab.label }}
@@ -106,8 +121,8 @@ const EMPTY_DASHBOARD: VendorDashboard = {
           } @else {
             <a
               [routerLink]="tab.route"
-              class="inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-black transition"
-              [ngClass]="view() === tab.view ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/20' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'"
+              class="inline-flex min-h-9 items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-[12px] font-bold transition-all"
+              [ngClass]="view() === tab.view ? 'bg-white text-primary-600 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:text-primary-300 dark:ring-slate-700' : 'text-slate-500 hover:bg-white/70 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'"
             >
               <ng-icon [name]="tab.icon" size="16"></ng-icon>
               {{ tab.label }}
@@ -182,7 +197,7 @@ const EMPTY_DASHBOARD: VendorDashboard = {
                     <tr>
                       <td>
                         <p class="font-black text-slate-950 dark:text-white">{{ vendor.vendorName }}</p>
-                        <p class="mt-1 text-xs font-semibold text-slate-500">{{ vendor.vendorCode }} · {{ vendor.contactPerson || vendor.businessName || 'No contact' }}</p>
+                        <p class="mt-1 text-xs font-semibold text-slate-500">{{ vendor.vendorCode }} - {{ vendor.contactPerson || vendor.businessName || 'No contact' }}</p>
                       </td>
                       <td>{{ typeLabel(vendor.vendorType) }}</td>
                       <td>
@@ -330,7 +345,7 @@ const EMPTY_DASHBOARD: VendorDashboard = {
             <p class="eyebrow">Outgoing payments</p>
             <h2 class="panel-title">Record Payment</h2>
             <select name="paymentVendor" [(ngModel)]="paymentForm.vendorId" required class="field"><option value="">Select vendor</option>@for (vendor of vendors(); track vendor.id) { <option [value]="vendor.id">{{ vendor.vendorName }}</option> }</select>
-            <select name="paymentBill" [(ngModel)]="paymentForm.billId" class="field"><option value="">Advance / unallocated payment</option>@for (bill of openBillsForPayment(); track bill.id) { <option [value]="bill.id">{{ bill.billNumber }} · {{ money(bill.balanceDue) }} due</option> }</select>
+            <select name="paymentBill" [(ngModel)]="paymentForm.billId" class="field"><option value="">Advance / unallocated payment</option>@for (bill of openBillsForPayment(); track bill.id) { <option [value]="bill.id">{{ bill.billNumber }} - {{ money(bill.balanceDue) }} due</option> }</select>
             <div class="grid grid-cols-2 gap-3">
               <input name="paymentAmount" [(ngModel)]="paymentForm.amount" type="number" min="1" required class="field" />
               <input name="paymentDate" [(ngModel)]="paymentForm.paymentDate" type="date" required class="field" />
@@ -392,8 +407,8 @@ const EMPTY_DASHBOARD: VendorDashboard = {
               @for (doc of documents(); track doc.id) {
                 <article class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
                   <p class="font-black text-slate-950 dark:text-white">{{ doc.name }}</p>
-                  <p class="mt-1 text-xs font-semibold text-slate-500">{{ statusText(doc.documentType) }} · {{ doc.vendor?.vendorName || vendorName(doc.vendorId) }}</p>
-                  @if (doc.fileUrl) { <a [href]="doc.fileUrl" target="_blank" class="mt-3 inline-flex text-sm font-black text-orange-600">Open file</a> }
+                  <p class="mt-1 text-xs font-semibold text-slate-500">{{ statusText(doc.documentType) }} - {{ doc.vendor?.vendorName || vendorName(doc.vendorId) }}</p>
+                  @if (doc.fileUrl) { <a [href]="doc.fileUrl" target="_blank" class="mt-3 inline-flex text-sm font-black text-primary-600 dark:text-primary-300">Open file</a> }
                 </article>
               }
             </div>
@@ -426,34 +441,208 @@ const EMPTY_DASHBOARD: VendorDashboard = {
     </div>
   `,
   styles: [`
-    :host { display: block; }
-    .panel { border: 1px solid rgb(226 232 240); background: white; border-radius: 24px; padding: 20px; box-shadow: 0 1px 2px rgba(15, 23, 42, .05); }
-    .panel-head { align-items: center; border-bottom: 1px solid rgb(241 245 249); display: flex; gap: 16px; justify-content: space-between; margin: -20px -20px 20px; padding: 18px 20px; }
-    .eyebrow, .metric-label, .label { color: rgb(148 163 184); font-size: 10px; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; }
-    .panel-title { color: rgb(2 6 23); font-size: 20px; font-weight: 900; letter-spacing: -.01em; }
-    .metric-value { color: rgb(2 6 23); display: block; font-size: 30px; font-weight: 900; line-height: 1.1; margin-top: 10px; }
-    .metric-copy { color: rgb(100 116 139); font-size: 12px; font-weight: 700; margin-top: 6px; }
-    .field { border: 1px solid rgb(226 232 240); border-radius: 16px; background: rgb(248 250 252); color: rgb(51 65 85); font-size: 14px; font-weight: 700; min-height: 44px; outline: none; padding: 10px 14px; width: 100%; }
-    .field:focus { border-color: rgb(251 146 60); box-shadow: 0 0 0 4px rgba(251, 146, 60, .14); }
-    .primary-btn, .mini-btn { align-items: center; border-radius: 16px; display: inline-flex; font-size: 14px; font-weight: 900; gap: 8px; justify-content: center; transition: .18s ease; }
-    .primary-btn { background: rgb(234 88 12); color: white; padding: 12px 18px; }
-    .primary-btn:hover { background: rgb(194 65 12); }
-    .mini-btn { border: 1px solid rgb(226 232 240); color: rgb(71 85 105); padding: 8px 12px; }
-    .data-table { border-collapse: collapse; width: 100%; }
-    .data-table th { color: rgb(148 163 184); font-size: 11px; font-weight: 900; letter-spacing: .14em; padding: 12px 14px; text-align: left; text-transform: uppercase; }
-    .data-table td { border-top: 1px solid rgb(241 245 249); color: rgb(71 85 105); font-size: 14px; font-weight: 700; padding: 14px; }
-    .pill { border-radius: 999px; display: inline-flex; font-size: 10px; font-weight: 900; letter-spacing: .14em; padding: 6px 10px; text-transform: uppercase; }
+    :host {
+      display: block;
+      min-width: 0;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    .vendor-page {
+      color: var(--text-primary, #0f172a);
+    }
+
+    .vendor-tabs {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .vendor-tabs::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+
+    .panel {
+      border: 1px solid var(--ad-card-border, #e2e8f0);
+      background: var(--ad-card-bg, #ffffff);
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: var(--shadow-card, 0 1px 2px rgba(15, 23, 42, .05));
+      color: var(--text-primary, #0f172a);
+    }
+
+    .panel-head {
+      align-items: center;
+      border-bottom: 1px solid var(--border-subtle, #f1f5f9);
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      margin: -20px -20px 20px;
+      padding: 18px 20px;
+    }
+
+    .eyebrow,
+    .metric-label,
+    .label {
+      color: var(--ad-text-muted, #94a3b8);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    .panel-title {
+      color: var(--ad-text-primary, #020617);
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .metric-value {
+      color: var(--ad-text-primary, #020617);
+      display: block;
+      font-size: 30px;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-top: 10px;
+    }
+
+    .metric-copy {
+      color: var(--ad-text-secondary, #64748b);
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .field {
+      border: 1px solid var(--ad-card-border, #e2e8f0);
+      border-radius: 16px;
+      background: var(--surface-elevated, #f8fafc);
+      color: var(--text-secondary, #334155);
+      font-size: 14px;
+      font-weight: 700;
+      min-height: 44px;
+      outline: none;
+      padding: 10px 14px;
+      width: 100%;
+    }
+
+    .field:focus {
+      border-color: var(--primary-400, #60a5fa);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, .14);
+    }
+
+    .primary-btn,
+    .mini-btn {
+      align-items: center;
+      border-radius: 16px;
+      display: inline-flex;
+      font-size: 14px;
+      font-weight: 900;
+      gap: 8px;
+      justify-content: center;
+      transition: .18s ease;
+    }
+
+    .primary-btn {
+      background: var(--primary-600, #1d4ed8);
+      color: white;
+      padding: 12px 18px;
+    }
+
+    .primary-btn:hover {
+      background: var(--primary-700, #1e40af);
+    }
+
+    .mini-btn {
+      border: 1px solid var(--ad-card-border, #e2e8f0);
+      color: var(--ad-text-secondary, #475569);
+      padding: 8px 12px;
+    }
+
+    .mini-btn:hover {
+      border-color: var(--primary-200, #bfdbfe);
+      background: var(--primary-50, #eff6ff);
+      color: var(--primary-700, #1e40af);
+    }
+
+    .data-table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    .data-table th {
+      background: var(--surface-elevated, #f8fafc);
+      color: var(--ad-text-muted, #94a3b8);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .14em;
+      padding: 12px 14px;
+      text-align: left;
+      text-transform: uppercase;
+    }
+
+    .data-table td {
+      border-top: 1px solid var(--border-subtle, #f1f5f9);
+      color: var(--ad-text-secondary, #475569);
+      font-size: 14px;
+      font-weight: 700;
+      padding: 14px;
+    }
+
+    .data-table tbody tr:hover {
+      background: rgba(59, 130, 246, .06);
+    }
+
+    .pill {
+      border-radius: 999px;
+      display: inline-flex;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .14em;
+      padding: 6px 10px;
+      text-transform: uppercase;
+    }
+
     .pill-green { background: rgb(220 252 231); color: rgb(4 120 87); }
     .pill-red { background: rgb(255 228 230); color: rgb(190 18 60); }
     .pill-blue { background: rgb(219 234 254); color: rgb(29 78 216); }
-    @media (prefers-color-scheme: dark) {
-      .panel { background: rgb(15 23 42); border-color: rgb(51 65 85); }
-      .panel-head { border-color: rgb(51 65 85); }
-      .panel-title, .metric-value { color: white; }
-      .field { background: rgb(30 41 59); border-color: rgb(51 65 85); color: rgb(226 232 240); }
-      .data-table td { border-color: rgb(51 65 85); color: rgb(203 213 225); }
-      .mini-btn { border-color: rgb(51 65 85); color: rgb(203 213 225); }
+
+    :host-context(.dark) .panel {
+      background: var(--surface-color, #10213a);
+      border-color: var(--border-color, #334155);
+      color: var(--text-primary, #eaf2fc);
     }
+
+    :host-context(.dark) .panel-head,
+    :host-context(.dark) .data-table td,
+    :host-context(.dark) .data-table th,
+    :host-context(.dark) .mini-btn {
+      border-color: var(--border-color, #334155);
+    }
+
+    :host-context(.dark) .field,
+    :host-context(.dark) .data-table th {
+      background: #14243c;
+      color: var(--text-primary, #eaf2fc);
+    }
+
+    :host-context(.dark) .data-table td,
+    :host-context(.dark) .mini-btn {
+      color: var(--text-secondary, #b8c7d9);
+    }
+
+    :host-context(.dark) .mini-btn:hover,
+    :host-context(.dark) .data-table tbody tr:hover {
+      background: rgba(96, 165, 250, .12);
+      border-color: rgba(147, 197, 253, .32);
+      color: var(--accent-hover, #93c5fd);
+    }
+
+    :host-context(.dark) .pill-green { background: rgba(16, 185, 129, .16); color: #86efac; }
+    :host-context(.dark) .pill-red { background: rgba(244, 63, 94, .16); color: #fda4af; }
+    :host-context(.dark) .pill-blue { background: rgba(96, 165, 250, .16); color: #bfdbfe; }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
