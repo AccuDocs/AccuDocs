@@ -10,7 +10,14 @@ export interface AppModule {
   status: ModuleStatus;
   badge?: number | null;  // notification count
   route: string;          // Angular route path
+  shortcuts?: ReadonlyArray<AppModuleShortcut>;
   pinned?: boolean;       // default pinned
+}
+
+export interface AppModuleShortcut {
+  label: string;
+  route: string;
+  iconName?: string;
 }
 
 export type HubId =
@@ -46,30 +53,192 @@ export const HUBS: Hub[] = [
 
 export const MODULE_REGISTRY: AppModule[] = ([
   // CORE
-  { id: 'dashboard', hub: 'core', label: 'Dashboard', icon: 'CORE', iconName: 'heroSquares2x2Solid', desc: 'Today\'s office overview', status: 'live', badge: null, route: '/dashboard', pinned: true },
-  { id: 'documents_all', hub: 'core', label: 'Documents', icon: 'DOCS', iconName: 'heroFolderSolid', desc: 'Global document vault', status: 'live', badge: null, route: '/documents', pinned: true },
+  {
+    id: 'dashboard',
+    hub: 'core',
+    label: 'Dashboard',
+    icon: 'CORE',
+    iconName: 'heroSquares2x2Solid',
+    desc: 'Today\'s office overview',
+    status: 'live',
+    badge: null,
+    route: '/dashboard',
+    shortcuts: [
+      { label: 'Overview', route: '/dashboard', iconName: 'heroSquares2x2Solid' },
+    ],
+    pinned: true,
+  },
+  {
+    id: 'documents_all',
+    hub: 'core',
+    label: 'Documents',
+    icon: 'DOCS',
+    iconName: 'heroFolderSolid',
+    desc: 'Global document vault',
+    status: 'live',
+    badge: null,
+    route: '/documents',
+    shortcuts: [
+      { label: 'All documents', route: '/documents', iconName: 'heroFolderSolid' },
+      { label: 'Scanner inbox', route: '/documents/scanner/all', iconName: 'heroDocumentMagnifyingGlassSolid' },
+    ],
+    pinned: true,
+  },
   { id: 'documents_scanner', hub: 'core', label: 'Document Scanner', icon: 'SCAN', iconName: 'heroDocumentMagnifyingGlassSolid', desc: 'OCR capture for receipts and bills', status: 'live', badge: null, route: '/documents/scanner', pinned: true },
 
   // BILLING
-  { id: 'billing_invoices', hub: 'billing', label: 'Firm Billing Suite', icon: 'BILL', iconName: 'heroDocumentTextSolid', desc: 'Firm billing, GST & collections', status: 'live', badge: 12, route: '/billing', pinned: true },
+  {
+    id: 'billing_invoices',
+    hub: 'billing',
+    label: 'Firm Billing Suite',
+    icon: 'BILL',
+    iconName: 'heroDocumentTextSolid',
+    desc: 'Firm billing, GST & collections',
+    status: 'live',
+    badge: 12,
+    route: '/billing',
+    shortcuts: [
+      { label: 'Suite overview', route: '/billing', iconName: 'heroDocumentTextSolid' },
+      { label: 'Invoice register', route: '/billing/invoices', iconName: 'heroDocumentTextSolid' },
+      { label: 'Recurring billing', route: '/billing/recurring', iconName: 'heroArrowPathSolid' },
+      { label: 'Bulk generate', route: '/billing/bulk-generate', iconName: 'heroBoltSolid' },
+      { label: 'New invoice', route: '/billing/invoices/new', iconName: 'heroPlusSolid' },
+    ],
+    pinned: true,
+  },
 
   // COMPLIANCE
-  { id: 'calendar', hub: 'compliance', label: 'Compliance Calendar', icon: 'CAL', iconName: 'heroCalendarDaysSolid', desc: 'All filing deadlines', status: 'live', badge: 3, route: '/compliance/calendar', pinned: true },
-  { id: 'checklists', hub: 'compliance', label: 'Doc Checklists', icon: 'LIST', iconName: 'heroClipboardDocumentCheckSolid', desc: 'Pending documents tracker', status: 'live', badge: 23, route: '/compliance/checklists', pinned: true },
-  { id: 'gst_hsn_sac', hub: 'compliance', label: 'HSN/SAC Master', icon: 'HSN', iconName: 'heroBookOpenSolid', desc: 'Universal GST code directory', status: 'live', badge: null, route: '/compliance/hsn-sac', pinned: true },
+  {
+    id: 'calendar',
+    hub: 'compliance',
+    label: 'Compliance Calendar',
+    icon: 'CAL',
+    iconName: 'heroCalendarDaysSolid',
+    desc: 'All filing deadlines',
+    status: 'live',
+    badge: 3,
+    route: '/compliance/calendar',
+    shortcuts: [
+      { label: 'Calendar', route: '/compliance/calendar', iconName: 'heroCalendarDaysSolid' },
+    ],
+    pinned: true,
+  },
+  {
+    id: 'checklists',
+    hub: 'compliance',
+    label: 'Doc Checklists',
+    icon: 'LIST',
+    iconName: 'heroClipboardDocumentCheckSolid',
+    desc: 'Pending documents tracker',
+    status: 'live',
+    badge: 23,
+    route: '/compliance/checklists',
+    shortcuts: [
+      { label: 'Overview', route: '/compliance/checklists', iconName: 'heroClipboardDocumentCheckSolid' },
+      { label: 'Bulk create', route: '/compliance/checklists/create', iconName: 'heroPlusSolid' },
+    ],
+    pinned: true,
+  },
+  {
+    id: 'gst_hsn_sac',
+    hub: 'compliance',
+    label: 'HSN/SAC Master',
+    icon: 'HSN',
+    iconName: 'heroBookOpenSolid',
+    desc: 'Universal GST code directory',
+    status: 'live',
+    badge: null,
+    route: '/compliance/hsn-sac',
+    shortcuts: [
+      { label: 'Directory', route: '/compliance/hsn-sac', iconName: 'heroBookOpenSolid' },
+    ],
+    pinned: true,
+  },
 
   // WORK
-  { id: 'tasks', hub: 'work', label: 'Task Board', icon: 'TASK', iconName: 'heroCheckCircleSolid', desc: 'Kanban & work tracker', status: 'live', badge: 8, route: '/work/tasks', pinned: true },
+  {
+    id: 'tasks',
+    hub: 'work',
+    label: 'Task Board',
+    icon: 'TASK',
+    iconName: 'heroCheckCircleSolid',
+    desc: 'Kanban & work tracker',
+    status: 'live',
+    badge: 8,
+    route: '/work/tasks',
+    shortcuts: [
+      { label: 'Board view', route: '/work/tasks', iconName: 'heroCheckCircleSolid' },
+      { label: 'List view', route: '/work/tasks/list', iconName: 'heroDocumentTextSolid' },
+    ],
+    pinned: true,
+  },
 
   // CLIENTS
-  { id: 'clients_user_client', hub: 'clients', label: 'Client', icon: 'CLNT', iconName: 'heroUserSolid', desc: 'Client management & interactions', status: 'live', badge: null, route: '/clients/client', pinned: true },
-  { id: 'clients_user_staff', hub: 'clients', label: 'Staff', icon: 'TEAM', iconName: 'heroUserGroupSolid', desc: 'Staff management & assignments', status: 'live', badge: null, route: '/clients/staff', pinned: true },
+  {
+    id: 'clients_user_client',
+    hub: 'clients',
+    label: 'Client',
+    icon: 'CLNT',
+    iconName: 'heroUserSolid',
+    desc: 'Client management & interactions',
+    status: 'live',
+    badge: null,
+    route: '/clients/client',
+    shortcuts: [
+      { label: 'Client directory', route: '/clients/client', iconName: 'heroUserSolid' },
+      { label: 'New client', route: '/clients/client/create', iconName: 'heroPlusSolid' },
+    ],
+    pinned: true,
+  },
+  {
+    id: 'clients_user_staff',
+    hub: 'clients',
+    label: 'Staff',
+    icon: 'TEAM',
+    iconName: 'heroUserGroupSolid',
+    desc: 'Staff management & assignments',
+    status: 'live',
+    badge: null,
+    route: '/clients/staff',
+    shortcuts: [
+      { label: 'Team directory', route: '/clients/staff', iconName: 'heroUserGroupSolid' },
+    ],
+    pinned: true,
+  },
 
   // FIRM OPS
-  { id: 'staff', hub: 'firm', label: 'Staff Management', icon: 'HR', iconName: 'heroIdentificationSolid', desc: 'HR, roles & staff profiles', status: 'live', badge: null, route: '/firm/staff', pinned: true },
+  {
+    id: 'staff',
+    hub: 'firm',
+    label: 'Staff Management',
+    icon: 'HR',
+    iconName: 'heroIdentificationSolid',
+    desc: 'HR, roles & staff profiles',
+    status: 'live',
+    badge: null,
+    route: '/firm/staff',
+    shortcuts: [
+      { label: 'Staff directory', route: '/firm/staff', iconName: 'heroIdentificationSolid' },
+    ],
+    pinned: true,
+  },
 
   // SETTINGS
-  { id: 'whatsapp_setup', hub: 'settings', label: 'WhatsApp Setup', icon: 'WA', iconName: 'heroChatBubbleLeftRightSolid', desc: 'Connect WhatsApp account', status: 'live', badge: null, route: '/settings/whatsapp', pinned: true },
+  {
+    id: 'whatsapp_setup',
+    hub: 'settings',
+    label: 'WhatsApp Setup',
+    icon: 'WA',
+    iconName: 'heroChatBubbleLeftRightSolid',
+    desc: 'Connect WhatsApp account',
+    status: 'live',
+    badge: null,
+    route: '/settings/whatsapp',
+    shortcuts: [
+      { label: 'Console', route: '/settings/whatsapp', iconName: 'heroChatBubbleLeftRightSolid' },
+    ],
+    pinned: true,
+  },
 ] as AppModule[]).filter((module) => module.id !== 'documents_scanner');
 
 // ==========================================

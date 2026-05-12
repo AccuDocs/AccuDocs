@@ -70,8 +70,10 @@ interface BillingClient {
   id: string;
   code?: string;
   name?: string;
+  businessName?: string;
   gstin?: string;
   mobile?: string;
+  email?: string;
   stateCode: string;
   address?: string;
   city?: string;
@@ -101,6 +103,7 @@ type LineItemFormModel = {
 };
 
 type InvoiceFormModel = {
+  customerSource: FormControl<'client' | 'custom'>;
   clientId: FormControl<string>;
   warehouseId: FormControl<string>;
   salesPerson: FormControl<string>;
@@ -297,6 +300,7 @@ export class InvoiceFormComponent {
   readonly barcodeScanControl = new FormControl('', { nonNullable: true });
 
   readonly invoiceForm = this.fb.group<InvoiceFormModel>({
+    customerSource: this.fb.nonNullable.control<'client' | 'custom'>('client'),
     clientId: this.fb.nonNullable.control('', Validators.required),
     warehouseId: this.fb.nonNullable.control(''),
     salesPerson: this.fb.nonNullable.control(''),
@@ -397,6 +401,12 @@ export class InvoiceFormComponent {
     ),
     { initialValue: this.invoiceForm.controls.clientId.getRawValue() }
   );
+  readonly selectedCustomerSource = toSignal(
+    this.invoiceForm.controls.customerSource.valueChanges.pipe(
+      startWith(this.invoiceForm.controls.customerSource.getRawValue())
+    ),
+    { initialValue: this.invoiceForm.controls.customerSource.getRawValue() }
+  );
   readonly selectedGstType = toSignal(
     this.invoiceForm.controls.gstType.valueChanges.pipe(
       startWith(this.invoiceForm.controls.gstType.getRawValue())
@@ -430,6 +440,19 @@ export class InvoiceFormComponent {
   readonly selectedClient = computed(
     () => this.clients().find((client) => client.id === this.selectedClientId()) ?? this.embeddedClient()
   );
+  readonly isExistingClientCustomer = computed(() =>
+    this.viewMode() === 'firm' && this.selectedCustomerSource() === 'client'
+  );
+  readonly selectedClientWorkspaceLabel = computed(() => {
+    if (this.isExistingClientCustomer()) {
+      const client = this.selectedClient();
+      if (!client) return 'Select a client';
+      const code = client.code ? ` (${client.code})` : '';
+      return `${this.displayClientName(client)}${code}`;
+    }
+
+    return this.organization().name;
+  });
   readonly salesTotals = computed<SalesTotals>(() => this.calculateSalesTotals());
   readonly gstCalc = signal<GstCalculation>(
     calculateGST([], DEFAULT_ORGANIZATION.stateCode, DEFAULT_ORGANIZATION.stateCode)
@@ -452,6 +475,10 @@ export class InvoiceFormComponent {
     this.isEditMode.set(this.isEmbedded ? !!this.embeddedInvoiceId : Boolean(this.route.snapshot.data['editMode']));
     this.invoiceId.set(this.isEmbedded ? this.embeddedInvoiceId : this.route.snapshot.paramMap.get('id'));
 
+    if (this.viewMode() === 'client') {
+      this.invoiceForm.controls.customerSource.setValue('custom', { emitEvent: false });
+    }
+
     const initialClientId = this.isEmbedded ? this.embeddedClientId : this.route.snapshot.queryParamMap.get('clientId');
     if (initialClientId && !this.isEditMode()) {
       this.invoiceForm.controls.clientId.setValue(initialClientId);
@@ -459,12 +486,16 @@ export class InvoiceFormComponent {
 
     if (this.isEmbedded && initialClientId) {
       this.loadEmbeddedClient(initialClientId);
-      this.invoiceForm.controls.customerName.addValidators(Validators.required);
-      this.invoiceForm.controls.customerName.updateValueAndValidity();
     }
+
+    this.applyCustomerSourceRules(this.invoiceForm.controls.customerSource.getRawValue());
   }
 
   constructor() {
+    this.invoiceForm.controls.customerSource.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((source) => this.applyCustomerSourceRules(source));
+
     this.invoiceForm.controls.clientId.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((clientId) => this.handleClientSelection(clientId));
@@ -493,6 +524,15 @@ export class InvoiceFormComponent {
 
       this.patchInvoice(response.data);
       this.invoicePatched.set(true);
+    });
+
+    effect(() => {
+      const client = this.selectedClient();
+      if (!client || !this.isExistingClientCustomer() || this.isEditMode()) {
+        return;
+      }
+
+      this.patchCustomerFromClient(client);
     });
 
     effect(() => {
@@ -685,7 +725,11 @@ export class InvoiceFormComponent {
   }
 
   displayClientName(client: BillingClient): string {
-    return client.name ?? client.user?.name ?? 'Unnamed client';
+    return client.businessName ?? client.name ?? client.user?.name ?? 'Unnamed client';
+  }
+
+  displayClientAddress(client: BillingClient): string {
+    return [client.address, client.city, client.pincode].filter(Boolean).join(', ');
   }
 
   saveDraft(): void {
@@ -875,10 +919,68 @@ export class InvoiceFormComponent {
       return;
     }
 
+    this.patchCustomerFromClient(client);
+  }
+
+  private patchCustomerFromClient(client: BillingClient): void {
     this.invoiceForm.patchValue({
+      customerName: this.displayClientName(client),
+      customerMobile: client.mobile ?? client.user?.mobile ?? '',
+      customerEmail: client.email ?? '',
+      customerAddress: this.displayClientAddress(client),
       clientGstin: client.gstin ?? '',
       gstType: this.detectGstType(client.stateCode),
     });
+  }
+
+  private clearCustomerFields(): void {
+    this.invoiceForm.controls.clientId.setValue('');
+    this.invoiceForm.patchValue({
+      customerName: '',
+      customerMobile: '',
+      customerEmail: '',
+      customerAddress: '',
+      shippingAddress: '',
+      clientGstin: '',
+    }, { emitEvent: false });
+  }
+
+  private applyCustomerSourceRules(source: 'client' | 'custom'): void {
+    const isClientMode = this.viewMode() === 'client';
+    const useExistingClient = this.viewMode() === 'firm' && source === 'client';
+
+    if (isClientMode || useExistingClient) {
+      this.invoiceForm.controls.clientId.addValidators(Validators.required);
+    } else {
+      this.invoiceForm.controls.clientId.clearValidators();
+    }
+
+    if (isClientMode || source === 'custom') {
+      this.invoiceForm.controls.customerName.addValidators(Validators.required);
+    } else {
+      this.invoiceForm.controls.customerName.clearValidators();
+    }
+
+    if (!isClientMode && source === 'custom') {
+      this.invoiceForm.controls.customerMobile.addValidators([Validators.required, Validators.minLength(10)]);
+    } else {
+      this.invoiceForm.controls.customerMobile.clearValidators();
+    }
+
+    this.invoiceForm.controls.clientId.updateValueAndValidity({ emitEvent: false });
+    this.invoiceForm.controls.customerName.updateValueAndValidity({ emitEvent: false });
+    this.invoiceForm.controls.customerMobile.updateValueAndValidity({ emitEvent: false });
+
+    if (this.viewMode() === 'firm' && !this.isEditMode()) {
+      if (source === 'custom') {
+        this.clearCustomerFields();
+      } else {
+        const client = this.selectedClient();
+        if (client) {
+          this.patchCustomerFromClient(client);
+        }
+      }
+    }
   }
 
   private handleWarehouseSelection(warehouseId: string): void {
@@ -953,9 +1055,11 @@ export class InvoiceFormComponent {
 
   private patchInvoice(invoice: Invoice): void {
     this.invoiceNumberControl.setValue(invoice.invoiceNumber);
+    const customerSource = this.viewMode() === 'client' || invoice.receiverName || invoice.receiverAddress ? 'custom' : 'client';
 
     this.invoiceForm.patchValue(
       {
+        customerSource,
         clientId: invoice.clientId,
         amountPaid: invoice.amountPaid ?? 0,
         invoiceDate: isoDateFromValue(invoice.invoiceDate),
@@ -970,6 +1074,7 @@ export class InvoiceFormComponent {
       },
       { emitEvent: false }
     );
+    this.invoiceForm.controls.customerSource.setValue(customerSource);
 
     this.lineItemsArray.clear();
     (invoice.lineItems ?? []).forEach((item) =>
@@ -1020,6 +1125,10 @@ export class InvoiceFormComponent {
     }
 
     this.isSubmitting.set(true);
+    this.ensureClientBeforeSave(() => this.submitInvoice(action));
+  }
+
+  private submitInvoice(action: 'draft' | 'issue' | 'preview'): void {
     const dto = this.buildDto(action);
 
     if (this.isEditMode() && this.invoiceId()) {
@@ -1045,6 +1154,62 @@ export class InvoiceFormComponent {
       error: () => {
         this.isSubmitting.set(false);
         this.toast.error('Failed to save invoice');
+      },
+    });
+  }
+
+  private ensureClientBeforeSave(onReady: () => void): void {
+    const rawValue = this.invoiceForm.getRawValue();
+    const shouldCreateCustomClient =
+      this.viewMode() === 'firm' &&
+      rawValue.customerSource === 'custom' &&
+      !rawValue.clientId;
+
+    if (!shouldCreateCustomClient) {
+      onReady();
+      return;
+    }
+
+    this.clientService.getNextCode().subscribe({
+      next: (codeResponse) => {
+        const code = codeResponse?.data?.code ?? codeResponse?.code;
+        if (!code) {
+          this.isSubmitting.set(false);
+          this.toast.error('Could not prepare a client code for this custom customer');
+          return;
+        }
+
+        this.clientService.createClient({
+          name: rawValue.customerName.trim(),
+          mobile: rawValue.customerMobile.trim(),
+          code,
+          email: rawValue.customerEmail.trim() || undefined,
+          businessName: rawValue.customerName.trim(),
+          entityType: 'business',
+          gstin: rawValue.clientGstin.trim() || undefined,
+          address: rawValue.customerAddress.trim() || undefined,
+          termsAccepted: true,
+        }).subscribe({
+          next: (clientResponse) => {
+            const client = clientResponse?.data ?? clientResponse;
+            if (!client?.id) {
+              this.isSubmitting.set(false);
+              this.toast.error('Custom customer was created but the response was incomplete');
+              return;
+            }
+
+            this.invoiceForm.controls.clientId.setValue(client.id);
+            onReady();
+          },
+          error: () => {
+            this.isSubmitting.set(false);
+            this.toast.error('Could not create the custom customer');
+          },
+        });
+      },
+      error: () => {
+        this.isSubmitting.set(false);
+        this.toast.error('Could not prepare a client code for this custom customer');
       },
     });
   }
@@ -1152,6 +1317,7 @@ export class InvoiceFormComponent {
         : action === 'issue'
           ? 'issued'
           : 'draft';
+    const shouldSendReceiverDetails = this.viewMode() === 'client';
 
     return {
       clientId: rawValue.clientId,
@@ -1164,8 +1330,8 @@ export class InvoiceFormComponent {
       discountAmount: totals.discountAmount,
       notes: this.buildCustomerNotes(rawValue),
       internalNotes: this.buildInternalNotes(rawValue),
-      customerName: rawValue.customerName || undefined,
-      customerAddress: rawValue.customerAddress || undefined,
+      customerName: shouldSendReceiverDetails ? rawValue.customerName || undefined : undefined,
+      customerAddress: shouldSendReceiverDetails ? rawValue.customerAddress || undefined : undefined,
       clientGstin: rawValue.clientGstin || undefined,
       gstType: rawValue.gstType,
       lineItems: rawValue.lineItems.map((item) => ({

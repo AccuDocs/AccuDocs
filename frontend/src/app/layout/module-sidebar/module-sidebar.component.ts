@@ -10,17 +10,12 @@ import {
   ClientWorkspaceShortcutTab,
 } from '../../core/services/client-workspace-context.service';
 import {
+  AppModule,
   getHubModules,
   groupModulesByStatus,
 } from '../../core/module-registry';
 import { NavRowButtonComponent } from '@ui/molecules/nav-row-button.component';
 import { IconComponent } from '@ui/atoms/icon.component';
-
-interface BillingShortcutItem {
-  iconName: string;
-  label: string;
-  route: string;
-}
 
 @Component({
   selector: 'app-module-sidebar',
@@ -129,6 +124,29 @@ interface BillingShortcutItem {
                 [ariaLabel]="module.label"
                 (clicked)="nav.navigateTo(module.id)"
               />
+              @if (showModuleShortcuts(module)) {
+                <div
+                  style="
+                    padding: 6px 0 12px 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                  "
+                >
+                  @for (shortcut of getVisibleModuleShortcuts(module); track shortcut.route) {
+                    <app-nav-row-button
+                      [iconName]="shortcut.iconName || ''"
+                      [label]="shortcut.label"
+                      [active]="isModuleShortcutActive(module, shortcut.route)"
+                      [accentColor]="getHubColor()"
+                      [paddingLeft]="28"
+                      [muted]="true"
+                      [ariaLabel]="shortcut.label"
+                      (clicked)="openModuleShortcut(shortcut.route)"
+                    />
+                  }
+                </div>
+              }
               @if (showClientWorkspaceShortcuts(module.id)) {
                 <div
                   style="
@@ -138,18 +156,6 @@ interface BillingShortcutItem {
                     gap: 2px;
                   "
                 >
-                  <div
-                    style="
-                      font-size: 10px;
-                      font-weight: 700;
-                      letter-spacing: 0.08em;
-                      text-transform: uppercase;
-                      color: var(--color-text-dim);
-                      padding: 4px 16px 4px 44px;
-                    "
-                  >
-                    Workspace
-                  </div>
                   @for (shortcut of clientWorkspaceTabs; track shortcut.tab) {
                     <app-nav-row-button
                       [iconName]="shortcut.iconName"
@@ -160,41 +166,6 @@ interface BillingShortcutItem {
                       [muted]="true"
                       [ariaLabel]="shortcut.label"
                       (clicked)="openClientWorkspaceTab(shortcut.tab)"
-                    />
-                  }
-                </div>
-              }
-              @if (showBillingShortcuts(module.id)) {
-                <div
-                  style="
-                    padding: 6px 0 12px 0;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 2px;
-                  "
-                >
-                  <div
-                    style="
-                      font-size: 10px;
-                      font-weight: 700;
-                      letter-spacing: 0.08em;
-                      text-transform: uppercase;
-                      color: var(--color-text-dim);
-                      padding: 4px 16px 4px 44px;
-                    "
-                  >
-                    Quick Actions
-                  </div>
-                  @for (shortcut of billingShortcuts; track shortcut.route) {
-                    <app-nav-row-button
-                      [iconName]="shortcut.iconName"
-                      [label]="shortcut.label"
-                      [active]="isBillingShortcutActive(shortcut.route)"
-                      [accentColor]="getHubColor()"
-                      [paddingLeft]="28"
-                      [muted]="true"
-                      [ariaLabel]="shortcut.label"
-                      (clicked)="openBillingShortcut(shortcut.route)"
                     />
                   }
                 </div>
@@ -352,12 +323,6 @@ export class ModuleSidebarComponent {
     ),
     { initialValue: this.router.url }
   );
-  billingShortcuts: ReadonlyArray<BillingShortcutItem> = [
-    { iconName: 'heroDocumentTextSolid', label: 'Invoice register', route: '/billing/invoices' },
-    { iconName: 'heroArrowPathSolid', label: 'Recurring billing', route: '/billing/recurring' },
-    { iconName: 'heroBoltSolid', label: 'Bulk generate', route: '/billing/bulk-generate' },
-    { iconName: 'heroPlusSolid', label: 'New invoice', route: '/billing/invoices/new' },
-  ];
 
   grouped = computed(() => {
     const modules = getHubModules(this.nav.activeHub());
@@ -374,8 +339,8 @@ export class ModuleSidebarComponent {
       && this.hasActiveClientSelection();
   }
 
-  showBillingShortcuts(moduleId: string): boolean {
-    return this.nav.activeHub() === 'billing' && moduleId === 'billing_invoices';
+  showModuleShortcuts(module: AppModule): boolean {
+    return this.getVisibleModuleShortcuts(module).length > 0;
   }
 
   openClientWorkspaceTab(tab: ClientWorkspaceShortcutTab): void {
@@ -386,24 +351,41 @@ export class ModuleSidebarComponent {
     return this.selectedWorkspaceTab() === tab;
   }
 
-  openBillingShortcut(route: string): void {
+  openModuleShortcut(route: string): void {
     void this.router.navigateByUrl(route);
   }
 
-  isBillingShortcutActive(route: string): boolean {
-    const url = this.currentUrl();
+  isModuleShortcutActive(module: AppModule, route: string): boolean {
+    const activeRoute = this.getActiveModuleShortcutRoute(module);
+    return activeRoute === route;
+  }
 
-    switch (route) {
-      case '/billing/invoices/new':
-        return url.startsWith('/billing/invoices/new');
-      case '/billing/invoices':
-        return url.startsWith('/billing/invoices') && !url.startsWith('/billing/invoices/new');
-      case '/billing/recurring':
-        return url.startsWith('/billing/recurring');
-      case '/billing/bulk-generate':
-        return url.startsWith('/billing/bulk-generate');
-      default:
-        return url === route || url.startsWith(`${route}/`);
+  getVisibleModuleShortcuts(module: AppModule) {
+    return (module.shortcuts ?? []).filter((shortcut) => shortcut.route !== module.route);
+  }
+
+  private getActiveModuleShortcutRoute(module: AppModule): string | null {
+    const url = this.currentUrl();
+    const shortcuts = this.getVisibleModuleShortcuts(module);
+
+    let activeRoute: string | null = null;
+    let longestMatch = -1;
+
+    for (const shortcut of shortcuts) {
+      if (url === shortcut.route || url.startsWith(`${shortcut.route}/`)) {
+        if (shortcut.route.length > longestMatch) {
+          activeRoute = shortcut.route;
+          longestMatch = shortcut.route.length;
+        }
+        continue;
+      }
+
+      if (url.startsWith(`${shortcut.route}?`) && shortcut.route.length > longestMatch) {
+        activeRoute = shortcut.route;
+        longestMatch = shortcut.route.length;
+      }
     }
+
+    return activeRoute;
   }
 }

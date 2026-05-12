@@ -52,35 +52,81 @@
               </div>
             </div>
 
+            @if (viewMode() === 'firm') {
+              <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label class="radio-tile" [class.active]="selectedCustomerSource() === 'client'">
+                  <input type="radio" formControlName="customerSource" value="client" class="hidden" />
+                  <p class="font-black text-sm">Select our client</p>
+                  <p class="mt-1 text-[10px] font-semibold text-slate-500">Use saved client profile, GSTIN, mobile, and address.</p>
+                </label>
+                <label class="radio-tile" [class.active]="selectedCustomerSource() === 'custom'">
+                  <input type="radio" formControlName="customerSource" value="custom" class="hidden" />
+                  <p class="font-black text-sm">Custom</p>
+                  <p class="mt-1 text-[10px] font-semibold text-slate-500">Create a one-off customer from the details entered here.</p>
+                </label>
+              </div>
+            }
+
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              @if (isExistingClientCustomer()) {
+                <div class="md:col-span-2">
+                  <label class="studio-label">Select Client</label>
+                  <input [formControl]="clientSearchControl" class="studio-input mb-3 h-12" placeholder="Search client by name, code, GSTIN, or mobile" />
+                  <select formControlName="clientId" class="studio-select h-12" (change)="onSelectClient($any($event.target).value)">
+                    <option value="">Choose from saved clients</option>
+                    @for (client of filteredClients(); track client.id) {
+                      <option [value]="client.id">
+                        {{ displayClientName(client) }}{{ client.code ? ' - ' + client.code : '' }}{{ client.gstin ? ' - ' + client.gstin : '' }}
+                      </option>
+                    }
+                  </select>
+                  @if (clientsResource.isLoading()) {
+                    <p class="mt-2 text-[11px] font-bold text-slate-400">Loading clients...</p>
+                  }
+                </div>
+              }
+
               <div class="md:col-span-2">
-                <label class="studio-label">Customer Name</label>
-                <input formControlName="customerName" class="studio-input h-12" placeholder="Search or enter customer name" />
+                <label class="studio-label">{{ isExistingClientCustomer() ? 'Client Name' : 'Customer Name' }}</label>
+                <input
+                  formControlName="customerName"
+                  class="studio-input h-12"
+                  [readOnly]="isExistingClientCustomer()"
+                  [placeholder]="isExistingClientCustomer() ? 'Select a saved client' : 'Enter customer name'"
+                />
               </div>
               <div>
                 <label class="studio-label">Mobile Number</label>
-                <input formControlName="customerMobile" class="studio-input h-12" placeholder="9876543210" />
+                <input formControlName="customerMobile" class="studio-input h-12" [readOnly]="isExistingClientCustomer()" placeholder="9876543210" />
               </div>
               <div>
                 <label class="studio-label">Email</label>
-                <input formControlName="customerEmail" class="studio-input h-12" placeholder="customer@example.com" />
+                <input formControlName="customerEmail" class="studio-input h-12" [readOnly]="isExistingClientCustomer()" placeholder="customer@example.com" />
               </div>
               <div>
                 <label class="studio-label">GST Number</label>
-                <input formControlName="clientGstin" class="studio-input h-12 uppercase" placeholder="24ABCDE1234F1Z5" />
+                <input formControlName="clientGstin" class="studio-input h-12 uppercase" [readOnly]="isExistingClientCustomer()" placeholder="24ABCDE1234F1Z5" />
               </div>
               <div>
                 <label class="studio-label">Client Workspace</label>
-                <input class="studio-input h-12" [value]="organization().name" disabled />
+                <input class="studio-input h-12" [value]="selectedClientWorkspaceLabel()" disabled />
               </div>
               <div class="md:col-span-2">
                 <label class="studio-label">Billing Address</label>
-                <textarea formControlName="customerAddress" rows="3" class="studio-input py-3" placeholder="Enter complete billing address"></textarea>
+                <textarea
+                  formControlName="customerAddress"
+                  rows="3"
+                  class="studio-input py-3"
+                  [readOnly]="isExistingClientCustomer()"
+                  placeholder="Enter complete billing address"
+                ></textarea>
               </div>
-              <div class="md:col-span-2">
-                <label class="studio-label">Shipping Address</label>
-                <textarea formControlName="shippingAddress" rows="3" class="studio-input py-3" placeholder="Enter shipping address if different"></textarea>
-              </div>
+              @if (!isExistingClientCustomer()) {
+                <div class="md:col-span-2">
+                  <label class="studio-label">Shipping Address</label>
+                  <textarea formControlName="shippingAddress" rows="3" class="studio-input py-3" placeholder="Enter shipping address if different"></textarea>
+                </div>
+              }
             </div>
           </div>
 

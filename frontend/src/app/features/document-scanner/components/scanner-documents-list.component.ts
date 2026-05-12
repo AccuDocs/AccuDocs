@@ -4,6 +4,13 @@ import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } fr
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { merge } from 'rxjs';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import {
+  heroEyeSolid,
+  heroFolderOpenSolid,
+  heroPencilSquareSolid,
+  heroTrashSolid,
+} from '@ng-icons/heroicons/solid';
 import { ToastService } from '@core/services/toast.service';
 import { ScannerEditorComponent } from './scanner-editor.component';
 import { DocumentScannerService } from '../services/document-scanner.service';
@@ -12,15 +19,29 @@ import { DocumentType, ScannerDocumentData, ScannerLineItem } from '../models/do
 @Component({
   selector: 'app-scanner-documents-list',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, ScannerEditorComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, NgIconComponent, ScannerEditorComponent],
+  providers: [
+    provideIcons({
+      heroEyeSolid,
+      heroFolderOpenSolid,
+      heroPencilSquareSolid,
+      heroTrashSolid,
+    }),
+  ],
   template: `
     <div class="list-page">
       <header class="list-hero">
-        <div>
-          <p class="eyebrow">Scanned Documents</p>
+        <div class="hero-copy-wrap">
+          <p class="eyebrow hero-eyebrow">
+            <ng-icon name="heroFolderOpenSolid" size="14"></ng-icon>
+            Scanned Documents
+          </p>
           <h1>Browse, export, edit, and soft-delete saved OCR records.</h1>
         </div>
-        <a routerLink="/documents" class="primary-link">Back to Documents</a>
+        <a routerLink="/documents" class="primary-link">
+          <ng-icon name="heroFolderOpenSolid" size="16"></ng-icon>
+          Back to Documents
+        </a>
       </header>
 
       <section class="filter-card" [formGroup]="filterForm">
@@ -52,10 +73,14 @@ import { DocumentType, ScannerDocumentData, ScannerLineItem } from '../models/do
         </div>
 
         <div class="filter-actions">
-          <button type="button" class="secondary-btn" (click)="applyFilters()">Apply Filters</button>
-          <button type="button" class="ghost-btn" (click)="resetFilters()">Reset</button>
-          <button type="button" class="ghost-btn" (click)="downloadExcel()">Export Excel</button>
-          <button type="button" class="ghost-btn" (click)="downloadCsv()">Export CSV</button>
+          <div class="filter-action-group">
+            <button type="button" class="primary-btn" (click)="applyFilters()">Apply Filters</button>
+            <button type="button" class="ghost-btn" (click)="resetFilters()">Reset</button>
+          </div>
+          <div class="filter-action-group export-actions">
+            <button type="button" class="export-btn excel-btn" (click)="downloadExcel()">Export Excel</button>
+            <button type="button" class="export-btn csv-btn" (click)="downloadCsv()">Export CSV</button>
+          </div>
         </div>
       </section>
 
@@ -96,9 +121,20 @@ import { DocumentType, ScannerDocumentData, ScannerLineItem } from '../models/do
                 <td>{{ formatCurrency(document.total_amount) }}</td>
                 <td>{{ document.ocr_confidence ?? 0 }}%</td>
                 <td class="actions">
-                  <button type="button" class="link-btn" (click)="openView(document.id!)">View</button>
-                  <button type="button" class="link-btn" (click)="openEdit(document.id!)">Edit</button>
-                  <button type="button" class="danger-btn" (click)="deleteDocument(document.id!)">Delete</button>
+                  <div class="action-group">
+                    <button type="button" class="action-btn view-btn" title="View document" (click)="openView(document.id!)">
+                      <ng-icon name="heroEyeSolid" size="16"></ng-icon>
+                      <span>View</span>
+                    </button>
+                    <button type="button" class="action-btn edit-btn" title="Edit document" (click)="openEdit(document.id!)">
+                      <ng-icon name="heroPencilSquareSolid" size="16"></ng-icon>
+                      <span>Edit</span>
+                    </button>
+                    <button type="button" class="action-btn delete-btn" title="Delete document" (click)="deleteDocument(document.id!)">
+                      <ng-icon name="heroTrashSolid" size="16"></ng-icon>
+                      <span>Delete</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -162,7 +198,7 @@ import { DocumentType, ScannerDocumentData, ScannerLineItem } from '../models/do
           (removeRowRequested)="removeEditLineItem($event)"
         />
 
-        <div class="filter-actions">
+        <div class="form-actions">
           <button type="button" class="secondary-btn" (click)="closeModals()">Cancel</button>
           <button type="button" class="primary-btn" [disabled]="isUpdating()" (click)="saveEdit()">
             {{ isUpdating() ? 'Saving changes...' : 'Save Changes' }}
@@ -175,105 +211,242 @@ import { DocumentType, ScannerDocumentData, ScannerLineItem } from '../models/do
     `
       :host {
         display: block;
+        min-width: 0;
       }
 
       .list-page {
         display: grid;
-        gap: 1.25rem;
-        padding: 1.5rem;
+        gap: 1.5rem;
+        width: 100%;
+        min-height: 100%;
+        min-width: 0;
+        padding: 1rem 1.5rem 2rem;
+        animation: pageIn 420ms cubic-bezier(0, 0, 0.2, 1);
       }
 
-      .list-hero,
       .filter-card,
       .table-card,
       .modal-panel {
-        border: 1px solid #dbeafe;
-        border-radius: 1.5rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 24px;
         background: #ffffff;
-        box-shadow: 0 18px 45px -32px rgba(15, 23, 42, 0.28);
+        box-shadow: 0 4px 24px -4px rgba(15, 23, 42, 0.05);
       }
 
       .list-hero,
       .filter-card,
-      .table-card,
       .modal-panel {
         padding: 1.5rem;
       }
 
       .list-hero,
       .table-head,
-      .filter-actions,
       .modal-head {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        gap: 1rem;
+        gap: 1.5rem;
+      }
+
+      .list-hero {
+        position: relative;
+        min-height: 8.5rem;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        border-radius: 28px;
+        background: #ffffff;
+        box-shadow: 0 4px 24px -4px rgba(15, 23, 42, 0.05);
+      }
+
+      .list-hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at top left, rgba(37, 99, 235, 0.14), transparent 34%),
+          linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98), rgba(239, 246, 255, 0.72));
+        pointer-events: none;
+      }
+
+      .list-hero > * {
+        position: relative;
+      }
+
+      .hero-copy-wrap {
+        max-width: 56rem;
       }
 
       .eyebrow {
         margin: 0 0 0.35rem;
         font-size: 0.72rem;
         font-weight: 800;
-        letter-spacing: 0.16em;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: #64748b;
+        color: var(--text-secondary, #64748b);
+      }
+
+      .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-bottom: 0.75rem;
+        border-radius: 999px;
+        background: #eff6ff;
+        padding: 0.35rem 0.75rem;
+        color: #1d4ed8;
+        letter-spacing: 0.2em;
       }
 
       h1,
       h2 {
         margin: 0;
-        color: #0f172a;
+        color: var(--text-primary, #0f172a);
+      }
+
+      h1 {
+        font-size: clamp(2rem, 3vw, 2.7rem);
+        font-weight: 900;
+        letter-spacing: 0;
+        line-height: 1.05;
+      }
+
+      h2 {
+        font-size: 1.125rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        line-height: 1.2;
       }
 
       .primary-link,
       .primary-btn,
       .secondary-btn,
       .ghost-btn,
-      .link-btn,
-      .danger-btn {
+      .export-btn,
+      .action-btn {
         border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
         font: inherit;
-        border-radius: 999px;
+        line-height: 1;
+        white-space: nowrap;
+        border-radius: 16px;
         cursor: pointer;
+        transition:
+          background-color 160ms ease,
+          border-color 160ms ease,
+          box-shadow 160ms ease,
+          color 160ms ease,
+          transform 160ms ease;
+      }
+
+      .primary-link:focus-visible,
+      .primary-btn:focus-visible,
+      .secondary-btn:focus-visible,
+      .ghost-btn:focus-visible,
+      .export-btn:focus-visible,
+      .action-btn:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px var(--ring-color, rgba(79, 70, 229, 0.18));
+      }
+
+      .primary-link:hover,
+      .primary-btn:hover,
+      .secondary-btn:hover,
+      .ghost-btn:hover,
+      .export-btn:hover,
+      .action-btn:hover {
+        transform: translateY(-1px);
+      }
+
+      button:disabled,
+      button:disabled:hover {
+        cursor: not-allowed;
+        opacity: 0.55;
+        transform: none;
       }
 
       .primary-link,
       .primary-btn {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        min-height: 2.75rem;
+        background: #0074c9;
         color: white;
-        padding: 0.85rem 1.2rem;
+        padding: 0.8rem 1.25rem;
         text-decoration: none;
-        font-weight: 700;
+        font-size: 0.875rem;
+        font-weight: 900;
+        box-shadow: 0 4px 16px -4px rgba(0, 116, 201, 0.3);
+      }
+
+      .primary-link:hover,
+      .primary-btn:hover {
+        background: #005fa3;
+        color: white;
       }
 
       .secondary-btn,
       .ghost-btn {
-        background: #e2e8f0;
-        color: #334155;
-        padding: 0.8rem 1.1rem;
-        font-weight: 700;
+        min-height: 2.5rem;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        color: #475569;
+        padding: 0.7rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 800;
       }
 
       .ghost-btn {
+        background: #f8fafc;
+        color: #475569;
+      }
+
+      .secondary-btn:hover,
+      .ghost-btn:hover {
+        border-color: #cbd5e1;
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+
+      .export-btn {
+        min-height: 2.5rem;
+        border: 1px solid transparent;
+        padding: 0.7rem 1rem;
+        font-size: 0.78rem;
+        font-weight: 900;
+      }
+
+      .excel-btn {
+        border-color: #bbf7d0;
+        background: #f0fdf4;
+        color: #15803d;
+      }
+
+      .excel-btn:hover {
+        background: #dcfce7;
+      }
+
+      .csv-btn {
+        border-color: #bfdbfe;
         background: #eff6ff;
         color: #1d4ed8;
       }
 
-      .link-btn {
+      .csv-btn:hover {
         background: #dbeafe;
-        color: #1d4ed8;
-        padding: 0.55rem 0.9rem;
       }
 
-      .danger-btn {
-        background: #fee2e2;
-        color: #b91c1c;
-        padding: 0.55rem 0.9rem;
+      .filter-card {
+        display: grid;
+        gap: 1.25rem;
+        padding: 1.5rem;
       }
 
       .filter-grid {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: minmax(10rem, 1fr) minmax(11rem, 1fr) minmax(11rem, 1fr) minmax(16rem, 1.25fr);
         gap: 1rem;
       }
 
@@ -287,51 +460,220 @@ import { DocumentType, ScannerDocumentData, ScannerLineItem } from '../models/do
       }
 
       label span {
-        font-size: 0.82rem;
-        font-weight: 700;
+        font-size: 0.78rem;
+        font-weight: 900;
         color: #334155;
       }
 
       input,
       select {
-        border: 1px solid #cbd5e1;
-        border-radius: 0.95rem;
-        padding: 0.85rem 0.95rem;
+        width: 100%;
+        min-width: 0;
+        height: 3rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        background: #f8fafc;
+        color: #0f172a;
+        padding: 0.75rem 0.95rem;
         font: inherit;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition:
+          border-color 160ms ease,
+          box-shadow 160ms ease,
+          background-color 160ms ease;
+      }
+
+      input::placeholder {
+        color: #94a3b8;
+      }
+
+      input:focus,
+      select:focus {
+        border-color: #0074c9;
+        background: #ffffff;
+        outline: none;
+      }
+
+      .filter-actions,
+      .form-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .filter-actions {
+        justify-content: space-between;
+      }
+
+      .filter-action-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .export-actions {
+        margin-left: auto;
+      }
+
+      .form-actions {
+        justify-content: flex-end;
+        margin-top: 1rem;
+      }
+
+      .table-card {
+        overflow: hidden;
+        border-radius: 24px;
+      }
+
+      .table-head {
+        align-items: center;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 1.25rem 2rem;
       }
 
       .table-wrap {
-        overflow: auto;
+        overflow-x: auto;
+        overflow-y: hidden;
       }
 
       table {
         width: 100%;
-        border-collapse: collapse;
+        min-width: 74rem;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0;
       }
 
       th,
       td {
-        padding: 0.95rem 0.75rem;
-        border-bottom: 1px solid #e2e8f0;
+        padding: 0.9rem 1.25rem;
+        border-bottom: 1px solid #f1f5f9;
+        color: #0f172a;
         text-align: left;
+        vertical-align: middle;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       th {
-        color: #475569;
-        font-size: 0.78rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
+        color: #64748b;
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0;
+        background: #f8fafc;
+      }
+
+      td {
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+
+      tbody tr {
+        transition: background-color 160ms ease;
+      }
+
+      tbody tr:hover {
+        background: #f8fafc;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+
+      th:nth-child(1),
+      td:nth-child(1) {
+        width: 4rem;
+      }
+
+      th:nth-child(2),
+      td:nth-child(2) {
+        width: 10.5rem;
+      }
+
+      th:nth-child(3),
+      td:nth-child(3) {
+        width: 16rem;
+      }
+
+      th:nth-child(5),
+      td:nth-child(5) {
+        width: 10rem;
+      }
+
+      th:nth-child(6),
+      td:nth-child(6) {
+        width: 8rem;
+      }
+
+      th:nth-child(7),
+      td:nth-child(7) {
+        width: 6rem;
+      }
+
+      th:nth-child(8),
+      td:nth-child(8) {
+        width: 18rem;
+        text-align: right;
       }
 
       .actions {
-        display: flex;
+        overflow: visible;
+      }
+
+      .action-group {
+        display: inline-flex;
         justify-content: flex-end;
         gap: 0.5rem;
       }
 
+      .action-btn {
+        min-height: 2.5rem;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        padding: 0.6rem 0.85rem;
+        font-size: 0.82rem;
+        font-weight: 800;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      }
+
+      .view-btn {
+        border-color: #bfdbfe;
+        background: #eff6ff;
+        color: #1d4ed8;
+      }
+
+      .view-btn:hover {
+        background: #dbeafe;
+      }
+
+      .edit-btn {
+        border-color: #fde68a;
+        background: #fffbeb;
+        color: #b45309;
+      }
+
+      .edit-btn:hover {
+        background: #fef3c7;
+      }
+
+      .delete-btn {
+        border-color: #fecdd3;
+        background: #fff1f2;
+        color: #be123c;
+      }
+
+      .delete-btn:hover {
+        background: #ffe4e6;
+      }
+
       .empty-state {
+        margin: 0 1.5rem 1.5rem;
         border: 1px dashed #bfdbfe;
-        border-radius: 1rem;
+        border-radius: 22px;
         padding: 2rem;
         text-align: center;
         color: #64748b;
@@ -341,6 +683,14 @@ import { DocumentType, ScannerDocumentData, ScannerLineItem } from '../models/do
         display: flex;
         align-items: center;
         gap: 0.75rem;
+        color: #0f172a;
+        white-space: nowrap;
+      }
+
+      .pager span {
+        color: #334155;
+        font-size: 0.875rem;
+        font-weight: 700;
       }
 
       .modal-shell {
@@ -357,6 +707,7 @@ import { DocumentType, ScannerDocumentData, ScannerLineItem } from '../models/do
         width: min(100%, 72rem);
         max-height: 90vh;
         overflow: auto;
+        border-radius: 24px;
       }
 
       .details-grid {
@@ -368,7 +719,7 @@ import { DocumentType, ScannerDocumentData, ScannerLineItem } from '../models/do
       .details-grid div,
       .line-view-row {
         border: 1px solid #e2e8f0;
-        border-radius: 1rem;
+        border-radius: 18px;
         padding: 1rem;
       }
 
@@ -396,9 +747,51 @@ import { DocumentType, ScannerDocumentData, ScannerLineItem } from '../models/do
         gap: 1rem;
       }
 
+      :host-context(.dark) .secondary-btn {
+        background: #334155;
+        color: #e2e8f0;
+      }
+
+      :host-context(.dark) .secondary-btn:hover {
+        background: #475569;
+      }
+
+      :host-context(.dark) .ghost-btn,
+      :host-context(.dark) .view-btn {
+        border-color: rgba(99, 102, 241, 0.35);
+        background: rgba(99, 102, 241, 0.16);
+        color: #c7d2fe;
+      }
+
+      :host-context(.dark) tbody tr:hover {
+        background: rgba(148, 163, 184, 0.06);
+      }
+
+      @keyframes pageIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
       @media (max-width: 1024px) {
+        .filter-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 768px) {
+        .list-page {
+          gap: 1rem;
+          padding: 1rem;
+        }
+
         .list-hero,
-        .filter-actions,
         .table-head,
         .modal-head,
         .details-grid,
@@ -407,9 +800,36 @@ import { DocumentType, ScannerDocumentData, ScannerLineItem } from '../models/do
           grid-template-columns: 1fr;
         }
 
-        .actions {
-          justify-content: flex-start;
+        .list-hero {
+          min-height: 0;
+        }
+
+        h1 {
+          font-size: 1.5rem;
+        }
+
+        .primary-link,
+        .filter-action-group,
+        .filter-action-group button {
+          width: 100%;
+        }
+
+        .export-actions {
+          margin-left: 0;
+        }
+
+        .table-head {
+          align-items: start;
+          padding: 1.25rem;
+        }
+
+        .pager {
           flex-wrap: wrap;
+        }
+
+        .line-view-row {
+          display: grid;
+          grid-template-columns: 1fr;
         }
       }
     `,
