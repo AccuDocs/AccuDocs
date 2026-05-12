@@ -1,1 +1,0 @@
-import"./chunk-PHUH23IY.js";var t=[{path:"",redirectTo:"login",pathMatch:"full"},{path:"login",loadComponent:()=>import("./chunk-BTDKKWLP.js").then(o=>o.LoginComponent)},{path:"otp",loadComponent:()=>import("./chunk-7FVKBCGW.js").then(o=>o.OtpComponent)}];export{t as AUTH_ROUTES};
