@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { Chart, registerables } from 'chart.js';
 import { Client, ClientService } from '@core/services/client.service';
 import { BillingMetrics } from '../../models/billing-metrics.model';
-import { Invoice, InvoiceStatus } from '../../models/invoice.model';
+import { Invoice, InvoicePartyRole, InvoiceStatus, InvoiceType } from '../../models/invoice.model';
 import { InvoiceService } from '../../services/invoice.service';
 import { InrCurrencyPipe } from '../../pipes/inr-currency.pipe';
 
@@ -679,8 +679,18 @@ export class BillingDashboardComponent implements OnDestroy {
     void this.router.navigate(['/billing/invoices', id]);
   }
 
-  newInvoice(): void {
-    void this.router.navigate(['/billing/invoices/new']);
+  newInvoice(invoiceType: InvoiceType = 'tax_invoice', partyRole: InvoicePartyRole = 'customer'): void {
+    const queryParams: Record<string, string> = {};
+    if (invoiceType !== 'tax_invoice') {
+      queryParams['invoiceType'] = invoiceType;
+    }
+    if (partyRole === 'vendor') {
+      queryParams['partyRole'] = partyRole;
+    }
+
+    void this.router.navigate(['/billing/invoices/new'], {
+      queryParams,
+    });
   }
 
   openRecurring(): void {

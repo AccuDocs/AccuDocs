@@ -53,6 +53,7 @@ export class BillingController {
     const responseData = {
       id: invoice.id,
       invoiceNumber: invoice.invoiceNumber,
+      partyRole: invoice.partyRole,
       totalAmount: invoice.totalAmount,
       status: invoice.status,
     };
@@ -61,7 +62,7 @@ export class BillingController {
   });
 
   static getInvoices = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { status, clientId, search, page = 1, limit = 10, sortBy, sortOrder = 'desc' } = req.query;
+    const { status, clientId, invoiceType, partyRole, search, page = 1, limit = 10, sortBy, sortOrder = 'desc' } = req.query;
 
     const sortColumnMap: Record<string, string> = {
       invoiceNumber: 'invoiceNumber',
@@ -82,6 +83,14 @@ export class BillingController {
 
     if (clientId) {
       where.clientId = clientId;
+    }
+
+    if (invoiceType) {
+      where.invoiceType = invoiceType;
+    }
+
+    if (partyRole) {
+      where.partyRole = partyRole;
     }
 
     if (search) {
@@ -129,6 +138,7 @@ export class BillingController {
         clientId: rawInvoice.clientId,
         recurringTemplateId: rawInvoice.recurringTemplateId,
         invoiceType: rawInvoice.invoiceType,
+        partyRole: rawInvoice.partyRole || 'customer',
         invoiceNumber: rawInvoice.invoiceNumber,
         status: rawInvoice.status,
         invoiceDate: rawInvoice.invoiceDate,
@@ -245,6 +255,7 @@ export class BillingController {
       clientId: rawInvoice.clientId,
       recurringTemplateId: rawInvoice.recurringTemplateId,
       invoiceType: rawInvoice.invoiceType,
+      partyRole: rawInvoice.partyRole || 'customer',
       invoiceNumber: rawInvoice.invoiceNumber,
       status: rawInvoice.status,
       invoiceDate: rawInvoice.invoiceDate,
@@ -324,6 +335,7 @@ export class BillingController {
       {
         id: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
+        partyRole: invoice.partyRole,
         totalAmount: invoice.totalAmount,
         status: invoice.status,
       },
@@ -347,6 +359,7 @@ export class BillingController {
     const invoices = await InvoiceModel.findAll({
       where: {
         organizationId: req.user!.organizationId,
+        partyRole: 'customer',
       },
     });
 

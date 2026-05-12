@@ -83,6 +83,8 @@ export class SequelizeInvoiceRepository implements IInvoiceRepository {
 
     if (filters.status) where.status = filters.status;
     if (filters.clientId) where.clientId = filters.clientId;
+    if (filters.invoiceType) where.invoiceType = filters.invoiceType;
+    if (filters.partyRole) where.partyRole = filters.partyRole;
 
     if (filters.search) {
       where[Op.or] = [

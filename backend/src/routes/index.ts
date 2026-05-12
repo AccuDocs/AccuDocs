@@ -17,6 +17,7 @@ import whatsappRoutes from '../modules/notifications/presentation/routes/whatsap
 import dataRoutes from '../modules/data/data.routes';
 import gstRoutes from '../modules/gst/presentation/routes/gst.routes';
 import inventoryRoutes from '../modules/inventory/presentation/routes/inventory.routes';
+import vendorRoutes from '../modules/vendors/presentation/routes/vendor.routes';
 import publicRoutes from './public.routes';
 
 const router = Router();
@@ -52,6 +53,7 @@ router.use('/whatsapp', whatsappRoutes);
 router.use('/clients', dataRoutes); // Data module: /:clientId/sales, /purchases, /expenses, /gst-summary
 router.use('/gst', gstRoutes);
 router.use('/inventory', inventoryRoutes);
+router.use('/vendors', vendorRoutes);
 
 // Public endpoints (no authentication required)
 router.use('/public', publicRoutes);

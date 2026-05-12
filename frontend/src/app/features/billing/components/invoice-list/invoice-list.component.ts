@@ -7,7 +7,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { HotToastService } from '@ngneat/hot-toast';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { ConfirmDialogComponent } from '@shared/components/confirm-dialog/confirm-dialog.component';
-import { Invoice, InvoiceStatus } from '../../models/invoice.model';
+import { Invoice, InvoicePartyRole, InvoiceStatus, InvoiceType } from '../../models/invoice.model';
 import { InrCurrencyPipe } from '../../pipes/inr-currency.pipe';
 import { InvoiceService } from '../../services/invoice.service';
 import { InvoiceListFacade } from './invoice-list.facade';
@@ -48,9 +48,26 @@ export class InvoiceListComponent implements OnInit {
     { label: 'Cancelled', value: 'cancelled' },
   ];
 
+  readonly invoiceTypeOptions: Array<{ label: string; value: InvoiceType | '' }> = [
+    { label: 'All document types', value: '' },
+    { label: 'Tax Invoice', value: 'tax_invoice' },
+    { label: 'Proforma Invoice', value: 'proforma' },
+    { label: 'Quotation', value: 'quotation' },
+    { label: 'Credit Note', value: 'credit_note' },
+    { label: 'Debit Note', value: 'debit_note' },
+  ];
+
+  readonly partyRoleOptions: Array<{ label: string; value: InvoicePartyRole | '' }> = [
+    { label: 'All parties', value: '' },
+    { label: 'Customers', value: 'customer' },
+    { label: 'Vendors', value: 'vendor' },
+  ];
+
   readonly filterForm = this.fb.group({
     search: this.fb.nonNullable.control(''),
     status: this.fb.nonNullable.control<InvoiceStatus | ''>(''),
+    invoiceType: this.fb.nonNullable.control<InvoiceType | ''>(''),
+    partyRole: this.fb.nonNullable.control<InvoicePartyRole | ''>(''),
     dateFrom: this.fb.nonNullable.control(''),
     dateTo: this.fb.nonNullable.control(''),
   });
@@ -61,6 +78,8 @@ export class InvoiceListComponent implements OnInit {
     let count = 0;
     if (this.filterForm.controls.search.value.trim()) count += 1;
     if (this.filterForm.controls.status.value) count += 1;
+    if (this.filterForm.controls.invoiceType.value) count += 1;
+    if (this.filterForm.controls.partyRole.value) count += 1;
     if (this.filterForm.controls.dateFrom.value) count += 1;
     if (this.filterForm.controls.dateTo.value) count += 1;
     return count;
@@ -133,6 +152,18 @@ export class InvoiceListComponent implements OnInit {
       this.facade.setStatus(status);
     }
 
+    const invoiceType = this.route.snapshot.queryParamMap.get('invoiceType');
+    if (this.isInvoiceType(invoiceType)) {
+      this.filterForm.controls.invoiceType.setValue(invoiceType, { emitEvent: false });
+      this.facade.setInvoiceType(invoiceType);
+    }
+
+    const partyRole = this.route.snapshot.queryParamMap.get('partyRole');
+    if (this.isInvoicePartyRole(partyRole)) {
+      this.filterForm.controls.partyRole.setValue(partyRole, { emitEvent: false });
+      this.facade.setPartyRole(partyRole);
+    }
+
     this.filterForm.controls.search.valueChanges
       .pipe(debounceTime(250), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => this.facade.setSearch(value.trim()));
@@ -140,6 +171,14 @@ export class InvoiceListComponent implements OnInit {
     this.filterForm.controls.status.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => this.facade.setStatus(value));
+
+    this.filterForm.controls.invoiceType.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => this.facade.setInvoiceType(value));
+
+    this.filterForm.controls.partyRole.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => this.facade.setPartyRole(value));
 
     this.filterForm.controls.dateFrom.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -154,8 +193,18 @@ export class InvoiceListComponent implements OnInit {
     void this.router.navigate(['/billing/invoices', id]);
   }
 
-  newInvoice(): void {
-    void this.router.navigate(['/billing/invoices/new']);
+  newInvoice(invoiceType: InvoiceType = 'tax_invoice', partyRole: InvoicePartyRole = 'customer'): void {
+    const queryParams: Record<string, string> = {};
+    if (invoiceType !== 'tax_invoice') {
+      queryParams['invoiceType'] = invoiceType;
+    }
+    if (partyRole === 'vendor') {
+      queryParams['partyRole'] = partyRole;
+    }
+
+    void this.router.navigate(['/billing/invoices/new'], {
+      queryParams,
+    });
   }
 
   editInvoice(id: string, event?: Event): void {
@@ -296,9 +345,39 @@ export class InvoiceListComponent implements OnInit {
     this.filterForm.reset({
       search: '',
       status: '',
+      invoiceType: '',
+      partyRole: '',
       dateFrom: '',
       dateTo: '',
     });
+  }
+
+  invoiceTypeLabel(type?: InvoiceType): string {
+    const option = this.invoiceTypeOptions.find((item) => item.value === type);
+    return option?.label ?? 'Invoice';
+  }
+
+  invoiceTypeClasses(type?: InvoiceType): string {
+    const classes: Record<InvoiceType, string> = {
+      tax_invoice: 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800/60',
+      proforma: 'bg-cyan-50 text-cyan-700 border border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-800/60',
+      quotation: 'bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-800/60',
+      credit_note: 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800/60',
+      debit_note: 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800/60',
+    };
+
+    return classes[type ?? 'tax_invoice'];
+  }
+
+  partyRoleLabel(role?: InvoicePartyRole): string {
+    const option = this.partyRoleOptions.find((item) => item.value === role);
+    return option?.label.replace(/s$/, '') ?? 'Customer';
+  }
+
+  partyRoleClasses(role?: InvoicePartyRole): string {
+    return role === 'vendor'
+      ? 'bg-orange-50 text-orange-700 border border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800/60'
+      : 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800/60';
   }
 
   statusLabel(status: InvoiceStatus): string {
@@ -444,5 +523,19 @@ export class InvoiceListComponent implements OnInit {
       status === 'overdue' ||
       status === 'cancelled'
     );
+  }
+
+  private isInvoiceType(value: string | null): value is InvoiceType {
+    return (
+      value === 'tax_invoice' ||
+      value === 'proforma' ||
+      value === 'quotation' ||
+      value === 'credit_note' ||
+      value === 'debit_note'
+    );
+  }
+
+  private isInvoicePartyRole(value: string | null): value is InvoicePartyRole {
+    return value === 'customer' || value === 'vendor';
   }
 }

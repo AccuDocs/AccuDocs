@@ -8,6 +8,7 @@ export class Invoice extends Model {
   declare public recurringTemplateId: string | null;
   
   declare public invoiceType: 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
+  declare public partyRole: 'customer' | 'vendor';
   declare public invoiceNumber: string;
   declare public status: 'draft' | 'issued' | 'partially_paid' | 'paid' | 'overdue' | 'cancelled';
   
@@ -72,6 +73,7 @@ Invoice.init({
   recurringTemplateId: { type: DataTypes.UUID, allowNull: true, field: 'recurring_template_id' },
   
   invoiceType: { type: DataTypes.STRING(15), allowNull: false, defaultValue: 'tax_invoice', field: 'invoice_type' },
+  partyRole: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'customer', field: 'party_role' },
   invoiceNumber: { type: DataTypes.STRING(30), allowNull: false, field: 'invoice_number' },
   status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'draft' },
   

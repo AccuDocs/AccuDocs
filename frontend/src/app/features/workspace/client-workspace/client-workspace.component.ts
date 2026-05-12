@@ -32,7 +32,8 @@ import {
   heroPlusSolid,
   heroArrowPathSolid,
   heroFolderPlusSolid,
-  heroEllipsisVerticalSolid
+  heroEllipsisVerticalSolid,
+  heroTruckSolid
 } from '@ng-icons/heroicons/solid';
 
 // File Explorer specific imports
@@ -55,8 +56,9 @@ import { heroClipboardDocumentCheckSolid, heroCalendarSolid, heroChartBarSolid, 
 
 import { ClientBillingComponent } from '../components/client-billing/client-billing.component';
 import { ClientInventoryComponent } from '../components/client-inventory/client-inventory.component';
+import { VendorManagementComponent } from '../../vendors/vendor-management/vendor-management.component';
 
-export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst' | 'billing' | 'dashboard' | 'inventory';
+export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst' | 'billing' | 'vendors' | 'dashboard' | 'inventory';
 
 @Component({
   selector: 'app-client-workspace',
@@ -82,7 +84,8 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
     GstSummaryComponent,
     ClientDashboardComponent,
     ClientBillingComponent,
-    ClientInventoryComponent
+    ClientInventoryComponent,
+    VendorManagementComponent
   ],
   providers: [
     provideIcons({
@@ -106,6 +109,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
       heroArrowPathSolid,
       heroFolderPlusSolid,
       heroEllipsisVerticalSolid,
+      heroTruckSolid,
       heroClipboardDocumentCheckSolid,
       heroCalendarSolid,
       heroChartBarSolid,
@@ -180,6 +184,10 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
         ></app-gst-summary>
       } @else if (activeTab() === 'billing') {
         <app-client-billing [clientId]="workspace()?.clientId || ''"></app-client-billing>
+      } @else if (activeTab() === 'vendors') {
+        <div class="no-scrollbar min-h-0 flex-1 overflow-auto">
+          <app-vendor-management [clientId]="workspace()?.clientId || null"></app-vendor-management>
+        </div>
       } @else if (activeTab() === 'inventory') {
         <div class="no-scrollbar min-h-0 flex-1 overflow-auto">
           <app-client-inventory class="block min-h-full" [clientId]="workspace()?.clientId || ''"></app-client-inventory>
@@ -1212,6 +1220,7 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
     'data',
     'gst',
     'billing',
+    'vendors',
     'dashboard',
     'inventory',
   ];

@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { tap } from 'rxjs';
-import { InvoiceStatus } from '../../models/invoice.model';
+import { InvoicePartyRole, InvoiceStatus, InvoiceType } from '../../models/invoice.model';
 import { InvoiceService } from '../../services/invoice.service';
 
 @Injectable()
@@ -12,6 +12,8 @@ export class InvoiceListFacade {
   currentPage = signal(0);
   pageSize = signal(20);
   statusFilter = signal<InvoiceStatus | ''>('');
+  invoiceTypeFilter = signal<InvoiceType | ''>('');
+  partyRoleFilter = signal<InvoicePartyRole | ''>('');
   clientFilter = signal('');
   dateFromFilter = signal('');
   dateToFilter = signal('');
@@ -23,6 +25,8 @@ export class InvoiceListFacade {
     page: this.currentPage() + 1,
     limit: this.pageSize(),
     status: this.statusFilter() || undefined,
+    invoiceType: this.invoiceTypeFilter() || undefined,
+    partyRole: this.partyRoleFilter() || undefined,
     clientId: this.clientFilter() || undefined,
     dateFrom: this.dateFromFilter() || undefined,
     dateTo: this.dateToFilter() || undefined,
@@ -56,6 +60,16 @@ export class InvoiceListFacade {
 
   setStatus(status: InvoiceStatus | ''): void {
     this.statusFilter.set(status);
+    this.currentPage.set(0);
+  }
+
+  setInvoiceType(invoiceType: InvoiceType | ''): void {
+    this.invoiceTypeFilter.set(invoiceType);
+    this.currentPage.set(0);
+  }
+
+  setPartyRole(partyRole: InvoicePartyRole | ''): void {
+    this.partyRoleFilter.set(partyRole);
     this.currentPage.set(0);
   }
 

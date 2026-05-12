@@ -8,6 +8,7 @@ export interface InvoiceProps {
   clientId: string;
   recurringTemplateId?: string | null;
   invoiceType?: 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
+  partyRole?: 'customer' | 'vendor';
   invoiceNumber: string;
   status: 'draft' | 'issued' | 'partially_paid' | 'paid' | 'overdue' | 'cancelled';
   invoiceDate: Date;
@@ -55,6 +56,7 @@ export class Invoice extends Entity<InvoiceProps> {
   get clientId() { return this.props.clientId; }
   get recurringTemplateId() { return this.props.recurringTemplateId; }
   get invoiceType() { return this.props.invoiceType; }
+  get partyRole() { return this.props.partyRole || 'customer'; }
   get invoiceNumber() { return this.props.invoiceNumber; }
   get status() { return this.props.status; }
   get invoiceDate() { return this.props.invoiceDate; }

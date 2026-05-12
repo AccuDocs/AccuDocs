@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -26,6 +26,8 @@ import {
   CreateLineItemDto,
   GstType,
   Invoice,
+  InvoicePartyRole,
+  InvoiceType,
   UpdateInvoiceDto,
 } from '../../models/invoice.model';
 import { ServiceTemplate } from '../../models/service-template.model';
@@ -103,13 +105,14 @@ type LineItemFormModel = {
 };
 
 type InvoiceFormModel = {
+  partyRole: FormControl<InvoicePartyRole>;
   customerSource: FormControl<'client' | 'custom'>;
   clientId: FormControl<string>;
   warehouseId: FormControl<string>;
   salesPerson: FormControl<string>;
   invoiceDate: FormControl<string>;
   dueDate: FormControl<string>;
-  invoiceType: FormControl<'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note'>;
+  invoiceType: FormControl<InvoiceType>;
   expiryDate: FormControl<string>;
   gstType: FormControl<GstType>;
   clientGstin: FormControl<string>;
@@ -279,6 +282,8 @@ export class InvoiceFormComponent {
 
   @Input() embeddedClientId: string | null = null;
   @Input() embeddedInvoiceId: string | null = null;
+  @Input() initialInvoiceType: InvoiceType | null = null;
+  @Input() initialPartyRole: InvoicePartyRole | null = null;
   @Input() isEmbedded = false;
   @Output() saved = new EventEmitter<void>();
   @Output() canceled = new EventEmitter<void>();
@@ -300,6 +305,7 @@ export class InvoiceFormComponent {
   readonly barcodeScanControl = new FormControl('', { nonNullable: true });
 
   readonly invoiceForm = this.fb.group<InvoiceFormModel>({
+    partyRole: this.fb.nonNullable.control<InvoicePartyRole>('customer'),
     customerSource: this.fb.nonNullable.control<'client' | 'custom'>('client'),
     clientId: this.fb.nonNullable.control('', Validators.required),
     warehouseId: this.fb.nonNullable.control(''),
@@ -307,7 +313,7 @@ export class InvoiceFormComponent {
     invoiceDate: this.fb.nonNullable.control(formatDateInput(new Date()), Validators.required),
     dueDate: this.fb.nonNullable.control(formatDateInput(this.addDays(new Date(), 30)), Validators.required),
     expiryDate: this.fb.nonNullable.control(''),
-    invoiceType: this.fb.nonNullable.control<'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note'>('tax_invoice'),
+    invoiceType: this.fb.nonNullable.control<InvoiceType>('tax_invoice'),
     gstType: this.fb.nonNullable.control<GstType>('CGST_SGST'),
     clientGstin: this.fb.nonNullable.control(''),
     customerName: this.fb.nonNullable.control(''),
@@ -407,6 +413,12 @@ export class InvoiceFormComponent {
     ),
     { initialValue: this.invoiceForm.controls.customerSource.getRawValue() }
   );
+  readonly selectedPartyRole = toSignal(
+    this.invoiceForm.controls.partyRole.valueChanges.pipe(
+      startWith(this.invoiceForm.controls.partyRole.getRawValue())
+    ),
+    { initialValue: this.invoiceForm.controls.partyRole.getRawValue() }
+  );
   readonly selectedGstType = toSignal(
     this.invoiceForm.controls.gstType.valueChanges.pipe(
       startWith(this.invoiceForm.controls.gstType.getRawValue())
@@ -441,7 +453,7 @@ export class InvoiceFormComponent {
     () => this.clients().find((client) => client.id === this.selectedClientId()) ?? this.embeddedClient()
   );
   readonly isExistingClientCustomer = computed(() =>
-    this.viewMode() === 'firm' && this.selectedCustomerSource() === 'client'
+    this.viewMode() === 'firm' && this.selectedPartyRole() === 'customer' && this.selectedCustomerSource() === 'client'
   );
   readonly selectedClientWorkspaceLabel = computed(() => {
     if (this.isExistingClientCustomer()) {
@@ -466,6 +478,34 @@ export class InvoiceFormComponent {
       this.invoiceResource.isLoading()
   );
   readonly pageTitle = computed(() => this.viewMode() === 'client' ? 'Create Customer Invoice' : 'CA Billing Studio');
+  readonly partyLabel = computed(() => this.selectedPartyRole() === 'vendor' ? 'Vendor' : 'Customer');
+  readonly partyInfoTitle = computed(() => `${this.partyLabel()} Information`);
+  readonly partyInfoDescription = computed(() =>
+    this.selectedPartyRole() === 'vendor' ? 'Vendor bill-from and GST details' : 'Bill-to and ship-to details'
+  );
+  readonly documentBadge = computed(() => {
+    if (this.selectedPartyRole() === 'vendor') return 'VENDOR BILL';
+    return this.viewMode() === 'client' ? 'SALES INVOICE' : 'INVOICE';
+  });
+  readonly documentTitle = computed(() => {
+    if (this.selectedPartyRole() === 'vendor') return 'Create Vendor Bill';
+    return this.viewMode() === 'client' ? 'Create Sales Invoice' : this.pageTitle();
+  });
+  readonly documentDescription = computed(() =>
+    this.selectedPartyRole() === 'vendor'
+      ? 'Record vendor bills with GST, payment tracking, and audit-ready document actions.'
+      : 'Create a customer bill with warehouse stock validation, product rows, GST split, payment tracking, and final invoice actions.'
+  );
+  readonly documentActionLabel = computed(() => this.selectedPartyRole() === 'vendor' ? 'Generate Vendor Bill' : 'Generate Invoice');
+  readonly partyNameLabel = computed(() => {
+    if (this.isExistingClientCustomer()) return 'Client Name';
+    return `${this.partyLabel()} Name`;
+  });
+  readonly partyNamePlaceholder = computed(() => {
+    if (this.isExistingClientCustomer()) return 'Select a saved client';
+    return `Enter ${this.partyLabel().toLowerCase()} name`;
+  });
+  readonly partyAddressLabel = computed(() => this.selectedPartyRole() === 'vendor' ? 'Vendor Address' : 'Billing Address');
   readonly primaryActionLabel = computed(() => {
     if (this.isEditMode()) return 'Update Invoice';
     return this.viewMode() === 'client' ? 'Save Customer Invoice' : 'Save Invoice';
@@ -484,6 +524,9 @@ export class InvoiceFormComponent {
       this.invoiceForm.controls.clientId.setValue(initialClientId);
     }
 
+    this.applyInitialInvoiceType();
+    this.applyInitialPartyRole();
+
     if (this.isEmbedded && initialClientId) {
       this.loadEmbeddedClient(initialClientId);
     }
@@ -491,7 +534,20 @@ export class InvoiceFormComponent {
     this.applyCustomerSourceRules(this.invoiceForm.controls.customerSource.getRawValue());
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['initialInvoiceType'] && !this.isEditMode()) {
+      this.applyInitialInvoiceType();
+    }
+    if (changes['initialPartyRole'] && !this.isEditMode()) {
+      this.applyInitialPartyRole();
+    }
+  }
+
   constructor() {
+    this.invoiceForm.controls.partyRole.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((role) => this.handlePartyRoleChange(role));
+
     this.invoiceForm.controls.customerSource.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((source) => this.applyCustomerSourceRules(source));
@@ -728,6 +784,54 @@ export class InvoiceFormComponent {
     return client.businessName ?? client.name ?? client.user?.name ?? 'Unnamed client';
   }
 
+  private applyInitialInvoiceType(): void {
+    if (this.isEditMode()) {
+      return;
+    }
+
+    const queryType = this.route.snapshot.queryParamMap.get('invoiceType');
+    const invoiceType = this.isInvoiceType(this.initialInvoiceType)
+      ? this.initialInvoiceType
+      : this.isInvoiceType(queryType)
+        ? queryType
+        : null;
+
+    if (invoiceType) {
+      this.invoiceForm.controls.invoiceType.setValue(invoiceType, { emitEvent: false });
+    }
+  }
+
+  private applyInitialPartyRole(): void {
+    if (this.isEditMode()) {
+      return;
+    }
+
+    const queryPartyRole = this.route.snapshot.queryParamMap.get('partyRole');
+    const partyRole = this.isInvoicePartyRole(this.initialPartyRole)
+      ? this.initialPartyRole
+      : this.isInvoicePartyRole(queryPartyRole)
+        ? queryPartyRole
+        : null;
+
+    if (partyRole) {
+      this.invoiceForm.controls.partyRole.setValue(partyRole);
+    }
+  }
+
+  private isInvoiceType(value: unknown): value is InvoiceType {
+    return (
+      value === 'tax_invoice' ||
+      value === 'proforma' ||
+      value === 'quotation' ||
+      value === 'credit_note' ||
+      value === 'debit_note'
+    );
+  }
+
+  private isInvoicePartyRole(value: unknown): value is InvoicePartyRole {
+    return value === 'customer' || value === 'vendor';
+  }
+
   displayClientAddress(client: BillingClient): string {
     return [client.address, client.city, client.pincode].filter(Boolean).join(', ');
   }
@@ -945,9 +1049,18 @@ export class InvoiceFormComponent {
     }, { emitEvent: false });
   }
 
+  private handlePartyRoleChange(role: InvoicePartyRole): void {
+    if (role === 'vendor' && this.viewMode() === 'firm') {
+      this.invoiceForm.controls.customerSource.setValue('custom');
+    }
+
+    this.applyCustomerSourceRules(this.invoiceForm.controls.customerSource.getRawValue());
+  }
+
   private applyCustomerSourceRules(source: 'client' | 'custom'): void {
     const isClientMode = this.viewMode() === 'client';
-    const useExistingClient = this.viewMode() === 'firm' && source === 'client';
+    const isVendor = this.invoiceForm.controls.partyRole.getRawValue() === 'vendor';
+    const useExistingClient = this.viewMode() === 'firm' && !isVendor && source === 'client';
 
     if (isClientMode || useExistingClient) {
       this.invoiceForm.controls.clientId.addValidators(Validators.required);
@@ -955,7 +1068,7 @@ export class InvoiceFormComponent {
       this.invoiceForm.controls.clientId.clearValidators();
     }
 
-    if (isClientMode || source === 'custom') {
+    if (isClientMode || source === 'custom' || isVendor) {
       this.invoiceForm.controls.customerName.addValidators(Validators.required);
     } else {
       this.invoiceForm.controls.customerName.clearValidators();
@@ -1055,7 +1168,8 @@ export class InvoiceFormComponent {
 
   private patchInvoice(invoice: Invoice): void {
     this.invoiceNumberControl.setValue(invoice.invoiceNumber);
-    const customerSource = this.viewMode() === 'client' || invoice.receiverName || invoice.receiverAddress ? 'custom' : 'client';
+    const invoicePartyRole = invoice.partyRole || 'customer';
+    const customerSource = this.viewMode() === 'client' || invoicePartyRole === 'vendor' || invoice.receiverName || invoice.receiverAddress ? 'custom' : 'client';
 
     this.invoiceForm.patchValue(
       {
@@ -1065,6 +1179,7 @@ export class InvoiceFormComponent {
         invoiceDate: isoDateFromValue(invoice.invoiceDate),
         dueDate: isoDateFromValue(invoice.dueDate),
         invoiceType: (invoice as any).invoiceType || 'tax_invoice',
+        partyRole: invoicePartyRole,
         expiryDate: (invoice as any).expiryDate ? isoDateFromValue((invoice as any).expiryDate) : '',
         gstType: invoice.gstType,
         clientGstin: invoice.clientGstin ?? '',
@@ -1074,6 +1189,7 @@ export class InvoiceFormComponent {
       },
       { emitEvent: false }
     );
+    this.invoiceForm.controls.partyRole.setValue(invoicePartyRole);
     this.invoiceForm.controls.customerSource.setValue(customerSource);
 
     this.lineItemsArray.clear();
@@ -1160,6 +1276,7 @@ export class InvoiceFormComponent {
 
   private ensureClientBeforeSave(onReady: () => void): void {
     const rawValue = this.invoiceForm.getRawValue();
+    const partyName = rawValue.partyRole === 'vendor' ? 'vendor' : 'customer';
     const shouldCreateCustomClient =
       this.viewMode() === 'firm' &&
       rawValue.customerSource === 'custom' &&
@@ -1175,7 +1292,7 @@ export class InvoiceFormComponent {
         const code = codeResponse?.data?.code ?? codeResponse?.code;
         if (!code) {
           this.isSubmitting.set(false);
-          this.toast.error('Could not prepare a client code for this custom customer');
+          this.toast.error(`Could not prepare a client code for this custom ${partyName}`);
           return;
         }
 
@@ -1194,7 +1311,7 @@ export class InvoiceFormComponent {
             const client = clientResponse?.data ?? clientResponse;
             if (!client?.id) {
               this.isSubmitting.set(false);
-              this.toast.error('Custom customer was created but the response was incomplete');
+              this.toast.error(`Custom ${partyName} was created but the response was incomplete`);
               return;
             }
 
@@ -1203,13 +1320,13 @@ export class InvoiceFormComponent {
           },
           error: () => {
             this.isSubmitting.set(false);
-            this.toast.error('Could not create the custom customer');
+            this.toast.error(`Could not create the custom ${partyName}`);
           },
         });
       },
       error: () => {
         this.isSubmitting.set(false);
-        this.toast.error('Could not prepare a client code for this custom customer');
+        this.toast.error(`Could not prepare a client code for this custom ${partyName}`);
       },
     });
   }
@@ -1317,7 +1434,10 @@ export class InvoiceFormComponent {
         : action === 'issue'
           ? 'issued'
           : 'draft';
-    const shouldSendReceiverDetails = this.viewMode() === 'client';
+    const shouldSendReceiverDetails =
+      this.viewMode() === 'client' ||
+      rawValue.customerSource === 'custom' ||
+      rawValue.partyRole === 'vendor';
 
     return {
       clientId: rawValue.clientId,
@@ -1325,6 +1445,7 @@ export class InvoiceFormComponent {
       dueDate: rawValue.dueDate,
       expiryDate: isQuotation && rawValue.expiryDate ? rawValue.expiryDate : undefined,
       invoiceType: rawValue.invoiceType,
+      partyRole: rawValue.partyRole,
       status,
       amountPaid: totals.amountPaid,
       discountAmount: totals.discountAmount,
@@ -1363,10 +1484,11 @@ export class InvoiceFormComponent {
 
   private buildInternalNotes(rawValue: any): string | undefined {
     const warehouse = this.warehouses().find((entry) => entry.id === rawValue.warehouseId);
+    const partyLabel = rawValue.partyRole === 'vendor' ? 'Vendor' : 'Customer';
     const parts = [
       rawValue.internalNotes?.trim(),
-      rawValue.customerMobile ? `Customer mobile: ${rawValue.customerMobile}` : '',
-      rawValue.customerEmail ? `Customer email: ${rawValue.customerEmail}` : '',
+      rawValue.customerMobile ? `${partyLabel} mobile: ${rawValue.customerMobile}` : '',
+      rawValue.customerEmail ? `${partyLabel} email: ${rawValue.customerEmail}` : '',
       warehouse ? `Warehouse: ${warehouse.name} (${warehouse.code})` : '',
       rawValue.salesPerson ? `Sales person: ${rawValue.salesPerson}` : '',
       rawValue.paymentMethod ? `Payment method: ${rawValue.paymentMethod}` : '',
@@ -1377,6 +1499,10 @@ export class InvoiceFormComponent {
   }
 
   private validateStockBeforeSave(): boolean {
+    if (this.invoiceForm.controls.partyRole.getRawValue() === 'vendor') {
+      return true;
+    }
+
     for (const row of this.lineItemsArray.controls) {
       const value = row.getRawValue();
       if (!value.trackInventory) continue;

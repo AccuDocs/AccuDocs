@@ -6,6 +6,7 @@ export const CreateInvoiceSchema = z.object({
   dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)').optional(),
   expiryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)').optional(),
   invoiceType: z.enum(['tax_invoice', 'proforma', 'quotation', 'credit_note', 'debit_note']).optional().default('tax_invoice'),
+  partyRole: z.enum(['customer', 'vendor']).optional().default('customer'),
   status: z.enum(['draft', 'issued', 'paid']).optional(),
   gstType: z.enum(['CGST_SGST', 'IGST']).optional(),
   clientGstin: z.string().optional().nullable(),

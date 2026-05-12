@@ -50,6 +50,20 @@
           >
             New invoice
           </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-violet-600/20 transition hover:bg-violet-700"
+            (click)="newInvoice('quotation')"
+          >
+            New quotation
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-2xl bg-orange-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-orange-600/20 transition hover:bg-orange-700"
+            (click)="newInvoice('tax_invoice', 'vendor')"
+          >
+            New vendor bill
+          </button>
         </div>
       </div>
     </section>
@@ -136,7 +150,7 @@
               }
             </div>
 
-            <div class="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)_220px]">
+            <div class="grid gap-4 lg:grid-cols-[190px_220px_190px_minmax(0,1fr)_170px]">
               <div class="space-y-3">
                 <div class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Status</div>
                 <select
@@ -144,6 +158,30 @@
                   class="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                 >
                   @for (option of statusOptions; track option.value) {
+                    <option [value]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="space-y-3">
+                <div class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Document type</div>
+                <select
+                  formControlName="invoiceType"
+                  class="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                >
+                  @for (option of invoiceTypeOptions; track option.value) {
+                    <option [value]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="space-y-3">
+                <div class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Party</div>
+                <select
+                  formControlName="partyRole"
+                  class="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                >
+                  @for (option of partyRoleOptions; track option.value) {
                     <option [value]="option.value">{{ option.label }}</option>
                   }
                 </select>
@@ -243,11 +281,12 @@
             </div>
           } @else {
             <div class="overflow-x-auto">
-              <table class="min-w-[1320px] w-full divide-y divide-slate-100">
+              <table class="min-w-[1400px] w-full divide-y divide-slate-100">
                 <thead>
                   <tr class="text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
                     <th class="px-4 py-3">#</th>
                     <th class="px-4 py-3">Invoice no</th>
+                    <th class="px-4 py-3">Type</th>
                     <th class="px-4 py-3">Client</th>
                     <th class="px-4 py-3">Service summary</th>
                     <th class="px-4 py-3">Invoice date</th>
@@ -267,8 +306,22 @@
                         <p class="font-mono text-sm font-black text-slate-900">{{ invoice.invoiceNumber }}</p>
                       </td>
                       <td class="px-4 py-4">
-                        <p class="text-sm font-semibold text-slate-800">{{ invoice.client?.name || 'Client unavailable' }}</p>
-                        <p class="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{{ invoice.client?.gstin || 'No GSTIN' }}</p>
+                        <div class="flex flex-wrap gap-2">
+                          <span class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em]" [class]="invoiceTypeClasses(invoice.invoiceType)">
+                            {{ invoiceTypeLabel(invoice.invoiceType) }}
+                          </span>
+                          <span class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em]" [class]="partyRoleClasses(invoice.partyRole)">
+                            {{ partyRoleLabel(invoice.partyRole) }}
+                          </span>
+                        </div>
+                      </td>
+                      <td class="px-4 py-4">
+                        <p class="text-sm font-semibold text-slate-800">
+                          {{ invoice.partyRole === 'vendor' ? (invoice.receiverName || 'Vendor unavailable') : (invoice.client?.name || invoice.receiverName || 'Client unavailable') }}
+                        </p>
+                        <p class="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          {{ invoice.partyRole === 'vendor' ? 'Vendor bill' : (invoice.client?.gstin || 'No GSTIN') }}
+                        </p>
                       </td>
                       <td class="px-4 py-4 text-sm text-slate-600">{{ serviceSummary(invoice) }}</td>
                       <td class="px-4 py-4 text-sm text-slate-500">{{ displayDate(invoice.invoiceDate) }}</td>
@@ -322,7 +375,7 @@
                 </tbody>
                 <tfoot class="border-t border-slate-100 bg-slate-50">
                   <tr>
-                    <td colspan="6" class="px-4 py-3 text-right text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+                    <td colspan="7" class="px-4 py-3 text-right text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
                       Page totals
                     </td>
                     <td class="px-4 py-3 text-right text-sm font-black text-slate-900">{{ totalAmountInView() | inrCurrency }}</td>

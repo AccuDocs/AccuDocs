@@ -68,6 +68,20 @@
             >
               New invoice
             </button>
+            <button
+              type="button"
+              (click)="newInvoice('quotation')"
+              class="inline-flex items-center gap-2 rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-violet-600/20 transition hover:bg-violet-700"
+            >
+              New quotation
+            </button>
+            <button
+              type="button"
+              (click)="newInvoice('tax_invoice', 'vendor')"
+              class="inline-flex items-center gap-2 rounded-2xl bg-orange-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-orange-600/20 transition hover:bg-orange-700"
+            >
+              New vendor bill
+            </button>
           </div>
         </div>
       </section>
@@ -199,6 +213,9 @@
                 <div class="flex flex-wrap gap-2">
                   <button type="button" (click)="newInvoice()" class="rounded-full bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
                     Start invoice
+                  </button>
+                  <button type="button" (click)="newInvoice('tax_invoice', 'vendor')" class="rounded-full bg-orange-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-orange-600/20 transition hover:bg-orange-700">
+                    Start vendor bill
                   </button>
                   <button type="button" (click)="openRecurring()" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-600 transition hover:bg-slate-50">
                     Recurring retainers
@@ -466,9 +483,17 @@
                       <p class="mt-2 text-sm leading-6 text-slate-500">
                         Raise a GST-compliant invoice for audit, tax, ROC, advisory, or bookkeeping services.
                       </p>
-                      <button type="button" (click)="newInvoice()" class="mt-5 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
-                        Start invoice
-                      </button>
+                      <div class="mt-5 flex flex-wrap gap-2">
+                        <button type="button" (click)="newInvoice()" class="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
+                          Start invoice
+                        </button>
+                        <button type="button" (click)="newInvoice('quotation')" class="rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-violet-600/20 transition hover:bg-violet-700">
+                          Start quotation
+                        </button>
+                        <button type="button" (click)="newInvoice('tax_invoice', 'vendor')" class="rounded-2xl bg-orange-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-orange-600/20 transition hover:bg-orange-700">
+                          Start vendor bill
+                        </button>
+                      </div>
                     </article>
 
                     <article class="rounded-[22px] border border-slate-200 bg-slate-50 p-5">

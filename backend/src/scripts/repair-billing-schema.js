@@ -37,6 +37,10 @@ const statements = [
     sql: 'alter table invoices add column if not exists receiver_address text null',
   },
   {
+    label: 'invoices.party_role',
+    sql: "alter table invoices add column if not exists party_role varchar(20) not null default 'customer'",
+  },
+  {
     label: 'invoice_line_items.item_id',
     sql: 'alter table invoice_line_items add column if not exists item_id uuid null',
   },

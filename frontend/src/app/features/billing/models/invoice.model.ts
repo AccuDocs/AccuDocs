@@ -10,6 +10,8 @@ export type InvoiceStatus =
   | 'cancelled';
 
 export type GstType = 'CGST_SGST' | 'IGST';
+export type InvoiceType = 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
+export type InvoicePartyRole = 'customer' | 'vendor';
 
 export interface InvoiceClient {
   id: string;
@@ -27,7 +29,8 @@ export interface Invoice {
   client?: InvoiceClient;
   recurringTemplateId?: string;
   invoiceNumber: string;
-  invoiceType?: 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
+  invoiceType?: InvoiceType;
+  partyRole?: InvoicePartyRole;
   expiryDate?: string;
   receiverName?: string;
   receiverAddress?: string;
@@ -65,6 +68,8 @@ export interface InvoiceListParams {
   limit?: number;
   search?: string;
   status?: InvoiceStatus | '';
+  invoiceType?: InvoiceType | '';
+  partyRole?: InvoicePartyRole | '';
   clientId?: string;
   dateFrom?: string;
   dateTo?: string;
@@ -94,7 +99,8 @@ export interface CreateInvoiceDto {
   clientId: string;
   invoiceDate: string;
   dueDate: string;
-  invoiceType?: 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
+  invoiceType?: InvoiceType;
+  partyRole?: InvoicePartyRole;
   expiryDate?: string;
   status?: 'draft' | 'issued' | 'paid';
   amountPaid?: number;
@@ -111,7 +117,8 @@ export interface CreateInvoiceDto {
 export interface UpdateInvoiceDto {
   invoiceDate?: string;
   dueDate?: string;
-  invoiceType?: 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
+  invoiceType?: InvoiceType;
+  partyRole?: InvoicePartyRole;
   expiryDate?: string;
   status?: 'draft' | 'issued' | 'paid';
   amountPaid?: number;

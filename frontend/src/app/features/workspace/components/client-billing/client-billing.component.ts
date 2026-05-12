@@ -20,7 +20,7 @@ import {
 import { InvoiceFormComponent } from '../../../billing/components/invoice-form/invoice-form.component';
 import { PaymentLinkComponent } from '../../../billing/components/payment-link/payment-link.component';
 import { TemplateSelectorComponent } from '../../../billing/components/template-selector/template-selector.component';
-import { Invoice, InvoiceStatus } from '../../../billing/models/invoice.model';
+import { Invoice, InvoicePartyRole, InvoiceStatus, InvoiceType } from '../../../billing/models/invoice.model';
 import { InvoiceService } from '../../../billing/services/invoice.service';
 
 type BillingTab = 'createInvoice' | 'invoices' | 'templates';
@@ -81,9 +81,11 @@ type BillingTab = 'createInvoice' | 'invoices' | 'templates';
                     <ng-icon name="heroDocumentTextSolid" size="14"></ng-icon>
                     Customer invoice module
                   </div>
-                  <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-950">Create customer invoice</h2>
+                  <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-950">
+                    {{ draftPartyRole() === 'vendor' ? 'Create vendor bill' : (draftInvoiceType() === 'quotation' ? 'Create customer quotation' : 'Create customer invoice') }}
+                  </h2>
                   <p class="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
-                    Create tax invoices, proforma invoices, quotations, credit notes, and debit notes for this client business's customers.
+                    {{ draftPartyRole() === 'vendor' ? 'Record supplier bills and payables for this client workspace without syncing them as sales.' : "Create tax invoices, proforma invoices, quotations, credit notes, and debit notes for this client business's customers." }}
                   </p>
                 </div>
 
@@ -102,6 +104,8 @@ type BillingTab = 'createInvoice' | 'invoices' | 'templates';
               <app-invoice-form
                 [isEmbedded]="true"
                 [embeddedClientId]="clientId"
+                [initialInvoiceType]="draftInvoiceType()"
+                [initialPartyRole]="draftPartyRole()"
                 (saved)="onSaved()"
                 (canceled)="setTab('invoices')"
               ></app-invoice-form>
@@ -134,11 +138,27 @@ type BillingTab = 'createInvoice' | 'invoices' | 'templates';
                   </button>
                   <button
                     type="button"
-                    (click)="setTab('createInvoice')"
+                    (click)="startNewDocument()"
                     class="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-primary-700"
                   >
                     <ng-icon name="heroPlusSolid" size="18"></ng-icon>
                     New invoice
+                  </button>
+                  <button
+                    type="button"
+                    (click)="startNewDocument('quotation')"
+                    class="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-violet-700"
+                  >
+                    <ng-icon name="heroDocumentTextSolid" size="18"></ng-icon>
+                    New quotation
+                  </button>
+                  <button
+                    type="button"
+                    (click)="startNewDocument('tax_invoice', 'vendor')"
+                    class="inline-flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-orange-700"
+                  >
+                    <ng-icon name="heroDocumentTextSolid" size="18"></ng-icon>
+                    New vendor bill
                   </button>
                 </div>
               </div>
@@ -223,6 +243,32 @@ type BillingTab = 'createInvoice' | 'invoices' | 'templates';
                       </select>
                     </label>
 
+                    <label class="relative block sm:w-52">
+                      <ng-icon name="heroDocumentTextSolid" size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></ng-icon>
+                      <select
+                        [ngModel]="invoiceTypeFilter()"
+                        (ngModelChange)="invoiceTypeFilter.set($event)"
+                        class="h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm font-bold text-slate-700 outline-none transition focus:border-primary-400 focus:bg-white focus:ring-4 focus:ring-primary-100"
+                      >
+                        @for (option of invoiceTypeOptions; track option.value) {
+                          <option [value]="option.value">{{ option.label }}</option>
+                        }
+                      </select>
+                    </label>
+
+                    <label class="relative block sm:w-44">
+                      <ng-icon name="heroFunnelSolid" size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></ng-icon>
+                      <select
+                        [ngModel]="partyRoleFilter()"
+                        (ngModelChange)="partyRoleFilter.set($event)"
+                        class="h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm font-bold text-slate-700 outline-none transition focus:border-primary-400 focus:bg-white focus:ring-4 focus:ring-primary-100"
+                      >
+                        @for (option of partyRoleOptions; track option.value) {
+                          <option [value]="option.value">{{ option.label }}</option>
+                        }
+                      </select>
+                    </label>
+
                     @if (hasActiveFilters()) {
                       <button
                         type="button"
@@ -285,8 +331,14 @@ type BillingTab = 'createInvoice' | 'invoices' | 'templates';
                         Clear filters
                       </button>
                     }
-                    <button type="button" (click)="setTab('createInvoice')" class="rounded-xl bg-primary-600 px-4 py-2 text-sm font-black text-white hover:bg-primary-700">
+                    <button type="button" (click)="startNewDocument()" class="rounded-xl bg-primary-600 px-4 py-2 text-sm font-black text-white hover:bg-primary-700">
                       Create invoice
+                    </button>
+                    <button type="button" (click)="startNewDocument('quotation')" class="rounded-xl bg-violet-600 px-4 py-2 text-sm font-black text-white hover:bg-violet-700">
+                      Create quotation
+                    </button>
+                    <button type="button" (click)="startNewDocument('tax_invoice', 'vendor')" class="rounded-xl bg-orange-600 px-4 py-2 text-sm font-black text-white hover:bg-orange-700">
+                      Create vendor bill
                     </button>
                   </div>
                 </div>
@@ -316,12 +368,19 @@ type BillingTab = 'createInvoice' | 'invoices' | 'templates';
                               {{ invoice.invoiceNumber || 'Draft invoice' }}
                             </button>
                             <p class="mt-1 text-xs font-semibold text-slate-500">Updated {{ invoice.updatedAt | date:'mediumDate' }}</p>
-                            <p class="mt-1 text-xs font-semibold text-slate-400">Bill to {{ invoice.receiverName || 'Customer not set' }}</p>
+                            <p class="mt-1 text-xs font-semibold text-slate-400">
+                              {{ invoice.partyRole === 'vendor' ? 'Bill from ' : 'Bill to ' }}{{ invoice.receiverName || (invoice.partyRole === 'vendor' ? 'Vendor not set' : 'Customer not set') }}
+                            </p>
                           </td>
                           <td class="px-5 py-4">
-                            <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-black uppercase tracking-wide text-slate-600">
-                              {{ typeLabel(invoice.invoiceType) }}
-                            </span>
+                            <div class="flex flex-wrap gap-2">
+                              <span class="inline-flex rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide" [ngClass]="typeClass(invoice.invoiceType)">
+                                {{ typeLabel(invoice.invoiceType) }}
+                              </span>
+                              <span class="inline-flex rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide" [ngClass]="partyRoleClass(invoice.partyRole)">
+                                {{ partyRoleLabel(invoice.partyRole) }}
+                              </span>
+                            </div>
                           </td>
                           <td class="px-5 py-4 text-sm font-semibold text-slate-600">{{ invoice.invoiceDate | date:'mediumDate' }}</td>
                           <td class="px-5 py-4">
@@ -383,7 +442,7 @@ type BillingTab = 'createInvoice' | 'invoices' | 'templates';
 
                 <button
                   type="button"
-                  (click)="setTab('createInvoice')"
+                  (click)="startNewDocument()"
                   class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-primary-700"
                 >
                   <ng-icon name="heroPlusSolid" size="18"></ng-icon>
@@ -461,6 +520,21 @@ export class ClientBillingComponent implements OnInit, OnChanges {
     { value: 'cancelled', label: 'Cancelled' },
   ];
 
+  readonly invoiceTypeOptions: Array<{ value: InvoiceType | ''; label: string }> = [
+    { value: '', label: 'All document types' },
+    { value: 'tax_invoice', label: 'Tax Invoice' },
+    { value: 'proforma', label: 'Proforma Invoice' },
+    { value: 'quotation', label: 'Quotation' },
+    { value: 'credit_note', label: 'Credit Note' },
+    { value: 'debit_note', label: 'Debit Note' },
+  ];
+
+  readonly partyRoleOptions: Array<{ value: InvoicePartyRole | ''; label: string }> = [
+    { value: '', label: 'All parties' },
+    { value: 'customer', label: 'Customers' },
+    { value: 'vendor', label: 'Vendors' },
+  ];
+
   readonly skeletonRows = [1, 2, 3, 4];
 
   readonly mode = signal<'list' | 'create' | 'edit'>('list');
@@ -471,19 +545,28 @@ export class ClientBillingComponent implements OnInit, OnChanges {
   readonly errorMessage = signal<string | null>(null);
   readonly searchTerm = signal('');
   readonly statusFilter = signal<InvoiceStatus | ''>('');
+  readonly invoiceTypeFilter = signal<InvoiceType | ''>('');
+  readonly partyRoleFilter = signal<InvoicePartyRole | ''>('');
+  readonly draftInvoiceType = signal<InvoiceType>('tax_invoice');
+  readonly draftPartyRole = signal<InvoicePartyRole>('customer');
   readonly totalRecords = signal(0);
 
   readonly filteredInvoices = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
     const status = this.statusFilter();
+    const invoiceType = this.invoiceTypeFilter();
+    const partyRole = this.partyRoleFilter();
 
     return this.invoices().filter((invoice) => {
       const matchesStatus = !status || invoice.status === status;
+      const matchesType = !invoiceType || invoice.invoiceType === invoiceType;
+      const matchesParty = !partyRole || (invoice.partyRole || 'customer') === partyRole;
       const searchable = [
         invoice.invoiceNumber,
         invoice.receiverName,
         invoice.receiverAddress,
         invoice.invoiceType,
+        invoice.partyRole,
         invoice.status,
         invoice.invoiceDate,
         invoice.dueDate,
@@ -492,7 +575,7 @@ export class ClientBillingComponent implements OnInit, OnChanges {
         .join(' ')
         .toLowerCase();
 
-      return matchesStatus && (!term || searchable.includes(term));
+      return matchesStatus && matchesType && matchesParty && (!term || searchable.includes(term));
     });
   });
 
@@ -531,7 +614,9 @@ export class ClientBillingComponent implements OnInit, OnChanges {
     return counts;
   });
 
-  readonly hasActiveFilters = computed(() => Boolean(this.searchTerm().trim() || this.statusFilter()));
+  readonly hasActiveFilters = computed(() =>
+    Boolean(this.searchTerm().trim() || this.statusFilter() || this.invoiceTypeFilter() || this.partyRoleFilter())
+  );
 
   ngOnInit(): void {
     this.fetchInvoices();
@@ -584,6 +669,13 @@ export class ClientBillingComponent implements OnInit, OnChanges {
     this.billingTab.set(tab);
   }
 
+  startNewDocument(invoiceType: InvoiceType = 'tax_invoice', partyRole: InvoicePartyRole = 'customer'): void {
+    this.draftInvoiceType.set(invoiceType);
+    this.draftPartyRole.set(partyRole);
+    this.setMode('list');
+    this.setTab('createInvoice');
+  }
+
   setMode(mode: 'list' | 'create' | 'edit'): void {
     if (mode !== 'edit') {
       this.selectedId.set(null);
@@ -605,6 +697,8 @@ export class ClientBillingComponent implements OnInit, OnChanges {
   clearFilters(): void {
     this.searchTerm.set('');
     this.statusFilter.set('');
+    this.invoiceTypeFilter.set('');
+    this.partyRoleFilter.set('');
   }
 
   amount(value: unknown): number {
@@ -617,8 +711,30 @@ export class ClientBillingComponent implements OnInit, OnChanges {
   }
 
   typeLabel(type?: Invoice['invoiceType']): string {
-    if (!type) return 'Invoice';
-    return type.replace(/_/g, ' ');
+    const option = this.invoiceTypeOptions.find((item) => item.value === type);
+    return option?.label ?? 'Invoice';
+  }
+
+  typeClass(type?: Invoice['invoiceType']): string {
+    const classes: Record<InvoiceType, string> = {
+      tax_invoice: 'bg-blue-100 text-blue-700',
+      proforma: 'bg-cyan-100 text-cyan-700',
+      quotation: 'bg-violet-100 text-violet-700',
+      credit_note: 'bg-emerald-100 text-emerald-700',
+      debit_note: 'bg-amber-100 text-amber-700',
+    };
+
+    return classes[type ?? 'tax_invoice'];
+  }
+
+  partyRoleLabel(role?: Invoice['partyRole']): string {
+    return role === 'vendor' ? 'Vendor' : 'Customer';
+  }
+
+  partyRoleClass(role?: Invoice['partyRole']): string {
+    return role === 'vendor'
+      ? 'bg-orange-100 text-orange-700'
+      : 'bg-emerald-100 text-emerald-700';
   }
 
   statusLabel(status: InvoiceStatus): string {

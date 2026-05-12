@@ -28,6 +28,7 @@ export class BillingService {
     }
 
     const invoiceType = (data.invoiceType || 'tax_invoice') as 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
+    const partyRole: 'customer' | 'vendor' = data.partyRole === 'vendor' ? 'vendor' : 'customer';
     const isQuotation = invoiceType === 'quotation';
     const isIgst = org.stateCode !== (client as any).stateCode;
     const gstType = data.gstType || (isIgst ? ('IGST' as const) : ('CGST_SGST' as const));
@@ -73,6 +74,7 @@ export class BillingService {
       clientId: client.id,
       invoiceNumber,
       invoiceType,
+      partyRole,
       status: (data.status || 'draft') as any,
       invoiceDate: new Date(data.invoiceDate),
       dueDate: new Date(dueDate),
@@ -126,7 +128,7 @@ export class BillingService {
     (invoice as any).props.lineItems = lineItemEntities;
     const saved = await this.invoiceRepo.save(invoice);
 
-    if (saved.status === 'issued' || saved.status === 'paid') {
+    if ((saved.status === 'issued' || saved.status === 'paid') && saved.partyRole !== 'vendor') {
       await this.syncToSalesRegister(saved.id, organizationId);
       await this.syncInventoryForIssuedInvoice(saved, organizationId, adminId);
     }
@@ -149,6 +151,12 @@ export class BillingService {
     }
 
     const invoiceType = (data.invoiceType || existing.invoiceType || 'tax_invoice') as 'tax_invoice' | 'proforma' | 'quotation' | 'credit_note' | 'debit_note';
+    let partyRole: 'customer' | 'vendor' = existing.partyRole || 'customer';
+    if (data.partyRole === 'vendor') {
+      partyRole = 'vendor';
+    } else if (data.partyRole === 'customer') {
+      partyRole = 'customer';
+    }
     const isQuotation = invoiceType === 'quotation';
     const isIgst = org.stateCode !== (client as any).stateCode;
     const gstType = data.gstType || existing.gstType || (isIgst ? ('IGST' as const) : ('CGST_SGST' as const));
@@ -199,6 +207,7 @@ export class BillingService {
 
     (existing as any).props.clientId = clientId;
     (existing as any).props.invoiceType = invoiceType;
+    (existing as any).props.partyRole = partyRole;
     (existing as any).props.invoiceDate = data.invoiceDate ? new Date(data.invoiceDate) : existing.invoiceDate;
     (existing as any).props.dueDate = data.dueDate ? new Date(data.dueDate) : existing.dueDate;
     (existing as any).props.expiryDate = data.expiryDate ? new Date(data.expiryDate) : existing.expiryDate ?? null;
@@ -297,7 +306,7 @@ export class BillingService {
 
     const saved = await this.invoiceRepo.save(invoice);
 
-    if (saved.status === 'issued' || saved.status === 'paid') {
+    if ((saved.status === 'issued' || saved.status === 'paid') && saved.partyRole !== 'vendor') {
       await this.syncToSalesRegister(saved.id, organizationId);
       await this.syncInventoryForIssuedInvoice(saved, organizationId, adminId);
     } else if (saved.status === 'cancelled' && (oldStatus === 'issued' || oldStatus === 'paid')) {
@@ -316,6 +325,7 @@ export class BillingService {
   private async syncToSalesRegister(invoiceId: string, organizationId: string) {
     const invoice = await this.invoiceRepo.findById(invoiceId, organizationId);
     if (!invoice || invoice.status === 'draft') return;
+    if (invoice.partyRole === 'vendor') return;
 
     const client = await this.clientRepo.findById(invoice.clientId);
     if (!client) return;
@@ -453,7 +463,7 @@ export class BillingService {
   }
 
   async getMetrics(organizationId: string) {
-    const invoices = await this.invoiceRepo.findAll(organizationId, {}, { page: 1, limit: 1000 });
+    const invoices = await this.invoiceRepo.findAll(organizationId, { partyRole: 'customer' }, { page: 1, limit: 1000 });
     const totalRevenue = invoices.invoices.reduce((sum: number, inv: any) => sum + Number(inv.totalAmount), 0);
     const pendingAmount = invoices.invoices.reduce((sum: number, inv: any) => sum + Number(inv.balanceDue), 0);
     const paidAmount = totalRevenue - pendingAmount;
@@ -551,8 +561,10 @@ export class BillingService {
     const saved = await this.invoiceRepo.save(existing);
     
     // Sync to sales register
-    await this.syncToSalesRegister(saved.id, organizationId);
-    await this.syncInventoryForIssuedInvoice(saved, organizationId, adminId);
+    if (saved.partyRole !== 'vendor') {
+      await this.syncToSalesRegister(saved.id, organizationId);
+      await this.syncInventoryForIssuedInvoice(saved, organizationId, adminId);
+    }
 
     return saved;
   }

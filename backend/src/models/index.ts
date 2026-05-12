@@ -49,6 +49,12 @@ import { PurchaseOrder } from './purchase-order.model';
 import { PurchaseOrderItem } from './purchase-order-item.model';
 import { StockTransfer } from './stock-transfer.model';
 import { StockTransferItem } from './stock-transfer-item.model';
+import { Vendor } from './vendor.model';
+import { VendorPurchaseOrder } from './vendor-purchase-order.model';
+import { VendorPurchaseOrderItem } from './vendor-purchase-order-item.model';
+import { VendorBill } from './vendor-bill.model';
+import { VendorPayment } from './vendor-payment.model';
+import { VendorDocument } from './vendor-document.model';
 
 // Phase 2 models
 import { RecurringInvoice } from './recurring-invoice.model';
@@ -219,6 +225,24 @@ StockTransferItem.belongsTo(StockTransfer, { foreignKey: 'transfer_id', as: 'tra
 StockTransferItem.belongsTo(Item,          { foreignKey: 'item_id',     as: 'item' });
 StockTransferItem.belongsTo(ItemVariant,   { foreignKey: 'variant_id',  as: 'variant' });
 
+// Vendor Management
+Organization.hasMany(Vendor, { foreignKey: 'organization_id', as: 'vendors' });
+Vendor.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organization' });
+Client.hasMany(Vendor, { foreignKey: 'client_id', as: 'vendors' });
+Vendor.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
+Vendor.hasMany(VendorPurchaseOrder, { foreignKey: 'vendor_id', as: 'purchaseOrders' });
+VendorPurchaseOrder.belongsTo(Vendor, { foreignKey: 'vendor_id', as: 'vendor' });
+VendorPurchaseOrder.hasMany(VendorPurchaseOrderItem, { foreignKey: 'purchase_order_id', as: 'items' });
+VendorPurchaseOrderItem.belongsTo(VendorPurchaseOrder, { foreignKey: 'purchase_order_id', as: 'purchaseOrder' });
+Vendor.hasMany(VendorBill, { foreignKey: 'vendor_id', as: 'bills' });
+VendorBill.belongsTo(Vendor, { foreignKey: 'vendor_id', as: 'vendor' });
+VendorBill.belongsTo(VendorPurchaseOrder, { foreignKey: 'purchase_order_id', as: 'purchaseOrder' });
+Vendor.hasMany(VendorPayment, { foreignKey: 'vendor_id', as: 'payments' });
+VendorPayment.belongsTo(Vendor, { foreignKey: 'vendor_id', as: 'vendor' });
+VendorPayment.belongsTo(VendorBill, { foreignKey: 'bill_id', as: 'bill' });
+Vendor.hasMany(VendorDocument, { foreignKey: 'vendor_id', as: 'documents' });
+VendorDocument.belongsTo(Vendor, { foreignKey: 'vendor_id', as: 'vendor' });
+
 export {
   Organization,
   User,
@@ -278,4 +302,10 @@ export {
   PurchaseOrderItem,
   StockTransfer,
   StockTransferItem,
+  Vendor,
+  VendorPurchaseOrder,
+  VendorPurchaseOrderItem,
+  VendorBill,
+  VendorPayment,
+  VendorDocument,
 };
