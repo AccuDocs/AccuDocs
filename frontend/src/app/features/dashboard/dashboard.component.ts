@@ -318,50 +318,175 @@ interface QuickAction {
       min-height: 100%;
     }
     .home-shell {
+      --dash-bg-top: #E7F0F6;
+      --dash-bg-bottom: #DCE8F0;
+      --dash-surface: rgba(247, 250, 252, 0.92);
+      --dash-surface-solid: #F7FAFC;
+      --dash-surface-muted: #EDF4F8;
+      --dash-border: #C8D7E6;
+      --dash-border-soft: #D9E4EF;
+      --dash-text: #122033;
+      --dash-text-sub: #314B67;
+      --dash-muted: #647A94;
+      --dash-faint: #879BB1;
+      --dash-shadow-soft: 0 1px 3px rgba(28, 52, 78, 0.06);
+      --dash-shadow-lift: 0 10px 26px rgba(28, 52, 78, 0.09);
+      --dash-accent: #1D4ED8;
+      --dash-sky: #0369A1;
+      --dash-emerald: #047857;
+      --dash-amber: #B45309;
+      --dash-rose: #BE123C;
+      --dash-blue-soft: #DCEBFC;
+      --dash-emerald-soft: #DFF6EA;
+      --dash-amber-soft: #FFF0CF;
+      --dash-rose-soft: #FDE5E8;
       position: relative;
       overflow: hidden;
+      color: var(--dash-text);
       background:
-        radial-gradient(circle at top left, rgba(14, 165, 233, 0.10), transparent 26%),
-        radial-gradient(circle at top right, rgba(16, 185, 129, 0.08), transparent 24%),
-        linear-gradient(180deg, #f8fafc 0%, #eef4f8 100%);
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.08), transparent 26%),
+        radial-gradient(circle at top right, rgba(16, 185, 129, 0.07), transparent 24%),
+        linear-gradient(180deg, var(--dash-bg-top) 0%, var(--dash-bg-bottom) 100%);
+    }
+    :host-context(.dark) .home-shell {
+      --dash-bg-top: #07111F;
+      --dash-bg-bottom: #0B1729;
+      --dash-surface: rgba(16, 33, 58, 0.92);
+      --dash-surface-solid: #10213A;
+      --dash-surface-muted: #172B48;
+      --dash-border: #263B59;
+      --dash-border-soft: #203451;
+      --dash-text: #EAF2FC;
+      --dash-text-sub: #B8C7D9;
+      --dash-muted: #8EA2BA;
+      --dash-faint: #637A96;
+      --dash-shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.24);
+      --dash-shadow-lift: 0 12px 28px rgba(0, 0, 0, 0.28);
+      --dash-accent: #93C5FD;
+      --dash-sky: #93C5FD;
+      --dash-emerald: #86EFAC;
+      --dash-amber: #FCD34D;
+      --dash-rose: #FDA4AF;
+      --dash-blue-soft: rgba(96, 165, 250, 0.14);
+      --dash-emerald-soft: rgba(16, 185, 129, 0.14);
+      --dash-amber-soft: rgba(245, 158, 11, 0.16);
+      --dash-rose-soft: rgba(244, 63, 94, 0.16);
     }
     .home-shell > * {
       position: relative;
     }
+    .home-shell .text-slate-950,
+    .home-shell .text-slate-900 {
+      color: var(--dash-text) !important;
+    }
+    .home-shell .text-slate-800,
+    .home-shell .text-slate-700,
+    .home-shell .text-slate-600 {
+      color: var(--dash-text-sub) !important;
+    }
+    .home-shell .text-slate-500 {
+      color: var(--dash-muted) !important;
+    }
+    .home-shell .text-slate-400 {
+      color: var(--dash-faint) !important;
+    }
+    .home-shell .text-sky-700,
+    .home-shell .text-sky-600 {
+      color: var(--dash-sky) !important;
+    }
+    .home-shell .text-emerald-800,
+    .home-shell .text-emerald-700,
+    .home-shell .text-emerald-600 {
+      color: var(--dash-emerald) !important;
+    }
+    .home-shell .text-amber-800,
+    .home-shell .text-amber-700,
+    .home-shell .text-amber-600 {
+      color: var(--dash-amber) !important;
+    }
+    .home-shell .text-red-700,
+    .home-shell .text-rose-700 {
+      color: var(--dash-rose) !important;
+    }
+    .home-shell .bg-white,
+    .home-shell .bg-slate-50,
+    .home-shell .bg-slate-100 {
+      background: var(--dash-surface-muted) !important;
+    }
+    .home-shell .bg-sky-50,
+    .home-shell .bg-sky-100 {
+      background: var(--dash-blue-soft) !important;
+    }
+    .home-shell .bg-emerald-50,
+    .home-shell .bg-emerald-100 {
+      background: var(--dash-emerald-soft) !important;
+    }
+    .home-shell .bg-amber-50,
+    .home-shell .bg-amber-100 {
+      background: var(--dash-amber-soft) !important;
+    }
+    .home-shell .bg-red-100,
+    .home-shell .bg-rose-100 {
+      background: var(--dash-rose-soft) !important;
+    }
+    .home-shell .bg-slate-900 {
+      background: var(--dash-accent) !important;
+    }
+    .home-shell .border-slate-100,
+    .home-shell .border-slate-200,
+    .home-shell .border-slate-300 {
+      border-color: var(--dash-border) !important;
+    }
+    .home-shell .ring-slate-100 {
+      --tw-ring-color: var(--dash-border-soft) !important;
+    }
     .command-toolbar {
       border-radius: 24px;
-      border: 1px solid rgba(219, 231, 240, 0.95);
-      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid var(--dash-border);
+      background: var(--dash-surface);
       padding: 20px;
-      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+      box-shadow: var(--dash-shadow-soft);
       backdrop-filter: blur(14px);
     }
     .metric-card {
       min-width: 0;
       min-height: 132px;
       border-radius: 20px;
-      border: 1px solid #dbe7f0;
+      border: 1px solid var(--dash-border);
+      background: var(--dash-surface-solid);
       padding: 20px;
-      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+      box-shadow: var(--dash-shadow-soft);
       transition: box-shadow .16s ease;
     }
+    .metric-card--blue {
+      background: linear-gradient(135deg, var(--dash-blue-soft), var(--dash-surface-solid));
+    }
+    .metric-card--success {
+      background: linear-gradient(135deg, var(--dash-emerald-soft), var(--dash-surface-solid));
+    }
+    .metric-card--warning {
+      background: linear-gradient(135deg, var(--dash-amber-soft), var(--dash-surface-solid));
+    }
+    .metric-card--neutral {
+      background: var(--dash-surface-solid);
+    }
     .metric-card:hover {
-      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+      box-shadow: var(--dash-shadow-lift);
     }
     .dashboard-panel {
       min-width: 0;
       overflow: hidden;
       border-radius: 20px;
-      border: 1px solid #dbe3ef;
-      background: white;
-      box-shadow: 0 1px 3px rgba(15, 23, 42, .06);
+      border: 1px solid var(--dash-border);
+      background: var(--dash-surface);
+      box-shadow: var(--dash-shadow-soft);
     }
     .panel-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      border-bottom: 1px solid #dbe3ef;
+      border-bottom: 1px solid var(--dash-border);
       padding: 16px 18px;
     }
     .panel-body {
@@ -372,18 +497,18 @@ interface QuickAction {
       font-weight: 900;
       letter-spacing: .22em;
       text-transform: uppercase;
-      color: #94a3b8;
+      color: var(--dash-faint);
     }
     .panel-title {
       margin-top: 2px;
       font-size: 16px;
       font-weight: 950;
-      color: #0f172a;
+      color: var(--dash-text);
     }
     .panel-link {
       font-size: 12px;
       font-weight: 900;
-      color: #2563eb;
+      color: var(--dash-accent);
     }
     .action-grid {
       display: grid;
@@ -398,13 +523,14 @@ interface QuickAction {
       align-items: center;
       gap: 14px;
       border-radius: 16px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--dash-border);
+      background: var(--dash-surface-solid);
       padding: 14px;
       transition: all .16s ease;
     }
     .action-card:hover {
-      border-color: #cfe3f5;
-      background: #f8fbff;
+      border-color: var(--dash-accent);
+      background: var(--dash-surface-muted);
     }
     .list-row {
       display: flex;
@@ -416,21 +542,22 @@ interface QuickAction {
       transition: background-color .16s ease;
     }
     .list-row:hover {
-      background: #f8fbff;
+      background: var(--dash-surface-muted);
     }
     .list-row + .list-row {
-      border-top: 1px solid #f1f5f9;
+      border-top: 1px solid var(--dash-border-soft);
     }
     .workload-card {
       display: block;
       border-radius: 16px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--dash-border);
+      background: var(--dash-surface-solid);
       padding: 14px;
       transition: background-color .16s ease, border-color .16s ease;
     }
     .workload-card:hover {
-      border-color: #cfe3f5;
-      background: #f8fbff;
+      border-color: var(--dash-accent);
+      background: var(--dash-surface-muted);
     }
     .panel-empty {
       display: grid;
@@ -572,7 +699,7 @@ export class DashboardComponent {
         label: 'Total Clients',
         value: String(this.getClientCount()),
         icon: 'groups',
-        cardClass: 'bg-sky-50/45',
+        cardClass: 'metric-card--blue',
         labelClass: 'text-sky-700',
         valueClass: 'text-slate-950',
         iconClass: 'text-sky-700',
@@ -583,7 +710,7 @@ export class DashboardComponent {
         label: 'Pending Filings',
         value: String(pending || tasks?.dueTodayCount || 0),
         icon: overdue > 0 ? 'assignment_late' : 'event_note',
-        cardClass: overdue > 0 ? 'bg-amber-50/70' : 'bg-emerald-50/65',
+        cardClass: overdue > 0 ? 'metric-card--warning' : 'metric-card--success',
         labelClass: overdue > 0 ? 'text-amber-700' : 'text-emerald-700',
         valueClass: overdue > 0 ? 'text-amber-800' : 'text-emerald-800',
         iconClass: overdue > 0 ? 'text-amber-700' : 'text-emerald-700',
@@ -594,7 +721,7 @@ export class DashboardComponent {
         label: 'Completed',
         value: String(filed || tasks?.byStatus?.done || 0),
         icon: 'task_alt',
-        cardClass: 'bg-emerald-50/65',
+        cardClass: 'metric-card--success',
         labelClass: 'text-emerald-700',
         valueClass: 'text-emerald-800',
         iconClass: 'text-emerald-700',
@@ -605,7 +732,7 @@ export class DashboardComponent {
         label: 'Revenue',
         value: this.formatCompactINR(billing?.billedThisMonth || 0),
         icon: 'payments',
-        cardClass: 'bg-white',
+        cardClass: 'metric-card--neutral',
         labelClass: 'text-slate-400',
         valueClass: 'text-slate-950',
         iconClass: 'text-slate-700',

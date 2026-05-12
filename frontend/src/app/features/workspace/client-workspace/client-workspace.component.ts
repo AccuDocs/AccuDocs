@@ -114,7 +114,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
     })
   ],
   template: `
-    <div class="px-6 pt-3 pb-6 h-full flex flex-col animate-in fade-in duration-500">
+    <div class="client-workspace-shell px-6 pt-3 pb-6 h-full flex flex-col animate-in fade-in duration-500">
       <input
         #fileInput
         type="file"

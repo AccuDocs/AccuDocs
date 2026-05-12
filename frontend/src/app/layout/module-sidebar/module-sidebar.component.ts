@@ -32,17 +32,17 @@ import { IconComponent } from '@ui/atoms/icon.component';
         background: var(--sb2-bg);
         border-right: 1px solid var(--card-border);
         box-shadow: 2px 0 12px rgba(29, 78, 216, 0.06);
-        --nav-row-active-bg: #EFF6FF;
-        --nav-row-hover-bg-token: #F0F5FF;
+        --nav-row-active-bg: var(--brand-accent-soft);
+        --nav-row-hover-bg-token: var(--color-surface-hover);
         --nav-row-active-color: var(--accent);
         --nav-row-color-base: var(--text-muted);
         --nav-row-muted: var(--text-hint);
         --nav-row-hover-color-token: var(--text-body);
         --nav-row-active-dot: var(--accent);
         --nav-row-active-shadow: inset 3px 0 0 var(--accent);
-        --nav-row-badge-bg: #DBEAFE;
+        --nav-row-badge-bg: var(--brand-accent-soft);
         --nav-row-badge-color: var(--accent);
-        --nav-row-badge-border: #FFFFFF;
+        --nav-row-badge-border: var(--sb2-bg);
       "
     >
       <!-- Hub Header -->
@@ -56,7 +56,7 @@ import { IconComponent } from '@ui/atoms/icon.component';
           gap: 8px;
           min-height: 60px;
           padding: 12px 16px;
-          background: linear-gradient(135deg, #EFF6FF 0%, #FFFFFF 100%);
+          background: linear-gradient(135deg, var(--brand-accent-soft) 0%, var(--sb2-bg) 100%);
         "
       >
         <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
@@ -64,7 +64,7 @@ import { IconComponent } from '@ui/atoms/icon.component';
             <div
               style="
                 align-items: center;
-                background: #DBEAFE;
+                background: var(--brand-accent-soft);
                 border-radius: 8px;
                 color: var(--accent);
                 display: flex;
@@ -284,7 +284,7 @@ import { IconComponent } from '@ui/atoms/icon.component';
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: #DBEAFE;
+            background: var(--brand-accent-soft);
             color: var(--accent);
             display: flex;
             align-items: center;

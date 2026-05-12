@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { NavigationService } from '../../core/navigation.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ThemeService } from '../../core/services/theme.service';
 import { IconComponent } from '@ui/atoms/icon.component';
 import { IconButtonComponent } from '@ui/atoms/icon-button.component';
 
@@ -46,7 +47,7 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
           flex: 0.8;
           max-width: 400px;
           min-width: 200px;
-          background: #F8FAFF;
+          background: var(--color-bg-raised);
           border: 1px solid var(--card-border);
           border-radius: var(--radius-md);
           padding: 8px 12px;
@@ -114,6 +115,17 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
           size="md"
           tone="secondary"
           [badge]="3"
+        />
+
+        <!-- Theme toggle -->
+        <app-icon-button
+          (clicked)="themeService.toggleTheme()"
+          [icon]="themeService.isDarkMode() ? 'heroSunSolid' : 'heroMoonSolid'"
+          [title]="themeService.isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
+          ariaLabel="Toggle theme"
+          size="md"
+          tone="secondary"
+          [active]="themeService.isDarkMode()"
         />
 
         <!-- User profile container -->
@@ -224,6 +236,7 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
 export class TopBarComponent {
   nav = inject(NavigationService);
   authService = inject(AuthService);
+  themeService = inject(ThemeService);
   userMenuOpen = signal(false);
 
   logout() {

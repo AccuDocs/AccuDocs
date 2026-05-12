@@ -159,15 +159,15 @@ export class IconButtonComponent {
       ? 'var(--background-color)'
       : 'transparent';
     const hoverBackground = this.variant() === 'soft'
-      ? '#EFF6FF'
-      : '#F0F5FF';
+      ? 'var(--brand-accent-soft)'
+      : 'var(--color-surface-hover)';
 
     return {
       '--icon-button-size': sizeMap[this.size()],
-      '--icon-button-bg': this.active() ? 'var(--primary-50)' : baseBackground,
-      '--icon-button-hover-bg': this.active() ? 'var(--primary-100)' : hoverBackground,
-      '--icon-button-color': this.active() ? 'var(--primary-700)' : inactiveColor,
-      '--icon-button-hover-color': this.active() ? 'var(--primary-800)' : hoverColor,
+      '--icon-button-bg': this.active() ? 'var(--brand-accent-soft)' : baseBackground,
+      '--icon-button-hover-bg': this.active() ? 'var(--brand-accent-soft)' : hoverBackground,
+      '--icon-button-color': this.active() ? 'var(--accent)' : inactiveColor,
+      '--icon-button-hover-color': this.active() ? 'var(--accent-hover)' : hoverColor,
     };
   });
 

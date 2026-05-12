@@ -8,15 +8,15 @@
 :root {
   // AccuDocs Blue Theme v2 tokens. New code can use the short names; existing
   // AccuDocs components keep working through the --ad-* compatibility aliases.
-  --sb-bg: #0F1E35;
-  --sb2-bg: #FFFFFF;
+  --sb-bg: #0B1628;
+  --sb2-bg: #F3F7FB;
   --accent: #1D4ED8;
   --accent-hover: #1E3A8A;
   --icon-active: #60A5FA;
-  --page-bg: #F0F5FF;
-  --card-bg: #FFFFFF;
-  --card-border: #E2EDFF;
-  --header-border: #E2E8F0;
+  --page-bg: #E8F1F7;
+  --card-bg: #F8FAFC;
+  --card-border: #CBD8E6;
+  --header-border: #CFDAE8;
   --text-primary-token: #0F1E35;
   --text-body: #2D4A6A;
   --text-muted-token: #7A90B0;
@@ -25,14 +25,14 @@
   --ad-sidebar-bg: var(--sb-bg);
   --ad-sidebar-active: rgba(96, 165, 250, 0.15);
   --ad-sidebar-hover: rgba(255, 255, 255, 0.05);
-  --ad-header-bg: #FFFFFF;
+  --ad-header-bg: #F7FAFC;
   --ad-header-border: var(--header-border);
   --ad-page-bg: var(--page-bg);
   --ad-card-bg: var(--card-bg);
   --ad-card-border: var(--card-border);
   --ad-teal: var(--accent);
   --ad-teal-hover: var(--accent-hover);
-  --ad-teal-light: #EFF6FF;
+  --ad-teal-light: #E6F0FB;
   --ad-teal-icon: var(--icon-active);
   --ad-text-primary: var(--text-primary-token);
   --ad-text-secondary: var(--text-body);
@@ -56,7 +56,7 @@
   --brand-sidebar-border: rgba(255, 255, 255, 0.07);
   --brand-accent: var(--accent);
   --brand-accent-hover: var(--accent-hover);
-  --brand-accent-soft: #EFF6FF;
+  --brand-accent-soft: #E2ECFA;
   --brand-accent-bright: var(--icon-active);
   // Background & Surface layers
   --color-bg: var(--background-color);
@@ -305,7 +305,7 @@ body {
   // Surface & Background
   --background-color: var(--ad-page-bg);
     --surface-color: var(--ad-card-bg);
-  --surface-elevated: #ffffff;
+  --surface-elevated: #F3F7FB;
   --surface-overlay: var(--ad-header-bg);
 
   // Text Colors
@@ -317,7 +317,7 @@ body {
 
   // Border Colors
   --border-color: var(--ad-card-border);
-  --border-subtle: #F0F6FF;
+  --border-subtle: #DCE7F2;
   --border-strong: #CBD5E1;
 
   // Semantic Colors
@@ -448,17 +448,43 @@ body {
 // DARK MODE TOKENS
 // ==========================================
 .dark {
+  // Shell tokens
+  --sb-bg: #06101F;
+  --sb2-bg: #0F1D31;
+  --accent: #60A5FA;
+  --accent-hover: #93C5FD;
+  --icon-active: #7DD3FC;
+  --page-bg: #081321;
+  --card-bg: #10213A;
+  --card-border: #263B59;
+  --header-border: #223650;
+  --text-primary-token: #EAF2FC;
+  --text-body: #B8C7D9;
+  --text-muted-token: #8EA2BA;
+  --text-hint: #637A96;
+  --ad-header-bg: rgba(15, 29, 49, 0.96);
+  --ad-page-bg: #081321;
+  --ad-card-bg: #10213A;
+  --ad-card-border: #263B59;
+  --ad-teal-light: rgba(96, 165, 250, 0.14);
+  --ad-success-bg: rgba(16, 185, 129, 0.14);
+  --ad-success-text: #86EFAC;
+  --brand-accent-soft: rgba(96, 165, 250, 0.16);
+  --sidebar-bg: var(--sb-bg);
+  --sidebar-hover: rgba(255, 255, 255, 0.07);
+  --sidebar-active: rgba(125, 211, 252, 0.16);
+
   // Surface & Background
-  --background-color: #0B1729;
+  --background-color: #081321;
   --surface-color: #10213A;
   --surface-elevated: #172B48;
-  --surface-overlay: #10213A;
+  --surface-overlay: rgba(15, 29, 49, 0.96);
 
   // Text Colors
-  --text-primary: #F8FAFC;
-  --text-secondary: #CBD5E1;
-  --text-muted: #7A90B0;
-  --text-disabled: #64748B;
+  --text-primary: #EAF2FC;
+  --text-secondary: #B8C7D9;
+  --text-muted: #8EA2BA;
+  --text-disabled: #637A96;
   --text-inverse: #0F1E35;
 
   // Border Colors
@@ -596,6 +622,17 @@ h6 {
 
 .content-area :where(td) {
   border-color: var(--border-subtle);
+}
+
+.dark .content-area :where(thead),
+.dark .content-area :where(tbody tr:nth-child(even)),
+.dark .content-area :where(tbody tr:hover),
+.dark .ad-table-total {
+  background: #13233A;
+}
+
+.dark .content-area :where(td) {
+  border-color: var(--border-color);
 }
 p {
   line-height: var(--leading-relaxed);
@@ -1214,4 +1251,479 @@ body.modal-open {
   background: linear-gradient(90deg, transparent, var(--primary), transparent);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
+}
+
+// ==========================================
+// DARK MODE COMPATIBILITY LAYER
+// ==========================================
+.dark {
+  color-scheme: dark;
+}
+
+.dark .content-area {
+  background: #081321 !important;
+  color: var(--text-primary);
+}
+
+.dark .content-area :where(
+  .bg-white,
+  [class*="bg-white/"],
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-slate-50,
+  .bg-slate-100,
+  [class*="bg-slate-50/"],
+  [class*="bg-slate-100/"]
+) {
+  background-color: var(--surface-color) !important;
+}
+
+.dark .content-area :where(
+  .bg-gray-200,
+  .bg-slate-200,
+  [class*="bg-slate-200/"]
+) {
+  background-color: var(--surface-elevated) !important;
+}
+
+.dark .content-area :where(.bg-blue-50, .bg-blue-100, .bg-sky-50, .bg-sky-100, .bg-indigo-50, .bg-indigo-100, [class*="bg-blue-50/"], [class*="bg-sky-50/"], [class*="bg-indigo-50/"]) {
+  background-color: rgba(96, 165, 250, 0.16) !important;
+}
+
+.dark .content-area :where(.bg-emerald-50, .bg-emerald-100, .bg-green-50, .bg-green-100, [class*="bg-emerald-50/"], [class*="bg-green-50/"]) {
+  background-color: rgba(16, 185, 129, 0.16) !important;
+}
+
+.dark .content-area :where(.bg-amber-50, .bg-amber-100, .bg-yellow-50, .bg-yellow-100, [class*="bg-amber-50/"], [class*="bg-yellow-50/"]) {
+  background-color: rgba(245, 158, 11, 0.16) !important;
+}
+
+.dark .content-area :where(.bg-red-50, .bg-red-100, .bg-rose-50, .bg-rose-100, [class*="bg-red-50/"], [class*="bg-rose-50/"]) {
+  background-color: rgba(244, 63, 94, 0.16) !important;
+}
+
+.dark .content-area :where(.bg-violet-50, .bg-violet-100, .bg-purple-50, .bg-purple-100, .bg-pink-50, .bg-pink-100) {
+  background-color: rgba(139, 92, 246, 0.16) !important;
+}
+
+.dark .content-area :where([class*="bg-[radial-gradient"], [class*="bg-[linear-gradient"]) {
+  background:
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.16), transparent 34%),
+    linear-gradient(135deg, rgba(15, 29, 49, 0.98), rgba(16, 33, 58, 0.96), rgba(12, 26, 45, 0.94)) !important;
+}
+
+.dark .content-area :where(.text-slate-950, .text-slate-900, .text-gray-950, .text-gray-900) {
+  color: var(--text-primary) !important;
+}
+
+.dark .content-area :where(.text-slate-800, .text-slate-700, .text-slate-600, .text-gray-800, .text-gray-700, .text-gray-600) {
+  color: var(--text-secondary) !important;
+}
+
+.dark .content-area :where(.text-slate-500, .text-slate-400, .text-gray-500, .text-gray-400) {
+  color: var(--text-muted) !important;
+}
+
+.dark .content-area :where(.border-slate-50, .border-slate-100, .border-slate-200, .border-slate-300, .border-gray-100, .border-gray-200, .border-gray-300) {
+  border-color: var(--border-color) !important;
+}
+
+.dark .content-area :where(.ring-slate-100, .ring-slate-200, .ring-gray-100, .ring-gray-200) {
+  --tw-ring-color: var(--border-color) !important;
+}
+
+.dark .content-area :where(.shadow-sm, .shadow, .shadow-md, .shadow-lg, .shadow-xl) {
+  --tw-shadow-color: rgba(0, 0, 0, 0.36) !important;
+}
+
+.dark .content-area :where(input, textarea, select) {
+  background-color: #14243C !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark .content-area :where(input, textarea)::placeholder {
+  color: var(--text-muted) !important;
+}
+
+.dark .content-area input[type='date']::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.3);
+}
+
+.dark .content-area :where(table) {
+  background: var(--surface-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark .content-area :where(thead, thead tr, th) {
+  background: #14243C !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border-color) !important;
+}
+
+.dark .content-area :where(tbody, tr, td) {
+  background-color: transparent !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.dark .content-area :where(tbody tr:hover) {
+  background-color: rgba(96, 165, 250, 0.08) !important;
+}
+
+.dark .mat-mdc-form-field {
+  --mdc-outlined-text-field-container-color: #14243C;
+  --mdc-outlined-text-field-input-text-color: var(--text-primary);
+  --mdc-outlined-text-field-label-text-color: var(--text-muted);
+  --mdc-outlined-text-field-outline-color: var(--border-color);
+  --mdc-outlined-text-field-hover-outline-color: var(--border-strong);
+  --mdc-outlined-text-field-focus-outline-color: var(--accent);
+  --mat-select-enabled-trigger-text-color: var(--text-primary);
+  --mat-select-placeholder-text-color: var(--text-muted);
+}
+
+.dark .mat-mdc-select-panel,
+.dark .mat-mdc-menu-panel {
+  background: var(--surface-elevated) !important;
+  border-color: var(--border-color) !important;
+}
+
+.dark .mat-mdc-option,
+.dark .mat-mdc-menu-item {
+  color: var(--text-primary) !important;
+}
+
+.dark .mat-mdc-option:hover,
+.dark .mat-mdc-menu-item:hover {
+  background: rgba(96, 165, 250, 0.12) !important;
+}
+
+.dark .mat-mdc-paginator {
+  background: var(--surface-color) !important;
+  color: var(--text-secondary) !important;
+}
+
+.dark app-scanner-documents-list :where(.list-hero, .filter-card, .table-card, .modal-panel, .details-grid div, .line-view-row),
+.dark app-compliance-calendar :where(.command-toolbar, .dashboard-panel, .metric-card, .toolbar-button, .filter-field, .month-nav button, .view-toggle),
+.dark app-calendar-view :where(.calendar-panel, .calendar-cell, .calendar-head, .legend-row),
+.dark app-deadline-list :where(.deadline-list, .deadline-card),
+.dark app-file-view-toolbar .windows-command-bar,
+.dark app-file-grid,
+.dark app-file-grid :where(.multi-select-header),
+.dark app-file-list :where(.list-item),
+.dark app-details-pane > div,
+.dark app-preview-pane > div {
+  background: var(--surface-color) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark app-scanner-documents-list .list-hero::before {
+  background:
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.16), transparent 34%),
+    linear-gradient(135deg, rgba(15, 29, 49, 0.98), rgba(16, 33, 58, 0.96), rgba(12, 26, 45, 0.94)) !important;
+}
+
+.dark app-scanner-documents-list :where(label span, .pager, .pager span, .details-grid strong),
+.dark app-calendar-view :where(.day-pill),
+.dark app-file-list :where(.file-name),
+.dark app-file-grid :where(.file-name),
+.dark app-file-view-toolbar :where(.command-button, .command-icon-button, .toolbar-dropdown-btn) {
+  color: var(--text-primary) !important;
+}
+
+.dark app-scanner-documents-list :where(.eyebrow, .details-grid span, .line-items-view span),
+.dark app-calendar-view :where(.day-name, .legend-item, .more-chip),
+.dark app-file-list :where(.item-meta),
+.dark app-file-view-toolbar :where(.chevron-icon) {
+  color: var(--text-muted) !important;
+}
+
+.dark app-scanner-documents-list :where(.table-head, th),
+.dark app-calendar-view .calendar-head {
+  background: #14243C !important;
+}
+
+.dark app-calendar-view .calendar-cell.is-muted {
+  background: #0D1A2D !important;
+}
+
+.dark app-calendar-view .calendar-cell.is-today {
+  background: rgba(96, 165, 250, 0.12) !important;
+}
+
+.dark app-file-grid :where(.file-card:hover, .file-card.editing) {
+  background: rgba(96, 165, 250, 0.12) !important;
+  border-color: rgba(147, 197, 253, 0.42) !important;
+}
+
+.dark app-file-grid :where(.file-card.active, .file-card.selected) {
+  background: rgba(96, 165, 250, 0.20) !important;
+  border-color: rgba(147, 197, 253, 0.56) !important;
+}
+
+.dark app-file-grid .inline-rename-input {
+  background: #14243C !important;
+  color: var(--text-primary) !important;
+}
+
+.dark app-file-view-toolbar :where(.command-button:hover, .command-icon-button:hover:not(:disabled), .toolbar-dropdown-btn:hover) {
+  background: rgba(96, 165, 250, 0.12) !important;
+  border-color: rgba(147, 197, 253, 0.28) !important;
+  color: var(--accent-hover) !important;
+}
+
+// Client workspace embeds several feature modules that were built with local
+// white-card styles. Keep these overrides scoped to /workspace pages.
+.dark app-client-workspace {
+  color: var(--text-primary);
+}
+
+.dark app-client-workspace .client-workspace-shell,
+.dark app-client-workspace :where(.gst-dashboard-page, .client-inventory-shell) {
+  background: #081321 !important;
+  color: var(--text-primary) !important;
+}
+
+.dark app-client-workspace .files-module {
+  --files-primary: var(--accent);
+  --files-ink: var(--text-primary);
+  --files-muted: var(--text-muted);
+  --files-border: var(--border-color);
+  --files-soft: #14243C;
+}
+
+.dark app-client-workspace :where(
+  .files-tree-card,
+  .files-browser-card,
+  .files-tree-meta,
+  .files-browser-toolbar,
+  .explorer-address-row,
+  .explorer-address-bar,
+  .explorer-search-box,
+  .explorer-info-strip,
+  .files-content,
+  .files-status-bar,
+  .files-upload-progress,
+  .files-empty-state,
+  .dashboard-panel,
+  .summary-card,
+  .sa-card,
+  .ts-card,
+  .ts-large-preview,
+  .pl-result
+) {
+  background: var(--surface-color) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark app-client-workspace :where(
+  .files-tree-header,
+  .files-empty-icon,
+  .files-count-pill,
+  .folder-count,
+  .folder-count-muted,
+  .folder-row-action,
+  .ts-thumb,
+  .ts-card-footer,
+  .pl-url-box,
+  .pl-copy-btn
+) {
+  background: #14243C !important;
+  border-color: var(--border-color) !important;
+  box-shadow: none !important;
+  color: var(--text-secondary) !important;
+}
+
+.dark app-client-workspace :where(
+  .address-segment,
+  .address-segment.is-current,
+  .folder-tree-row,
+  .files-status-bar button,
+  .ts-title,
+  .ts-card-name,
+  .metric-value,
+  .split-value
+) {
+  color: var(--text-primary) !important;
+}
+
+.dark app-client-workspace :where(
+  .explorer-search-box,
+  .explorer-info-strip p,
+  .explorer-info-strip span,
+  .files-tree-meta,
+  .files-empty-state p,
+  .files-status-bar,
+  .ts-subtitle,
+  .ts-system-tag,
+  .ts-preview-kicker,
+  .pl-regen-btn
+) {
+  color: var(--text-muted) !important;
+}
+
+.dark app-client-workspace :where(
+  .address-segment:hover,
+  .folder-tree-row:hover,
+  .files-status-bar button:hover,
+  .folder-row-action:hover
+) {
+  background: rgba(96, 165, 250, 0.12) !important;
+  border-color: rgba(147, 197, 253, 0.32) !important;
+  color: var(--accent-hover) !important;
+}
+
+.dark app-client-workspace .folder-tree-row.is-active {
+  background: rgba(96, 165, 250, 0.22) !important;
+  border-color: rgba(147, 197, 253, 0.58) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark app-client-workspace :where(
+  .bg-white,
+  [class*="bg-white/"],
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-slate-50,
+  .bg-slate-100,
+  [class*="bg-slate-50/"],
+  [class*="bg-slate-100/"]
+) {
+  background-color: var(--surface-color) !important;
+}
+
+.dark app-client-workspace :where(
+  .bg-emerald-50,
+  .bg-emerald-100,
+  [class*="bg-emerald-50/"],
+  [class*="bg-emerald-100/"],
+  .bg-green-50,
+  .bg-green-100
+) {
+  background-color: rgba(16, 185, 129, 0.16) !important;
+}
+
+.dark app-client-workspace :where(
+  .bg-blue-50,
+  .bg-blue-100,
+  .bg-primary-50,
+  .bg-primary-100,
+  .bg-indigo-50,
+  .bg-indigo-100,
+  .bg-sky-50,
+  .bg-sky-100,
+  [class*="bg-blue-50/"],
+  [class*="bg-primary-50/"],
+  [class*="bg-indigo-50/"],
+  [class*="bg-sky-50/"]
+) {
+  background-color: rgba(96, 165, 250, 0.16) !important;
+}
+
+.dark app-client-workspace :where(
+  .bg-amber-50,
+  .bg-amber-100,
+  .bg-yellow-50,
+  .bg-yellow-100,
+  [class*="bg-amber-50/"],
+  [class*="bg-yellow-50/"]
+) {
+  background-color: rgba(245, 158, 11, 0.16) !important;
+}
+
+.dark app-client-workspace :where(
+  .bg-rose-50,
+  .bg-rose-100,
+  .bg-red-50,
+  .bg-red-100,
+  [class*="bg-rose-50/"],
+  [class*="bg-red-50/"]
+) {
+  background-color: rgba(244, 63, 94, 0.16) !important;
+}
+
+.dark app-client-workspace :where([class*="from-white"], [class*="via-white"], [class*="to-white"]) {
+  background:
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.14), transparent 34%),
+    linear-gradient(135deg, rgba(16, 33, 58, 0.98), rgba(20, 36, 60, 0.96)) !important;
+}
+
+.dark app-client-workspace :where(
+  .text-slate-950,
+  .text-slate-900,
+  .text-gray-950,
+  .text-gray-900
+) {
+  color: var(--text-primary) !important;
+}
+
+.dark app-client-workspace :where(
+  .text-slate-800,
+  .text-slate-700,
+  .text-slate-600,
+  .text-gray-800,
+  .text-gray-700,
+  .text-gray-600
+) {
+  color: var(--text-secondary) !important;
+}
+
+.dark app-client-workspace :where(
+  .text-slate-500,
+  .text-slate-400,
+  .text-gray-500,
+  .text-gray-400
+) {
+  color: var(--text-muted) !important;
+}
+
+.dark app-client-workspace :where(
+  .border-slate-50,
+  .border-slate-100,
+  .border-slate-200,
+  .border-slate-300,
+  .border-gray-100,
+  .border-gray-200,
+  .border-gray-300,
+  .ring-slate-100,
+  .ring-slate-200
+) {
+  border-color: var(--border-color) !important;
+  --tw-ring-color: var(--border-color) !important;
+}
+
+.dark app-client-workspace :where(input, textarea, select, .sa-input, .studio-input, .studio-select) {
+  background: #14243C !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark app-client-workspace :where(input, textarea, .studio-input)::placeholder {
+  color: var(--text-muted) !important;
+}
+
+.dark app-client-workspace :where(input[type='date'])::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.3);
+}
+
+.dark app-client-workspace :where(thead, thead tr, th) {
+  background: #14243C !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-muted) !important;
+}
+
+.dark app-client-workspace :where(tbody, tr, td) {
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark app-client-workspace :where(tbody tr:hover, [class*="hover:bg-white"]:hover, [class*="hover:bg-slate-50"]:hover) {
+  background-color: rgba(96, 165, 250, 0.10) !important;
+}
+
+.dark app-client-workspace :where(.radio-tile.active, .template-tile:hover, .ts-card--selected) {
+  background: rgba(96, 165, 250, 0.16) !important;
+  border-color: rgba(147, 197, 253, 0.58) !important;
 }
