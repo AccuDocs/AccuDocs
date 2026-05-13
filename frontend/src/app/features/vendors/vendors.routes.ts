@@ -8,6 +8,7 @@ export const VENDORS_ROUTES: Routes = [
   { path: 'add', component: VendorManagementComponent, data: { view: 'add' } },
   { path: 'expenses', component: VendorManagementComponent, data: { view: 'expenses' } },
   { path: 'recurring-expenses', component: VendorManagementComponent, data: { view: 'recurring-expenses' } },
+  { path: 'purchase-orders/new', component: VendorManagementComponent, data: { view: 'create-purchase-order' } },
   { path: 'purchase-orders', component: VendorManagementComponent, data: { view: 'purchase-orders' } },
   { path: 'bills', component: VendorManagementComponent, data: { view: 'bills' } },
   { path: 'recurring-bills', component: VendorManagementComponent, data: { view: 'recurring-bills' } },

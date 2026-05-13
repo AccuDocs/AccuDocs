@@ -26,6 +26,7 @@ import {
   VendorDashboard,
   VendorDocument,
   VendorPayment,
+  VendorPoStatus,
   VendorPurchaseOrder,
   VendorType,
 } from '../models/vendor.models';
@@ -36,6 +37,7 @@ type VendorView =
   | 'expenses'
   | 'recurring-expenses'
   | 'purchase-orders'
+  | 'create-purchase-order'
   | 'bills'
   | 'recurring-bills'
   | 'payments'
@@ -124,7 +126,7 @@ const EMPTY_DASHBOARD: VendorDashboard = {
               type="button"
               (click)="openVendorTab(tab.view)"
               class="inline-flex min-h-9 items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-[12px] font-bold transition-all"
-              [ngClass]="view() === tab.view ? 'bg-white text-primary-600 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:text-primary-300 dark:ring-slate-700' : 'text-slate-500 hover:bg-white/70 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'"
+              [ngClass]="isVendorTabActive(tab.view) ? 'bg-white text-primary-600 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:text-primary-300 dark:ring-slate-700' : 'text-slate-500 hover:bg-white/70 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'"
             >
               <ng-icon [name]="tab.icon" size="16"></ng-icon>
               {{ tab.label }}
@@ -134,7 +136,7 @@ const EMPTY_DASHBOARD: VendorDashboard = {
               [routerLink]="tab.route"
               (click)="prepareVendorRouteTab(tab.view)"
               class="inline-flex min-h-9 items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-[12px] font-bold transition-all"
-              [ngClass]="view() === tab.view ? 'bg-white text-primary-600 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:text-primary-300 dark:ring-slate-700' : 'text-slate-500 hover:bg-white/70 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'"
+              [ngClass]="isVendorTabActive(tab.view) ? 'bg-white text-primary-600 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:text-primary-300 dark:ring-slate-700' : 'text-slate-500 hover:bg-white/70 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'"
             >
               <ng-icon [name]="tab.icon" size="16"></ng-icon>
               {{ tab.label }}
@@ -315,42 +317,183 @@ const EMPTY_DASHBOARD: VendorDashboard = {
         </section>
       }
 
-      @if (view() === 'purchase-orders') {
-        <section class="grid gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
-          <form class="panel space-y-4" (ngSubmit)="savePurchaseOrder()">
-            <p class="eyebrow">Purchase order</p>
-            <h2 class="panel-title">Create PO</h2>
-            <select name="poVendor" [(ngModel)]="poForm.vendorId" required class="field"><option value="">Select vendor</option>@for (vendor of vendors(); track vendor.id) { <option [value]="vendor.id">{{ vendor.vendorName }}</option> }</select>
-            <input name="poDelivery" [(ngModel)]="poForm.deliveryDate" type="date" class="field" />
-            <input name="poDescription" [(ngModel)]="poItem.description" class="field" placeholder="Product/service" />
-            <div class="grid grid-cols-3 gap-3">
-              <input name="poQty" [(ngModel)]="poItem.quantity" type="number" min="1" class="field" placeholder="Qty" />
-              <input name="poRate" [(ngModel)]="poItem.rate" type="number" min="0" class="field" placeholder="Rate" />
-              <input name="poGst" [(ngModel)]="poItem.gstRate" type="number" min="0" class="field" placeholder="GST %" />
+      @if (view() === 'create-purchase-order') {
+        <section class="panel po-create-panel">
+          <form (ngSubmit)="savePurchaseOrder()">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Purchase order</p>
+                <h2 class="panel-title">Create Purchase Order</h2>
+              </div>
+              <button type="button" class="mini-btn" (click)="goToPurchaseOrders()">
+                <ng-icon name="heroXMarkSolid" size="16"></ng-icon>
+                Back to list
+              </button>
             </div>
-            <textarea name="poNotes" [(ngModel)]="poForm.notes" rows="3" class="field" placeholder="Approval notes or delivery terms"></textarea>
-            <button class="primary-btn w-full justify-center" type="submit">Create Purchase Order</button>
+
+            <div class="grid gap-4 lg:grid-cols-4">
+              <label class="space-y-2">
+                <span class="label">Vendor</span>
+                <select name="poVendor" [(ngModel)]="poForm.vendorId" required class="field">
+                  <option value="">Select vendor</option>
+                  @for (vendor of vendors(); track vendor.id) {
+                    <option [value]="vendor.id">{{ vendor.vendorName }}</option>
+                  }
+                </select>
+              </label>
+
+              <label class="space-y-2">
+                <span class="label">PO date</span>
+                <input name="poDate" [(ngModel)]="poForm.poDate" type="date" class="field" />
+              </label>
+
+              <label class="space-y-2">
+                <span class="label">Expected delivery</span>
+                <input name="poDelivery" [(ngModel)]="poForm.deliveryDate" type="date" class="field" />
+              </label>
+
+              <label class="space-y-2">
+                <span class="label">Status</span>
+                <select name="poStatus" [(ngModel)]="poForm.status" class="field">
+                  <option value="draft">Draft</option>
+                  <option value="pending_approval">Pending Approval</option>
+                  <option value="approved">Approved</option>
+                </select>
+              </label>
+
+              <label class="space-y-2 lg:col-span-2">
+                <span class="label">Item / service</span>
+                <input name="poDescription" [(ngModel)]="poItem.description" class="field" placeholder="Product or service name" />
+              </label>
+
+              <label class="space-y-2">
+                <span class="label">HSN/SAC</span>
+                <input name="poHsn" [(ngModel)]="poItem.hsnSacCode" class="field" placeholder="Code" />
+              </label>
+
+              <label class="space-y-2">
+                <span class="label">Qty</span>
+                <input name="poQty" [(ngModel)]="poItem.quantity" type="number" min="1" class="field" />
+              </label>
+
+              <label class="space-y-2">
+                <span class="label">Rate</span>
+                <input name="poRate" [(ngModel)]="poItem.rate" type="number" min="0" class="field" />
+              </label>
+
+              <label class="space-y-2">
+                <span class="label">GST %</span>
+                <select name="poGst" [(ngModel)]="poItem.gstRate" class="field">
+                  @for (rate of [0, 5, 12, 18, 28]; track rate) {
+                    <option [value]="rate">{{ rate }}%</option>
+                  }
+                </select>
+              </label>
+
+              <div class="po-total-box">
+                <div>
+                  <span>Taxable</span>
+                  <strong>{{ money(poSubtotal()) }}</strong>
+                </div>
+                <div>
+                  <span>GST</span>
+                  <strong>{{ money(poTaxAmount()) }}</strong>
+                </div>
+                <div class="po-total-final">
+                  <span>Total</span>
+                  <strong>{{ money(poTotalAmount()) }}</strong>
+                </div>
+              </div>
+
+              <label class="space-y-2 lg:col-span-4">
+                <span class="label">Terms / notes</span>
+                <textarea name="poNotes" [(ngModel)]="poForm.notes" rows="3" class="field" placeholder="Delivery terms, approval notes, or internal remarks"></textarea>
+              </label>
+
+              <div class="flex flex-wrap justify-end gap-3 lg:col-span-4">
+                <button class="mini-btn" type="button" (click)="goToPurchaseOrders()">
+                  Cancel
+                </button>
+                <button class="primary-btn" type="submit" [disabled]="!canCreatePurchaseOrder()">
+                  Create Purchase Order
+                </button>
+              </div>
+            </div>
           </form>
-          <div class="panel">
-            <div class="panel-head"><div><p class="eyebrow">PO management</p><h2 class="panel-title">Purchase Orders</h2></div></div>
+        </section>
+      }
+
+      @if (view() === 'purchase-orders') {
+        <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">PO register</p>
+                <h2 class="panel-title">Purchase Orders</h2>
+              </div>
+              <div class="flex flex-wrap items-center justify-end gap-3">
+                <div class="po-status-summary">
+                  <span>{{ purchaseOrders().length }} total</span>
+                  <span>{{ draftPoCount() }} draft</span>
+                  <span>{{ completedPoCount() }} completed</span>
+                </div>
+                <button type="button" class="primary-btn whitespace-nowrap" (click)="startCreatePurchaseOrder()">
+                  <ng-icon name="heroPlusSolid" size="16"></ng-icon>
+                  Create PO
+                </button>
+              </div>
+            </div>
             <div class="overflow-x-auto">
-              <table class="data-table min-w-[900px]">
-                <thead><tr><th>PO</th><th>Vendor</th><th>Delivery</th><th>Status</th><th>Total</th><th></th></tr></thead>
+              <table class="data-table min-w-[1120px]">
+                <thead>
+                  <tr>
+                    <th>PO</th>
+                    <th>Vendor</th>
+                    <th>Items</th>
+                    <th>Delivery</th>
+                    <th>Taxable</th>
+                    <th>GST</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
                 <tbody>
                   @for (po of purchaseOrders(); track po.id) {
                     <tr>
                       <td><p class="font-black">{{ po.poNumber }}</p><p class="text-xs text-slate-400">{{ po.poDate | date:'mediumDate' }}</p></td>
                       <td>{{ po.vendor?.vendorName || vendorName(po.vendorId) }}</td>
+                      <td>
+                        <p class="font-black text-slate-700 dark:text-slate-100">{{ poItemSummary(po) }}</p>
+                        <p class="text-xs text-slate-400">{{ po.items?.length || 0 }} line item(s)</p>
+                      </td>
                       <td>{{ po.deliveryDate ? (po.deliveryDate | date:'mediumDate') : 'Not set' }}</td>
-                      <td><span class="pill pill-blue">{{ statusText(po.status) }}</span></td>
+                      <td class="font-black">{{ money(po.subtotal) }}</td>
+                      <td>{{ money(po.taxAmount) }}</td>
                       <td class="font-black">{{ money(po.totalAmount) }}</td>
-                      <td><button class="mini-btn" (click)="markPoSent(po)" type="button">Send</button></td>
+                      <td><span class="pill" [ngClass]="poStatusClass(po.status)">{{ statusText(po.status) }}</span></td>
+                      <td class="action-cell">
+                        <div class="flex flex-wrap gap-2">
+                          @if (canSendPo(po)) {
+                            <button class="mini-btn" (click)="updatePoStatus(po, 'sent')" type="button">Send</button>
+                          }
+                          @if (canCompletePo(po)) {
+                            <button class="mini-btn" (click)="updatePoStatus(po, 'completed')" type="button">Complete</button>
+                          }
+                          @if (po.status !== 'cancelled') {
+                            <button class="mini-btn" (click)="openPoBill(po)" type="button">Bill</button>
+                          }
+                          @if (canCancelPo(po)) {
+                            <button class="mini-btn danger-btn" (click)="cancelPo(po)" type="button">Cancel</button>
+                          }
+                        </div>
+                      </td>
                     </tr>
+                  } @empty {
+                    <tr><td colspan="9" class="py-12 text-center text-slate-500">No purchase orders yet. Create your first PO to start tracking vendor commitments.</td></tr>
                   }
                 </tbody>
               </table>
             </div>
-          </div>
         </section>
       }
 
@@ -584,6 +727,67 @@ const EMPTY_DASHBOARD: VendorDashboard = {
       letter-spacing: 0;
     }
 
+    .po-create-panel {
+      align-self: start;
+    }
+
+    .po-total-box {
+      background: linear-gradient(135deg, #f8fafc 0%, #eef6ff 100%);
+      border: 1px solid var(--ad-card-border, #e2e8f0);
+      border-radius: 18px;
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+    }
+
+    .po-total-box div {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .po-total-box span,
+    .po-status-summary {
+      color: var(--ad-text-muted, #64748b);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .po-total-box strong {
+      color: var(--ad-text-primary, #020617);
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .po-total-final {
+      border-top: 1px solid rgba(148, 163, 184, .35);
+      margin-top: 2px;
+      padding-top: 10px;
+    }
+
+    .po-total-final strong {
+      color: var(--primary-700, #1d4ed8);
+      font-size: 22px;
+    }
+
+    .po-status-summary {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .po-status-summary span {
+      background: var(--surface-elevated, #f8fafc);
+      border: 1px solid var(--ad-card-border, #e2e8f0);
+      border-radius: 999px;
+      padding: 7px 10px;
+    }
+
     .metric-value {
       color: var(--ad-text-primary, #020617);
       display: block;
@@ -638,6 +842,13 @@ const EMPTY_DASHBOARD: VendorDashboard = {
 
     .primary-btn:hover {
       background: var(--primary-700, #1e40af);
+    }
+
+    .primary-btn:disabled,
+    .primary-btn:disabled:hover {
+      background: #94a3b8;
+      cursor: not-allowed;
+      opacity: .72;
     }
 
     .mini-btn {
@@ -713,6 +924,8 @@ const EMPTY_DASHBOARD: VendorDashboard = {
     .pill-green { background: rgb(220 252 231); color: rgb(4 120 87); }
     .pill-red { background: rgb(255 228 230); color: rgb(190 18 60); }
     .pill-blue { background: rgb(219 234 254); color: rgb(29 78 216); }
+    .pill-amber { background: rgb(254 243 199); color: rgb(180 83 9); }
+    .pill-slate { background: rgb(226 232 240); color: rgb(71 85 105); }
 
     :host-context(.dark) .panel {
       background: var(--surface-color, #10213a);
@@ -728,7 +941,9 @@ const EMPTY_DASHBOARD: VendorDashboard = {
     }
 
     :host-context(.dark) .field,
-    :host-context(.dark) .data-table th {
+    :host-context(.dark) .data-table th,
+    :host-context(.dark) .po-total-box,
+    :host-context(.dark) .po-status-summary span {
       background: #14243c;
       color: var(--text-primary, #eaf2fc);
     }
@@ -804,8 +1019,8 @@ export class VendorManagementComponent implements OnInit {
     creditLimit: 0,
   };
 
-  poForm = { vendorId: '', deliveryDate: '', notes: '', status: 'draft' };
-  poItem = { description: '', quantity: 1, rate: 0, gstRate: 18 };
+  poForm = { vendorId: '', poDate: this.today(), deliveryDate: '', notes: '', status: 'draft' };
+  poItem = { description: '', hsnSacCode: '', quantity: 1, rate: 0, gstRate: 18 };
   billForm = { vendorId: '', billNumber: '', invoiceDate: this.today(), dueDate: '', category: '', taxAmount: 0, totalAmount: 0, attachmentUrl: '' };
   paymentForm = { vendorId: '', billId: '', amount: 0, paymentDate: this.today(), paymentMethod: 'bank_transfer', referenceNumber: '' };
   documentForm = { vendorId: '', documentType: 'gst_certificate', name: '', fileUrl: '' };
@@ -817,6 +1032,7 @@ export class VendorManagementComponent implements OnInit {
       expenses: 'Expenses',
       'recurring-expenses': 'Recurring Expenses',
       'purchase-orders': 'Purchase Order Management',
+      'create-purchase-order': 'Create Purchase Order',
       bills: 'Vendor Bills',
       'recurring-bills': 'Recurring Bills',
       payments: 'Payments Made',
@@ -860,6 +1076,11 @@ export class VendorManagementComponent implements OnInit {
     if (view === 'add') {
       this.resetVendorForm();
     }
+  }
+
+  isVendorTabActive(view: VendorView): boolean {
+    const activeView = this.view();
+    return activeView === view || (view === 'purchase-orders' && activeView === 'create-purchase-order');
   }
 
   refresh(): void {
@@ -931,7 +1152,11 @@ export class VendorManagementComponent implements OnInit {
   savePurchaseOrder(): void {
     if (!this.poForm.vendorId || !this.poItem.description) return;
     this.vendorService.createPurchaseOrder(this.withScope({ ...this.poForm, items: [this.poItem] })).subscribe({
-      next: () => { this.poForm = { vendorId: '', deliveryDate: '', notes: '', status: 'draft' }; this.poItem = { description: '', quantity: 1, rate: 0, gstRate: 18 }; this.refresh(); },
+      next: () => {
+        this.resetPurchaseOrderForm();
+        this.refresh();
+        this.goToPurchaseOrders();
+      },
       error: (error) => this.errorMessage.set(error?.error?.message || 'Purchase order could not be saved'),
     });
   }
@@ -961,7 +1186,104 @@ export class VendorManagementComponent implements OnInit {
   }
 
   markPoSent(po: VendorPurchaseOrder): void {
-    this.vendorService.updatePurchaseOrderStatus(po.id, 'sent').subscribe({ next: () => this.loadPurchaseOrders() });
+    this.updatePoStatus(po, 'sent');
+  }
+
+  startCreatePurchaseOrder(): void {
+    this.resetPurchaseOrderForm();
+    if (this.isClientScoped()) {
+      this.setVendorView('create-purchase-order');
+      return;
+    }
+
+    void this.router.navigateByUrl('/purchases/purchase-orders/new');
+  }
+
+  goToPurchaseOrders(): void {
+    if (this.isClientScoped()) {
+      this.setVendorView('purchase-orders');
+      return;
+    }
+
+    void this.router.navigateByUrl('/purchases/purchase-orders');
+  }
+
+  canCreatePurchaseOrder(): boolean {
+    return !!this.poForm.vendorId
+      && !!this.poItem.description?.trim()
+      && Number(this.poItem.quantity || 0) > 0
+      && Number(this.poItem.rate || 0) >= 0;
+  }
+
+  poSubtotal(): number {
+    return Number(this.poItem.quantity || 0) * Number(this.poItem.rate || 0);
+  }
+
+  poTaxAmount(): number {
+    return this.poSubtotal() * (Number(this.poItem.gstRate || 0) / 100);
+  }
+
+  poTotalAmount(): number {
+    return this.poSubtotal() + this.poTaxAmount();
+  }
+
+  draftPoCount(): number {
+    return this.purchaseOrders().filter((po) => po.status === 'draft').length;
+  }
+
+  completedPoCount(): number {
+    return this.purchaseOrders().filter((po) => po.status === 'completed').length;
+  }
+
+  poItemSummary(po: VendorPurchaseOrder): string {
+    return po.items?.[0]?.description || 'Purchase item';
+  }
+
+  poStatusClass(status: VendorPoStatus): string {
+    const map: Record<VendorPoStatus, string> = {
+      draft: 'pill-blue',
+      pending_approval: 'pill-amber',
+      approved: 'pill-green',
+      sent: 'pill-blue',
+      partially_received: 'pill-amber',
+      completed: 'pill-green',
+      cancelled: 'pill-red',
+    };
+    return map[status] || 'pill-slate';
+  }
+
+  canSendPo(po: VendorPurchaseOrder): boolean {
+    return po.status === 'draft' || po.status === 'pending_approval' || po.status === 'approved';
+  }
+
+  canCompletePo(po: VendorPurchaseOrder): boolean {
+    return po.status === 'sent' || po.status === 'partially_received' || po.status === 'approved';
+  }
+
+  canCancelPo(po: VendorPurchaseOrder): boolean {
+    return po.status !== 'cancelled' && po.status !== 'completed';
+  }
+
+  updatePoStatus(po: VendorPurchaseOrder, status: VendorPoStatus): void {
+    this.vendorService.updatePurchaseOrderStatus(po.id, status).subscribe({
+      next: () => this.loadPurchaseOrders(),
+      error: (error) => this.errorMessage.set(error?.error?.message || 'Purchase order status could not be updated'),
+    });
+  }
+
+  cancelPo(po: VendorPurchaseOrder): void {
+    if (!window.confirm(`Cancel ${po.poNumber}?`)) return;
+    this.updatePoStatus(po, 'cancelled');
+  }
+
+  openPoBill(po: VendorPurchaseOrder): void {
+    this.prefillVendorAction(po.vendorId, 'bills');
+    if (this.isClientScoped()) {
+      this.setVendorView('bills');
+      return;
+    }
+
+    void this.router.navigateByUrl(`/purchases/bills?vendorId=${encodeURIComponent(po.vendorId)}`);
   }
 
   startAddVendor(): void {
@@ -1128,6 +1450,11 @@ export class VendorManagementComponent implements OnInit {
       creditDays: 30,
       creditLimit: 0,
     };
+  }
+
+  private resetPurchaseOrderForm(): void {
+    this.poForm = { vendorId: '', poDate: this.today(), deliveryDate: '', notes: '', status: 'draft' };
+    this.poItem = { description: '', hsnSacCode: '', quantity: 1, rate: 0, gstRate: 18 };
   }
 
   private goToVendorList(): void {
