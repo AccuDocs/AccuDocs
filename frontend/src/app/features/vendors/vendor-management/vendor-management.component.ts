@@ -30,7 +30,19 @@ import {
   VendorType,
 } from '../models/vendor.models';
 
-type VendorView = 'list' | 'add' | 'purchase-orders' | 'bills' | 'payments' | 'accounts-payable' | 'documents' | 'reports';
+type VendorView =
+  | 'list'
+  | 'add'
+  | 'expenses'
+  | 'recurring-expenses'
+  | 'purchase-orders'
+  | 'bills'
+  | 'recurring-bills'
+  | 'payments'
+  | 'vendor-credits'
+  | 'accounts-payable'
+  | 'documents'
+  | 'reports';
 
 const EMPTY_DASHBOARD: VendorDashboard = {
   totalVendors: 0,
@@ -279,6 +291,30 @@ const EMPTY_DASHBOARD: VendorDashboard = {
         </section>
       }
 
+      @if (view() === 'expenses') {
+        <section class="panel">
+          <div class="panel-head"><div><p class="eyebrow">Expenses</p><h2 class="panel-title">Expenses</h2></div></div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[900px]">
+              <thead><tr><th>Date</th><th>Vendor</th><th>Category</th><th>Taxable Amount</th><th>GST</th><th>Total</th><th>Status</th></tr></thead>
+              <tbody><tr><td colspan="7" class="py-12 text-center text-slate-500">No expenses to display.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      }
+
+      @if (view() === 'recurring-expenses') {
+        <section class="panel">
+          <div class="panel-head"><div><p class="eyebrow">Recurring expenses</p><h2 class="panel-title">Recurring Expenses</h2></div></div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[900px]">
+              <thead><tr><th>Profile</th><th>Vendor</th><th>Frequency</th><th>Next Date</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody><tr><td colspan="6" class="py-12 text-center text-slate-500">No recurring expenses to display.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      }
+
       @if (view() === 'purchase-orders') {
         <section class="grid gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
           <form class="panel space-y-4" (ngSubmit)="savePurchaseOrder()">
@@ -360,6 +396,18 @@ const EMPTY_DASHBOARD: VendorDashboard = {
         </section>
       }
 
+      @if (view() === 'recurring-bills') {
+        <section class="panel">
+          <div class="panel-head"><div><p class="eyebrow">Recurring bills</p><h2 class="panel-title">Recurring Bills</h2></div></div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[900px]">
+              <thead><tr><th>Profile</th><th>Vendor</th><th>Frequency</th><th>Next Bill</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody><tr><td colspan="6" class="py-12 text-center text-slate-500">No recurring bills to display.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      }
+
       @if (view() === 'payments') {
         <section class="grid gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
           <form class="panel space-y-4" (ngSubmit)="savePayment()">
@@ -383,6 +431,18 @@ const EMPTY_DASHBOARD: VendorDashboard = {
                 <tbody>@for (payment of payments(); track payment.id) { <tr><td>{{ payment.paymentDate | date:'mediumDate' }}</td><td>{{ payment.vendor?.vendorName || vendorName(payment.vendorId) }}</td><td>{{ payment.bill?.billNumber || 'Advance' }}</td><td>{{ statusText(payment.paymentMethod) }}</td><td class="font-black">{{ money(payment.amount) }}</td></tr> }</tbody>
               </table>
             </div>
+          </div>
+        </section>
+      }
+
+      @if (view() === 'vendor-credits') {
+        <section class="panel">
+          <div class="panel-head"><div><p class="eyebrow">Vendor credits</p><h2 class="panel-title">Vendor Credits</h2></div></div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[900px]">
+              <thead><tr><th>Credit Note</th><th>Vendor</th><th>Date</th><th>Amount</th><th>Applied</th><th>Balance</th><th>Status</th></tr></thead>
+              <tbody><tr><td colspan="7" class="py-12 text-center text-slate-500">No vendor credits to display.</td></tr></tbody>
+            </table>
           </div>
         </section>
       }
@@ -725,14 +785,14 @@ export class VendorManagementComponent implements OnInit {
 
   searchTerm = '';
   readonly tabs = [
-    { view: 'list', label: 'Vendor List', route: '/vendors', icon: 'heroBuildingStorefrontSolid' },
-    { view: 'add', label: 'Add Vendor', route: '/vendors/add', icon: 'heroPlusSolid' },
-    { view: 'purchase-orders', label: 'Purchase Orders', route: '/vendors/purchase-orders', icon: 'heroClipboardDocumentCheckSolid' },
-    { view: 'bills', label: 'Bills', route: '/vendors/bills', icon: 'heroDocumentTextSolid' },
-    { view: 'payments', label: 'Payments', route: '/vendors/payments', icon: 'heroBanknotesSolid' },
-    { view: 'accounts-payable', label: 'Accounts Payable', route: '/vendors/accounts-payable', icon: 'heroShieldCheckSolid' },
-    { view: 'documents', label: 'Documents', route: '/vendors/documents', icon: 'heroFolderSolid' },
-    { view: 'reports', label: 'Reports', route: '/vendors/reports', icon: 'heroTruckSolid' },
+    { view: 'list', label: 'Vendors', route: '/purchases/vendors', icon: 'heroBuildingStorefrontSolid' },
+    { view: 'expenses', label: 'Expenses', route: '/purchases/expenses', icon: 'heroBanknotesSolid' },
+    { view: 'recurring-expenses', label: 'Recurring Expenses', route: '/purchases/recurring-expenses', icon: 'heroArrowPathSolid' },
+    { view: 'purchase-orders', label: 'Purchase Orders', route: '/purchases/purchase-orders', icon: 'heroClipboardDocumentCheckSolid' },
+    { view: 'bills', label: 'Bills', route: '/purchases/bills', icon: 'heroDocumentTextSolid' },
+    { view: 'recurring-bills', label: 'Recurring Bills', route: '/purchases/recurring-bills', icon: 'heroArrowPathSolid' },
+    { view: 'payments', label: 'Payments Made', route: '/purchases/payments-made', icon: 'heroBanknotesSolid' },
+    { view: 'vendor-credits', label: 'Vendor Credits', route: '/purchases/vendor-credits', icon: 'heroShieldCheckSolid' },
   ] as const;
 
   vendorForm: Partial<Vendor> = {
@@ -754,9 +814,13 @@ export class VendorManagementComponent implements OnInit {
     const titles: Record<VendorView, string> = {
       list: 'Vendor Directory',
       add: 'Add Vendor',
+      expenses: 'Expenses',
+      'recurring-expenses': 'Recurring Expenses',
       'purchase-orders': 'Purchase Order Management',
       bills: 'Vendor Bills',
-      payments: 'Payment Management',
+      'recurring-bills': 'Recurring Bills',
+      payments: 'Payments Made',
+      'vendor-credits': 'Vendor Credits',
       'accounts-payable': 'Accounts Payable',
       documents: 'Vendor Documents',
       reports: 'Vendor Reports',
@@ -765,8 +829,8 @@ export class VendorManagementComponent implements OnInit {
   });
   readonly subtitle = computed(() =>
     this.isClientScoped()
-      ? 'Manage this client workspace supplier master, purchase orders, vendor bills, payments, AP aging, documents, and performance analytics.'
-      : 'Manage suppliers, purchase orders, vendor bills, outgoing payments, payable aging, documents, and performance analytics for CA firm and SME workflows.'
+      ? 'Manage this client workspace supplier master, purchase orders, vendor bills, expenses, outgoing payments, credits, and AP aging.'
+      : 'Manage vendors, expenses, recurring purchase workflows, purchase orders, bills, payments made, and vendor credits.'
   );
 
   readonly openBillsForPayment = computed(() =>
@@ -907,7 +971,7 @@ export class VendorManagementComponent implements OnInit {
       return;
     }
 
-    void this.router.navigateByUrl('/vendors/add');
+    void this.router.navigateByUrl('/purchases/vendors/add');
   }
 
   startEditVendor(vendor: Vendor): void {
@@ -917,7 +981,7 @@ export class VendorManagementComponent implements OnInit {
       return;
     }
 
-    void this.router.navigateByUrl(`/vendors/add?editVendorId=${encodeURIComponent(vendor.id)}`);
+    void this.router.navigateByUrl(`/purchases/vendors/add?editVendorId=${encodeURIComponent(vendor.id)}`);
   }
 
   cancelVendorEdit(): void {
@@ -946,7 +1010,7 @@ export class VendorManagementComponent implements OnInit {
       return;
     }
 
-    const route = this.tabs.find((tab) => tab.view === view)?.route || '/vendors';
+    const route = this.tabs.find((tab) => tab.view === view)?.route || '/purchases/vendors';
     void this.router.navigateByUrl(`${route}?vendorId=${encodeURIComponent(vendor.id)}`);
   }
 
@@ -1072,6 +1136,6 @@ export class VendorManagementComponent implements OnInit {
       return;
     }
 
-    void this.router.navigateByUrl('/vendors');
+    void this.router.navigateByUrl('/purchases/vendors');
   }
 }

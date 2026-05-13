@@ -197,6 +197,18 @@ export const routes: Routes = [
         loadChildren: () => import('./features/billing/billing.routes').then((m) => m.BILLING_ROUTES),
       },
       {
+        path: 'purchases',
+        loadChildren: () => import('./features/vendors/vendors.routes').then((m) => m.VENDORS_ROUTES),
+        canActivate: [roleGuard],
+        data: { roles: ['admin', 'accountant'] },
+      },
+      {
+        path: 'vendors',
+        loadChildren: () => import('./features/vendors/vendors.routes').then((m) => m.VENDORS_ROUTES),
+        canActivate: [roleGuard],
+        data: { roles: ['admin', 'accountant'] },
+      },
+      {
         path: 'inventory',
         loadChildren: () => import('./features/inventory/inventory.routes').then((m) => m.INVENTORY_ROUTES),
         canActivate: [roleGuard],

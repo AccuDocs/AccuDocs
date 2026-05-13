@@ -1,20 +1,20 @@
 <div
-  class="rounded-xl w-full max-w-full bg-white dark:bg-[#1e293b] border border-border-color dark:border-slate-700/50 overflow-hidden"
-  style="box-shadow: 0 4px 24px -4px rgba(15, 23, 42, 0.05);">
+  class="data-table-shell">
 
   <!-- Toolbar Section -->
   <div
-    class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-8 py-5 border-b border-slate-100 dark:border-slate-700/50">
-    <div class="flex items-center gap-4">
-      <h2 class="text-base font-semibold text-text-primary dark:text-white">
+    class="data-table-toolbar">
+    <div class="data-table-title-wrap">
+      <span class="table-title-dot"></span>
+      <h2 class="data-table-title">
         {{ title }}
       </h2>
     </div>
 
-    <div class="flex flex-wrap items-center gap-3">
+    <div class="data-table-actions">
       <!-- Search Input -->
-      <div class="relative">
-        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">
+      <div class="data-search">
+        <span class="data-search-icon">
           <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"
             xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -22,7 +22,7 @@
           </svg>
         </span>
         <input type="text" placeholder="Search..." [ngModel]="searchQuery()" (ngModelChange)="updateSearch($event)"
-          class="h-[40px] pl-10 pr-4 bg-[#F8FAFF] dark:bg-slate-800 border border-[#D0D7DE] dark:border-slate-600 text-text-primary dark:text-white placeholder-[#B0C0D4] dark:placeholder-slate-500 rounded-md w-56 outline-none focus:ring-2 focus:ring-[rgba(29,78,216,0.12)] focus:border-primary-600 transition-all text-sm font-normal" />
+          class="data-search-input" />
       </div>
 
       <!-- Filters Slot -->
@@ -32,12 +32,11 @@
       </ng-container>
 
       <!-- Divider -->
-      <div class="hidden md:block h-6 w-px bg-slate-200 dark:bg-slate-600 mx-1"></div>
+      <div class="table-action-divider"></div>
 
       <!-- Add Button -->
       <button *ngIf="canAdd" (click)="onAdd()"
-        class="hidden md:flex items-center justify-center gap-2 h-[40px] px-4 rounded-md bg-primary-600 text-white text-sm font-medium hover:bg-[#1E3A8A] transition-all active:scale-[0.98]"
-        style="box-shadow: 0 4px 16px -4px rgba(29, 78, 216, 0.24);" title="Add New">
+        class="table-add-btn" title="Add New">
         <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
         </svg>
@@ -46,7 +45,7 @@
 
       <!-- Mobile Add -->
       <button *ngIf="canAdd" (click)="onAdd()"
-        class="flex md:hidden items-center justify-center w-[40px] h-[40px] rounded-md bg-primary-600 text-white"
+        class="table-mobile-add-btn"
         title="Add New">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
@@ -56,12 +55,12 @@
       <!-- Export Actions -->
       <ng-container *ngIf="canExport">
         <button (click)="export('pdf')"
-          class="flex items-center justify-center gap-1.5 h-[40px] px-4 rounded-md bg-white dark:bg-slate-800 text-text-secondary dark:text-slate-200 border border-[#D0D7DE] dark:border-slate-700 hover:bg-background transition-all text-xs font-medium"
+          class="table-export-btn"
           title="Export PDF">
           PDF
         </button>
         <button (click)="export('excel')"
-          class="flex items-center justify-center gap-1.5 h-[40px] px-4 rounded-md bg-white dark:bg-slate-800 text-text-secondary dark:text-slate-200 border border-[#D0D7DE] dark:border-slate-700 hover:bg-background transition-all text-xs font-medium"
+          class="table-export-btn"
           title="Export Excel">
           XLS
         </button>
@@ -99,7 +98,7 @@
         [sortable]="col.sortable !== false" [width]="col.width || 150">
 
         <ng-template let-column="column" ngx-datatable-header-template>
-          <span class="text-[11px] font-medium uppercase tracking-[0.06em] text-text-muted dark:text-slate-400">{{ col.name }}</span>
+          <span class="datatable-heading">{{ col.name }}</span>
         </ng-template>
 
         <ng-template let-row="row" let-value="value" ngx-datatable-cell-template>
@@ -153,10 +152,10 @@
       </ngx-datatable-column>
 
       <!-- Actions Column -->
-      <ngx-datatable-column name="Actions" [sortable]="false" [width]="120"
+      <ngx-datatable-column name="Actions" [sortable]="false" [width]="140"
         *ngIf="actionsTemplate || canEdit || canDelete">
         <ng-template let-column="column" ngx-datatable-header-template>
-          <span class="text-[11px] font-medium uppercase tracking-[0.06em] text-text-muted dark:text-slate-400">Actions</span>
+          <span class="datatable-heading">Actions</span>
         </ng-template>
         <ng-template let-row="row" ngx-datatable-cell-template>
           <div class="flex items-center justify-end gap-2">

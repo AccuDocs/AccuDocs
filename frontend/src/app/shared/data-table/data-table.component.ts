@@ -35,6 +35,9 @@ import { PdfUtil } from '../utils/pdf.util';
 @Component({
   selector: 'app-data-table',
   standalone: true,
+  host: {
+    class: 'block',
+  },
   imports: [
     CommonModule,
     FormsModule,

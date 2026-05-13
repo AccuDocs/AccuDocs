@@ -22,7 +22,7 @@ export interface AppModuleShortcut {
 
 export type HubId =
   | 'core' | 'compliance' | 'work'
-  | 'clients' | 'firm' | 'settings' | 'billing';
+  | 'clients' | 'firm' | 'settings' | 'billing' | 'purchases';
 
 export interface Hub {
   id: HubId;
@@ -43,6 +43,7 @@ export const HUBS: Hub[] = [
   { id: 'work', label: 'Work', icon: 'WORK', iconName: 'heroClipboardDocumentCheckSolid', color: '#3A7FBF', desc: 'Tasks & productivity' },
   { id: 'clients', label: 'Clients', icon: 'CLNT', iconName: 'heroUserGroupSolid', color: '#8B5FBF', desc: 'CRM & relationships' },
   { id: 'billing', label: 'Billing & Rev', icon: 'BILL', iconName: 'heroBanknotesSolid', color: '#10B981', desc: 'Invoices & collections' },
+  { id: 'purchases', label: 'Purchases', icon: 'BUY', iconName: 'heroShoppingBagSolid', color: '#2563EB', desc: 'Vendors & payables' },
   { id: 'firm', label: 'Firm Ops', icon: 'FIRM', iconName: 'heroBuildingOffice2Solid', color: '#7A8898', desc: 'Staff & operations' },
   { id: 'settings', label: 'Settings', icon: 'SET', iconName: 'heroCog6ToothSolid', color: '#7A8898', desc: 'Configuration' },
 ];
@@ -103,6 +104,28 @@ export const MODULE_REGISTRY: AppModule[] = ([
       { label: 'Recurring billing', route: '/billing/recurring', iconName: 'heroArrowPathSolid' },
       { label: 'Bulk generate', route: '/billing/bulk-generate', iconName: 'heroBoltSolid' },
       { label: 'New invoice', route: '/billing/invoices/new', iconName: 'heroPlusSolid' },
+    ],
+    pinned: true,
+  },
+  {
+    id: 'purchases',
+    hub: 'purchases',
+    label: 'Purchases',
+    icon: 'BUY',
+    iconName: 'heroShoppingBagSolid',
+    desc: 'Vendors, bills, expenses & payments',
+    status: 'live',
+    badge: null,
+    route: '/purchases',
+    shortcuts: [
+      { label: 'Vendors', route: '/purchases/vendors', iconName: 'heroBuildingStorefrontSolid' },
+      { label: 'Expenses', route: '/purchases/expenses', iconName: 'heroBanknotesSolid' },
+      { label: 'Recurring Expenses', route: '/purchases/recurring-expenses', iconName: 'heroArrowPathSolid' },
+      { label: 'Purchase Orders', route: '/purchases/purchase-orders', iconName: 'heroClipboardDocumentCheckSolid' },
+      { label: 'Bills', route: '/purchases/bills', iconName: 'heroDocumentTextSolid' },
+      { label: 'Recurring Bills', route: '/purchases/recurring-bills', iconName: 'heroArrowPathSolid' },
+      { label: 'Payments Made', route: '/purchases/payments-made', iconName: 'heroBanknotesSolid' },
+      { label: 'Vendor Credits', route: '/purchases/vendor-credits', iconName: 'heroShieldCheckSolid' },
     ],
     pinned: true,
   },

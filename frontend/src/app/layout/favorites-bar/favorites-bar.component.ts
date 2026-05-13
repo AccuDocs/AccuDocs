@@ -127,6 +127,7 @@ export class FavoritesBarComponent {
       compliance: '#3A9E7A',
       work: '#3A7FBF',
       billing: '#C87C2A',
+      purchases: '#2563EB',
       clients: '#8B5FBF',
       analytics: '#2A8F8A',
       specialist: '#C84B7A',

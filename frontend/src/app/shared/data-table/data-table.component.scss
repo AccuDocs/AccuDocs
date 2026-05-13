@@ -6,25 +6,184 @@
 // ==========================================
 // AccuDocs ngx-datatable styling
 // ==========================================
+.data-table-shell {
+  background: var(--ad-card-bg, #ffffff);
+  border: 1px solid var(--ad-card-border, #cbd8e6);
+  border-radius: 12px;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
+  max-width: 100%;
+  overflow: hidden;
+  width: 100%;
+}
+
+.data-table-toolbar {
+  align-items: center;
+  background:
+    linear-gradient(180deg, rgba(248, 250, 252, .96), rgba(255, 255, 255, .96));
+  border-bottom: 1px solid var(--ad-card-border, #cbd8e6);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 18px 20px;
+}
+
+.data-table-title-wrap {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.table-title-dot {
+  background: var(--accent, #1d4ed8);
+  border-radius: 999px;
+  box-shadow: 0 0 0 5px rgba(29, 78, 216, .12);
+  flex: 0 0 auto;
+  height: 8px;
+  width: 8px;
+}
+
+.data-table-title {
+  color: var(--ad-text-primary, #0f1e35);
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.data-table-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.data-search {
+  position: relative;
+}
+
+.data-search-icon {
+  color: var(--ad-text-muted, #7a90b0);
+  left: 12px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.data-search-input {
+  background: var(--color-bg-raised, #f1f5f9);
+  border: 1px solid var(--ad-card-border, #cbd8e6);
+  border-radius: 8px;
+  color: var(--ad-text-primary, #0f1e35);
+  font-size: 13px;
+  font-weight: 600;
+  height: 40px;
+  outline: none;
+  padding: 0 12px 0 40px;
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+  width: 246px;
+}
+
+.data-search-input::placeholder {
+  color: var(--ad-text-muted, #7a90b0);
+}
+
+.data-search-input:focus {
+  background: var(--ad-card-bg, #ffffff);
+  border-color: var(--accent, #1d4ed8);
+  box-shadow: 0 0 0 4px rgba(29, 78, 216, .12);
+}
+
+.table-action-divider {
+  background: var(--ad-card-border, #cbd8e6);
+  height: 24px;
+  width: 1px;
+}
+
+.table-add-btn,
+.table-mobile-add-btn,
+.table-export-btn {
+  align-items: center;
+  border-radius: 8px;
+  display: inline-flex;
+  font-weight: 800;
+  gap: 8px;
+  height: 40px;
+  justify-content: center;
+  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+.table-add-btn {
+  background: var(--accent, #1d4ed8);
+  border: 1px solid var(--accent, #1d4ed8);
+  box-shadow: 0 10px 20px rgba(29, 78, 216, .16);
+  color: #ffffff;
+  font-size: 13px;
+  padding: 0 16px;
+}
+
+.table-add-btn:hover,
+.table-mobile-add-btn:hover {
+  background: var(--accent-hover, #1e3a8a);
+  border-color: var(--accent-hover, #1e3a8a);
+  transform: translateY(-1px);
+}
+
+.table-mobile-add-btn {
+  background: var(--accent, #1d4ed8);
+  border: 1px solid var(--accent, #1d4ed8);
+  color: #ffffff;
+  width: 40px;
+}
+
+.table-export-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ad-text-secondary, #2d4a6a);
+  font-size: 12px;
+  padding: 0 10px;
+}
+
+.table-export-btn:hover {
+  background: var(--color-surface-hover, #eef4fb);
+  border-color: var(--ad-card-border, #cbd8e6);
+  color: var(--ad-text-primary, #0f1e35);
+}
+
+.datatable-wrapper {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.datatable-heading {
+  color: var(--ad-text-muted, #7a90b0);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
 .ngx-datatable.material {
   box-shadow: none;
   background: var(--ad-card-bg);
-  border: 1px solid var(--ad-card-border);
-  border-radius: 12px;
+  border: 0;
+  border-radius: 0;
   overflow: hidden;
 
   .datatable-header {
-    background-color: #F5F9FF;
+    background-color: #F7FAFC;
     border-bottom: 1px solid var(--ad-card-border);
 
     .datatable-header-cell {
-      font-weight: 500;
+      font-weight: 900;
       color: var(--ad-text-muted);
-      padding: 12px 20px;
+      padding: 12px 18px;
       vertical-align: middle;
       font-family: var(--font-sans);
-      font-size: 11px;
-      letter-spacing: 0.06em;
+      font-size: 10px;
+      letter-spacing: 0.12em;
       line-height: 1.4;
       text-transform: uppercase;
     }
@@ -34,18 +193,18 @@
     .datatable-row-wrapper {
       &:hover {
         .datatable-body-row {
-          background-color: #F5F9FF !important;
+          background-color: #F4F8FE !important;
         }
       }
     }
 
     .datatable-body-row {
-      border-bottom: 1px solid #F0F6FF;
-      border-left: 3px solid transparent;
+      border-bottom: 1px solid #EAF1FA;
+      border-left: 0;
       transition: background-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
 
       &:nth-child(even) {
-        background: #FAFCFF;
+        background: #FBFDFF;
       }
 
       &.border-primary {
@@ -73,10 +232,10 @@
       }
 
       .datatable-body-cell {
-        padding: 0 20px;
+        padding: 0 18px;
         color: var(--ad-text-secondary);
         font-size: 13px;
-        font-weight: 400;
+        font-weight: 600;
         display: flex;
         align-items: center;
         min-height: 48px;
@@ -111,15 +270,65 @@
   }
 }
 
+@media (max-width: 768px) {
+  .data-table-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .data-table-actions {
+    justify-content: flex-start;
+  }
+
+  .data-search,
+  .data-search-input {
+    width: 100%;
+  }
+
+  .table-action-divider {
+    display: none;
+  }
+
+  .table-add-btn {
+    display: none;
+  }
+}
+
+@media (min-width: 769px) {
+  .table-mobile-add-btn {
+    display: none;
+  }
+}
+
 // ==========================================
 // DARK MODE SUPPORT
 // ==========================================
 :host-context(.dark) {
+  .data-table-shell {
+    background: var(--ad-card-bg, #10213a);
+    box-shadow: none;
+  }
+
+  .data-table-toolbar {
+    background:
+      linear-gradient(180deg, rgba(23, 43, 72, .96), rgba(16, 33, 58, .96));
+  }
+
+  .data-search-input {
+    background: #14243c;
+    color: var(--text-primary, #eaf2fc);
+  }
+
+  .table-export-btn {
+    color: var(--text-secondary, #b8c7d9);
+  }
+
   .ngx-datatable.material {
-    background: #1e293b;
+    background: var(--ad-card-bg, #10213a);
 
     .datatable-header {
-      background-color: #0f172a;
+      background-color: #14243c;
       border-bottom: 1px solid #334155;
 
       .datatable-header-cell {
@@ -138,7 +347,7 @@
 
       .datatable-body-row {
         border-bottom: 1px solid rgba(51, 65, 85, 0.4);
-        background-color: #1e293b;
+        background-color: var(--ad-card-bg, #10213a);
 
         &.active {
           background-color: rgba(29, 78, 216, 0.18);
@@ -151,7 +360,7 @@
     }
 
     .datatable-footer {
-      background: #1e293b;
+      background: var(--ad-card-bg, #10213a);
       border-top: 1px solid #334155;
       color: #94a3b8;
 
@@ -179,11 +388,30 @@
 }
 
 .dark {
+  .data-table-shell {
+    background: var(--ad-card-bg, #10213a);
+    box-shadow: none;
+  }
+
+  .data-table-toolbar {
+    background:
+      linear-gradient(180deg, rgba(23, 43, 72, .96), rgba(16, 33, 58, .96));
+  }
+
+  .data-search-input {
+    background: #14243c;
+    color: var(--text-primary, #eaf2fc);
+  }
+
+  .table-export-btn {
+    color: var(--text-secondary, #b8c7d9);
+  }
+
   .ngx-datatable.material {
-    background: #1e293b;
+    background: var(--ad-card-bg, #10213a);
 
     .datatable-header {
-      background-color: #0f172a;
+      background-color: #14243c;
       border-bottom: 1px solid #334155;
 
       .datatable-header-cell {
@@ -202,7 +430,7 @@
 
       .datatable-body-row {
         border-bottom: 1px solid rgba(51, 65, 85, 0.4);
-        background-color: #1e293b;
+        background-color: var(--ad-card-bg, #10213a);
 
         &.active {
           background-color: rgba(29, 78, 216, 0.18);
@@ -215,7 +443,7 @@
     }
 
     .datatable-footer {
-      background: #1e293b;
+      background: var(--ad-card-bg, #10213a);
       border-top: 1px solid #334155;
       color: #94a3b8;
 

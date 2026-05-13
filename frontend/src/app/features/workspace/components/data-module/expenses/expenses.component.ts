@@ -254,10 +254,15 @@ import { HsnSacCode } from '@core/services/gst-extended.service';
   `,
   styles: [`
     :host { display: block; }
-    .sa-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); transition: all 0.2s ease; }
-    .sa-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
+    .sa-card { background: var(--ad-card-bg, #ffffff); border: 1px solid var(--ad-card-border, #cbd8e6); border-radius: 12px; box-shadow: 0 10px 26px rgba(15,23,42,.05); min-height: 118px; overflow: hidden; padding: 18px 20px; position: relative; transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+    .sa-card::before { background: linear-gradient(180deg, var(--accent, #1d4ed8), rgba(29,78,216,.18)); content: ''; inset: 0 auto 0 0; position: absolute; width: 3px; }
+    .sa-card:hover { border-color: rgba(29,78,216,.26); box-shadow: 0 14px 34px rgba(15,23,42,.08); transform: translateY(-1px); }
+    .sa-card h3 { letter-spacing: -.01em; line-height: 1.05; }
+    .sa-card p { letter-spacing: 0; }
     .sa-input { width: 100%; height: 40px; padding: 0 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; transition: all 0.15s ease; }
     .sa-input:focus { background: white; border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99,102,241,0.1); }
+    :host-context(.dark) .sa-card { background: var(--ad-card-bg, #10213a); box-shadow: none; }
+    :host-context(.dark) .sa-input { background: #14243c; border-color: var(--ad-card-border, #263b59); color: var(--text-primary, #eaf2fc); }
   `]
 })
 export class ExpensesComponent implements OnInit, OnChanges {
