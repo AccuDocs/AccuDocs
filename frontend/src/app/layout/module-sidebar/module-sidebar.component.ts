@@ -54,12 +54,13 @@ import { IconComponent } from '@ui/atoms/icon.component';
           align-items: center;
           justify-content: space-between;
           gap: 8px;
-          min-height: 60px;
-          padding: 12px 16px;
+          height: var(--header-height);
+          min-height: var(--header-height);
+          padding: 0 16px;
           background: linear-gradient(135deg, var(--brand-accent-soft) 0%, var(--sb2-bg) 100%);
         "
       >
-        <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+        <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
           @if (hubData(); as hub) {
             <div
               style="
@@ -75,15 +76,15 @@ import { IconComponent } from '@ui/atoms/icon.component';
             >
               <app-icon [name]="hub.iconName" size="sm" tone="current" ariaLabel=""></app-icon>
             </div>
-            <div>
-              <div style="font-weight: 700; font-size: 13px; color: var(--text-primary);">
+            <div style="min-width: 0;">
+              <div style="font-weight: 700; font-size: 13px; line-height: 1.15; color: var(--text-primary);">
                 {{ hub.label }}
               </div>
               <div
                 style="
                   font-size: 12px;
                   color: var(--text-muted);
-                  line-height: 1;
+                  line-height: 1.05;
                   margin-top: 2px;
                 "
               >

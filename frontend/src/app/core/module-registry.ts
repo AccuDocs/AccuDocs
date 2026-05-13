@@ -186,7 +186,6 @@ export const MODULE_REGISTRY: AppModule[] = ([
     route: '/clients/client',
     shortcuts: [
       { label: 'Client directory', route: '/clients/client', iconName: 'heroUserSolid' },
-      { label: 'New client', route: '/clients/client/create', iconName: 'heroPlusSolid' },
     ],
     pinned: true,
   },

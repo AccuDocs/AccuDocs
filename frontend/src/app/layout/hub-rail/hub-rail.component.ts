@@ -12,14 +12,16 @@ import { IconComponent } from '@ui/atoms/icon.component';
     <nav class="hub-rail" aria-label="Primary modules">
       <button
         type="button"
-        class="rail-button rail-logo"
+        class="brand-home"
         [class.active]="nav.activeHub() === 'core'"
-        style="--hub-accent: var(--icon-active)"
         title="Home"
         aria-label="Home"
         (click)="nav.setActiveHub('core')"
       >
-        <app-icon name="heroBuildingLibrarySolid" size="md" tone="current" ariaLabel=""></app-icon>
+        <span class="brand-mark">
+          <app-icon name="heroShieldCheckSolid" size="md" tone="current" ariaLabel=""></app-icon>
+        </span>
+        <span class="brand-name">AccuDocs</span>
       </button>
 
       <div class="rail-list">
@@ -69,7 +71,7 @@ import { IconComponent } from '@ui/atoms/icon.component';
       height: 100vh;
       justify-content: space-between;
       overflow-y: auto;
-      padding: 14px 0 12px;
+      padding: 12px 0;
       scrollbar-width: none;
       width: 60px;
     }
@@ -84,7 +86,7 @@ import { IconComponent } from '@ui/atoms/icon.component';
       flex: 1;
       flex-direction: column;
       gap: 8px;
-      margin-top: 18px;
+      margin-top: 14px;
       width: 100%;
     }
 
@@ -132,17 +134,57 @@ import { IconComponent } from '@ui/atoms/icon.component';
       width: 5px;
     }
 
-    .rail-logo {
-      background: linear-gradient(135deg, #1D4ED8, #60A5FA);
-      border-color: transparent;
+    .brand-home {
+      align-items: center;
+      background: transparent;
+      border: 0;
       color: #ffffff;
-      height: 32px;
-      width: 32px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding: 0;
+      width: 100%;
     }
 
-    .rail-logo:hover,
-    .rail-logo.active {
-      background: linear-gradient(135deg, #1D4ED8, #60A5FA);
+    .brand-mark {
+      align-items: center;
+      background: #2554dd;
+      border-radius: 11px;
+      box-shadow: 0 10px 22px rgba(37, 84, 221, 0.26);
+      color: #ffffff;
+      display: inline-flex;
+      height: 42px;
+      justify-content: center;
+      transition:
+        background 180ms ease,
+        box-shadow 180ms ease,
+        transform 180ms ease;
+      width: 42px;
+    }
+
+    .brand-name {
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0;
+      line-height: 1;
+      max-width: 56px;
+      overflow: hidden;
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .brand-home:hover .brand-mark,
+    .brand-home.active .brand-mark {
+      background: #2b5beb;
+      box-shadow: 0 12px 26px rgba(37, 84, 221, 0.34);
+      transform: translateY(-1px);
+    }
+
+    .brand-home:hover .brand-name,
+    .brand-home.active .brand-name {
       color: #ffffff;
     }
 
