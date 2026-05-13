@@ -25,12 +25,20 @@ export class VendorService {
     return this.http.get<PaginatedApiResponse<Vendor>>(`${this.base}`, { params: this.params(params) });
   }
 
+  getVendor(id: string, params: Record<string, string | number | undefined> = {}) {
+    return this.http.get<ApiResponse<Vendor>>(`${this.base}/${id}`, { params: this.params(params) });
+  }
+
   createVendor(payload: Partial<Vendor>) {
     return this.http.post<ApiResponse<Vendor>>(`${this.base}`, payload);
   }
 
   updateVendor(id: string, payload: Partial<Vendor>) {
     return this.http.put<ApiResponse<Vendor>>(`${this.base}/${id}`, payload);
+  }
+
+  deleteVendor(id: string, params: Record<string, string | number | undefined> = {}) {
+    return this.http.delete<ApiResponse<null>>(`${this.base}/${id}`, { params: this.params(params) });
   }
 
   getPurchaseOrders(params: Record<string, string | number | undefined> = {}) {

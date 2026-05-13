@@ -156,7 +156,7 @@ function vendorResponse(vendor: any, metrics?: any) {
 }
 
 async function nextVendorCode(organizationId: string): Promise<string> {
-  const count = await Vendor.count({ where: { organizationId } });
+  const count = await Vendor.count({ where: { organizationId }, paranoid: false });
   return `VEN-${String(count + 1).padStart(4, '0')}`;
 }
 
@@ -348,6 +348,15 @@ export class VendorController {
     });
 
     sendSuccess(res, vendorResponse(vendor, await vendorMetrics(req.user!.organizationId, vendor.id)), 'Vendor updated');
+  });
+
+  static deleteVendor = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const clientId = getClientScope(req);
+    await assertClientScope(req.user!.organizationId, clientId);
+    const vendor = await assertVendor(req.user!.organizationId, req.params.id, clientId);
+    await vendor.destroy();
+
+    sendSuccess(res, null, 'Vendor deleted');
   });
 
   static listPurchaseOrders = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {

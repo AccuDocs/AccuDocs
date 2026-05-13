@@ -27,5 +27,6 @@ router.get('/', VendorController.listVendors);
 router.post('/', VendorController.createVendor);
 router.get('/:id', VendorController.getVendor);
 router.put('/:id', VendorController.updateVendor);
+router.delete('/:id', VendorController.deleteVendor);
 
 export default router;

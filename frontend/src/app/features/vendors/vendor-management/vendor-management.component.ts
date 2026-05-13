@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
@@ -11,9 +11,12 @@ import {
   heroClipboardDocumentCheckSolid,
   heroDocumentTextSolid,
   heroFolderSolid,
+  heroPencilSquareSolid,
   heroPlusSolid,
   heroShieldCheckSolid,
   heroTruckSolid,
+  heroTrashSolid,
+  heroXMarkSolid,
 } from '@ng-icons/heroicons/solid';
 import { VendorService } from '../services/vendor.service';
 import {
@@ -50,9 +53,12 @@ const EMPTY_DASHBOARD: VendorDashboard = {
       heroClipboardDocumentCheckSolid,
       heroDocumentTextSolid,
       heroFolderSolid,
+      heroPencilSquareSolid,
       heroPlusSolid,
       heroShieldCheckSolid,
       heroTruckSolid,
+      heroTrashSolid,
+      heroXMarkSolid,
     }),
   ],
   template: `
@@ -91,17 +97,10 @@ const EMPTY_DASHBOARD: VendorDashboard = {
               <ng-icon name="heroArrowPathSolid" size="16" [class.animate-spin]="isLoading()"></ng-icon>
               Refresh
             </button>
-            @if (isClientScoped()) {
-              <button type="button" (click)="setVendorView('add')" class="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-primary-700">
-                <ng-icon name="heroPlusSolid" size="16"></ng-icon>
-                Add vendor
-              </button>
-            } @else {
-              <a routerLink="/vendors/add" class="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-primary-700">
-                <ng-icon name="heroPlusSolid" size="16"></ng-icon>
-                Add vendor
-              </a>
-            }
+            <button type="button" (click)="startAddVendor()" class="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-primary-700">
+              <ng-icon name="heroPlusSolid" size="16"></ng-icon>
+              Add vendor
+            </button>
           </div>
         </div>
       </section>
@@ -111,7 +110,7 @@ const EMPTY_DASHBOARD: VendorDashboard = {
           @if (isClientScoped()) {
             <button
               type="button"
-              (click)="setVendorView(tab.view)"
+              (click)="openVendorTab(tab.view)"
               class="inline-flex min-h-9 items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-[12px] font-bold transition-all"
               [ngClass]="view() === tab.view ? 'bg-white text-primary-600 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:text-primary-300 dark:ring-slate-700' : 'text-slate-500 hover:bg-white/70 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'"
             >
@@ -121,6 +120,7 @@ const EMPTY_DASHBOARD: VendorDashboard = {
           } @else {
             <a
               [routerLink]="tab.route"
+              (click)="prepareVendorRouteTab(tab.view)"
               class="inline-flex min-h-9 items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-[12px] font-bold transition-all"
               [ngClass]="view() === tab.view ? 'bg-white text-primary-600 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:text-primary-300 dark:ring-slate-700' : 'text-slate-500 hover:bg-white/70 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'"
             >
@@ -171,17 +171,23 @@ const EMPTY_DASHBOARD: VendorDashboard = {
       }
 
       @if (view() === 'list') {
-        <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section class="vendor-list-section">
           <div class="panel">
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Vendor master</p>
                 <h2 class="panel-title">Vendor List</h2>
               </div>
-              <input [(ngModel)]="searchTerm" name="vendorSearch" (ngModelChange)="loadVendors()" class="field max-w-xs" placeholder="Search vendors, GSTIN, mobile..." />
+              <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+                <input [(ngModel)]="searchTerm" name="vendorSearch" (ngModelChange)="loadVendors()" class="field sm:w-72" placeholder="Search vendors, GSTIN, mobile..." />
+                <button type="button" class="primary-btn whitespace-nowrap" (click)="startAddVendor()">
+                  <ng-icon name="heroPlusSolid" size="16"></ng-icon>
+                  Add Vendor
+                </button>
+              </div>
             </div>
             <div class="overflow-x-auto">
-              <table class="data-table min-w-[980px]">
+              <table class="data-table min-w-[1160px]">
                 <thead>
                   <tr>
                     <th>Vendor</th>
@@ -190,6 +196,7 @@ const EMPTY_DASHBOARD: VendorDashboard = {
                     <th>Outstanding</th>
                     <th>Overdue</th>
                     <th>Status</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -207,24 +214,26 @@ const EMPTY_DASHBOARD: VendorDashboard = {
                       <td class="font-black">{{ money(vendor.metrics?.totalOutstanding || 0) }}</td>
                       <td class="font-black text-rose-600">{{ money(vendor.metrics?.overdueAmount || 0) }}</td>
                       <td><span class="pill" [ngClass]="vendor.status === 'active' ? 'pill-green' : 'pill-red'">{{ vendor.status }}</span></td>
+                      <td class="action-cell">
+                        <div class="flex flex-wrap gap-2">
+                          <button type="button" class="mini-btn" (click)="startEditVendor(vendor)" [attr.aria-label]="'Edit ' + vendor.vendorName" title="Edit vendor">
+                            <ng-icon name="heroPencilSquareSolid" size="14"></ng-icon>
+                            Edit
+                          </button>
+                          <button type="button" class="mini-btn danger-btn" (click)="deleteVendor(vendor)" [attr.aria-label]="'Delete ' + vendor.vendorName" title="Delete vendor">
+                            <ng-icon name="heroTrashSolid" size="14"></ng-icon>
+                            Delete
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   } @empty {
-                    <tr><td colspan="6" class="py-12 text-center text-slate-500">No vendors yet. Add your first supplier to start AP tracking.</td></tr>
+                    <tr><td colspan="7" class="py-12 text-center text-slate-500">No vendors yet. Add your first supplier to start AP tracking.</td></tr>
                   }
                 </tbody>
               </table>
             </div>
           </div>
-
-          <aside class="panel">
-            <p class="eyebrow">Workflow</p>
-            <h2 class="panel-title">Real AP Flow</h2>
-            <div class="mt-5 space-y-3">
-              @for (step of workflowSteps; track step) {
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">{{ step }}</div>
-              }
-            </div>
-          </aside>
         </section>
       }
 
@@ -233,8 +242,14 @@ const EMPTY_DASHBOARD: VendorDashboard = {
           <div class="panel-head">
             <div>
               <p class="eyebrow">Vendor master</p>
-              <h2 class="panel-title">Add Vendor</h2>
+              <h2 class="panel-title">{{ editingVendorId() ? 'Edit Vendor' : 'Add Vendor' }}</h2>
             </div>
+            @if (editingVendorId()) {
+              <button type="button" class="mini-btn" (click)="cancelVendorEdit()">
+                <ng-icon name="heroXMarkSolid" size="16"></ng-icon>
+                Cancel edit
+              </button>
+            }
           </div>
           <form class="grid gap-4 lg:grid-cols-3" (ngSubmit)="saveVendor()">
             <label class="space-y-2"><span class="label">Vendor Name</span><input name="vendorName" [(ngModel)]="vendorForm.vendorName" required class="field" /></label>
@@ -251,8 +266,14 @@ const EMPTY_DASHBOARD: VendorDashboard = {
             <label class="space-y-2"><span class="label">Status</span><select name="status" [(ngModel)]="vendorForm.status" class="field"><option value="active">Active</option><option value="blocked">Blocked</option></select></label>
             <label class="space-y-2 lg:col-span-3"><span class="label">Billing Address</span><textarea name="billingAddress" [(ngModel)]="vendorForm.billingAddress" rows="3" class="field"></textarea></label>
             <label class="space-y-2 lg:col-span-3"><span class="label">Shipping Address</span><textarea name="shippingAddress" [(ngModel)]="vendorForm.shippingAddress" rows="3" class="field"></textarea></label>
-            <div class="lg:col-span-3 flex justify-end">
-              <button class="primary-btn" type="submit"><ng-icon name="heroPlusSolid" size="16"></ng-icon> Save Vendor</button>
+            <div class="lg:col-span-3 flex flex-wrap justify-end gap-3">
+              @if (editingVendorId()) {
+                <button class="mini-btn" type="button" (click)="cancelVendorEdit()"><ng-icon name="heroXMarkSolid" size="16"></ng-icon> Cancel</button>
+              }
+              <button class="primary-btn" type="submit">
+                <ng-icon [name]="editingVendorId() ? 'heroPencilSquareSolid' : 'heroPlusSolid'" size="16"></ng-icon>
+                {{ editingVendorId() ? 'Update Vendor' : 'Save Vendor' }}
+              </button>
             </div>
           </form>
         </section>
@@ -463,6 +484,10 @@ const EMPTY_DASHBOARD: VendorDashboard = {
       height: 0;
     }
 
+    .vendor-list-section {
+      width: 100%;
+    }
+
     .panel {
       border: 1px solid var(--ad-card-border, #e2e8f0);
       background: var(--ad-card-bg, #ffffff);
@@ -567,6 +592,16 @@ const EMPTY_DASHBOARD: VendorDashboard = {
       color: var(--primary-700, #1e40af);
     }
 
+    .danger-btn {
+      color: rgb(190 18 60);
+    }
+
+    .danger-btn:hover {
+      border-color: rgb(254 205 211);
+      background: rgb(255 241 242);
+      color: rgb(190 18 60);
+    }
+
     .data-table {
       border-collapse: collapse;
       width: 100%;
@@ -589,6 +624,16 @@ const EMPTY_DASHBOARD: VendorDashboard = {
       font-size: 14px;
       font-weight: 700;
       padding: 14px;
+    }
+
+    .action-cell {
+      min-width: 190px;
+      white-space: nowrap;
+    }
+
+    .action-cell .mini-btn {
+      min-height: 34px;
+      padding: 7px 10px;
     }
 
     .data-table tbody tr:hover {
@@ -640,6 +685,16 @@ const EMPTY_DASHBOARD: VendorDashboard = {
       color: var(--accent-hover, #93c5fd);
     }
 
+    :host-context(.dark) .danger-btn {
+      color: #fda4af;
+    }
+
+    :host-context(.dark) .danger-btn:hover {
+      background: rgba(244, 63, 94, .14);
+      border-color: rgba(251, 113, 133, .36);
+      color: #fecdd3;
+    }
+
     :host-context(.dark) .pill-green { background: rgba(16, 185, 129, .16); color: #86efac; }
     :host-context(.dark) .pill-red { background: rgba(244, 63, 94, .16); color: #fda4af; }
     :host-context(.dark) .pill-blue { background: rgba(96, 165, 250, .16); color: #bfdbfe; }
@@ -648,6 +703,7 @@ const EMPTY_DASHBOARD: VendorDashboard = {
 })
 export class VendorManagementComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly vendorService = inject(VendorService);
   private readonly routeData = toSignal(this.route.data, { initialValue: this.route.snapshot.data });
 
@@ -665,18 +721,9 @@ export class VendorManagementComponent implements OnInit {
   readonly payments = signal<VendorPayment[]>([]);
   readonly accountsPayable = signal<AccountsPayableRow[]>([]);
   readonly documents = signal<VendorDocument[]>([]);
+  readonly editingVendorId = signal<string | null>(null);
 
   searchTerm = '';
-  readonly workflowSteps = [
-    'Create Vendor',
-    'Create Purchase Order',
-    'Receive Goods / Services',
-    'Vendor Sends Bill',
-    'Accounts Verification',
-    'Payment Processing',
-    'Ledger Entry + Reports',
-  ];
-
   readonly tabs = [
     { view: 'list', label: 'Vendor List', route: '/vendors', icon: 'heroBuildingStorefrontSolid' },
     { view: 'add', label: 'Add Vendor', route: '/vendors/add', icon: 'heroPlusSolid' },
@@ -730,11 +777,25 @@ export class VendorManagementComponent implements OnInit {
   );
 
   ngOnInit(): void {
+    this.applyVendorSelectionFromQuery();
     this.refresh();
   }
 
   setVendorView(view: VendorView): void {
     this.embeddedView.set(view);
+  }
+
+  openVendorTab(view: VendorView): void {
+    if (view === 'add') {
+      this.resetVendorForm();
+    }
+    this.setVendorView(view);
+  }
+
+  prepareVendorRouteTab(view: VendorView): void {
+    if (view === 'add') {
+      this.resetVendorForm();
+    }
   }
 
   refresh(): void {
@@ -780,10 +841,23 @@ export class VendorManagementComponent implements OnInit {
 
   saveVendor(): void {
     if (!this.vendorForm.vendorName) return;
+    const vendorId = this.editingVendorId();
+    if (vendorId) {
+      this.vendorService.updateVendor(vendorId, this.withScope(this.vendorForm)).subscribe({
+        next: () => {
+          this.resetVendorForm();
+          this.goToVendorList();
+          this.refresh();
+        },
+        error: (error) => this.errorMessage.set(error?.error?.message || 'Vendor could not be updated'),
+      });
+      return;
+    }
+
     this.vendorService.createVendor(this.withScope(this.vendorForm)).subscribe({
       next: () => {
-        this.vendorForm = { vendorName: '', vendorType: 'goods_supplier', status: 'active', creditDays: 30, creditLimit: 0 };
-        this.setVendorView('list');
+        this.resetVendorForm();
+        this.goToVendorList();
         this.refresh();
       },
       error: (error) => this.errorMessage.set(error?.error?.message || 'Vendor could not be saved'),
@@ -826,6 +900,56 @@ export class VendorManagementComponent implements OnInit {
     this.vendorService.updatePurchaseOrderStatus(po.id, 'sent').subscribe({ next: () => this.loadPurchaseOrders() });
   }
 
+  startAddVendor(): void {
+    this.resetVendorForm();
+    if (this.isClientScoped()) {
+      this.setVendorView('add');
+      return;
+    }
+
+    void this.router.navigateByUrl('/vendors/add');
+  }
+
+  startEditVendor(vendor: Vendor): void {
+    this.populateVendorForm(vendor);
+    if (this.isClientScoped()) {
+      this.setVendorView('add');
+      return;
+    }
+
+    void this.router.navigateByUrl(`/vendors/add?editVendorId=${encodeURIComponent(vendor.id)}`);
+  }
+
+  cancelVendorEdit(): void {
+    this.resetVendorForm();
+    this.goToVendorList();
+  }
+
+  deleteVendor(vendor: Vendor): void {
+    if (!window.confirm(`Delete ${vendor.vendorName}? This will remove it from the vendor list.`)) return;
+
+    this.vendorService.deleteVendor(vendor.id, this.scopeParams()).subscribe({
+      next: () => {
+        if (this.editingVendorId() === vendor.id) {
+          this.resetVendorForm();
+        }
+        this.refresh();
+      },
+      error: (error) => this.errorMessage.set(error?.error?.message || 'Vendor could not be deleted'),
+    });
+  }
+
+  openVendorAction(vendor: Vendor, view: 'purchase-orders' | 'bills' | 'payments'): void {
+    this.prefillVendorAction(vendor.id, view);
+    if (this.isClientScoped()) {
+      this.setVendorView(view);
+      return;
+    }
+
+    const route = this.tabs.find((tab) => tab.view === view)?.route || '/vendors';
+    void this.router.navigateByUrl(`${route}?vendorId=${encodeURIComponent(vendor.id)}`);
+  }
+
   vendorName(id: string): string {
     return this.vendors().find((vendor) => vendor.id === id)?.vendorName || 'Vendor unavailable';
   }
@@ -866,5 +990,88 @@ export class VendorManagementComponent implements OnInit {
   private withScope<T extends object>(payload: T): T & { clientId?: string } {
     const clientId = this.scopedClientId();
     return clientId ? { ...payload, clientId } : payload;
+  }
+
+  private applyVendorSelectionFromQuery(): void {
+    const editVendorId = this.route.snapshot.queryParamMap.get('editVendorId');
+    if (this.view() === 'add' && editVendorId) {
+      this.loadVendorForEdit(editVendorId);
+      return;
+    }
+
+    const vendorId = this.route.snapshot.queryParamMap.get('vendorId');
+    if (!vendorId) return;
+
+    const view = this.view();
+    if (view === 'purchase-orders' || view === 'bills' || view === 'payments') {
+      this.prefillVendorAction(vendorId, view);
+    }
+  }
+
+  private prefillVendorAction(vendorId: string, view: 'purchase-orders' | 'bills' | 'payments'): void {
+    if (view === 'purchase-orders') {
+      this.poForm.vendorId = vendorId;
+      return;
+    }
+
+    if (view === 'bills') {
+      this.billForm.vendorId = vendorId;
+      return;
+    }
+
+    this.paymentForm.vendorId = vendorId;
+  }
+
+  private loadVendorForEdit(vendorId: string): void {
+    this.vendorService.getVendor(vendorId, this.scopeParams()).subscribe({
+      next: (res) => {
+        if (res.data) {
+          this.populateVendorForm(res.data);
+        }
+      },
+      error: (error) => this.errorMessage.set(error?.error?.message || 'Vendor could not be loaded for editing'),
+    });
+  }
+
+  private populateVendorForm(vendor: Vendor): void {
+    this.editingVendorId.set(vendor.id);
+    this.vendorForm = {
+      vendorName: vendor.vendorName,
+      businessName: vendor.businessName || '',
+      vendorType: vendor.vendorType,
+      gstNumber: vendor.gstNumber || '',
+      panNumber: vendor.panNumber || '',
+      contactPerson: vendor.contactPerson || '',
+      mobile: vendor.mobile || '',
+      email: vendor.email || '',
+      billingAddress: vendor.billingAddress || '',
+      shippingAddress: vendor.shippingAddress || '',
+      paymentTerms: vendor.paymentTerms || '',
+      creditDays: vendor.creditDays,
+      creditLimit: vendor.creditLimit,
+      status: vendor.status,
+      notes: vendor.notes || '',
+    };
+  }
+
+  private resetVendorForm(): void {
+    this.editingVendorId.set(null);
+    this.vendorForm = {
+      vendorName: '',
+      businessName: '',
+      vendorType: 'goods_supplier',
+      status: 'active',
+      creditDays: 30,
+      creditLimit: 0,
+    };
+  }
+
+  private goToVendorList(): void {
+    if (this.isClientScoped()) {
+      this.setVendorView('list');
+      return;
+    }
+
+    void this.router.navigateByUrl('/vendors');
   }
 }
