@@ -1,1 +1,0 @@
-import"./chunk-PHUH23IY.js";var t=[{path:"",loadComponent:()=>import("./chunk-RLFYLSSA.js").then(o=>o.KanbanBoardComponent)},{path:"list",loadComponent:()=>import("./chunk-SS2ABZJ5.js").then(o=>o.TaskListComponent)}];export{t as TASKS_ROUTES};
