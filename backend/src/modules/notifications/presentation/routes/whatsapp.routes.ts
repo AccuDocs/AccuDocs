@@ -27,6 +27,11 @@ router.use(adminOnly);
  *         description: QR code data retrieved
  */
 router.get('/qr', WhatsAppController.getQR);
+router.post('/send', WhatsAppController.sendMessage);
+router.get('/session/:mobile', WhatsAppController.getSession);
+router.delete('/session/:mobile', WhatsAppController.clearSession);
+router.get('/chats', WhatsAppController.getChats);
+router.get('/chats/:chatId/messages', WhatsAppController.getChatMessages);
 
 /**
  * @openapi

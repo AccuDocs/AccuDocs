@@ -9,7 +9,7 @@
     <div
       class="px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
       <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-      Meta API Active
+      WhatsApp Web
     </div>
   </div>
 
@@ -229,10 +229,28 @@
         <!-- Search Header -->
         <div class="p-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-[#202c33]">
           <div class="relative">
-            <input type="text" placeholder="Search or start new chat" [value]="searchQuery()"
+            <input type="text" placeholder="Search client chats" [value]="searchQuery()"
               (input)="searchQuery.set($any($event.target).value)"
               class="w-full bg-white dark:bg-[#111b21] text-xs px-3 py-2 pl-9 rounded-lg border-none focus:ring-1 focus:ring-[#00a884] shadow-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400">
             <ng-icon name="heroArrowPathSolid" class="absolute left-2.5 top-2 text-slate-400" size="14"></ng-icon>
+          </div>
+          <div class="flex items-center justify-between mt-2">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              {{ visibleChats().length }} shown / {{ chats().length }} chats
+            </span>
+            <button
+              type="button"
+              (click)="clientOnly.set(!clientOnly())"
+              class="px-2 py-1 rounded-md text-[10px] font-bold border transition-colors"
+              [class.bg-emerald-50]="clientOnly()"
+              [class.text-emerald-700]="clientOnly()"
+              [class.border-emerald-100]="clientOnly()"
+              [class.bg-white]="!clientOnly()"
+              [class.text-slate-500]="!clientOnly()"
+              [class.border-slate-200]="!clientOnly()"
+            >
+              {{ clientOnly() ? 'Clients Only' : 'All Chats' }}
+            </button>
           </div>
         </div>
 
@@ -244,10 +262,7 @@
             <span class="text-[10px] text-slate-400">Loading chats...</span>
           </div>
           } @else {
-          @for (chat of chats(); track chat.id) {
-          <!-- Filter Logic (Basic) -->
-          @if (!searchQuery() || chat.name.toLowerCase().includes(searchQuery().toLowerCase()) ||
-          chat.id.includes(searchQuery())) {
+          @for (chat of visibleChats(); track chat.id) {
           <div (click)="selectChat(chat)"
             class="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-[#202c33] cursor-pointer border-b border-slate-50 dark:border-slate-800 transition-colors group"
             [class.bg-slate-100]="selectedChat()?.id === chat.id"
@@ -262,12 +277,23 @@
 
             <div class="flex-1 min-w-0">
               <div class="flex items-center justify-between mb-0.5">
-                <span class="text-sm font-medium text-slate-800 dark:text-gray-100 truncate">{{ chat.name || chat.id
-                  }}</span>
+                <span class="text-sm font-medium text-slate-800 dark:text-gray-100 truncate">{{ chat.client?.name || chat.name || chat.id }}</span>
                 @if (chat.lastMessage) {
                 <span class="text-[10px] text-slate-400">{{ chat.lastMessage.timestamp * 1000 | date:'shortTime'
                   }}</span>
                 }
+              </div>
+              <div class="flex items-center gap-1 mb-1">
+                @if (chat.isClient) {
+                <span class="bg-emerald-50 text-emerald-700 border border-emerald-100 text-[9px] font-bold px-1.5 py-0.5 rounded">
+                  CLIENT {{ chat.client?.code }}
+                </span>
+                } @else {
+                <span class="bg-slate-100 text-slate-500 border border-slate-200 text-[9px] font-bold px-1.5 py-0.5 rounded">
+                  UNKNOWN
+                </span>
+                }
+                <span class="text-[10px] text-slate-400 truncate">{{ chat.client?.mobile || chat.id }}</span>
               </div>
               <div class="flex items-center justify-between">
                 <p
@@ -283,6 +309,12 @@
             </div>
           </div>
           }
+          @if (visibleChats().length === 0) {
+          <div class="flex flex-col items-center justify-center h-40 px-6 text-center">
+            <ng-icon name="heroChatBubbleLeftRightSolid" class="text-slate-300 mb-2" size="26"></ng-icon>
+            <strong class="text-xs text-slate-500">No client chats found</strong>
+            <span class="text-[10px] text-slate-400 mt-1">Turn off Clients Only to see all WhatsApp chats.</span>
+          </div>
           }
           }
         </div>
@@ -308,4 +340,3 @@
 
   </div> <!-- CLOSING GRID -->
 </div> <!-- CLOSING ROOT -->
-```

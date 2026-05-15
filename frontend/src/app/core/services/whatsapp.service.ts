@@ -18,6 +18,13 @@ export interface WhatsAppSession {
 export interface WhatsAppStatus {
   status: 'INITIALIZING' | 'QR_READY' | 'AUTHENTICATED' | 'DISCONNECTED';
   qrCode: string | null;
+  message?: string;
+  connected?: boolean;
+  device?: {
+    platform?: string;
+    pushname?: string;
+    wid?: string;
+  } | null;
 }
 
 // Add interface for WhatsApp Chat
@@ -25,6 +32,15 @@ export interface WhatsAppChat {
   id: string;
   name: string;
   unreadCount: number;
+  isClient?: boolean;
+  client?: {
+    id: string;
+    code: string;
+    name: string;
+    mobile: string | null;
+    email: string | null;
+    isActive: boolean;
+  } | null;
   lastMessage: {
     body: string;
     timestamp: number;
@@ -43,7 +59,7 @@ export class WhatsAppService {
     return this.http.post(`${this.apiUrl}/send`, { to, message });
   }
 
-  getSession(mobile: string): Observable<WhatsAppSession> {
+  getSession(mobile: string): Observable<WhatsAppSession | null> {
     return this.http.get<any>(`${this.apiUrl}/session/${mobile}`).pipe(
       map(response => response.data)
     );
@@ -55,6 +71,12 @@ export class WhatsAppService {
 
   getQR(): Observable<WhatsAppStatus> {
     return this.http.get<any>(`${this.apiUrl}/qr`).pipe(
+      map(response => response.data)
+    );
+  }
+
+  getStatus(): Observable<WhatsAppStatus> {
+    return this.http.get<any>(`${this.apiUrl}/status`).pipe(
       map(response => response.data)
     );
   }

@@ -1,9 +1,10 @@
-import { Component, inject, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { NavigationService } from '../../core/navigation.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { WhatsAppService, WhatsAppStatus } from '../../core/services/whatsapp.service';
 import { IconComponent } from '@ui/atoms/icon.component';
 import { IconButtonComponent } from '@ui/atoms/icon-button.component';
 
@@ -84,27 +85,29 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
       <div style="display: flex; align-items: center; gap: 16px;">
         <!-- WhatsApp status -->
         <div
+          [style.background]="waBadgeTone().background"
+          [style.border-color]="waBadgeTone().border"
+          [style.color]="waBadgeTone().text"
+          [title]="waStatusMessage()"
           style="
             display: flex;
             align-items: center;
             gap: 6px;
             padding: 4px 12px;
             border-radius: var(--radius-full);
-            background: var(--success-bg);
-            border: 1px solid var(--success-border);
+            border: 1px solid;
             font-size: 12px;
-            color: var(--color-text-sub);
           "
         >
           <span
+            [style.background]="waBadgeTone().dot"
             style="
               width: 6px;
               height: 6px;
               border-radius: 50%;
-              background: var(--success);
             "
           ></span>
-          WA Connected
+          {{ waLabel() }}
         </div>
 
         <!-- Notifications bell -->
@@ -233,11 +236,74 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TopBarComponent {
+export class TopBarComponent implements OnInit, OnDestroy {
   nav = inject(NavigationService);
   authService = inject(AuthService);
   themeService = inject(ThemeService);
+  whatsappService = inject(WhatsAppService);
   userMenuOpen = signal(false);
+  waStatus = signal<WhatsAppStatus['status']>('DISCONNECTED');
+  waStatusMessage = signal('WhatsApp status not checked yet');
+  private waTimer: ReturnType<typeof setInterval> | null = null;
+
+  ngOnInit(): void {
+    this.refreshWhatsAppStatus();
+    this.waTimer = setInterval(() => this.refreshWhatsAppStatus(), 30000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.waTimer) clearInterval(this.waTimer);
+  }
+
+  waLabel(): string {
+    const labels: Record<WhatsAppStatus['status'], string> = {
+      AUTHENTICATED: 'WA Connected',
+      QR_READY: 'WA QR Ready',
+      INITIALIZING: 'WA Starting',
+      DISCONNECTED: 'WA Disconnected',
+    };
+    return labels[this.waStatus()];
+  }
+
+  waBadgeTone(): { background: string; border: string; text: string; dot: string } {
+    if (this.waStatus() === 'AUTHENTICATED') {
+      return {
+        background: 'var(--success-bg)',
+        border: 'var(--success-border)',
+        text: 'var(--color-text-sub)',
+        dot: 'var(--success)',
+      };
+    }
+
+    if (this.waStatus() === 'QR_READY' || this.waStatus() === 'INITIALIZING') {
+      return {
+        background: '#fffbeb',
+        border: '#fde68a',
+        text: '#92400e',
+        dot: '#f59e0b',
+      };
+    }
+
+    return {
+      background: '#f8fafc',
+      border: '#e2e8f0',
+      text: '#64748b',
+      dot: '#94a3b8',
+    };
+  }
+
+  private refreshWhatsAppStatus(): void {
+    this.whatsappService.getStatus().subscribe({
+      next: (status) => {
+        this.waStatus.set(status.status);
+        this.waStatusMessage.set(status.message || this.waLabel());
+      },
+      error: () => {
+        this.waStatus.set('DISCONNECTED');
+        this.waStatusMessage.set('Unable to read WhatsApp status');
+      },
+    });
+  }
 
   logout() {
     this.userMenuOpen.set(false);

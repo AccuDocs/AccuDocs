@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, TemplateRef, ViewChild, computed, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, TemplateRef, ViewChild, computed, inject, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -38,6 +38,34 @@ type StaffSection =
   | 'performance'
   | 'documents'
   | 'logs';
+
+type RolePermissionSection = 'list' | 'create' | 'matrix' | 'assignments' | 'approval' | 'logs';
+type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'export' | 'approve';
+
+interface RoleDefinition {
+  name: string;
+  code: string;
+  department: string;
+  description: string;
+  dashboard: string;
+  status: 'Active' | 'Inactive';
+  permissions: string[];
+}
+
+interface RoleDraft {
+  name: string;
+  code: string;
+  department: string;
+  description: string;
+  dashboard: string;
+  status: 'Active' | 'Inactive';
+}
+
+interface PermissionModuleRow {
+  module: string;
+  description: string;
+  permissions: Record<PermissionAction, boolean>;
+}
 
 const DEFAULT_STAFF_SECTION: StaffSection = 'dashboard';
 const STAFF_SECTION_IDS = new Set<string>([
@@ -221,22 +249,291 @@ function normalizeStaffSection(value: string | null): StaffSection {
           } @else if (activeSection() === 'add') {
             <app-staff-form [isModal]="true" [closeCallback]="closeInlineStaffForm"></app-staff-form>
           } @else if (activeSection() === 'roles') {
-            <div class="role-grid">
-              @for (role of roleCards; track role.title) {
-                <article class="staff-panel role-card">
-                  <div class="role-head">
-                    <ng-icon name="heroShieldCheckSolid" size="20"></ng-icon>
-                    <h2>{{ role.title }}</h2>
+            <section class="role-permission-shell">
+              <article class="staff-panel role-permission-hero">
+                <div>
+                  <p class="staff-eyebrow">Role & Permission Module</p>
+                  <h2>Access control for firm teams</h2>
+                  <span>Partners, managers, accountants, tax executives, auditors, admin staff, and interns.</span>
+                </div>
+                <div class="role-summary-grid">
+                  <div>
+                    <strong>{{ activeRoleCount() }}</strong>
+                    <span>Active Roles</span>
                   </div>
-                  <p>{{ role.scope }}</p>
-                  <div class="permission-list">
-                    @for (permission of role.permissions; track permission) {
-                      <span>{{ permission }}</span>
+                  <div>
+                    <strong>{{ permissionMatrix().length }}</strong>
+                    <span>Modules</span>
+                  </div>
+                  <div>
+                    <strong>{{ staffRows().length }}</strong>
+                    <span>Assigned Users</span>
+                  </div>
+                </div>
+              </article>
+
+              <nav class="role-switch" aria-label="Role permission switch">
+                @for (item of rolePermissionSections; track item.id) {
+                  <button
+                    type="button"
+                    [class.active]="activeRolePermissionSection() === item.id"
+                    (click)="selectRolePermissionSection(item.id)"
+                  >
+                    <ng-icon [name]="item.icon" size="16"></ng-icon>
+                    {{ item.label }}
+                  </button>
+                }
+              </nav>
+
+              @if (activeRolePermissionSection() === 'list') {
+                <div class="role-grid">
+                  @for (role of accessRoles(); track role.code) {
+                    <article class="staff-panel role-card access-role-card">
+                      <div class="role-card-top">
+                        <div class="role-head">
+                          <ng-icon name="heroShieldCheckSolid" size="20"></ng-icon>
+                          <h2>{{ role.name }}</h2>
+                        </div>
+                        <span class="status-pill" [class.inactive]="role.status === 'Inactive'">{{ role.status }}</span>
+                      </div>
+                      <p>{{ role.description }}</p>
+                      <dl class="role-meta">
+                        <div>
+                          <dt>Code</dt>
+                          <dd>{{ role.code }}</dd>
+                        </div>
+                        <div>
+                          <dt>Department</dt>
+                          <dd>{{ role.department }}</dd>
+                        </div>
+                        <div>
+                          <dt>Dashboard</dt>
+                          <dd>{{ role.dashboard }}</dd>
+                        </div>
+                      </dl>
+                      <div class="permission-list">
+                        @for (permission of role.permissions; track permission) {
+                          <span>{{ permission }}</span>
+                        }
+                      </div>
+                    </article>
+                  }
+                </div>
+              } @else if (activeRolePermissionSection() === 'create') {
+                <article class="staff-panel role-form-panel">
+                  <div class="panel-head">
+                    <h2>Create Role</h2>
+                    <span>Predefined access set</span>
+                  </div>
+                  <form class="role-create-form" (ngSubmit)="addRole()">
+                    <label>
+                      <span>Role Name</span>
+                      <input
+                        name="roleName"
+                        [ngModel]="newRole().name"
+                        (ngModelChange)="updateNewRole('name', $event)"
+                        placeholder="Senior Accountant"
+                      >
+                    </label>
+                    <label>
+                      <span>Role Code</span>
+                      <input
+                        name="roleCode"
+                        [ngModel]="newRole().code"
+                        (ngModelChange)="updateNewRole('code', $event)"
+                        placeholder="SEN-ACC"
+                      >
+                    </label>
+                    <label>
+                      <span>Department</span>
+                      <select name="roleDepartment" [ngModel]="newRole().department" (ngModelChange)="updateNewRole('department', $event)">
+                        <option>Accounts</option>
+                        <option>Taxation</option>
+                        <option>Audit</option>
+                        <option>Compliance</option>
+                        <option>Administration</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Default Dashboard</span>
+                      <select name="roleDashboard" [ngModel]="newRole().dashboard" (ngModelChange)="updateNewRole('dashboard', $event)">
+                        <option>Firm Dashboard</option>
+                        <option>Staff Dashboard</option>
+                        <option>Accounting Dashboard</option>
+                        <option>GST Filing Dashboard</option>
+                        <option>Audit Dashboard</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Status</span>
+                      <select name="roleStatus" [ngModel]="newRole().status" (ngModelChange)="updateNewRole('status', $event)">
+                        <option>Active</option>
+                        <option>Inactive</option>
+                      </select>
+                    </label>
+                    <label class="span-2">
+                      <span>Description</span>
+                      <textarea
+                        name="roleDescription"
+                        [ngModel]="newRole().description"
+                        (ngModelChange)="updateNewRole('description', $event)"
+                        placeholder="What this role can manage"
+                      ></textarea>
+                    </label>
+                    <div class="form-actions">
+                      <button type="button" class="secondary-action" (click)="resetRoleDraft()">Reset</button>
+                      <button type="submit" class="primary-action" [disabled]="!newRole().name || !newRole().code">Create Role</button>
+                    </div>
+                  </form>
+                </article>
+              } @else if (activeRolePermissionSection() === 'matrix') {
+                <article class="staff-panel matrix-panel">
+                  <div class="panel-head">
+                    <h2>Permission Matrix</h2>
+                    <span>View, create, edit, delete, export, approve</span>
+                  </div>
+                  <div class="table-wrap">
+                    <table class="permission-table">
+                      <thead>
+                        <tr>
+                          <th>Module</th>
+                          @for (column of permissionColumns; track column.key) {
+                            <th>{{ column.label }}</th>
+                          }
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (module of permissionMatrix(); track module.module) {
+                          <tr>
+                            <td>
+                              <strong>{{ module.module }}</strong>
+                              <small>{{ module.description }}</small>
+                            </td>
+                            @for (column of permissionColumns; track column.key) {
+                              <td>
+                                <button
+                                  type="button"
+                                  class="matrix-toggle"
+                                  [class.enabled]="module.permissions[column.key]"
+                                  (click)="togglePermission(module.module, column.key)"
+                                >
+                                  <span class="sr-only">{{ module.module }} {{ column.label }}</span>
+                                </button>
+                              </td>
+                            }
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div class="module-permission-grid">
+                    @for (module of modulePermissionGroups; track module.title) {
+                      <div class="module-permission-card">
+                        <strong>{{ module.title }}</strong>
+                        @for (item of module.items; track item) {
+                          <span>{{ item }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                </article>
+              } @else if (activeRolePermissionSection() === 'assignments') {
+                <article class="staff-panel">
+                  <div class="panel-head">
+                    <h2>User Assignment</h2>
+                    <span>{{ staffRows().length }} users</span>
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Staff</th>
+                          <th>Current Role</th>
+                          <th>Branch Restriction</th>
+                          <th>Client Scope</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (member of staffRows(); track member.id) {
+                          <tr>
+                            <td>
+                              <strong>{{ member.name }}</strong>
+                              <small>{{ member.email || member.mobile }}</small>
+                            </td>
+                            <td>{{ assignmentRoleLabel(member) }}</td>
+                            <td>{{ member.preferences?.staffProfile?.branchOffice || 'All branches' }}</td>
+                            <td>{{ assignedClientScope(member) }}</td>
+                            <td><span class="status-pill" [class.inactive]="!member.isActive">{{ member.isActive ? 'Active' : 'Inactive' }}</span></td>
+                          </tr>
+                        } @empty {
+                          <tr><td colspan="5" class="empty-cell">No staff users available for assignment</td></tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </article>
+              } @else if (activeRolePermissionSection() === 'approval') {
+                <div class="approval-layout">
+                  <article class="staff-panel approval-panel">
+                    <div class="panel-head">
+                      <h2>Approval Rules</h2>
+                      <span>Maker checker workflow</span>
+                    </div>
+                    <div class="approval-flow">
+                      @for (step of approvalFlow; track step.title) {
+                        <div>
+                          <strong>{{ step.title }}</strong>
+                          <span>{{ step.description }}</span>
+                        </div>
+                      }
+                    </div>
+                  </article>
+                  <article class="staff-panel approval-panel">
+                    <div class="panel-head">
+                      <h2>Data Restrictions</h2>
+                      <span>Scope control</span>
+                    </div>
+                    <div class="restriction-list">
+                      @for (restriction of dataRestrictions; track restriction.title) {
+                        <div>
+                          <strong>{{ restriction.title }}</strong>
+                          <span>{{ restriction.example }}</span>
+                        </div>
+                      }
+                    </div>
+                  </article>
+                </div>
+                <article class="staff-panel security-panel">
+                  <div class="panel-head">
+                    <h2>Advanced Security</h2>
+                    <span>Professional controls</span>
+                  </div>
+                  <div class="security-grid">
+                    @for (feature of securityFeatures; track feature) {
+                      <span>{{ feature }}</span>
+                    }
+                  </div>
+                </article>
+              } @else if (activeRolePermissionSection() === 'logs') {
+                <article class="staff-panel">
+                  <div class="panel-head">
+                    <h2>Access Logs</h2>
+                    <span>Login, edits, exports</span>
+                  </div>
+                  <div class="work-list">
+                    @for (log of accessLogs(); track log.id) {
+                      <div class="work-row access-log-row">
+                        <strong>{{ log.actor }}</strong>
+                        <span>{{ log.action }}</span>
+                        <em>{{ log.status }}</em>
+                      </div>
                     }
                   </div>
                 </article>
               }
-            </div>
+            </section>
           } @else if (activeSection() === 'assignments') {
             <article class="staff-panel">
               <div class="panel-head">
@@ -714,6 +1011,98 @@ function normalizeStaffSection(value: string | null): StaffSection {
       width: 160px;
     }
 
+    .role-permission-shell {
+      display: grid;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .role-permission-hero {
+      align-items: center;
+      display: grid;
+      gap: 20px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      padding: 20px;
+    }
+
+    .role-permission-hero h2 {
+      color: #020617;
+      font-size: 24px;
+      font-weight: 950;
+      letter-spacing: 0;
+      margin: 4px 0 6px;
+    }
+
+    .role-permission-hero span {
+      color: #5d6f89;
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .role-summary-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, minmax(112px, 1fr));
+    }
+
+    .role-summary-grid div {
+      background: #f8fbff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .role-summary-grid strong {
+      color: #1d4ed8;
+      display: block;
+      font-size: 24px;
+      font-weight: 950;
+    }
+
+    .role-summary-grid span {
+      color: #64748b;
+      display: block;
+      font-size: 11px;
+      font-weight: 900;
+      margin-top: 2px;
+      text-transform: uppercase;
+    }
+
+    .role-switch {
+      align-items: center;
+      background: rgba(255, 255, 255, .72);
+      border: 1px solid #dbe4ef;
+      border-radius: 16px;
+      box-shadow: 0 10px 22px rgba(15, 23, 42, .045);
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 8px;
+    }
+
+    .role-switch button {
+      align-items: center;
+      background: transparent;
+      border: 0;
+      border-radius: 12px;
+      color: #52657f;
+      cursor: pointer;
+      display: inline-flex;
+      flex: 0 0 auto;
+      gap: 7px;
+      font-size: 13px;
+      font-weight: 950;
+      min-height: 42px;
+      padding: 0 14px;
+      white-space: nowrap;
+    }
+
+    .role-switch button.active {
+      background: #fff;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, .075);
+      color: #0d4bf0;
+    }
+
     .role-grid,
     .assignment-grid,
     .performance-grid,
@@ -725,6 +1114,19 @@ function normalizeStaffSection(value: string | null): StaffSection {
 
     .role-card {
       padding: 18px;
+    }
+
+    .access-role-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 254px;
+    }
+
+    .role-card-top {
+      align-items: flex-start;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
     }
 
     .role-head {
@@ -748,6 +1150,36 @@ function normalizeStaffSection(value: string | null): StaffSection {
       margin: 10px 0 14px;
     }
 
+    .role-meta {
+      border-top: 1px solid #eef2f7;
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin: auto 0 14px;
+      padding-top: 14px;
+    }
+
+    .role-meta div {
+      min-width: 0;
+    }
+
+    .role-meta dt {
+      color: #94a3b8;
+      font-size: 10px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .role-meta dd {
+      color: #0f172a;
+      font-size: 12px;
+      font-weight: 900;
+      margin: 3px 0 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .permission-list {
       display: flex;
       flex-wrap: wrap;
@@ -763,6 +1195,231 @@ function normalizeStaffSection(value: string | null): StaffSection {
       font-size: 11px;
       font-weight: 900;
       padding: 6px 9px;
+    }
+
+    .status-pill.inactive {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    .role-form-panel,
+    .matrix-panel,
+    .approval-panel,
+    .security-panel {
+      overflow: hidden;
+    }
+
+    .role-create-form {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      padding: 18px;
+    }
+
+    .role-create-form label {
+      display: grid;
+      gap: 7px;
+    }
+
+    .role-create-form label span {
+      color: #52657f;
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .role-create-form input,
+    .role-create-form select,
+    .role-create-form textarea {
+      background: #f8fbff;
+      border: 1px solid #dbe4ef;
+      border-radius: 12px;
+      color: #0f172a;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 750;
+      min-height: 42px;
+      outline: none;
+      padding: 0 12px;
+      width: 100%;
+    }
+
+    .role-create-form textarea {
+      min-height: 104px;
+      padding: 12px;
+      resize: vertical;
+    }
+
+    .span-2 {
+      grid-column: span 2;
+    }
+
+    .form-actions {
+      align-items: center;
+      display: flex;
+      gap: 10px;
+      grid-column: span 2;
+      justify-content: flex-end;
+    }
+
+    .primary-action,
+    .secondary-action {
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 950;
+      min-height: 40px;
+      padding: 0 16px;
+    }
+
+    .primary-action {
+      background: #2454dc;
+      border: 1px solid #2454dc;
+      color: #fff;
+    }
+
+    .primary-action:disabled {
+      cursor: not-allowed;
+      opacity: .52;
+    }
+
+    .secondary-action {
+      background: #fff;
+      border: 1px solid #dbe4ef;
+      color: #52657f;
+    }
+
+    .permission-table {
+      min-width: 860px;
+    }
+
+    .permission-table th:not(:first-child),
+    .permission-table td:not(:first-child) {
+      text-align: center;
+    }
+
+    .matrix-toggle {
+      background: #e2e8f0;
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+      height: 26px;
+      position: relative;
+      width: 48px;
+    }
+
+    .matrix-toggle::after {
+      background: #fff;
+      border-radius: 999px;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, .18);
+      content: '';
+      height: 20px;
+      left: 3px;
+      position: absolute;
+      top: 3px;
+      transition: transform .18s ease;
+      width: 20px;
+    }
+
+    .matrix-toggle.enabled {
+      background: #2454dc;
+    }
+
+    .matrix-toggle.enabled::after {
+      transform: translateX(22px);
+    }
+
+    .sr-only {
+      border: 0;
+      clip: rect(0, 0, 0, 0);
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      padding: 0;
+      position: absolute;
+      white-space: nowrap;
+      width: 1px;
+    }
+
+    .module-permission-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      padding: 18px;
+    }
+
+    .module-permission-card {
+      background: #f8fbff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      display: grid;
+      gap: 8px;
+      padding: 14px;
+    }
+
+    .module-permission-card strong {
+      color: #0f172a;
+      font-size: 13px;
+      font-weight: 950;
+    }
+
+    .module-permission-card span,
+    .restriction-list span,
+    .approval-flow span {
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .approval-layout {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .approval-flow,
+    .restriction-list {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+    }
+
+    .approval-flow div,
+    .restriction-list div {
+      background: #f8fbff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      display: grid;
+      gap: 4px;
+      padding: 14px;
+    }
+
+    .approval-flow strong,
+    .restriction-list strong {
+      color: #0f172a;
+      font-size: 13px;
+      font-weight: 950;
+    }
+
+    .security-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 18px;
+    }
+
+    .security-grid span {
+      background: #eef6ff;
+      border: 1px solid #dbeafe;
+      border-radius: 999px;
+      color: #1d4ed8;
+      font-size: 12px;
+      font-weight: 900;
+      padding: 8px 11px;
+    }
+
+    .access-log-row {
+      grid-template-columns: minmax(0, 1fr) minmax(220px, 2fr) auto;
     }
 
     .assignment-grid,
@@ -913,7 +1570,9 @@ function normalizeStaffSection(value: string | null): StaffSection {
       .role-grid,
       .assignment-grid,
       .performance-grid,
-      .document-grid {
+      .document-grid,
+      .module-permission-grid,
+      .approval-layout {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
@@ -934,8 +1593,23 @@ function normalizeStaffSection(value: string | null): StaffSection {
       .role-grid,
       .assignment-grid,
       .performance-grid,
-      .document-grid {
+      .document-grid,
+      .role-permission-hero,
+      .role-summary-grid,
+      .role-create-form,
+      .module-permission-grid,
+      .approval-layout {
         grid-template-columns: 1fr;
+      }
+
+      .span-2,
+      .form-actions {
+        grid-column: auto;
+      }
+
+      .form-actions {
+        align-items: stretch;
+        flex-direction: column;
       }
 
       .staff-table-filters {
@@ -986,12 +1660,164 @@ export class StaffListComponent {
     { id: 'logs', label: 'Activity Logs', icon: 'heroClipboardDocumentListSolid' },
   ];
 
-  readonly roleCards = [
-    { title: 'Admin', scope: 'Full access for partners and firm administrators.', permissions: ['All modules', 'User control', 'Billing', 'Reports'] },
-    { title: 'Accountant', scope: 'Operational access for entries and ledger work.', permissions: ['Sales', 'Purchases', 'Ledger reports', 'Client work'] },
-    { title: 'Tax Executive', scope: 'Compliance workflow for GST, TDS, and filing.', permissions: ['GST filing', 'TDS work', 'Compliance reports'] },
-    { title: 'Audit Executive', scope: 'Audit files, review workflow, and reporting.', permissions: ['Audit files', 'Financial reports', 'Partner review'] },
-    { title: 'Admin Staff', scope: 'Office operations and document coordination.', permissions: ['Documents', 'Follow ups', 'Attendance'] },
+  readonly rolePermissionSections: ReadonlyArray<{ id: RolePermissionSection; label: string; icon: string }> = [
+    { id: 'list', label: 'Roles List', icon: 'heroShieldCheckSolid' },
+    { id: 'create', label: 'Create Role', icon: 'heroPlusSolid' },
+    { id: 'matrix', label: 'Permission Matrix', icon: 'heroClipboardDocumentCheckSolid' },
+    { id: 'assignments', label: 'User Assignment', icon: 'heroUserGroupSolid' },
+    { id: 'approval', label: 'Approval Rules', icon: 'heroClipboardDocumentListSolid' },
+    { id: 'logs', label: 'Access Logs', icon: 'heroClockSolid' },
+  ];
+
+  activeRolePermissionSection = signal<RolePermissionSection>('list');
+
+  accessRoles = signal<RoleDefinition[]>([
+    {
+      name: 'Partner',
+      code: 'PARTNER',
+      department: 'Management',
+      description: 'Full business control across clients, billing, staff, approvals, and reports.',
+      dashboard: 'Firm Dashboard',
+      status: 'Active',
+      permissions: ['All modules', 'Final approval', 'Sensitive data', 'Exports'],
+    },
+    {
+      name: 'Manager',
+      code: 'MANAGER',
+      department: 'Accounts',
+      description: 'Team management, review workflow, client ownership, and branch-level reporting.',
+      dashboard: 'Staff Dashboard',
+      status: 'Active',
+      permissions: ['Team review', 'Client assignment', 'Reports', 'Approvals'],
+    },
+    {
+      name: 'Accountant',
+      code: 'ACCOUNTANT',
+      department: 'Accounts',
+      description: 'Accounting entries, vouchers, ledger reports, client billing, and reconciliations.',
+      dashboard: 'Accounting Dashboard',
+      status: 'Active',
+      permissions: ['Ledger', 'Vouchers', 'Client billing', 'No deletes'],
+    },
+    {
+      name: 'Tax Executive',
+      code: 'TAX-EXEC',
+      department: 'Taxation',
+      description: 'GST filing, TDS filing, return submission, and compliance reports.',
+      dashboard: 'GST Filing Dashboard',
+      status: 'Active',
+      permissions: ['GST filing', 'TDS filing', 'Compliance reports', 'No payroll'],
+    },
+    {
+      name: 'Auditor',
+      code: 'AUDITOR',
+      department: 'Audit',
+      description: 'Audit files, audit reports, workpaper review, and financial reporting.',
+      dashboard: 'Audit Dashboard',
+      status: 'Active',
+      permissions: ['Audit files', 'Financial reports', 'Partner review'],
+    },
+    {
+      name: 'Admin',
+      code: 'ADMIN',
+      department: 'Administration',
+      description: 'Staff management, office operations, document coordination, and attendance support.',
+      dashboard: 'Staff Dashboard',
+      status: 'Active',
+      permissions: ['Staff', 'Documents', 'Attendance', 'Office ops'],
+    },
+    {
+      name: 'Intern',
+      code: 'INTERN',
+      department: 'Accounts',
+      description: 'Limited read and task execution access with manager approval required.',
+      dashboard: 'Staff Dashboard',
+      status: 'Active',
+      permissions: ['Assigned clients', 'Task updates', 'No exports', 'No deletes'],
+    },
+  ]);
+
+  newRole = signal<RoleDraft>({
+    name: '',
+    code: '',
+    department: 'Accounts',
+    description: '',
+    dashboard: 'Staff Dashboard',
+    status: 'Active',
+  });
+
+  readonly permissionColumns: ReadonlyArray<{ key: PermissionAction; label: string }> = [
+    { key: 'view', label: 'View' },
+    { key: 'create', label: 'Create' },
+    { key: 'edit', label: 'Edit' },
+    { key: 'delete', label: 'Delete' },
+    { key: 'export', label: 'Export' },
+    { key: 'approve', label: 'Approve' },
+  ];
+
+  permissionMatrix = signal<PermissionModuleRow[]>([
+    {
+      module: 'Clients',
+      description: 'View clients, add client, edit client, delete client.',
+      permissions: { view: true, create: true, edit: true, delete: false, export: true, approve: true },
+    },
+    {
+      module: 'Ledger',
+      description: 'Journal, payment, receipt, reports, trial balance.',
+      permissions: { view: true, create: true, edit: true, delete: false, export: true, approve: false },
+    },
+    {
+      module: 'Payroll',
+      description: 'Salary records, payslips, payroll reports.',
+      permissions: { view: true, create: false, edit: false, delete: false, export: false, approve: false },
+    },
+    {
+      module: 'GST Filing',
+      description: 'GST filing, return submission, compliance reports.',
+      permissions: { view: true, create: true, edit: true, delete: false, export: true, approve: true },
+    },
+    {
+      module: 'Staff',
+      description: 'Staff directory, roles, assignments, performance.',
+      permissions: { view: true, create: false, edit: false, delete: false, export: false, approve: false },
+    },
+    {
+      module: 'Billing',
+      description: 'Create, send, edit, and approve invoices.',
+      permissions: { view: true, create: true, edit: true, delete: false, export: true, approve: true },
+    },
+  ]);
+
+  readonly modulePermissionGroups = [
+    { title: 'Client Module', items: ['View clients', 'Add client', 'Edit client', 'Delete client'] },
+    { title: 'Accounting Module', items: ['Journal entry', 'Payment entry', 'Receipt entry', 'Ledger reports', 'Trial balance', 'Balance sheet'] },
+    { title: 'Tax Module', items: ['GST filing', 'TDS filing', 'Return submission'] },
+    { title: 'Billing Module', items: ['Create invoice', 'Send invoice', 'Edit invoice', 'Approve invoice'] },
+  ];
+
+  readonly approvalFlow = [
+    { title: 'Junior Accountant creates entry', description: 'Draft entry is saved for manager review.' },
+    { title: 'Manager reviews', description: 'Manager checks ledger, tax, and client scope.' },
+    { title: 'Partner approves', description: 'Partner gives final approval for sensitive records.' },
+    { title: 'Entry locked', description: 'Approved entry becomes locked for audit integrity.' },
+  ];
+
+  readonly dataRestrictions = [
+    { title: 'Branch', example: 'Ahmedabad staff can only see Ahmedabad branch data.' },
+    { title: 'Client Group', example: 'Restrict users to GST, audit, payroll, or assigned client groups.' },
+    { title: 'Assigned Clients', example: 'Staff can only open clients assigned to them.' },
+    { title: 'Department', example: 'Tax team sees GST and TDS work, not payroll.' },
+    { title: 'Date Lock', example: 'Older approved periods need partner permission to edit.' },
+  ];
+
+  readonly securityFeatures = [
+    'Two-factor login',
+    'Login session control',
+    'Screen lock',
+    'Download restrictions',
+    'Print restrictions',
+    'Sensitive data masking',
+    'Auto logout',
   ];
 
   readonly taskTypes = [
@@ -1024,6 +1850,24 @@ export class StaffListComponent {
   totalStaff = computed(() => this.staffRows().length);
   activeStaff = computed(() => this.staffRows().filter((staff: any) => staff.isActive).length);
   selectedRole = computed(() => this.facade.roleFilter() ?? 'all');
+  activeRoleCount = computed(() => this.accessRoles().filter((role) => role.status === 'Active').length);
+
+  accessLogs = computed(() => {
+    const rows = this.staffRows();
+    if (!rows.length) {
+      return [
+        { id: 'log-system-1', actor: 'System', action: 'Role permission workspace ready', status: 'Ready' },
+        { id: 'log-system-2', actor: 'System', action: 'Download and print restrictions configured', status: 'Security' },
+      ];
+    }
+
+    return rows.slice(0, 8).map((member: any, index: number) => ({
+      id: member.id || `log-${index}`,
+      actor: member.name,
+      action: member.lastLoginAt ? `Logged in at ${new Date(member.lastLoginAt).toLocaleString()}` : 'No login history yet',
+      status: member.isActive ? 'Allowed' : 'Blocked',
+    }));
+  });
 
   kpiCards = computed(() => [
     { label: 'Total Staff', value: this.totalStaff(), tone: 'blue' },
@@ -1064,6 +1908,60 @@ export class StaffListComponent {
     });
   }
 
+  selectRolePermissionSection(section: RolePermissionSection): void {
+    this.activeRolePermissionSection.set(section);
+  }
+
+  updateNewRole(field: keyof RoleDraft, value: string): void {
+    this.newRole.update((role) => ({
+      ...role,
+      [field]: field === 'status' ? value as RoleDraft['status'] : value,
+    }));
+  }
+
+  addRole(): void {
+    const draft = this.newRole();
+    if (!draft.name.trim() || !draft.code.trim()) return;
+
+    const role: RoleDefinition = {
+      name: draft.name.trim(),
+      code: draft.code.trim().toUpperCase(),
+      department: draft.department,
+      description: draft.description.trim() || `${draft.name.trim()} access profile.`,
+      dashboard: draft.dashboard,
+      status: draft.status,
+      permissions: ['View assigned work', 'Reports access', 'Approval as configured'],
+    };
+
+    this.accessRoles.update((roles) => [role, ...roles]);
+    this.resetRoleDraft();
+    this.activeRolePermissionSection.set('list');
+  }
+
+  resetRoleDraft(): void {
+    this.newRole.set({
+      name: '',
+      code: '',
+      department: 'Accounts',
+      description: '',
+      dashboard: 'Staff Dashboard',
+      status: 'Active',
+    });
+  }
+
+  togglePermission(moduleName: string, action: PermissionAction): void {
+    this.permissionMatrix.update((rows) => rows.map((row) => {
+      if (row.module !== moduleName) return row;
+      return {
+        ...row,
+        permissions: {
+          ...row.permissions,
+          [action]: !row.permissions[action],
+        },
+      };
+    }));
+  }
+
   openAddStaff(): void {
     this.selectSection('add');
   }
@@ -1101,6 +1999,24 @@ export class StaffListComponent {
       super_admin: 'Super Admin',
     };
     return labels[role] ?? role;
+  }
+
+  assignmentRoleLabel(member: any): string {
+    const accessRole = member.preferences?.staffProfile?.accessRole;
+    if (accessRole) {
+      return String(accessRole)
+        .split('_')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+    }
+    return this.formatRole(member.role);
+  }
+
+  assignedClientScope(member: any): string {
+    const clients = member.preferences?.staffProfile?.assignedClients;
+    if (Array.isArray(clients) && clients.length) return `${clients.length} assigned`;
+    if (typeof clients === 'string' && clients.trim()) return clients;
+    return member.role === 'admin' ? 'All clients' : 'Assigned clients only';
   }
 
   initials(name: string): string {
