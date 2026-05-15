@@ -37,6 +37,10 @@ export const routes: Routes = [
       },
       // Hub Overview Page (e.g., /hub/compliance, /hub/work)
       {
+        path: 'hub/accounting',
+        redirectTo: 'dashboard',
+      },
+      {
         path: 'hub/:id',
         loadComponent: () => import('./layout/hub-overview/hub-overview.component').then(m => m.HubOverviewComponent),
       },
@@ -197,12 +201,6 @@ export const routes: Routes = [
         loadChildren: () => import('./features/billing/billing.routes').then((m) => m.BILLING_ROUTES),
       },
       {
-        path: 'purchases',
-        loadChildren: () => import('./features/vendors/vendors.routes').then((m) => m.VENDORS_ROUTES),
-        canActivate: [roleGuard],
-        data: { roles: ['admin', 'accountant'] },
-      },
-      {
         path: 'vendors',
         loadChildren: () => import('./features/vendors/vendors.routes').then((m) => m.VENDORS_ROUTES),
         canActivate: [roleGuard],
@@ -214,12 +212,6 @@ export const routes: Routes = [
         canActivate: [roleGuard],
         data: { roles: ['admin', 'accountant'] },
       },
-      {
-        path: 'sub-ledger',
-        loadChildren: () => import('./features/sub-ledger/sub-ledger.routes').then((m) => m.SUB_LEDGER_ROUTES),
-        canActivate: [roleGuard],
-        data: { roles: ['admin', 'accountant'] },
-      }
     ]
   },
   {
