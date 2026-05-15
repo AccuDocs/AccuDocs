@@ -213,6 +213,12 @@ export const routes: Routes = [
         loadChildren: () => import('./features/inventory/inventory.routes').then((m) => m.INVENTORY_ROUTES),
         canActivate: [roleGuard],
         data: { roles: ['admin', 'accountant'] },
+      },
+      {
+        path: 'sub-ledger',
+        loadChildren: () => import('./features/sub-ledger/sub-ledger.routes').then((m) => m.SUB_LEDGER_ROUTES),
+        canActivate: [roleGuard],
+        data: { roles: ['admin', 'accountant'] },
       }
     ]
   },

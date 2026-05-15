@@ -22,7 +22,7 @@ export interface AppModuleShortcut {
 
 export type HubId =
   | 'core' | 'compliance' | 'work'
-  | 'clients' | 'firm' | 'settings' | 'billing' | 'purchases';
+  | 'clients' | 'firm' | 'settings' | 'billing' | 'purchases' | 'accounting';
 
 export interface Hub {
   id: HubId;
@@ -44,6 +44,7 @@ export const HUBS: Hub[] = [
   { id: 'clients', label: 'Clients', icon: 'CLNT', iconName: 'heroUserGroupSolid', color: '#8B5FBF', desc: 'CRM & relationships' },
   { id: 'billing', label: 'Billing & Rev', icon: 'BILL', iconName: 'heroBanknotesSolid', color: '#10B981', desc: 'Invoices & collections' },
   { id: 'purchases', label: 'Purchases', icon: 'BUY', iconName: 'heroShoppingBagSolid', color: '#2563EB', desc: 'Vendors & payables' },
+  { id: 'accounting', label: 'Accounting', icon: 'ACCT', iconName: 'heroCalculatorSolid', color: '#0F766E', desc: 'Ledgers & vouchers' },
   { id: 'firm', label: 'Firm Ops', icon: 'FIRM', iconName: 'heroBuildingOffice2Solid', color: '#7A8898', desc: 'Staff & operations' },
   { id: 'settings', label: 'Settings', icon: 'SET', iconName: 'heroCog6ToothSolid', color: '#7A8898', desc: 'Configuration' },
 ];
@@ -126,6 +127,30 @@ export const MODULE_REGISTRY: AppModule[] = ([
       { label: 'Recurring Bills', route: '/purchases/recurring-bills', iconName: 'heroArrowPathSolid' },
       { label: 'Payments Made', route: '/purchases/payments-made', iconName: 'heroBanknotesSolid' },
       { label: 'Vendor Credits', route: '/purchases/vendor-credits', iconName: 'heroShieldCheckSolid' },
+    ],
+    pinned: true,
+  },
+  {
+    id: 'sub_ledger',
+    hub: 'accounting',
+    label: 'Sub Ledger',
+    icon: 'SUB',
+    iconName: 'heroRectangleStackSolid',
+    desc: 'Subsidiary ledgers and ageing',
+    status: 'live',
+    badge: null,
+    route: '/sub-ledger',
+    shortcuts: [
+      { label: 'Dashboard', route: '/sub-ledger/dashboard', iconName: 'heroSquares2x2Solid' },
+      { label: 'Customer Ledger', route: '/sub-ledger/customers', iconName: 'heroUsersSolid' },
+      { label: 'Vendor Ledger', route: '/sub-ledger/vendors', iconName: 'heroBuildingStorefrontSolid' },
+      { label: 'Inventory Ledger', route: '/sub-ledger/inventory', iconName: 'heroArchiveBoxSolid' },
+      { label: 'Employee Ledger', route: '/sub-ledger/employees', iconName: 'heroIdentificationSolid' },
+      { label: 'Tax Ledger', route: '/sub-ledger/tax', iconName: 'heroReceiptPercentSolid' },
+      { label: 'Bank Sub Ledger', route: '/sub-ledger/bank', iconName: 'heroBuildingLibrarySolid' },
+      { label: 'Outstanding', route: '/sub-ledger/outstanding', iconName: 'heroExclamationTriangleSolid' },
+      { label: 'Reports', route: '/sub-ledger/reports', iconName: 'heroDocumentChartBarSolid' },
+      { label: 'Audit Logs', route: '/sub-ledger/audit-logs', iconName: 'heroClipboardDocumentListSolid' },
     ],
     pinned: true,
   },

@@ -25,8 +25,29 @@ import { RecentStockActivityWidgetComponent } from '../../../inventory/component
 import { SystemWarningWidgetComponent } from '../../../inventory/components/monitoring/system-warning-widget/system-warning-widget.component';
 import { QuickActionsWidgetComponent } from '../../../inventory/components/actions/quick-actions-widget/quick-actions-widget.component';
 import type { InventoryKpi, QuickAction, SystemWarning, WarehousePerformanceRow } from '../../../inventory/models/inventory-dashboard.models';
+import { SubLedgerPageComponent } from '../../../sub-ledger/pages/sub-ledger-page.component';
 import { heroTagSolid } from '@ng-icons/heroicons/solid';
-type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purchase-orders' | 'transfers' | 'ledger' | 'low-stock';
+type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purchase-orders' | 'transfers' | 'ledger' | 'sub-ledger' | 'low-stock';
+type InventorySubLedgerStatus = 'healthy' | 'low' | 'out';
+
+interface InventorySubLedgerRow {
+  id: string;
+  itemId: string;
+  warehouseId: string;
+  variantId: string;
+  itemName: string;
+  sku: string;
+  ledgerCode: string;
+  warehouseName: string;
+  qtyIn: number;
+  qtyOut: number;
+  closingQty: number;
+  avgCost: number;
+  stockValue: number;
+  movements: number;
+  lastTransactionDate: string | null;
+  status: InventorySubLedgerStatus;
+}
 
 @Component({
   selector: 'app-client-inventory',
@@ -49,6 +70,7 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
     RecentStockActivityWidgetComponent,
     SystemWarningWidgetComponent,
     QuickActionsWidgetComponent,
+    SubLedgerPageComponent,
   ],
   providers: [provideIcons({
     heroArchiveBoxSolid, heroPlusSolid, heroArrowPathSolid,
@@ -853,6 +875,8 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
 
       <!-- ═══ LEDGER TAB ═══ -->
       } @else if (activeView() === 'ledger') {
+        <app-sub-ledger-page [clientId]="clientId"></app-sub-ledger-page>
+        @if (false) {
         <div class="flex items-center justify-between mb-6">
           <div>
             <h2 class="text-xl font-bold text-slate-900">Stock Ledger</h2>
@@ -924,6 +948,181 @@ type InventoryView = 'overview' | 'items' | 'categories' | 'warehouses' | 'purch
             </table>
           </div>
         </div>
+        }
+
+      } @else if (activeView() === 'sub-ledger') {
+        <app-sub-ledger-page [clientId]="clientId"></app-sub-ledger-page>
+        @if (false) {
+        <div class="space-y-5">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h2 class="text-xl font-bold text-slate-900">Inventory Sub Ledger</h2>
+              <p class="text-sm text-slate-500 mt-1">Item-wise subsidiary ledger under the Inventory control account.</p>
+            </div>
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(220px,1fr)_170px]">
+              <input
+                [ngModel]="subLedgerSearch()"
+                (ngModelChange)="subLedgerSearch.set($event)"
+                placeholder="Search item, SKU, warehouse"
+                class="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-primary-500"
+              />
+              <select [ngModel]="subLedgerTypeFilter()"
+                      (ngModelChange)="subLedgerTypeFilter.set($event)"
+                      class="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-primary-500">
+                <option value="">All Types</option>
+                <option value="purchase">Purchase</option>
+                <option value="sale">Sale</option>
+                <option value="transfer_in">Transfer In</option>
+                <option value="transfer_out">Transfer Out</option>
+                <option value="adjustment">Adjustment</option>
+                <option value="opening_stock">Opening Stock</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+              <p class="text-[11px] font-black uppercase tracking-wider text-slate-500">Total Sub Ledgers</p>
+              <p class="mt-3 text-2xl font-black text-slate-950">{{ subLedgerKpis().accounts }}</p>
+            </div>
+            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+              <p class="text-[11px] font-black uppercase tracking-wider text-slate-500">Inventory Value</p>
+              <p class="mt-3 text-2xl font-black text-emerald-700">₹{{ subLedgerKpis().stockValue | number:'1.0-0' }}</p>
+            </div>
+            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+              <p class="text-[11px] font-black uppercase tracking-wider text-slate-500">Qty In</p>
+              <p class="mt-3 text-2xl font-black text-emerald-700">{{ subLedgerKpis().qtyIn | number:'1.0-2' }}</p>
+            </div>
+            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+              <p class="text-[11px] font-black uppercase tracking-wider text-slate-500">Qty Out</p>
+              <p class="mt-3 text-2xl font-black text-rose-700">{{ subLedgerKpis().qtyOut | number:'1.0-2' }}</p>
+            </div>
+            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+              <p class="text-[11px] font-black uppercase tracking-wider text-slate-500">Transactions</p>
+              <p class="mt-3 text-2xl font-black text-slate-950">{{ subLedgerKpis().transactions }}</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-5 2xl:grid-cols-[1.1fr_0.9fr]">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+                <div>
+                  <h3 class="text-sm font-black text-slate-900">Sub Ledger Accounts</h3>
+                  <p class="mt-0.5 text-xs font-semibold text-slate-500">Inventory control account split by item and warehouse.</p>
+                </div>
+                <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700">{{ filteredSubLedgerRows().length }} accounts</span>
+              </div>
+              <div class="overflow-x-auto no-scrollbar">
+                <table class="w-full min-w-[980px] text-left border-collapse">
+                  <thead>
+                    <tr class="border-b border-slate-200 bg-white">
+                      <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sub Ledger</th>
+                      <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Warehouse</th>
+                      <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">In Qty</th>
+                      <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Out Qty</th>
+                      <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Closing</th>
+                      <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Value</th>
+                      <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    @if (isLoadingSubLedger()) {
+                      @for (i of [1,2,3,4,5,6]; track i) {
+                        <tr><td colspan="7" class="px-4 py-3"><div class="h-5 rounded bg-slate-100 animate-pulse"></div></td></tr>
+                      }
+                    } @else {
+                      @for (row of filteredSubLedgerRows(); track row.id) {
+                        <tr class="hover:bg-slate-50/70 transition-colors">
+                          <td class="py-3 px-4">
+                            <p class="text-sm font-bold text-slate-900">{{ row.itemName }}</p>
+                            <p class="mt-0.5 text-[11px] font-semibold text-slate-500">{{ row.ledgerCode }}</p>
+                          </td>
+                          <td class="py-3 px-4 text-sm font-semibold text-slate-600">{{ row.warehouseName }}</td>
+                          <td class="py-3 px-4 text-right text-sm font-mono font-bold text-emerald-600">{{ row.qtyIn | number:'1.0-2' }}</td>
+                          <td class="py-3 px-4 text-right text-sm font-mono font-bold text-rose-600">{{ row.qtyOut | number:'1.0-2' }}</td>
+                          <td class="py-3 px-4 text-right text-sm font-mono font-black text-slate-950">{{ row.closingQty | number:'1.0-2' }}</td>
+                          <td class="py-3 px-4 text-right text-sm font-mono text-slate-700">₹{{ row.stockValue | number:'1.0-0' }}</td>
+                          <td class="py-3 px-4">
+                            <span class="inline-flex rounded-full px-2 py-1 text-[10px] font-black uppercase"
+                                  [ngClass]="{
+                                    'bg-emerald-100 text-emerald-700': row.status === 'healthy',
+                                    'bg-amber-100 text-amber-700': row.status === 'low',
+                                    'bg-rose-100 text-rose-700': row.status === 'out'
+                                  }">
+                              {{ row.status === 'out' ? 'out of stock' : row.status }}
+                            </span>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr><td colspan="7" class="py-12 text-center text-slate-400">No inventory sub ledger accounts found</td></tr>
+                      }
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+                <div>
+                  <h3 class="text-sm font-black text-slate-900">Recent Postings</h3>
+                  <p class="mt-0.5 text-xs font-semibold text-slate-500">Debit increases stock, credit reduces stock.</p>
+                </div>
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ filteredSubLedgerEntries().length }} rows</span>
+              </div>
+              <div class="overflow-x-auto no-scrollbar">
+                <table class="w-full min-w-[760px] text-left border-collapse">
+                  <thead>
+                    <tr class="border-b border-slate-200 bg-white">
+                      <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Date</th>
+                      <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Voucher</th>
+                      <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Item</th>
+                      <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Debit</th>
+                      <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Credit</th>
+                      <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    @if (isLoadingSubLedger()) {
+                      @for (i of [1,2,3,4]; track i) {
+                        <tr><td colspan="6" class="px-4 py-3"><div class="h-5 rounded bg-slate-100 animate-pulse"></div></td></tr>
+                      }
+                    } @else {
+                      @for (entry of filteredSubLedgerEntries(); track entry.id) {
+                        <tr class="hover:bg-slate-50/70 transition-colors">
+                          <td class="py-3 px-4 text-sm font-mono text-slate-600 whitespace-nowrap">{{ entry.transactionDate | date:'dd MMM yyyy' }}</td>
+                          <td class="py-3 px-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                                  [ngClass]="{
+                                    'bg-emerald-50 text-emerald-700': entry.transactionType === 'purchase',
+                                    'bg-blue-50 text-blue-700': entry.transactionType === 'sale',
+                                    'bg-indigo-50 text-indigo-700': entry.transactionType === 'transfer_in',
+                                    'bg-orange-50 text-orange-700': entry.transactionType === 'transfer_out',
+                                    'bg-slate-100 text-slate-600': entry.transactionType === 'adjustment',
+                                    'bg-purple-50 text-purple-700': entry.transactionType === 'opening_stock'
+                                  }">
+                              {{ entry.transactionType?.replace('_', ' ') }}
+                            </span>
+                          </td>
+                          <td class="py-3 px-4">
+                            <p class="max-w-[220px] truncate text-sm font-bold text-slate-900">{{ entry.item?.name || entry.itemId }}</p>
+                            <p class="mt-0.5 text-[11px] font-semibold text-slate-500">{{ entry.warehouse?.name || 'Warehouse' }}</p>
+                          </td>
+                          <td class="py-3 px-4 text-right text-sm font-mono font-bold text-emerald-600">{{ entry.qtyIn ? (entry.qtyIn | number:'1.0-2') : '-' }}</td>
+                          <td class="py-3 px-4 text-right text-sm font-mono font-bold text-rose-600">{{ entry.qtyOut ? (entry.qtyOut | number:'1.0-2') : '-' }}</td>
+                          <td class="py-3 px-4 text-right text-sm font-mono font-black text-slate-950">{{ entry.runningBalance | number:'1.0-2' }}</td>
+                        </tr>
+                      } @empty {
+                        <tr><td colspan="6" class="py-12 text-center text-slate-400">No postings found</td></tr>
+                      }
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        }
 
       <!-- ═══ LOW STOCK TAB ═══ -->
       } @else if (activeView() === 'low-stock') {
@@ -1285,6 +1484,144 @@ export class ClientInventoryComponent implements OnInit, OnChanges {
   isLoadingLedger = signal(false);
   ledgerTypeFilter = '';
 
+  // Sub Ledger
+  subLedgerValuationRows = signal<any[]>([]);
+  subLedgerEntries = signal<any[]>([]);
+  isLoadingSubLedger = signal(false);
+  subLedgerSearch = signal('');
+  subLedgerTypeFilter = signal('');
+
+  subLedgerRows = computed<InventorySubLedgerRow[]>(() => {
+    const accounts = new Map<string, InventorySubLedgerRow>();
+
+    for (const row of this.subLedgerValuationRows()) {
+      const itemId = String(row.itemId ?? '');
+      if (!itemId) continue;
+      const warehouseId = String(row.warehouseId ?? '');
+      const variantId = String(row.variantId ?? '');
+      const key = this.subLedgerKey(itemId, warehouseId, variantId);
+
+      accounts.set(key, {
+        id: key,
+        itemId,
+        warehouseId,
+        variantId,
+        itemName: row.itemName ?? row.item?.name ?? 'Inventory item',
+        sku: row.sku ?? '',
+        ledgerCode: row.sku ? `INV-${row.sku}` : `INV-${itemId.slice(0, 8).toUpperCase()}`,
+        warehouseName: row.warehouseName ?? row.warehouse?.name ?? 'All warehouses',
+        qtyIn: 0,
+        qtyOut: 0,
+        closingQty: Number(row.qtyOnHand ?? row.qty_on_hand ?? 0),
+        avgCost: Number(row.avgCost ?? row.avg_cost ?? 0),
+        stockValue: Number(row.stockValue ?? 0),
+        movements: 0,
+        lastTransactionDate: null,
+        status: 'healthy',
+      });
+    }
+
+    for (const entry of this.subLedgerEntries()) {
+      const itemId = String(entry.itemId ?? '');
+      if (!itemId) continue;
+      const warehouseId = String(entry.warehouseId ?? '');
+      const variantId = String(entry.variantId ?? '');
+      const key = this.subLedgerKey(itemId, warehouseId, variantId);
+      const existing = accounts.get(key) ?? {
+        id: key,
+        itemId,
+        warehouseId,
+        variantId,
+        itemName: entry.item?.name ?? 'Inventory item',
+        sku: entry.item?.sku ?? '',
+        ledgerCode: entry.item?.sku ? `INV-${entry.item.sku}` : `INV-${itemId.slice(0, 8).toUpperCase()}`,
+        warehouseName: entry.warehouse?.name ?? 'Warehouse',
+        qtyIn: 0,
+        qtyOut: 0,
+        closingQty: 0,
+        avgCost: 0,
+        stockValue: 0,
+        movements: 0,
+        lastTransactionDate: null,
+        status: 'healthy' as InventorySubLedgerStatus,
+      };
+
+      existing.qtyIn += Number(entry.qtyIn ?? 0);
+      existing.qtyOut += Number(entry.qtyOut ?? 0);
+      existing.movements += 1;
+      existing.avgCost = existing.avgCost || Number(entry.rate ?? 0);
+
+      if (!accounts.has(key) || this.isLaterDate(entry.transactionDate, existing.lastTransactionDate)) {
+        existing.closingQty = Number(entry.runningBalance ?? existing.closingQty ?? 0);
+        existing.lastTransactionDate = entry.transactionDate ?? existing.lastTransactionDate;
+      }
+
+      if (existing.stockValue === 0) {
+        existing.stockValue = existing.closingQty * existing.avgCost;
+      }
+
+      accounts.set(key, existing);
+    }
+
+    return [...accounts.values()]
+      .map((row) => ({
+        ...row,
+        status: this.subLedgerStatus(row),
+      }))
+      .sort((a, b) => Number(b.stockValue ?? 0) - Number(a.stockValue ?? 0));
+  });
+
+  filteredSubLedgerEntries = computed(() => {
+    const search = this.subLedgerSearch().trim().toLowerCase();
+    const type = this.subLedgerTypeFilter();
+
+    return this.subLedgerEntries().filter((entry) => {
+      if (type && entry.transactionType !== type) return false;
+      if (!search) return true;
+      const haystack = [
+        entry.item?.name,
+        entry.item?.sku,
+        entry.warehouse?.name,
+        entry.transactionType,
+        entry.referenceType,
+      ].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(search);
+    });
+  });
+
+  filteredSubLedgerRows = computed(() => {
+    const search = this.subLedgerSearch().trim().toLowerCase();
+    const type = this.subLedgerTypeFilter();
+    const typedAccountIds = type
+      ? new Set(this.subLedgerEntries()
+          .filter((entry) => entry.transactionType === type)
+          .map((entry) => this.subLedgerKey(String(entry.itemId ?? ''), String(entry.warehouseId ?? ''), String(entry.variantId ?? ''))))
+      : null;
+
+    return this.subLedgerRows().filter((row) => {
+      if (typedAccountIds && !typedAccountIds.has(row.id)) return false;
+      if (!search) return true;
+      return [
+        row.itemName,
+        row.sku,
+        row.ledgerCode,
+        row.warehouseName,
+      ].join(' ').toLowerCase().includes(search);
+    });
+  });
+
+  subLedgerKpis = computed(() => {
+    const rows = this.filteredSubLedgerRows();
+    const entries = this.filteredSubLedgerEntries();
+    return {
+      accounts: rows.length,
+      stockValue: rows.reduce((sum, row) => sum + Number(row.stockValue ?? 0), 0),
+      qtyIn: entries.reduce((sum, entry) => sum + Number(entry.qtyIn ?? 0), 0),
+      qtyOut: entries.reduce((sum, entry) => sum + Number(entry.qtyOut ?? 0), 0),
+      transactions: entries.length,
+    };
+  });
+
   private loadedViews = new Set<string>();
 
   constructor() {
@@ -1298,7 +1635,6 @@ export class ClientInventoryComponent implements OnInit, OnChanges {
         case 'warehouses': this.loadWarehouses(); break;
         case 'purchase-orders': this.loadPOs(); break;
         case 'transfers': this.loadTransfers(); break;
-        case 'ledger': this.loadLedger(); break;
       }
     });
   }
@@ -1331,7 +1667,8 @@ export class ClientInventoryComponent implements OnInit, OnChanges {
       case 'warehouses': this.loadWarehouses(); break;
       case 'purchase-orders': this.loadPOs(); break;
       case 'transfers': this.loadTransfers(); break;
-      case 'ledger': this.loadLedger(); break;
+      case 'ledger': break;
+      case 'sub-ledger': break;
       case 'categories':
       case 'low-stock':
         this.loadOverview();
@@ -1656,6 +1993,35 @@ export class ClientInventoryComponent implements OnInit, OnChanges {
     });
   }
 
+  // Sub Ledger
+  loadSubLedger() {
+    this.isLoadingSubLedger.set(true);
+    const clientId = this.scopedClientId;
+    const valuationRequest = clientId
+      ? this.inventoryService.getClientStockValuation(clientId)
+      : this.inventoryService.getStockValuation();
+    const ledgerRequest = clientId
+      ? this.inventoryService.getClientStockLedger(clientId, { limit: 250 })
+      : this.inventoryService.getStockLedger({ limit: 250 });
+
+    forkJoin({
+      valuation: valuationRequest.pipe(catchError(() => of({ data: { rows: [] } }))),
+      ledger: ledgerRequest.pipe(catchError(() => of({ data: [] }))),
+    }).subscribe({
+      next: ({ valuation, ledger }: any) => {
+        const report = valuation?.data ?? valuation ?? {};
+        this.subLedgerValuationRows.set(report.rows ?? []);
+        this.subLedgerEntries.set(ledger?.data ?? []);
+        this.isLoadingSubLedger.set(false);
+      },
+      error: () => {
+        this.subLedgerValuationRows.set([]);
+        this.subLedgerEntries.set([]);
+        this.isLoadingSubLedger.set(false);
+      },
+    });
+  }
+
   // Ledger
   loadLedger(itemId?: string) {
     this.isLoadingLedger.set(true);
@@ -1669,5 +2035,21 @@ export class ClientInventoryComponent implements OnInit, OnChanges {
       next: (res: any) => { this.ledgerEntries.set(res.data ?? []); this.isLoadingLedger.set(false); },
       error: () => this.isLoadingLedger.set(false)
     });
+  }
+
+  private subLedgerKey(itemId: string, warehouseId: string, variantId: string): string {
+    return `${itemId || 'item'}:${warehouseId || 'all'}:${variantId || 'base'}`;
+  }
+
+  private isLaterDate(value: string | null | undefined, compareTo: string | null | undefined): boolean {
+    if (!value) return false;
+    if (!compareTo) return true;
+    return new Date(value).getTime() >= new Date(compareTo).getTime();
+  }
+
+  private subLedgerStatus(row: InventorySubLedgerRow): InventorySubLedgerStatus {
+    if (row.closingQty <= 0) return 'out';
+    if (this.lowStockItemIds().has(row.itemId)) return 'low';
+    return 'healthy';
   }
 }
