@@ -11,6 +11,7 @@ export interface User {
   isActive: boolean;
   email?: string | null;
   lastLoginAt?: string | null;
+  preferences?: any;
   createdAt: string;
   updatedAt: string;
 }

@@ -76,6 +76,7 @@ export const createUserSchema = z.object({
   email: z.string().email('Invalid email format').optional().nullable(),
   password: z.string().min(8, 'Password must be at least 8 characters').optional(),
   isActive: booleanCoerce.optional(),
+  preferences: z.record(z.any()).optional(),
 });
 
 export const updateUserSchema = z.object({
@@ -85,6 +86,7 @@ export const updateUserSchema = z.object({
   email: z.string().email('Invalid email format').optional().nullable(),
   password: z.string().min(8, 'Password must be at least 8 characters').optional(),
   isActive: booleanCoerce.optional(),
+  preferences: z.record(z.any()).optional(),
 });
 
 export const userFilterSchema = z.object({

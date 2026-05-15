@@ -37,6 +37,7 @@ export class UserService {
         isActive: u.isActive,
         lastLoginAt: u.lastLoginAt,
         email: u.email,
+        preferences: u.preferences,
         createdAt: u.createdAt
       })),
       total: result.total
@@ -57,6 +58,7 @@ export class UserService {
       isActive: user.isActive,
       lastLoginAt: user.lastLoginAt,
       email: user.email,
+      preferences: user.preferences,
       createdAt: user.createdAt
     };
   }
@@ -77,7 +79,7 @@ export class UserService {
       lastLoginAt: null,
       password: hashedPassword,
       email: data.email ?? null,
-      preferences: {},
+      preferences: data.preferences ?? {},
     });
 
     if (userOrError.isFailure) {
@@ -112,7 +114,12 @@ export class UserService {
       password,
       email: data.email !== undefined ? data.email : existing.email,
       avatarS3Key: existing.avatarS3Key,
-      preferences: existing.preferences,
+      preferences: data.preferences !== undefined
+        ? {
+            ...(existing.preferences || {}),
+            ...(data.preferences || {}),
+          }
+        : existing.preferences,
     }, existing.id);
 
     if (userOrError.isFailure) {
