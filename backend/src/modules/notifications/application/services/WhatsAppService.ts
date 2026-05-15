@@ -17,36 +17,44 @@ export class WhatsAppService {
     @inject("WhatsAppServiceAdapter") private waAdapter: WhatsAppServiceAdapter
   ) {}
 
-  async getQR() {
+  async getQR(organizationId?: string) {
+    this.waAdapter.setActiveOrganization(organizationId);
     return this.waAdapter.getQR();
   }
 
-  async getStatus() {
+  async getStatus(organizationId?: string) {
+    this.waAdapter.setActiveOrganization(organizationId);
     return this.waAdapter.getStatus();
   }
 
-  async sendMessage(to: string, message: string) {
+  async sendMessage(to: string, message: string, organizationId?: string) {
+    this.waAdapter.setActiveOrganization(organizationId);
     return this.waAdapter.sendMessage(to, message);
   }
 
-  async getSession(mobile: string) {
+  async getSession(mobile: string, organizationId?: string) {
+    this.waAdapter.setActiveOrganization(organizationId);
     return this.waAdapter.getSession(mobile);
   }
 
-  async clearSession() {
+  async clearSession(organizationId?: string) {
+    this.waAdapter.setActiveOrganization(organizationId);
     return this.waAdapter.clearSession();
   }
 
   async getChats(organizationId: string) {
+    this.waAdapter.setActiveOrganization(organizationId);
     const chats = await this.waAdapter.getChats();
     return this.attachClientMatches(organizationId, chats);
   }
 
-  async getChatMessages(chatId: string, limit = 50) {
+  async getChatMessages(chatId: string, limit = 50, organizationId?: string) {
+    this.waAdapter.setActiveOrganization(organizationId);
     return this.waAdapter.getChatMessages(chatId, limit);
   }
 
-  async logout() {
+  async logout(organizationId?: string) {
+    this.waAdapter.setActiveOrganization(organizationId);
     return this.waAdapter.logout();
   }
 

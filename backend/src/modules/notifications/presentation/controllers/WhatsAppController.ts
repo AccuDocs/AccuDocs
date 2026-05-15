@@ -9,32 +9,32 @@ export class WhatsAppController {
   
   static getQR = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(WhatsAppService);
-    const result = await service.getQR();
+    const result = await service.getQR(req.user!.organizationId);
     sendSuccess(res, result);
   });
 
   static getStatus = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(WhatsAppService);
-    const result = await service.getStatus();
+    const result = await service.getStatus(req.user!.organizationId);
     sendSuccess(res, result);
   });
 
   static sendMessage = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(WhatsAppService);
     const { to, message } = req.body;
-    const result = await service.sendMessage(to, message);
+    const result = await service.sendMessage(to, message, req.user!.organizationId);
     sendSuccess(res, result, 'WhatsApp message sent');
   });
 
   static getSession = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(WhatsAppService);
-    const result = await service.getSession(req.params.mobile);
+    const result = await service.getSession(req.params.mobile, req.user!.organizationId);
     sendSuccess(res, result, 'WhatsApp session retrieved');
   });
 
   static clearSession = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(WhatsAppService);
-    const result = await service.clearSession();
+    const result = await service.clearSession(req.user!.organizationId);
     sendSuccess(res, result, 'WhatsApp session cleared');
   });
 
@@ -47,13 +47,13 @@ export class WhatsAppController {
   static getChatMessages = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(WhatsAppService);
     const limit = req.query.limit ? Number(req.query.limit) : 50;
-    const result = await service.getChatMessages(req.params.chatId, limit);
+    const result = await service.getChatMessages(req.params.chatId, limit, req.user!.organizationId);
     sendSuccess(res, result, 'WhatsApp messages retrieved');
   });
 
   static logout = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(WhatsAppService);
-    const result = await service.logout();
+    const result = await service.logout(req.user!.organizationId);
     sendSuccess(res, result);
   });
 }

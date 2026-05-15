@@ -1,6 +1,7 @@
-import { Client, LocalAuth } from 'whatsapp-web.js';
+import { Client as WhatsAppWebClient, LocalAuth } from 'whatsapp-web.js';
 import { injectable } from "tsyringe";
 import { logger } from "../../../utils/logger";
+import { Checklist, Client as ClientModel, User } from "../../../models";
 
 export type WhatsAppConnectionStatus = 'INITIALIZING' | 'QR_READY' | 'AUTHENTICATED' | 'DISCONNECTED';
 
@@ -12,14 +13,39 @@ export interface WhatsAppStatusResponse {
   device: { platform?: string; pushname?: string; wid?: string } | null;
 }
 
+interface VerifiedWhatsAppClient {
+  id: string;
+  organizationId: string;
+  code: string;
+  name: string;
+  businessName?: string | null;
+  gstin?: string | null;
+  pan?: string | null;
+  mobile?: string | null;
+  email?: string | null;
+  city?: string | null;
+  stateCode?: string | null;
+  user?: {
+    mobile?: string | null;
+    email?: string | null;
+    isActive?: boolean;
+  };
+}
+
 @injectable()
 export class WhatsAppServiceAdapter {
-  private static client: Client | null = null;
+  private static client: WhatsAppWebClient | null = null;
   private static initializing: Promise<void> | null = null;
   private static status: WhatsAppConnectionStatus = 'DISCONNECTED';
   private static qrCode: string | null = null;
   private static lastActivity = Date.now();
   private static readyInfo: WhatsAppStatusResponse['device'] = null;
+  private static processedIncomingIds = new Set<string>();
+  private static activeOrganizationId: string | null = null;
+
+  setActiveOrganization(organizationId?: string | null): void {
+    if (organizationId) WhatsAppServiceAdapter.activeOrganizationId = organizationId;
+  }
 
   async sendOTP(mobile: string, otp: string): Promise<void> {
     await this.sendMessage(mobile, `Your AccuDocs OTP is ${otp}`);
@@ -36,6 +62,8 @@ export class WhatsAppServiceAdapter {
   }
 
   async getStatus(): Promise<WhatsAppStatusResponse> {
+    this.ensureClient();
+
     return {
       status: WhatsAppServiceAdapter.status,
       qrCode: WhatsAppServiceAdapter.qrCode,
@@ -48,7 +76,7 @@ export class WhatsAppServiceAdapter {
   async sendMessage(to: string, message: string): Promise<{ sent: boolean; to: string; id?: string }> {
     await this.requireAuthenticated();
 
-    const chatId = this.toChatId(to);
+    const chatId = await this.resolveChatId(to);
     let result: any;
     try {
       result = await WhatsAppServiceAdapter.client!.sendMessage(chatId, message);
@@ -168,7 +196,7 @@ export class WhatsAppServiceAdapter {
     WhatsAppServiceAdapter.status = 'INITIALIZING';
     WhatsAppServiceAdapter.qrCode = null;
 
-    const client = new Client({
+    const client = new WhatsAppWebClient({
       authStrategy: new LocalAuth({ clientId: 'accudocs-main' }),
       puppeteer: {
         headless: true,
@@ -196,7 +224,7 @@ export class WhatsAppServiceAdapter {
       });
   }
 
-  private bindClientEvents(client: Client): void {
+  private bindClientEvents(client: WhatsAppWebClient): void {
     client.on('qr', (qr: string) => {
       WhatsAppServiceAdapter.qrCode = qr;
       WhatsAppServiceAdapter.status = 'QR_READY';
@@ -228,6 +256,10 @@ export class WhatsAppServiceAdapter {
       }
 
       logger.info('WhatsApp client ready');
+    }) as any);
+
+    client.on('message', ((message: any) => {
+      void this.handleIncomingMessage(message);
     }) as any);
 
     client.on('disconnected', (reason: string) => {
@@ -279,6 +311,270 @@ export class WhatsAppServiceAdapter {
     let digits = value.replace(/\D/g, '');
     if (digits.length === 10) digits = `91${digits}`;
     return `${digits}@c.us`;
+  }
+
+  private async resolveChatId(value: string): Promise<string> {
+    if (value.includes('@g.us')) return value;
+    if (value.includes('@c.us')) return value;
+
+    let digits = value.replace(/\D/g, '');
+    if (digits.length === 10) digits = `91${digits}`;
+    const fallback = `${digits}@c.us`;
+
+    try {
+      const numberId = await (WhatsAppServiceAdapter.client as any)?.getNumberId?.(fallback);
+      return numberId?._serialized || fallback;
+    } catch (error) {
+      logger.warn(`WhatsApp getNumberId failed for ${fallback}; using direct chat id`, error);
+      return fallback;
+    }
+  }
+
+  private async handleIncomingMessage(message: any): Promise<void> {
+    try {
+      if (!message || message.fromMe || message.isStatus) return;
+
+      const from = String(message.from || '');
+      if (!from || from === 'status@broadcast' || from.includes('@g.us')) return;
+
+      const messageId = String(message.id?._serialized || `${from}:${message.timestamp || Date.now()}`);
+      if (WhatsAppServiceAdapter.processedIncomingIds.has(messageId)) return;
+      WhatsAppServiceAdapter.processedIncomingIds.add(messageId);
+      if (WhatsAppServiceAdapter.processedIncomingIds.size > 500) {
+        WhatsAppServiceAdapter.processedIncomingIds = new Set([...WhatsAppServiceAdapter.processedIncomingIds].slice(-250));
+      }
+
+      WhatsAppServiceAdapter.lastActivity = Date.now();
+
+      const contactCandidates = await this.getIncomingContactCandidates(message);
+      const verifiedClient = await this.findVerifiedClient(contactCandidates);
+      if (!verifiedClient) {
+        logger.warn(
+          `WhatsApp bot could not match sender ${from} in organization ${WhatsAppServiceAdapter.activeOrganizationId || 'unknown'}`
+        );
+        await message.reply(
+          'Sorry, this WhatsApp number is not registered with AccuDocs. Please message from the mobile number saved in your client profile or contact your CA firm.'
+        );
+        return;
+      }
+
+      const body = String(message.body || '').trim();
+
+      if (message.hasMedia) {
+        await message.reply(
+          `Thanks ${verifiedClient.name}. We received your file. Our team will review it and attach it to your client work if required.`
+        );
+        return;
+      }
+
+      const intent = this.detectBotIntent(body);
+      const reply = await this.buildBotReply(intent, verifiedClient);
+      if (reply) await message.reply(reply);
+    } catch (error) {
+      logger.warn('WhatsApp bot failed to process incoming message', error);
+    }
+  }
+
+  private async getIncomingContactCandidates(message: any): Promise<string[]> {
+    const candidates = new Set<string>();
+
+    for (const value of [
+      message.from,
+      message.author,
+      message.to,
+      message._data?.from,
+      message._data?.author,
+      message._data?.notifyName,
+    ]) {
+      if (value) candidates.add(String(value));
+    }
+
+    try {
+      const contact = await message.getContact?.();
+      for (const value of [
+        contact?.number,
+        contact?.pushname,
+        contact?.name,
+        contact?.shortName,
+        contact?.id?._serialized,
+        contact?.id?.user,
+      ]) {
+        if (value) candidates.add(String(value));
+      }
+    } catch (error) {
+      logger.warn('WhatsApp bot could not read incoming contact details', error);
+    }
+
+    return [...candidates];
+  }
+
+  private async findVerifiedClient(senderCandidates: string[]): Promise<VerifiedWhatsAppClient | null> {
+    const senderKeys = [...new Set(senderCandidates.flatMap((candidate) => this.phoneKeys(candidate)))];
+    if (!senderKeys.length) return null;
+
+    const clients = await ClientModel.findAll({
+      where: {
+        isActive: true,
+        ...(WhatsAppServiceAdapter.activeOrganizationId
+          ? { organizationId: WhatsAppServiceAdapter.activeOrganizationId }
+          : {}),
+      },
+      attributes: [
+        'id',
+        'organizationId',
+        'code',
+        'name',
+        'businessName',
+        'gstin',
+        'pan',
+        'mobile',
+        'email',
+        'city',
+        'stateCode',
+      ],
+      include: [
+        { model: User, as: 'user', attributes: ['mobile', 'email', 'isActive'] },
+      ],
+      limit: 5000,
+    });
+
+    const matches = (clients as any[])
+      .map((clientModel) => clientModel.get({ plain: true }) as VerifiedWhatsAppClient)
+      .filter((client) => client.user?.isActive !== false)
+      .filter((client) => {
+        const clientKeys = new Set([
+          ...this.phoneKeys(client.mobile),
+          ...this.phoneKeys(client.user?.mobile),
+        ]);
+        return senderKeys.some((key) => clientKeys.has(key));
+      });
+
+    const organizationIds = new Set(matches.map((client) => client.organizationId));
+    if (!WhatsAppServiceAdapter.activeOrganizationId && organizationIds.size > 1) {
+      logger.warn(`WhatsApp bot found duplicate client mobile across organizations for ${senderCandidates.join(', ')}`);
+      return null;
+    }
+
+    return matches[0] || null;
+  }
+
+  private detectBotIntent(body: string): 'greeting' | 'info' | 'files' | 'help' | 'unknown' {
+    const text = body.toLowerCase();
+    if (!text || /^(hi|hey|hello|hii|helo|namaste|start|menu)$/i.test(text)) return 'greeting';
+    if (['1', 'info', 'information', 'details', 'profile', 'account'].includes(text)) return 'info';
+    if (['2', 'file', 'files', 'document', 'documents', 'upload', 'checklist'].includes(text)) return 'files';
+    if (['3', 'help', 'support', 'call', 'contact', 'human'].includes(text)) return 'help';
+    if (/\b(info|profile|account|details)\b/.test(text)) return 'info';
+    if (/\b(file|files|document|documents|upload|checklist)\b/.test(text)) return 'files';
+    if (/\b(help|support|contact|call|human)\b/.test(text)) return 'help';
+    return 'unknown';
+  }
+
+  private async buildBotReply(
+    intent: 'greeting' | 'info' | 'files' | 'help' | 'unknown',
+    client: VerifiedWhatsAppClient
+  ): Promise<string> {
+    if (intent === 'info') return this.buildClientInfoReply(client);
+    if (intent === 'files') return this.buildFileRequestReply(client);
+    if (intent === 'help') {
+      return `Hi ${client.name}, your request is noted. Our team will contact you shortly.\n\nYou can also reply INFO for profile details or FILE for pending document requests.`;
+    }
+    if (intent === 'unknown') {
+      return `Hi ${client.name}, I can help with these options:\n\n1. INFO - client profile details\n2. FILE - pending document/file requests\n3. HELP - ask our team to contact you`;
+    }
+
+    return `Hi ${client.name}, verified successfully with AccuDocs.\n\nReply with:\n1. INFO - your client profile details\n2. FILE - pending document/file requests\n3. HELP - contact the office team`;
+  }
+
+  private buildClientInfoReply(client: VerifiedWhatsAppClient): string {
+    const lines = [
+      'Your AccuDocs client details:',
+      `Client Code: ${client.code}`,
+      `Name: ${client.name}`,
+    ];
+
+    if (client.businessName) lines.push(`Business: ${client.businessName}`);
+    if (client.gstin) lines.push(`GSTIN: ${client.gstin}`);
+    if (client.pan) lines.push(`PAN: ${this.maskSensitive(client.pan)}`);
+    if (client.email || client.user?.email) lines.push(`Email: ${client.email || client.user?.email}`);
+    if (client.mobile || client.user?.mobile) lines.push(`Mobile: ${client.mobile || client.user?.mobile}`);
+    if (client.city || client.stateCode) lines.push(`Location: ${[client.city, client.stateCode].filter(Boolean).join(', ')}`);
+
+    lines.push('', 'Reply FILE to see pending document requests.');
+    return lines.join('\n');
+  }
+
+  private async buildFileRequestReply(client: VerifiedWhatsAppClient): Promise<string> {
+    const checklists = await Checklist.findAll({
+      where: { clientId: client.id, status: 'active' },
+      attributes: [
+        'id',
+        'name',
+        'financialYear',
+        'serviceType',
+        'items',
+        'progress',
+        'totalItems',
+        'receivedItems',
+        'dueDate',
+      ],
+      order: [['updatedAt', 'DESC']],
+      limit: 3,
+    });
+
+    if (!checklists.length) {
+      return `Hi ${client.name}, there are no active document requests right now.\n\nYou can still send a file here and our team will review it.`;
+    }
+
+    const lines = [`Hi ${client.name}, these are your pending document requests:`];
+
+    for (const checklistModel of checklists as any[]) {
+      const checklist = checklistModel.get({ plain: true });
+      const pendingItems = Array.isArray(checklist.items)
+        ? checklist.items.filter((item: any) => item?.status === 'pending')
+        : [];
+      const dueDate = checklist.dueDate ? `, due ${this.formatDate(checklist.dueDate)}` : '';
+      const missing = pendingItems
+        .slice(0, 4)
+        .map((item: any) => item.label)
+        .join(', ');
+      const extra = pendingItems.length > 4 ? `, +${pendingItems.length - 4} more` : '';
+
+      lines.push(
+        '',
+        `${checklist.name || checklist.serviceType} (${checklist.financialYear}${dueDate})`,
+        `Received: ${checklist.receivedItems || 0}/${checklist.totalItems || 0}`
+      );
+      if (missing) lines.push(`Pending: ${missing}${extra}`);
+    }
+
+    lines.push('', 'You can send the requested file here. Our team will review and attach it to your work.');
+    return lines.join('\n');
+  }
+
+  private phoneKeys(value?: string | null): string[] {
+    const digits = String(value || '').replace(/\D/g, '');
+    if (!digits) return [];
+
+    const withoutCountryCode = digits.startsWith('91') && digits.length > 10 ? digits.slice(2) : digits;
+    const keys = new Set<string>([digits, withoutCountryCode]);
+    if (digits.length > 10) keys.add(digits.slice(-10));
+    if (digits.length === 10) keys.add(`91${digits}`);
+
+    return [...keys].filter((key) => key.length >= 10);
+  }
+
+  private maskSensitive(value: string): string {
+    if (value.length <= 4) return value;
+    return `${'*'.repeat(Math.max(value.length - 4, 0))}${value.slice(-4)}`;
+  }
+
+  private formatDate(value: string | Date): string {
+    return new Date(value).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
   }
 
   private async getChatsFromStore(): Promise<any[]> {
