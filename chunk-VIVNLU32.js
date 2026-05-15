@@ -1,0 +1,1 @@
+import"./chunk-PHUH23IY.js";var n=[{path:"",loadComponent:()=>import("./chunk-4SB7DKGO.js").then(t=>t.DocumentsListComponent)},{path:"scanner",redirectTo:"",pathMatch:"full"},{path:"scanner/all",loadComponent:()=>import("./chunk-HH6OWI27.js").then(t=>t.ScannerDocumentsListComponent)}];export{n as DOCUMENTS_ROUTES};
