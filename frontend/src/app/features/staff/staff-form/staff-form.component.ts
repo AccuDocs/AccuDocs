@@ -37,7 +37,7 @@ import { NotificationService } from '@core/services/notification.service';
                 {{ isEditMode() ? 'Edit Staff Profile' : 'Add New Staff' }}
               </h1>
               <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium italic opacity-80">
-                {{ isEditMode() ? 'Update team member roles and contact data' : 'Register a new internal team administrator' }}
+                {{ isEditMode() ? 'Update team member roles and contact data' : 'Register a new internal team member' }}
               </p>
             </div>
           </div>
@@ -105,6 +105,8 @@ import { NotificationService } from '@core/services/notification.service';
                     [class.error]="staffForm.get('role')?.touched && staffForm.get('role')?.invalid"
                   >
                     <option value="admin">Admin</option>
+                    <option value="accountant">Accountant</option>
+                    <option value="staff">Staff</option>
                   </select>
                   <div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
                     <mat-icon class="text-xl">arrow_drop_down</mat-icon>
@@ -151,7 +153,7 @@ import { NotificationService } from '@core/services/notification.service';
                   <div class="input-focus-border"></div>
                 </div>
                 <div class="flex items-center justify-between px-1 mt-1">
-                  <p class="text-[11px] text-slate-400 font-medium italic">{{ isEditMode() ? 'Leave blank to preserve current internal password' : 'A temporary setup password for their admin login' }}</p>
+                  <p class="text-[11px] text-slate-400 font-medium italic">{{ isEditMode() ? 'Leave blank to preserve current internal password' : 'A temporary setup password for internal access' }}</p>
                   @if (staffForm.get('password')?.touched && staffForm.get('password')?.invalid) {
                     <p class="text-xs text-danger-500 font-bold flex items-center gap-1.5 animate-slide-up">
                       <mat-icon class="text-[16px] w-[16px] h-[16px]">warning</mat-icon> Usually requires 8+ Characters
@@ -302,7 +304,7 @@ export class StaffFormComponent implements OnInit {
       this.staffForm.patchValue({
         name: data.name,
         mobile: mobile,
-        role: data.role || 'admin',
+        role: data.role || 'staff',
         isActive: data.isActive
       });
 
@@ -315,7 +317,7 @@ export class StaffFormComponent implements OnInit {
   staffForm: FormGroup = this.fb.group({
     name: ['', [Validators.required]],
     mobile: ['', [Validators.required, Validators.pattern(/^[0-9]{5}\s?[0-9]{5}$/)]],
-    role: ['admin', [Validators.required]],
+    role: ['staff', [Validators.required]],
     password: ['', [Validators.required, Validators.minLength(8)]],
     isActive: [true]
   });
@@ -359,7 +361,7 @@ export class StaffFormComponent implements OnInit {
       },
       error: () => {
         this.notificationService.error('Failed to load user details');
-        this.router.navigate(['/staff']);
+        this.router.navigate(['/firm/staff']);
       },
       complete: () => this.isLoadingData.set(false),
     });
@@ -392,7 +394,7 @@ export class StaffFormComponent implements OnInit {
         if (this.isModal && this.closeCallback) {
           this.closeCallback();
         } else {
-          this.router.navigate(['/staff']);
+          this.router.navigate(['/firm/staff']);
         }
       },
       error: (e) => {
@@ -425,7 +427,7 @@ export class StaffFormComponent implements OnInit {
     if (this.isModal && this.closeCallback) {
       this.closeCallback();
     } else {
-      this.router.navigate(['/staff']);
+      this.router.navigate(['/firm/staff']);
     }
   }
 }

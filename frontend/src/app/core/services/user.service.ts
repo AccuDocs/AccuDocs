@@ -7,8 +7,10 @@ export interface User {
   id: string;
   name: string;
   mobile: string;
-  role: 'admin' | 'client' | string;
+  role: 'admin' | 'staff' | 'accountant' | 'client' | string;
   isActive: boolean;
+  email?: string | null;
+  lastLoginAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -37,7 +39,8 @@ export class UserService {
     limit: number = 10,
     search?: string,
     role?: string,
-    isActive?: boolean
+    isActive?: boolean,
+    excludeRole?: string
   ): Observable<PaginatedResponse<User>> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -46,6 +49,7 @@ export class UserService {
     if (search) params = params.set('search', search);
     if (role) params = params.set('role', role);
     if (isActive !== undefined) params = params.set('isActive', isActive.toString());
+    if (excludeRole) params = params.set('excludeRole', excludeRole);
 
     return this.http.get<PaginatedResponse<User>>(this.baseUrl, { params });
   }

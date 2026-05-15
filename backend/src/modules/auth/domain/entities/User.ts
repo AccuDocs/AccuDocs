@@ -6,7 +6,7 @@ export interface UserProps {
   organizationId: string;
   name: string;
   mobile: string;
-  role: 'super_admin' | 'admin' | 'staff' | 'client';
+  role: 'super_admin' | 'admin' | 'staff' | 'accountant' | 'client';
   isActive: boolean;
   lastLoginAt: Date | null;
   password?: string | null;

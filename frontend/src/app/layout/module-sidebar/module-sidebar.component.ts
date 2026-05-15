@@ -383,11 +383,18 @@ export class ModuleSidebarComponent {
     const url = this.currentUrl();
     const shortcuts = this.getVisibleModuleShortcuts(module);
 
+    if (url === module.route) {
+      const dashboardShortcut = shortcuts.find((shortcut) => shortcut.route === `${module.route}?section=dashboard`);
+      if (dashboardShortcut) {
+        return dashboardShortcut.route;
+      }
+    }
+
     let activeRoute: string | null = null;
     let longestMatch = -1;
 
     for (const shortcut of shortcuts) {
-      if (url === shortcut.route || url.startsWith(`${shortcut.route}/`)) {
+      if (url === shortcut.route || url.startsWith(`${shortcut.route}/`) || url.startsWith(`${shortcut.route}&`)) {
         if (shortcut.route.length > longestMatch) {
           activeRoute = shortcut.route;
           longestMatch = shortcut.route.length;

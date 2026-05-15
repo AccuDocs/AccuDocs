@@ -63,6 +63,10 @@ export class SequelizeUserRepository implements IUserRepository {
     const where: any = {};
     if (filters.organizationId) where.organizationId = filters.organizationId;
     if (filters.role) where.role = filters.role;
+    if (filters.excludeRole && !filters.role) {
+      const { Op } = require('sequelize');
+      where.role = { [Op.ne]: filters.excludeRole };
+    }
     if (filters.isActive !== undefined) where.isActive = filters.isActive;
     
     // Search by name or mobile if provided in filters.q or similar

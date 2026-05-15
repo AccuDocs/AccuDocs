@@ -12,7 +12,7 @@ export class StaffFacade {
   pageIndex = signal(0);
   sortBy = signal('createdAt');
   sortOrder = signal<'asc' | 'desc'>('desc');
-  roleFilter = signal<'admin' | undefined>('admin');
+  roleFilter = signal<'admin' | 'staff' | 'accountant' | undefined>(undefined);
 
   // Resource for declarative data fetching
   staffResource = rxResource({
@@ -21,18 +21,21 @@ export class StaffFacade {
       limit: this.pageSize(),
       search: this.searchQuery(),
       role: this.roleFilter(),
+      excludeRole: 'client',
       // active: undefined
     }),
     loader: (req) => this.userService.getUsers(
       req.request.page,
       req.request.limit,
       req.request.search,
-      req.request.role
+      req.request.role,
+      undefined,
+      req.request.excludeRole
     ),
   });
 
   // Computed views
-  staff = computed(() => this.staffResource.value()?.data || []);
+  staff = computed(() => (this.staffResource.value()?.data || []).filter((user: any) => user.role !== 'client'));
   totalCount = computed(() => this.staffResource.value()?.meta?.total || 0);
   isLoading = computed(() => this.staffResource.isLoading());
 

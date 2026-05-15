@@ -20,6 +20,24 @@ export class UserController {
     );
   });
 
+  static getUser = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(UserService);
+    const result = await service.getUser(req.user!.organizationId, req.params.id);
+    sendSuccess(res, result, 'User retrieved successfully');
+  });
+
+  static createUser = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(UserService);
+    const result = await service.createUser(req.user!.organizationId, req.body);
+    sendSuccess(res, result, 'User created successfully', 201);
+  });
+
+  static updateUser = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const service = container.resolve(UserService);
+    const result = await service.updateUser(req.user!.organizationId, req.params.id, req.body);
+    sendSuccess(res, result, 'User updated successfully');
+  });
+
   static toggleStatus = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(UserService);
     const result = await service.toggleUserStatus(req.user!.organizationId, req.params.id);

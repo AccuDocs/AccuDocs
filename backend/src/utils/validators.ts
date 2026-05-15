@@ -72,7 +72,7 @@ export const updateClientSchema = createClientSchema.partial().extend({
 export const createUserSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must not exceed 100 characters'),
   mobile: z.string().regex(patterns.mobile, 'Invalid mobile number format'),
-  role: z.enum(['admin', 'client']),
+  role: z.enum(['admin', 'staff', 'accountant', 'client']),
   email: z.string().email('Invalid email format').optional().nullable(),
   password: z.string().min(8, 'Password must be at least 8 characters').optional(),
   isActive: booleanCoerce.optional(),
@@ -81,7 +81,7 @@ export const createUserSchema = z.object({
 export const updateUserSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must not exceed 100 characters').optional(),
   mobile: z.string().regex(patterns.mobile, 'Invalid mobile number format').optional(),
-  role: z.enum(['admin', 'client']).optional(),
+  role: z.enum(['admin', 'staff', 'accountant', 'client']).optional(),
   email: z.string().email('Invalid email format').optional().nullable(),
   password: z.string().min(8, 'Password must be at least 8 characters').optional(),
   isActive: booleanCoerce.optional(),

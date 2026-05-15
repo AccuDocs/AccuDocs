@@ -8,7 +8,7 @@ export class User extends Model {
   declare public mobile: string;
   declare public email: string | null;
   declare public password: string | null;
-  declare public role: 'super_admin' | 'admin' | 'staff' | 'client';
+  declare public role: 'super_admin' | 'admin' | 'staff' | 'accountant' | 'client';
   declare public isActive: boolean;
   declare public avatarS3Key: string | null;
   declare public lastLoginAt: Date | null;
