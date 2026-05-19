@@ -74,12 +74,19 @@ Organization.hasMany(WhatsAppMessageLog, { foreignKey: 'organizationId', as: 'wh
 
 User.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
 User.hasMany(StaffPermissionModel, { foreignKey: 'userId', as: 'staffPermissions' });
+User.hasMany(Task, { foreignKey: 'assignedTo', as: 'assignedTasks' });
+User.hasMany(Task, { foreignKey: 'createdBy', as: 'createdTasks' });
 
 Client.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
 Client.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 Client.hasMany(Invoice, { foreignKey: 'clientId', as: 'invoices' });
 Client.hasMany(Year, { foreignKey: 'clientId', as: 'years' });
 Client.hasMany(ClientAccessToken, { foreignKey: 'clientId', as: 'accessTokens' });
+Client.hasMany(Task, { foreignKey: 'clientId', as: 'tasks' });
+
+Task.belongsTo(Client, { foreignKey: 'clientId', as: 'client' });
+Task.belongsTo(User, { foreignKey: 'assignedTo', as: 'assignee' });
+Task.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
 
 Invoice.hasMany(InvoiceLineItem, { foreignKey: 'invoice_id', as: 'lineItems' });
 Invoice.hasMany(Payment, { foreignKey: 'invoice_id', as: 'payments' });

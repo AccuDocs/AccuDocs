@@ -14,7 +14,6 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TaskService } from '@core/services/task.service';
 import { NotificationService } from '@core/services/notification.service';
-import { LoadingService } from '@core/services/loading.service';
 import { Task, TaskStatus, PaginatedResponse } from '@app/models/task.model';
 import { TaskFormComponent } from '../task-form/task-form.component';
 
@@ -39,17 +38,29 @@ import { TaskFormComponent } from '../task-form/task-form.component';
     TaskFormComponent,
   ],
   template: `
-    <div class="w-full h-full flex flex-col gap-4 p-6">
+    <div class="w-full h-full flex flex-col gap-5 p-6">
       <!-- Header -->
       <div class="flex items-center justify-between gap-4">
         <div>
           <h1 class="text-3xl font-bold text-text-primary">Tasks</h1>
-          <p class="text-text-secondary mt-1">Organize your work with drag and drop</p>
+          <p class="text-text-secondary mt-1">Accounting work queue, approvals, and follow-ups</p>
         </div>
         <button class="btn-primary" (click)="openCreateForm()">
           <mat-icon>add</mat-icon>
           Add Task
         </button>
+      </div>
+
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        @for (card of dashboardCards(); track card.label) {
+          <div class="rounded-lg border border-border-color bg-white p-4 dark:bg-slate-800">
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-xs font-semibold text-text-secondary">{{ card.label }}</span>
+              <mat-icon [class]="card.tone" class="text-lg">{{ card.icon }}</mat-icon>
+            </div>
+            <strong class="mt-2 block text-2xl font-bold text-text-primary">{{ card.value }}</strong>
+          </div>
+        }
       </div>
 
       <!-- Kanban Board -->
@@ -86,7 +97,7 @@ import { TaskFormComponent } from '../task-form/task-form.component';
               [id]="status"
               [cdkDropListData]="getTasksByStatus(status)"
               [cdkDropListSortingDisabled]="false"
-              cdkDropListConnectedTo="['todo', 'in-progress', 'review', 'done']"
+              [cdkDropListConnectedTo]="statuses"
               class="flex-1 p-3 space-y-3 overflow-y-auto"
               (cdkDropListDropped)="onTaskDrop($event, status)"
             >
@@ -96,13 +107,17 @@ import { TaskFormComponent } from '../task-form/task-form.component';
                   [cdkDragData]="task"
                   class="bg-white dark:bg-slate-800 rounded-lg border border-border-color p-3 cursor-grabbing shadow-sm hover:shadow-md transition-all"
                 >
-                  <!-- Priority Badge -->
                   <div class="flex items-start justify-between gap-2 mb-2">
-                    <div class="flex items-center gap-1">
+                    <div class="flex min-w-0 flex-wrap items-center gap-1.5">
                       <span [class]="getPriorityBadgeClass(task.priority)" class="w-2 h-2 rounded-full"></span>
                       <span [class]="getPriorityTextClass(task.priority)" class="text-xs font-semibold">
                         {{ task.priority | titlecase }}
                       </span>
+                      @if (task.taskType) {
+                        <span class="rounded border border-slate-200 px-1.5 py-0.5 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300">
+                          {{ getTaskTypeLabel(task.taskType) }}
+                        </span>
+                      }
                     </div>
                     <button
                       [matMenuTriggerFor]="taskMenu"
@@ -129,6 +144,12 @@ import { TaskFormComponent } from '../task-form/task-form.component';
 
                   <!-- Client & Assignee -->
                   <div class="space-y-1 mb-3 text-xs">
+                    @if (task.moduleType) {
+                      <div class="flex items-center gap-1 text-text-secondary">
+                        <mat-icon class="text-xs">hub</mat-icon>
+                        <span>{{ getModuleTypeLabel(task.moduleType) }}</span>
+                      </div>
+                    }
                     @if (task.client) {
                       <div class="flex items-center gap-1 text-text-secondary">
                         <mat-icon class="text-xs">business</mat-icon>
@@ -146,13 +167,20 @@ import { TaskFormComponent } from '../task-form/task-form.component';
                   <!-- Due Date -->
                   @if (task.dueDate) {
                     <div
-                      [class]="isDueDateOverdue(task.dueDate) && task.status !== 'done'
+                      [class]="isDueDateOverdue(task.dueDate) && normalizeStatus(task.status) !== 'completed'
                         ? 'text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/10'
                         : 'text-text-secondary border-border-color bg-slate-50 dark:bg-slate-700/30'"
                       class="flex items-center gap-1 px-2 py-1 rounded border text-xs"
                     >
                       <mat-icon class="text-xs">calendar_today</mat-icon>
                       <span>{{ formatDate(task.dueDate) }}</span>
+                    </div>
+                  }
+
+                  @if (task.checklist?.length) {
+                    <div class="mt-2 flex items-center gap-2 text-xs text-text-secondary">
+                      <mat-icon class="text-sm">checklist</mat-icon>
+                      <span>{{ getChecklistProgress(task) }}</span>
                     </div>
                   }
 
@@ -211,37 +239,49 @@ import { TaskFormComponent } from '../task-form/task-form.component';
 export class KanbanBoardComponent implements OnInit {
   private taskService = inject(TaskService);
   private notificationService = inject(NotificationService);
-  private loadingService = inject(LoadingService);
 
   isLoading = signal(false);
   showTaskForm = signal(false);
   selectedTask = signal<Task | null>(null);
   selectedClientId = signal<string | null>(null);
-  selectedStatus = signal<TaskStatus>('todo');
+  selectedStatus = signal<TaskStatus>('pending');
 
   tasks = signal<Task[]>([]);
-  statuses: TaskStatus[] = ['todo', 'in-progress', 'review', 'done'];
+  statuses: TaskStatus[] = ['pending', 'in-progress', 'review', 'completed'];
 
   statusLabels: Record<TaskStatus, string> = {
-    'todo': 'To Do',
+    'pending': 'Pending',
     'in-progress': 'In Progress',
-    'review': 'In Review',
-    'done': 'Done',
+    'review': 'Review',
+    'completed': 'Completed',
   };
 
   tasksByStatus = computed(() => {
     const result: Record<TaskStatus, Task[]> = {
-      'todo': [],
+      'pending': [],
       'in-progress': [],
       'review': [],
-      'done': [],
+      'completed': [],
     };
 
     this.tasks().forEach((task) => {
-      result[task.status].push(task);
+      result[this.normalizeStatus(task.status)].push(task);
     });
 
     return result;
+  });
+
+  dashboardCards = computed(() => {
+    const tasks = this.tasks();
+    const openTasks = tasks.filter((task) => this.normalizeStatus(task.status) !== 'completed');
+
+    return [
+      { label: 'Due today', value: tasks.filter((task) => this.isDueToday(task.dueDate) && this.normalizeStatus(task.status) !== 'completed').length, icon: 'today', tone: 'text-blue-700 dark:text-blue-300' },
+      { label: 'Overdue', value: openTasks.filter((task) => this.isDueDateOverdue(task.dueDate)).length, icon: 'warning', tone: 'text-red-700 dark:text-red-300' },
+      { label: 'Urgent open', value: openTasks.filter((task) => task.priority === 'urgent').length, icon: 'priority_high', tone: 'text-orange-700 dark:text-orange-300' },
+      { label: 'In review', value: tasks.filter((task) => this.normalizeStatus(task.status) === 'review').length, icon: 'rate_review', tone: 'text-amber-700 dark:text-amber-300' },
+      { label: 'Completed', value: tasks.filter((task) => this.normalizeStatus(task.status) === 'completed').length, icon: 'check_circle', tone: 'text-emerald-700 dark:text-emerald-300' },
+    ];
   });
 
   ngOnInit(): void {
@@ -274,7 +314,7 @@ export class KanbanBoardComponent implements OnInit {
   openCreateForm(): void {
     this.selectedTask.set(null);
     this.selectedClientId.set(null);
-    this.selectedStatus.set('todo');
+    this.selectedStatus.set('pending');
     this.showTaskForm.set(true);
   }
 
@@ -288,7 +328,7 @@ export class KanbanBoardComponent implements OnInit {
   editTask(task: Task): void {
     this.selectedTask.set(task);
     this.selectedClientId.set(task.clientId || null);
-    this.selectedStatus.set(task.status);
+    this.selectedStatus.set(this.normalizeStatus(task.status));
     this.showTaskForm.set(true);
   }
 
@@ -314,7 +354,7 @@ export class KanbanBoardComponent implements OnInit {
   onTaskDrop(event: CdkDragDrop<Task[]>, newStatus: TaskStatus): void {
     const task = event.item.data;
 
-    if (task.status !== newStatus) {
+    if (this.normalizeStatus(task.status) !== newStatus) {
       this.taskService.updateTaskStatus(task.id, newStatus).subscribe({
         next: (updatedTask) => {
           this.notificationService.success(`Task moved to ${this.statusLabels[newStatus]}`);
@@ -335,16 +375,17 @@ export class KanbanBoardComponent implements OnInit {
 
   getStatusBadgeClass(status: TaskStatus): string {
     const classes: Record<TaskStatus, string> = {
-      'todo': 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300',
+      'pending': 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300',
       'in-progress': 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
       'review': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
-      'done': 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+      'completed': 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
     };
     return classes[status];
   }
 
   getPriorityBadgeClass(priority: string): string {
     const classes: Record<string, string> = {
+      'urgent': 'bg-orange-500',
       'high': 'bg-red-500',
       'medium': 'bg-yellow-500',
       'low': 'bg-green-500',
@@ -354,6 +395,7 @@ export class KanbanBoardComponent implements OnInit {
 
   getPriorityTextClass(priority: string): string {
     const classes: Record<string, string> = {
+      'urgent': 'text-orange-700 dark:text-orange-400',
       'high': 'text-red-700 dark:text-red-400',
       'medium': 'text-yellow-700 dark:text-yellow-400',
       'low': 'text-green-700 dark:text-green-400',
@@ -361,15 +403,69 @@ export class KanbanBoardComponent implements OnInit {
     return classes[priority] || 'text-text-secondary';
   }
 
-  isDueDateOverdue(dueDate: string | Date): boolean {
+  isDueDateOverdue(dueDate: string | Date | undefined | null): boolean {
+    if (!dueDate) return false;
     const due = new Date(dueDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return due < today;
   }
 
+  isDueToday(dueDate: string | Date | undefined): boolean {
+    if (!dueDate) return false;
+    const due = new Date(dueDate);
+    const today = new Date();
+    return due.toDateString() === today.toDateString();
+  }
+
   formatDate(date: string | Date): string {
     const d = new Date(date);
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  normalizeStatus(status: string): TaskStatus {
+    if (status === 'todo' || status === 'pending') return 'pending';
+    if (status === 'done' || status === 'completed') return 'completed';
+    if (status === 'in_progress' || status === 'in-progress') return 'in-progress';
+    return status === 'review' ? 'review' : 'pending';
+  }
+
+  getChecklistProgress(task: Task): string {
+    const items = task.checklist || [];
+    const completed = items.filter((item) => item.completed).length;
+    return `${completed}/${items.length} subtasks`;
+  }
+
+  getTaskTypeLabel(value: string): string {
+    const labels: Record<string, string> = {
+      'gst-filing': 'GST filing',
+      'invoice-follow-up': 'Invoice follow-up',
+      'bank-reconciliation': 'Bank reconciliation',
+      'tds-submission': 'TDS',
+      'payroll-processing': 'Payroll',
+      'expense-verification': 'Expense check',
+      'audit-preparation': 'Audit',
+      'client-call': 'Client call',
+      'document-collection': 'Documents',
+      'vendor-payment': 'Vendor payment',
+      'employee-approval': 'Employee approval',
+      'general': 'General',
+    };
+    return labels[value] || value;
+  }
+
+  getModuleTypeLabel(value: string): string {
+    const labels: Record<string, string> = {
+      invoice: 'Invoice',
+      client: 'Client',
+      expense: 'Expense',
+      gst: 'GST',
+      payroll: 'Payroll',
+      vendor: 'Vendor',
+      document: 'Document',
+      audit: 'Audit',
+      other: 'Other',
+    };
+    return labels[value] || value;
   }
 }

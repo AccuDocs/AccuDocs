@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '@environments/environment';
 import { Task, CreateTaskDto, UpdateTaskDto, UpdateTaskStatusDto, TaskStats, PaginatedResponse } from '@app/models/task.model';
 
@@ -55,7 +56,9 @@ export class TaskService {
    * Get task statistics for dashboard
    */
   getTaskStats(): Observable<TaskStats> {
-    return this.http.get<TaskStats>(`${this.baseUrl}/stats`);
+    return this.http.get<{ success: boolean; data: TaskStats }>(`${this.baseUrl}/stats`).pipe(
+      map((response) => response.data)
+    );
   }
 
   /**

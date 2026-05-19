@@ -719,7 +719,7 @@ export class DashboardComponent {
       },
       {
         label: 'Completed',
-        value: String(filed || tasks?.byStatus?.done || 0),
+        value: String(filed || tasks?.byStatus?.completed || 0),
         icon: 'task_alt',
         cardClass: 'metric-card--success',
         labelClass: 'text-emerald-700',
@@ -787,7 +787,7 @@ export class DashboardComponent {
     const counts = new Map<string, number>();
 
     for (const task of this.tasksResource.value() || []) {
-      if (task.status === 'done') continue;
+      if (task.status === 'completed') continue;
       const name = task.assignee?.name || 'Unassigned';
       counts.set(name, (counts.get(name) || 0) + 1);
     }
@@ -885,7 +885,7 @@ export class DashboardComponent {
     if (!stats) return [];
 
     const rows: WorkloadRow[] = [
-      { name: 'To Do', count: stats.byStatus?.todo || 0 },
+      { name: 'Pending', count: stats.byStatus?.pending || 0 },
       { name: 'In Progress', count: stats.byStatus?.['in-progress'] || 0 },
       { name: 'In Review', count: stats.byStatus?.review || 0 },
     ];
@@ -896,7 +896,7 @@ export class DashboardComponent {
   private getTaskCompletionRate(): number {
     const stats: TaskStats | undefined = this.taskStatsResource.value();
     if (!stats?.totalTasks) return 0;
-    return Math.round(((stats.byStatus?.done || 0) / stats.totalTasks) * 100);
+    return Math.round(((stats.byStatus?.completed || 0) / stats.totalTasks) * 100);
   }
 
   private getClientDeadline(clientId: string): ClientDeadlineAssignment | undefined {

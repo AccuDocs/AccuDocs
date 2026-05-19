@@ -1,16 +1,52 @@
-export type TaskPriority = 'high' | 'medium' | 'low';
-export type TaskStatus = 'todo' | 'in-progress' | 'review' | 'done';
+export type TaskPriority = 'urgent' | 'high' | 'medium' | 'low';
+export type TaskStatus = 'pending' | 'in-progress' | 'review' | 'completed';
+export type TaskModuleType = 'invoice' | 'client' | 'expense' | 'gst' | 'payroll' | 'vendor' | 'document' | 'audit' | 'other';
+export type TaskType =
+  | 'gst-filing'
+  | 'invoice-follow-up'
+  | 'bank-reconciliation'
+  | 'tds-submission'
+  | 'payroll-processing'
+  | 'expense-verification'
+  | 'audit-preparation'
+  | 'client-call'
+  | 'document-collection'
+  | 'vendor-payment'
+  | 'employee-approval'
+  | 'general';
+
+export interface TaskChecklistItem {
+  id?: string;
+  title: string;
+  completed?: boolean;
+}
+
+export interface TaskAttachment {
+  id?: string;
+  name: string;
+  url?: string | null;
+}
 
 export interface Task {
   id: string;
   title: string;
   description?: string;
-  clientId?: string;
+  clientId?: string | null;
+  assignedTo?: string | null;
+  createdBy?: string;
   priority: TaskPriority;
   status: TaskStatus;
+  startDate?: string | Date | null;
   dueDate?: string | Date;
-  tags: string[];
-  completedAt?: string | Date;
+  taskType?: TaskType | string | null;
+  moduleType?: TaskModuleType | string | null;
+  moduleId?: string | null;
+  estimatedHours?: number | null;
+  actualHours?: number | null;
+  tags?: string[];
+  checklist?: TaskChecklistItem[];
+  attachments?: TaskAttachment[];
+  completedAt?: string | Date | null;
   client?: {
     id: string;
     code: string;
@@ -33,23 +69,39 @@ export interface Task {
 export interface CreateTaskDto {
   title: string;
   description?: string;
-  clientId?: string;
-  assignedTo?: string;
+  clientId?: string | null;
+  assignedTo?: string | null;
   priority?: TaskPriority;
   status?: TaskStatus;
+  startDate?: string | Date | null;
   dueDate?: string | Date;
+  taskType?: TaskType | string | null;
+  moduleType?: TaskModuleType | string | null;
+  moduleId?: string | null;
+  estimatedHours?: number | null;
+  actualHours?: number | null;
   tags?: string[];
+  checklist?: TaskChecklistItem[];
+  attachments?: TaskAttachment[];
 }
 
 export interface UpdateTaskDto {
   title?: string;
   description?: string;
-  clientId?: string;
-  assignedTo?: string;
+  clientId?: string | null;
+  assignedTo?: string | null;
   priority?: TaskPriority;
   status?: TaskStatus;
+  startDate?: string | Date | null;
   dueDate?: string | Date;
+  taskType?: TaskType | string | null;
+  moduleType?: TaskModuleType | string | null;
+  moduleId?: string | null;
+  estimatedHours?: number | null;
+  actualHours?: number | null;
   tags?: string[];
+  checklist?: TaskChecklistItem[];
+  attachments?: TaskAttachment[];
 }
 
 export interface UpdateTaskStatusDto {
@@ -61,10 +113,10 @@ export interface TaskStats {
   dueTodayCount: number;
   overdueCount: number;
   byStatus: {
-    todo: number;
+    pending: number;
     'in-progress': number;
     review: number;
-    done: number;
+    completed: number;
   };
 }
 

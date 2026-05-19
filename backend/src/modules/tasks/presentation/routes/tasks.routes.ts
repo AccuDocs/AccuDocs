@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { TaskController } from '../controllers/TaskController';
 import { validate } from '../../../../middlewares/validate.middleware';
-import { CreateTaskSchema, UpdateTaskStatusSchema } from '../validators/tasks.validators';
+import { CreateTaskSchema, UpdateTaskSchema, UpdateTaskStatusSchema } from '../validators/tasks.validators';
 import { authenticate } from '../../../../middlewares/auth.middleware';
 
 const router = Router();
@@ -55,6 +55,12 @@ router.post('/', validate(CreateTaskSchema), TaskController.createTask);
  */
 router.get('/', TaskController.getTasks);
 
+router.get('/stats', TaskController.getStats);
+
+router.get('/:id', TaskController.getTaskById);
+
+router.put('/:id', validate(UpdateTaskSchema), TaskController.updateTask);
+
 /**
  * @openapi
  * /tasks/{id}/status:
@@ -85,6 +91,8 @@ router.get('/', TaskController.getTasks);
  */
 router.patch('/:id/status', validate(UpdateTaskStatusSchema), TaskController.updateStatus);
 
+router.delete('/:id', TaskController.deleteTask);
+
 /**
  * @openapi
  * /tasks/stats:
@@ -97,6 +105,4 @@ router.patch('/:id/status', validate(UpdateTaskStatusSchema), TaskController.upd
  *       200:
  *         description: Statistics retrieved
  */
-router.get('/stats', TaskController.getStats);
-
 export default router;

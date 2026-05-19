@@ -10,9 +10,17 @@ export class Task extends Model {
   declare public title: string;
   declare public description: string | null;
   declare public priority: 'low' | 'medium' | 'high' | 'urgent';
-  declare public status: 'pending' | 'in_progress' | 'review' | 'done' | 'cancelled';
+  declare public status: 'pending' | 'in_progress' | 'review' | 'completed' | 'cancelled' | 'todo' | 'done';
+  declare public startDate: Date | null;
   declare public dueDate: Date | null;
+  declare public taskType: string | null;
+  declare public moduleType: string | null;
+  declare public moduleId: string | null;
+  declare public estimatedHours: number | null;
+  declare public actualHours: number | null;
   declare public tags: any;
+  declare public checklist: any;
+  declare public attachments: any;
   declare public completedAt: Date | null;
   declare public parentTaskId: string | null;
   declare public relatedInvoiceId: string | null;
@@ -32,8 +40,16 @@ Task.init({
   description: { type: DataTypes.TEXT, allowNull: true },
   priority: { type: DataTypes.STRING(10), allowNull: false, defaultValue: 'medium' },
   status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'pending' },
+  startDate: { type: DataTypes.DATE, allowNull: true, field: 'start_date' },
   dueDate: { type: DataTypes.DATE, allowNull: true, field: 'due_date' },
+  taskType: { type: DataTypes.STRING(50), allowNull: true, field: 'task_type' },
+  moduleType: { type: DataTypes.STRING(50), allowNull: true, field: 'module_type' },
+  moduleId: { type: DataTypes.STRING(100), allowNull: true, field: 'module_id' },
+  estimatedHours: { type: DataTypes.DECIMAL(8, 2), allowNull: true, field: 'estimated_hours' },
+  actualHours: { type: DataTypes.DECIMAL(8, 2), allowNull: true, field: 'actual_hours' },
   tags: { type: DataTypes.JSONB, allowNull: false, defaultValue: [] },
+  checklist: { type: DataTypes.JSONB, allowNull: false, defaultValue: [] },
+  attachments: { type: DataTypes.JSONB, allowNull: false, defaultValue: [] },
   completedAt: { type: DataTypes.DATE, allowNull: true, field: 'completed_at' },
   parentTaskId: { type: DataTypes.UUID, allowNull: true, field: 'parent_task_id' },
   relatedInvoiceId: { type: DataTypes.UUID, allowNull: true, field: 'related_invoice_id' },

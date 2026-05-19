@@ -7,6 +7,7 @@ import { scheduler } from './config/scheduler';
 import './models/index'; // Associations run on load
 import { initializeOcrWorker, terminateOcrWorker } from './modules/scanner/ocr/engine';
 import { ensureScannerSchema } from './modules/scanner/db/repository';
+import { ensureTaskSchema } from './modules/tasks/infrastructure/ensure-task-schema';
 
 const startServer = async (): Promise<void> => {
   try {
@@ -15,6 +16,7 @@ const startServer = async (): Promise<void> => {
 
     logger.info('🚀 Starting AccuDocs Server initialization...');
     await connectDatabase();
+    await ensureTaskSchema();
     await ensureScannerSchema();
     await initializeOcrWorker();
 

@@ -10,11 +10,23 @@ export interface TaskProps {
   description?: string | null;
   status: 'todo' | 'pending' | 'in-progress' | 'in_progress' | 'review' | 'done' | 'completed' | 'cancelled';
   priority: 'low' | 'medium' | 'high' | 'urgent';
+  startDate?: Date | null;
   dueDate?: Date | null;
+  taskType?: string | null;
+  moduleType?: string | null;
+  moduleId?: string | null;
+  estimatedHours?: number | null;
+  actualHours?: number | null;
+  tags?: string[];
+  checklist?: any[];
+  attachments?: any[];
   completedAt?: Date | null;
   createdBy: string;
   createdAt?: Date;
   updatedAt?: Date;
+  client?: any;
+  assignee?: any;
+  creator?: any;
 }
 
 export class Task extends Entity<TaskProps> {
@@ -25,11 +37,23 @@ export class Task extends Entity<TaskProps> {
   get description() { return this.props.description; }
   get status() { return this.props.status; }
   get priority() { return this.props.priority; }
+  get startDate() { return this.props.startDate; }
   get dueDate() { return this.props.dueDate; }
+  get taskType() { return this.props.taskType; }
+  get moduleType() { return this.props.moduleType; }
+  get moduleId() { return this.props.moduleId; }
+  get estimatedHours() { return this.props.estimatedHours; }
+  get actualHours() { return this.props.actualHours; }
+  get tags() { return this.props.tags; }
+  get checklist() { return this.props.checklist; }
+  get attachments() { return this.props.attachments; }
   get completedAt() { return this.props.completedAt; }
   get createdBy() { return this.props.createdBy; }
   get createdAt() { return this.props.createdAt; }
   get updatedAt() { return this.props.updatedAt; }
+  get client() { return this.props.client; }
+  get assignee() { return this.props.assignee; }
+  get creator() { return this.props.creator; }
 
   private constructor(props: TaskProps, id?: string) {
     super(props, id);

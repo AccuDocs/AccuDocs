@@ -68,10 +68,10 @@ import { TaskFormComponent } from '../task-form/task-form.component';
             <mat-label>Status</mat-label>
             <mat-select [(value)]="statusFilter" (valueChange)="resetPagination()">
               <mat-option value="">All Statuses</mat-option>
-              <mat-option value="todo">To Do</mat-option>
+              <mat-option value="pending">Pending</mat-option>
               <mat-option value="in-progress">In Progress</mat-option>
-              <mat-option value="review">In Review</mat-option>
-              <mat-option value="done">Done</mat-option>
+              <mat-option value="review">Review</mat-option>
+              <mat-option value="completed">Completed</mat-option>
             </mat-select>
           </mat-form-field>
 
@@ -80,9 +80,30 @@ import { TaskFormComponent } from '../task-form/task-form.component';
             <mat-label>Priority</mat-label>
             <mat-select [(value)]="priorityFilter" (valueChange)="resetPagination()">
               <mat-option value="">All Priorities</mat-option>
+              <mat-option value="urgent">Urgent</mat-option>
               <mat-option value="high">High</mat-option>
               <mat-option value="medium">Medium</mat-option>
               <mat-option value="low">Low</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="w-full" appearance="outline">
+            <mat-label>Task Type</mat-label>
+            <mat-select [(value)]="taskTypeFilter" (valueChange)="resetPagination()">
+              <mat-option value="">All Types</mat-option>
+              @for (type of taskTypes; track type.value) {
+                <mat-option [value]="type.value">{{ type.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="w-full" appearance="outline">
+            <mat-label>Related Module</mat-label>
+            <mat-select [(value)]="moduleTypeFilter" (valueChange)="resetPagination()">
+              <mat-option value="">All Modules</mat-option>
+              @for (module of moduleTypes; track module.value) {
+                <mat-option [value]="module.value">{{ module.label }}</mat-option>
+              }
             </mat-select>
           </mat-form-field>
 
@@ -121,7 +142,9 @@ import { TaskFormComponent } from '../task-form/task-form.component';
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-900/50 border-b border-border-color">
                   <th class="px-6 py-3 text-left text-xs font-semibold text-text-secondary">Title</th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold text-text-secondary">Type</th>
                   <th class="px-6 py-3 text-left text-xs font-semibold text-text-secondary">Client</th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold text-text-secondary">Module</th>
                   <th class="px-6 py-3 text-left text-xs font-semibold text-text-secondary">Priority</th>
                   <th class="px-6 py-3 text-left text-xs font-semibold text-text-secondary">Status</th>
                   <th class="px-6 py-3 text-left text-xs font-semibold text-text-secondary">Due Date</th>
@@ -133,7 +156,9 @@ import { TaskFormComponent } from '../task-form/task-form.component';
                 @for (task of tasks(); track task.id) {
                   <tr class="border-b border-border-color hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                     <td class="px-6 py-4 text-sm text-text-primary font-medium">{{ task.title }}</td>
+                    <td class="px-6 py-4 text-sm text-text-secondary">{{ getTaskTypeLabel(task.taskType) }}</td>
                     <td class="px-6 py-4 text-sm text-text-secondary">{{ task.client?.name || '-' }}</td>
+                    <td class="px-6 py-4 text-sm text-text-secondary">{{ getModuleTypeLabel(task.moduleType) }}</td>
                     <td class="px-6 py-4 text-sm">
                       <span [class]="getPriorityBadgeClass(task.priority)" class="px-3 py-1 rounded-full text-xs font-semibold">
                         {{ task.priority | titlecase }}
@@ -144,7 +169,7 @@ import { TaskFormComponent } from '../task-form/task-form.component';
                         {{ getStatusLabel(task.status) }}
                       </span>
                     </td>
-                    <td class="px-6 py-4 text-sm" [class]="isDueDateOverdue(task.dueDate) && task.status !== 'done' ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-text-secondary'">
+                    <td class="px-6 py-4 text-sm" [class]="isDueDateOverdue(task.dueDate) && normalizeStatus(task.status) !== 'completed' ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-text-secondary'">
                       {{ task.dueDate ? (task.dueDate | date: 'MMM d, y') : '-' }}
                     </td>
                     <td class="px-6 py-4 text-sm text-text-secondary">{{ task.assignee?.name || '-' }}</td>
@@ -171,7 +196,7 @@ import { TaskFormComponent } from '../task-form/task-form.component';
 
                 @if (tasks().length === 0) {
                   <tr>
-                    <td colspan="7" class="px-6 py-12 text-center text-text-secondary">
+                    <td colspan="9" class="px-6 py-12 text-center text-text-secondary">
                       <div class="flex flex-col items-center justify-center">
                         <mat-icon class="text-4xl mb-2 opacity-50">folder_open</mat-icon>
                         <p class="font-medium">No tasks found</p>
@@ -218,8 +243,37 @@ export class TaskListComponent implements OnInit {
   searchTerm = '';
   statusFilter = '';
   priorityFilter = '';
+  taskTypeFilter = '';
+  moduleTypeFilter = '';
   sortBy = 'createdAt';
   sortOrder: 'asc' | 'desc' = 'desc';
+
+  taskTypes = [
+    { value: 'general', label: 'General' },
+    { value: 'gst-filing', label: 'GST Filing' },
+    { value: 'invoice-follow-up', label: 'Invoice Follow-up' },
+    { value: 'bank-reconciliation', label: 'Bank Reconciliation' },
+    { value: 'tds-submission', label: 'TDS Submission' },
+    { value: 'payroll-processing', label: 'Payroll Processing' },
+    { value: 'expense-verification', label: 'Expense Verification' },
+    { value: 'audit-preparation', label: 'Audit Preparation' },
+    { value: 'client-call', label: 'Client Call' },
+    { value: 'document-collection', label: 'Document Collection' },
+    { value: 'vendor-payment', label: 'Vendor Payment' },
+    { value: 'employee-approval', label: 'Employee Approval' },
+  ];
+
+  moduleTypes = [
+    { value: 'invoice', label: 'Invoice' },
+    { value: 'client', label: 'Client' },
+    { value: 'expense', label: 'Expense' },
+    { value: 'gst', label: 'GST' },
+    { value: 'payroll', label: 'Payroll' },
+    { value: 'vendor', label: 'Vendor' },
+    { value: 'document', label: 'Document' },
+    { value: 'audit', label: 'Audit' },
+    { value: 'other', label: 'Other' },
+  ];
 
   pageSize = 10;
   currentPage = 0;
@@ -235,6 +289,8 @@ export class TaskListComponent implements OnInit {
     if (this.searchTerm) filters.search = this.searchTerm;
     if (this.statusFilter) filters.status = this.statusFilter;
     if (this.priorityFilter) filters.priority = this.priorityFilter;
+    if (this.taskTypeFilter) filters.taskType = this.taskTypeFilter;
+    if (this.moduleTypeFilter) filters.moduleType = this.moduleTypeFilter;
 
     this.taskService.getTasks(
       this.currentPage + 1,
@@ -298,26 +354,27 @@ export class TaskListComponent implements OnInit {
 
   getStatusLabel(status: TaskStatus): string {
     const labels: Record<TaskStatus, string> = {
-      'todo': 'To Do',
+      'pending': 'Pending',
       'in-progress': 'In Progress',
-      'review': 'In Review',
-      'done': 'Done',
+      'review': 'Review',
+      'completed': 'Completed',
     };
-    return labels[status];
+    return labels[this.normalizeStatus(status)];
   }
 
   getStatusBadgeClass(status: TaskStatus): string {
     const classes: Record<TaskStatus, string> = {
-      'todo': 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300',
+      'pending': 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300',
       'in-progress': 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
       'review': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
-      'done': 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+      'completed': 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
     };
-    return classes[status];
+    return classes[this.normalizeStatus(status)];
   }
 
   getPriorityBadgeClass(priority: string): string {
     const classes: Record<string, string> = {
+      'urgent': 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
       'high': 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
       'medium': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
       'low': 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
@@ -331,5 +388,24 @@ export class TaskListComponent implements OnInit {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return due < today;
+  }
+
+  normalizeStatus(status: string): TaskStatus {
+    if (status === 'todo' || status === 'pending') return 'pending';
+    if (status === 'done' || status === 'completed') return 'completed';
+    if (status === 'in_progress' || status === 'in-progress') return 'in-progress';
+    return status === 'review' ? 'review' : 'pending';
+  }
+
+  getTaskTypeLabel(value?: string | null): string {
+    if (!value) return '-';
+    const match = this.taskTypes.find((type) => type.value === value);
+    return match?.label || value;
+  }
+
+  getModuleTypeLabel(value?: string | null): string {
+    if (!value) return '-';
+    const match = this.moduleTypes.find((module) => module.value === value);
+    return match?.label || value;
   }
 }

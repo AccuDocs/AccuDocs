@@ -79,13 +79,13 @@ import { Task, TaskStats } from '@app/models/task.model';
             <div class="flex items-center gap-2">
               <div class="flex-1">
                 <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs text-text-secondary">To Do</span>
-                  <span class="text-xs font-semibold text-text-primary">{{ getStatusCount('todo') }}</span>
+                  <span class="text-xs text-text-secondary">Pending</span>
+                  <span class="text-xs font-semibold text-text-primary">{{ getStatusCount('pending') }}</span>
                 </div>
                 <div class="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
                   <div
                     class="h-full bg-slate-400 dark:bg-slate-500"
-                    [style.width.%]="getStatusPercentage('todo')"
+                    [style.width.%]="getStatusPercentage('pending')"
                   ></div>
                 </div>
               </div>
@@ -109,7 +109,7 @@ import { Task, TaskStats } from '@app/models/task.model';
             <div class="flex items-center gap-2">
               <div class="flex-1">
                 <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs text-text-secondary">In Review</span>
+                  <span class="text-xs text-text-secondary">Review</span>
                   <span class="text-xs font-semibold text-text-primary">{{ getStatusCount('review') }}</span>
                 </div>
                 <div class="w-full h-2 rounded-full bg-yellow-200 dark:bg-yellow-900/30 overflow-hidden">
@@ -124,13 +124,13 @@ import { Task, TaskStats } from '@app/models/task.model';
             <div class="flex items-center gap-2">
               <div class="flex-1">
                 <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs text-text-secondary">Done</span>
-                  <span class="text-xs font-semibold text-text-primary">{{ getStatusCount('done') }}</span>
+                  <span class="text-xs text-text-secondary">Completed</span>
+                  <span class="text-xs font-semibold text-text-primary">{{ getStatusCount('completed') }}</span>
                 </div>
                 <div class="w-full h-2 rounded-full bg-green-200 dark:bg-green-900/30 overflow-hidden">
                   <div
                     class="h-full bg-green-500"
-                    [style.width.%]="getStatusPercentage('done')"
+                    [style.width.%]="getStatusPercentage('completed')"
                   ></div>
                 </div>
               </div>
