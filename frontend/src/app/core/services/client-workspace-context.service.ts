@@ -11,6 +11,7 @@ export type ClientWorkspaceShortcutTab =
   | 'gst'
   | 'billing'
   | 'accounting'
+  | 'banking'
   | 'vendors'
   | 'inventory'
   | 'dashboard';
@@ -41,6 +42,7 @@ export class ClientWorkspaceContextService {
     { iconName: 'heroReceiptPercentSolid', label: 'GST Filing', tab: 'gst' },
     { iconName: 'heroDocumentTextSolid', label: 'Billing & Invoices', tab: 'billing' },
     { iconName: 'heroBanknotesSolid', label: 'Accounting & Finance', tab: 'accounting' },
+    { iconName: 'heroCreditCardSolid', label: 'Banking & Payments', tab: 'banking' },
     { iconName: 'heroTruckSolid', label: 'Vendors', tab: 'vendors' },
     { iconName: 'heroArchiveBoxSolid', label: 'Inventory & Stock', tab: 'inventory' },
     { iconName: 'heroPresentationChartBarSolid', label: 'Dashboard', tab: 'dashboard' },
@@ -146,6 +148,7 @@ export class ClientWorkspaceContextService {
       case 'gst':
       case 'billing':
       case 'accounting':
+      case 'banking':
       case 'vendors':
       case 'inventory':
       case 'dashboard':

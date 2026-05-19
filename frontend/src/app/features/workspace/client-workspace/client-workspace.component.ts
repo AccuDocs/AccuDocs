@@ -34,7 +34,8 @@ import {
   heroFolderPlusSolid,
   heroEllipsisVerticalSolid,
   heroTruckSolid,
-  heroBanknotesSolid
+  heroBanknotesSolid,
+  heroCreditCardSolid
 } from '@ng-icons/heroicons/solid';
 
 // File Explorer specific imports
@@ -58,9 +59,10 @@ import { heroClipboardDocumentCheckSolid, heroCalendarSolid, heroChartBarSolid, 
 import { ClientBillingComponent } from '../components/client-billing/client-billing.component';
 import { ClientInventoryComponent } from '../components/client-inventory/client-inventory.component';
 import { AccountingFinanceComponent } from '../components/accounting-finance/accounting-finance.component';
+import { BankingPaymentsComponent } from '../components/banking-payments/banking-payments.component';
 import { VendorManagementComponent } from '../../vendors/vendor-management/vendor-management.component';
 
-export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst' | 'billing' | 'accounting' | 'vendors' | 'dashboard' | 'inventory';
+export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst' | 'billing' | 'accounting' | 'banking' | 'vendors' | 'dashboard' | 'inventory';
 
 @Component({
   selector: 'app-client-workspace',
@@ -88,6 +90,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
     ClientBillingComponent,
     ClientInventoryComponent,
     AccountingFinanceComponent,
+    BankingPaymentsComponent,
     VendorManagementComponent
   ],
   providers: [
@@ -114,6 +117,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
       heroEllipsisVerticalSolid,
       heroTruckSolid,
       heroBanknotesSolid,
+      heroCreditCardSolid,
       heroClipboardDocumentCheckSolid,
       heroCalendarSolid,
       heroChartBarSolid,
@@ -191,6 +195,10 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
       } @else if (activeTab() === 'accounting') {
         <div class="no-scrollbar min-h-0 flex-1 overflow-auto">
           <app-accounting-finance [clientId]="workspace()?.clientId || ''"></app-accounting-finance>
+        </div>
+      } @else if (activeTab() === 'banking') {
+        <div class="no-scrollbar min-h-0 flex-1 overflow-auto">
+          <app-banking-payments [clientId]="workspace()?.clientId || ''"></app-banking-payments>
         </div>
       } @else if (activeTab() === 'vendors') {
         <div class="no-scrollbar min-h-0 flex-1 overflow-auto">
@@ -1229,6 +1237,7 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
     'gst',
     'billing',
     'accounting',
+    'banking',
     'vendors',
     'dashboard',
     'inventory',
