@@ -9,7 +9,7 @@ async function runTests() {
     console.log('Logging in as Admin (9876543210)...');
     
     const payload = {
-      mobile: '9876543210',
+      identifier: '9876543210',
       password: 'adminPassword123'
     };
     
@@ -27,6 +27,8 @@ async function runTests() {
     const endpoints = [
       { name: 'Invoices List', url: '/billing/invoices' },
       { name: 'Billing Metrics', url: '/billing/metrics' },
+      { name: 'Clients List', url: '/clients?page=1&limit=5' },
+      { name: 'Next Client Code', url: '/clients/next-code' },
       { name: 'Document Stats', url: '/documents/stats' },
       { name: 'Task Stats', url: '/tasks/stats' },
       { name: 'Compliance Stats', url: '/compliance/stats' },
@@ -35,6 +37,15 @@ async function runTests() {
       { name: 'Users List', url: '/users' },
       { name: 'Compliance Deadlines', url: '/compliance/deadlines' },
       { name: 'Client Deadlines', url: '/compliance/client-deadlines' },
+      { name: 'GST HSN/SAC Search', url: '/gst/hsn-sac/search?q=accounting&limit=5' },
+      { name: 'Inventory Category Tree', url: '/inventory/categories/tree' },
+      { name: 'Inventory Items', url: '/inventory/items?page=1&limit=5' },
+      { name: 'Inventory Warehouses', url: '/inventory/warehouses?page=1&limit=5' },
+      { name: 'Inventory Stock Valuation', url: '/inventory/stock/valuation' },
+      { name: 'Vendor Dashboard', url: '/vendors/dashboard' },
+      { name: 'Vendors List', url: '/vendors?page=1&limit=5' },
+      { name: 'Sub Ledger Dashboard', url: '/sub-ledger/dashboard' },
+      { name: 'Sub Ledger Outstanding', url: '/sub-ledger/outstanding' },
       { name: 'WhatsApp QR', url: '/whatsapp/qr' }
     ];
 

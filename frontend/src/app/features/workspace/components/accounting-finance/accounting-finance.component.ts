@@ -2283,7 +2283,12 @@ export class AccountingFinanceComponent {
       'Credit Note': 'CN',
     };
     const prefix = prefixMap[type] || 'JV';
-    return `${prefix}-${String(this.generatedVoucherCount).padStart(4, '0')}`;
+    let number = `${prefix}-${String(this.generatedVoucherCount).padStart(4, '0')}`;
+    while (this.vouchers.some((voucher) => voucher.number === number)) {
+      this.generatedVoucherCount += 1;
+      number = `${prefix}-${String(this.generatedVoucherCount).padStart(4, '0')}`;
+    }
+    return number;
   }
 
   private defaultDebitAccount(type: string): string {
