@@ -126,7 +126,7 @@ export const routes: Routes = [
             path: '',
             loadComponent: () => import('./layout/hub-overview/hub-overview.component').then(m => m.HubOverviewComponent),
           },
-          // Specific client and staff routes must come before :id
+          // Specific client routes must come before :id
           {
             path: 'client',
             loadChildren: () => import('./features/clients/clients.routes').then((m) => m.CLIENTS_ROUTES),
@@ -135,9 +135,8 @@ export const routes: Routes = [
           },
           {
             path: 'staff',
-            loadChildren: () => import('./features/staff/staff.routes').then((m) => m.STAFF_ROUTES),
-            canActivate: [roleGuard],
-            data: { roles: ['admin'] },
+            redirectTo: '/firm/staff',
+            pathMatch: 'full',
           },
         ],
       },

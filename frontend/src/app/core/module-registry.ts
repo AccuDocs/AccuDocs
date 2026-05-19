@@ -188,21 +188,6 @@ export const MODULE_REGISTRY: AppModule[] = ([
     ],
     pinned: true,
   },
-  {
-    id: 'clients_user_staff',
-    hub: 'clients',
-    label: 'Staff',
-    icon: 'TEAM',
-    iconName: 'heroUserGroupSolid',
-    desc: 'Staff management & assignments',
-    status: 'live',
-    badge: null,
-    route: '/clients/staff',
-    shortcuts: [
-      { label: 'Team directory', route: '/clients/staff', iconName: 'heroUserGroupSolid' },
-    ],
-    pinned: true,
-  },
 
   // FIRM OPS
   {
