@@ -56,11 +56,13 @@ export interface Task {
     id: string;
     name: string;
     email?: string;
+    role?: string;
   };
   assignee?: {
     id: string;
     name: string;
     email?: string;
+    role?: string;
   };
   createdAt: string | Date;
   updatedAt: string | Date;
