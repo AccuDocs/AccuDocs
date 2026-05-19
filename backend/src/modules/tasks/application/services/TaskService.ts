@@ -3,6 +3,19 @@ import { ITaskRepository } from "../../domain/repositories/ITaskRepository";
 import { Task } from "../../domain/entities/Task";
 import { AppError, NotFoundError } from "../../../../utils/errors";
 
+const normalizeStatusForPersistence = (status?: string): any => {
+  switch (status) {
+    case 'in-progress':
+      return 'in_progress';
+    case 'pending':
+      return 'todo';
+    case 'completed':
+      return 'done';
+    default:
+      return status || 'todo';
+  }
+};
+
 @injectable()
 export class TaskService {
   constructor(
@@ -16,7 +29,7 @@ export class TaskService {
       assignedTo: data.assignedTo,
       title: data.title,
       description: data.description,
-      status: 'pending' as any,
+      status: normalizeStatusForPersistence(data.status),
       priority: data.priority || 'medium',
       dueDate: data.dueDate ? new Date(data.dueDate) : null,
       createdBy: creatorId
@@ -51,8 +64,9 @@ export class TaskService {
     const task = await this.taskRepo.findById(id, organizationId);
     if (!task) throw new NotFoundError('Task not found');
 
-    (task as any).props.status = newStatus;
-    if (newStatus === 'completed') {
+    const normalizedStatus = normalizeStatusForPersistence(newStatus);
+    (task as any).props.status = normalizedStatus;
+    if (normalizedStatus === 'done') {
       (task as any).props.completedAt = new Date();
     } else {
       (task as any).props.completedAt = null;
@@ -66,9 +80,10 @@ export class TaskService {
     const { tasks } = await this.taskRepo.findAll(organizationId, {}, { page: 1, limit: 1000 });
     
     const stats = {
-      pending: tasks.filter((t: any) => t.status === 'pending').length,
-      in_progress: tasks.filter((t: any) => t.status === 'in_progress').length,
-      completed: tasks.filter((t: any) => t.status === 'completed').length,
+      todo: tasks.filter((t: any) => t.status === 'todo' || t.status === 'pending').length,
+      in_progress: tasks.filter((t: any) => t.status === 'in_progress' || t.status === 'in-progress').length,
+      review: tasks.filter((t: any) => t.status === 'review').length,
+      done: tasks.filter((t: any) => t.status === 'done' || t.status === 'completed').length,
       total: tasks.length
     };
     

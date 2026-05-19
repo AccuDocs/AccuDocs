@@ -5,6 +5,19 @@ import { Task as TaskModel, User as UserModel, Client as ClientModel } from "../
 import { TaskMapper } from "../mappers/TaskMapper";
 import { Op } from "sequelize";
 
+const normalizeStatusFilter = (status: string) => {
+  switch (status) {
+    case 'in-progress':
+      return 'in_progress';
+    case 'pending':
+      return 'todo';
+    case 'completed':
+      return 'done';
+    default:
+      return status;
+  }
+};
+
 @injectable()
 export class SequelizeTaskRepository implements ITaskRepository {
   async save(task: Task, options?: any): Promise<Task> {
@@ -30,7 +43,7 @@ export class SequelizeTaskRepository implements ITaskRepository {
   async findAll(organizationId: string, filters: any, pagination: any): Promise<{ tasks: Task[], total: number }> {
     const where: any = { organizationId };
 
-    if (filters.status) where.status = filters.status;
+    if (filters.status) where.status = normalizeStatusFilter(filters.status);
     if (filters.priority) where.priority = filters.priority;
     if (filters.clientId) where.clientId = filters.clientId;
     if (filters.assignedTo) where.assignedTo = filters.assignedTo;

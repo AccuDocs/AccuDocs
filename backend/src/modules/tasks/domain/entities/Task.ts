@@ -4,11 +4,11 @@ import { Guard } from "../../../../shared/core/Guard";
 
 export interface TaskProps {
   organizationId: string;
-  clientId: string;
+  clientId?: string | null;
   assignedTo?: string | null;
   title: string;
   description?: string | null;
-  status: 'pending' | 'in_progress' | 'review' | 'completed';
+  status: 'todo' | 'pending' | 'in-progress' | 'in_progress' | 'review' | 'done' | 'completed' | 'cancelled';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   dueDate?: Date | null;
   completedAt?: Date | null;
@@ -38,7 +38,6 @@ export class Task extends Entity<TaskProps> {
   public static create(props: TaskProps, id?: string): Result<Task> {
     const guards = [
       { argument: props.organizationId, argumentName: 'organizationId' },
-      { argument: props.clientId, argumentName: 'clientId' },
       { argument: props.title, argumentName: 'title' },
       { argument: props.status, argumentName: 'status' },
       { argument: props.priority, argumentName: 'priority' },

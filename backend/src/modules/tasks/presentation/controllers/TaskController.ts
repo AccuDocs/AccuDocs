@@ -5,12 +5,25 @@ import { sendSuccess, sendCreated, sendPaginated } from '../../../../utils/respo
 import { asyncHandler } from '../../../../middlewares';
 import { AuthenticatedRequest } from '../../../../shared/types/auth.types';
 
+const toApiTaskStatus = (status: string) => {
+  switch (status) {
+    case 'in_progress':
+      return 'in-progress';
+    case 'pending':
+      return 'todo';
+    case 'completed':
+      return 'done';
+    default:
+      return status;
+  }
+};
+
 export class TaskController {
   
   static createTask = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(TaskService);
     const task = await service.createTask(req.user!.organizationId, req.user!.userId, req.body);
-    sendCreated(res, task, 'Task created successfully');
+    sendCreated(res, { ...task, status: toApiTaskStatus(task.status) }, 'Task created successfully');
   });
 
   static getTasks = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
@@ -27,7 +40,7 @@ export class TaskController {
     const formatted = tasks.map(t => ({
       id: t.id,
       title: t.title,
-      status: t.status,
+      status: toApiTaskStatus(t.status),
       priority: t.priority,
       clientId: t.clientId,
       assignedTo: t.assignedTo,
@@ -41,7 +54,7 @@ export class TaskController {
   static updateStatus = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const service = container.resolve(TaskService);
     const result = await service.updateStatus(req.user!.organizationId, req.params.id, req.body.status);
-    sendSuccess(res, result, 'Task status updated');
+    sendSuccess(res, { ...result, status: toApiTaskStatus(result.status) }, 'Task status updated');
   });
 
   static getStats = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
