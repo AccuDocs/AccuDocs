@@ -17,6 +17,17 @@ type BankingView =
   | 'reports'
   | 'settings';
 
+type BankingForm =
+  | 'account'
+  | 'statement'
+  | 'ledger'
+  | 'cheque'
+  | 'upi'
+  | 'gateway'
+  | 'cash'
+  | 'transfer'
+  | 'reminder';
+
 type BankStatus = 'Active' | 'Inactive';
 type ReconciliationStatus = 'Matched' | 'Suggested' | 'Unmatched' | 'Ignored';
 type ChequeStatus = 'Pending' | 'Cleared' | 'Deposited' | 'Bounced' | 'Cancelled';
@@ -157,6 +168,312 @@ interface TransferRow {
           <button type="button" class="icon-button" (click)="clearAction()" aria-label="Dismiss message">
             <mat-icon>close</mat-icon>
           </button>
+        </section>
+      }
+
+      @if (activeForm(); as form) {
+        <section class="data-form-panel" [attr.aria-label]="formTitle()">
+          <div class="form-heading">
+            <div>
+              <span>Data entry</span>
+              <h2>{{ formTitle() }}</h2>
+              <p>{{ formSubtitle() }}</p>
+            </div>
+            <button type="button" class="icon-button" (click)="closeForm()" aria-label="Close data entry form">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <form class="data-form" (ngSubmit)="submitActiveForm()" #bankingDataForm="ngForm">
+            @if (form === 'account') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Bank name</span>
+                  <input name="bankName" [(ngModel)]="bankAccountForm.bank" required />
+                </label>
+                <label class="field">
+                  <span>Account name</span>
+                  <input name="accountName" [(ngModel)]="bankAccountForm.accountName" required />
+                </label>
+                <label class="field">
+                  <span>Account type</span>
+                  <select name="accountType" [(ngModel)]="bankAccountForm.accountType" required>
+                    <option value="Current">Current</option>
+                    <option value="Savings">Savings</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Wallet">Wallet</option>
+                    <option value="UPI">UPI</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Account group</span>
+                  <input name="accountGroup" [(ngModel)]="bankAccountForm.group" required />
+                </label>
+                <label class="field">
+                  <span>Branch</span>
+                  <input name="branch" [(ngModel)]="bankAccountForm.branch" required />
+                </label>
+                <label class="field">
+                  <span>IFSC</span>
+                  <input name="ifsc" [(ngModel)]="bankAccountForm.ifsc" required />
+                </label>
+                <label class="field">
+                  <span>Opening balance</span>
+                  <input type="number" min="0" name="openingBalance" [(ngModel)]="bankAccountForm.openingBalance" required />
+                </label>
+                <label class="field">
+                  <span>Current balance</span>
+                  <input type="number" min="0" name="balance" [(ngModel)]="bankAccountForm.balance" required />
+                </label>
+                <label class="field">
+                  <span>Status</span>
+                  <select name="bankStatus" [(ngModel)]="bankAccountForm.status" required>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </label>
+              </div>
+            } @else if (form === 'statement') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Date</span>
+                  <input type="date" name="statementDate" [(ngModel)]="statementForm.date" required />
+                </label>
+                <label class="field">
+                  <span>Bank</span>
+                  <input name="statementBank" [(ngModel)]="statementForm.bank" required />
+                </label>
+                <label class="field wide">
+                  <span>Narration</span>
+                  <input name="statementNarration" [(ngModel)]="statementForm.narration" required />
+                </label>
+                <label class="field">
+                  <span>Source</span>
+                  <select name="statementMode" [(ngModel)]="statementForm.mode" required>
+                    <option value="CSV">CSV</option>
+                    <option value="XLSX">XLSX</option>
+                    <option value="PDF">PDF</option>
+                    <option value="API Sync">API Sync</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Direction</span>
+                  <select name="statementDirection" [(ngModel)]="statementForm.direction" required>
+                    <option value="Inflow">Inflow</option>
+                    <option value="Outflow">Outflow</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Amount</span>
+                  <input type="number" min="0" name="statementAmount" [(ngModel)]="statementForm.amount" required />
+                </label>
+              </div>
+            } @else if (form === 'ledger') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Bank statement entry</span>
+                  <input name="ledgerBankEntry" [(ngModel)]="ledgerEntryForm.bankEntry" required />
+                </label>
+                <label class="field">
+                  <span>ERP ledger entry</span>
+                  <input name="ledgerEntryName" [(ngModel)]="ledgerEntryForm.ledgerEntry" required />
+                </label>
+                <label class="field">
+                  <span>Amount</span>
+                  <input type="number" min="0" name="ledgerAmount" [(ngModel)]="ledgerEntryForm.amount" required />
+                </label>
+              </div>
+            } @else if (form === 'cheque') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Party</span>
+                  <input name="chequeParty" [(ngModel)]="chequeForm.party" required />
+                </label>
+                <label class="field">
+                  <span>Bank</span>
+                  <input name="chequeBank" [(ngModel)]="chequeForm.bank" required />
+                </label>
+                <label class="field">
+                  <span>Date</span>
+                  <input type="date" name="chequeDate" [(ngModel)]="chequeForm.date" required />
+                </label>
+                <label class="field">
+                  <span>Amount</span>
+                  <input type="number" min="0" name="chequeAmount" [(ngModel)]="chequeForm.amount" required />
+                </label>
+                <label class="field">
+                  <span>Status</span>
+                  <select name="chequeStatus" [(ngModel)]="chequeForm.status" required>
+                    <option value="Pending">Pending</option>
+                    <option value="Cleared">Cleared</option>
+                    <option value="Deposited">Deposited</option>
+                    <option value="Bounced">Bounced</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </label>
+              </div>
+            } @else if (form === 'upi') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Payer</span>
+                  <input name="upiPayer" [(ngModel)]="upiForm.payer" required />
+                </label>
+                <label class="field">
+                  <span>UPI app</span>
+                  <select name="upiApp" [(ngModel)]="upiForm.app" required>
+                    <option value="Google Pay">Google Pay</option>
+                    <option value="PhonePe">PhonePe</option>
+                    <option value="Paytm">Paytm</option>
+                    <option value="BHIM">BHIM</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Amount</span>
+                  <input type="number" min="0" name="upiAmount" [(ngModel)]="upiForm.amount" required />
+                </label>
+              </div>
+            } @else if (form === 'gateway') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Gateway</span>
+                  <select name="gatewayName" [(ngModel)]="gatewayForm.gateway" required>
+                    <option value="Razorpay">Razorpay</option>
+                    <option value="PayU">PayU</option>
+                    <option value="Cashfree">Cashfree</option>
+                    <option value="Stripe">Stripe</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Invoice</span>
+                  <input name="gatewayInvoice" [(ngModel)]="gatewayForm.invoice" required />
+                </label>
+                <label class="field">
+                  <span>Customer</span>
+                  <input name="gatewayCustomer" [(ngModel)]="gatewayForm.customer" required />
+                </label>
+                <label class="field">
+                  <span>Amount</span>
+                  <input type="number" min="0" name="gatewayAmount" [(ngModel)]="gatewayForm.amount" required />
+                </label>
+                <label class="field">
+                  <span>Settlement</span>
+                  <select name="gatewaySettlement" [(ngModel)]="gatewayForm.settlement" required>
+                    <option value="Pending">Pending</option>
+                    <option value="T+1">T+1</option>
+                    <option value="T+2">T+2</option>
+                    <option value="Retry">Retry</option>
+                  </select>
+                </label>
+              </div>
+            } @else if (form === 'cash') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Entry type</span>
+                  <select name="cashType" [(ngModel)]="cashForm.type" required>
+                    <option value="Cash receipt">Cash receipt</option>
+                    <option value="Cash expense">Cash expense</option>
+                    <option value="Branch transfer">Branch transfer</option>
+                    <option value="Daily closing">Daily closing</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Branch</span>
+                  <input name="cashBranch" [(ngModel)]="cashForm.branch" required />
+                </label>
+                <label class="field">
+                  <span>Amount</span>
+                  <input type="number" min="0" name="cashAmount" [(ngModel)]="cashForm.amount" required />
+                </label>
+                <label class="field">
+                  <span>Status</span>
+                  <input name="cashStatus" [(ngModel)]="cashForm.status" required />
+                </label>
+              </div>
+            } @else if (form === 'transfer') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Mode</span>
+                  <select name="transferMode" [(ngModel)]="transferForm.mode" required>
+                    <option value="NEFT">NEFT</option>
+                    <option value="RTGS">RTGS</option>
+                    <option value="IMPS">IMPS</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Beneficiary</span>
+                  <input name="transferBeneficiary" [(ngModel)]="transferForm.beneficiary" required />
+                </label>
+                <label class="field">
+                  <span>UTR number</span>
+                  <input name="transferUtr" [(ngModel)]="transferForm.utr" />
+                </label>
+                <label class="field">
+                  <span>Amount</span>
+                  <input type="number" min="0" name="transferAmount" [(ngModel)]="transferForm.amount" required />
+                </label>
+                <label class="field">
+                  <span>Status</span>
+                  <select name="transferStatus" [(ngModel)]="transferForm.status" required>
+                    <option value="Pending">Pending</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Failed">Failed</option>
+                    <option value="Reversed">Reversed</option>
+                  </select>
+                </label>
+              </div>
+            } @else if (form === 'reminder') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Party</span>
+                  <input name="reminderParty" [(ngModel)]="reminderForm.party" required />
+                </label>
+                <label class="field">
+                  <span>Channel</span>
+                  <select name="reminderChannel" [(ngModel)]="reminderForm.channel" required>
+                    <option value="WhatsApp">WhatsApp</option>
+                    <option value="Email">Email</option>
+                    <option value="SMS">SMS</option>
+                    <option value="Push">Push</option>
+                    <option value="Email + SMS">Email + SMS</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Reminder type</span>
+                  <select name="reminderDueType" [(ngModel)]="reminderForm.dueType" required>
+                    <option value="Invoice due reminder">Invoice due reminder</option>
+                    <option value="Overdue reminder">Overdue reminder</option>
+                    <option value="EMI reminder">EMI reminder</option>
+                    <option value="Vendor payment reminder">Vendor payment reminder</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Next run</span>
+                  <input name="reminderNextRun" [(ngModel)]="reminderForm.nextRun" required />
+                </label>
+                <label class="field">
+                  <span>Status</span>
+                  <select name="reminderStatus" [(ngModel)]="reminderForm.status" required>
+                    <option value="Scheduled">Scheduled</option>
+                    <option value="Sent">Sent</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Escalation">Escalation</option>
+                  </select>
+                </label>
+              </div>
+            }
+
+            <div class="form-actions">
+              <button type="submit" class="primary-action" [disabled]="bankingDataForm.invalid">
+                <mat-icon>save</mat-icon>
+                {{ formSubmitLabel() }}
+              </button>
+              <button type="button" class="small-action" (click)="closeForm()">
+                <mat-icon>close</mat-icon>
+                Cancel
+              </button>
+            </div>
+          </form>
         </section>
       }
 
@@ -689,7 +1006,8 @@ interface TransferRow {
     .banking-menu,
     .panel,
     .metric-card,
-    .report-card {
+    .report-card,
+    .data-form-panel {
       border: 1px solid rgb(226 232 240);
       border-radius: 8px;
       background: white;
@@ -703,7 +1021,8 @@ interface TransferRow {
     :host-context(.dark) .banking-menu,
     :host-context(.dark) .panel,
     :host-context(.dark) .metric-card,
-    :host-context(.dark) .report-card {
+    :host-context(.dark) .report-card,
+    :host-context(.dark) .data-form-panel {
       border-color: rgb(30 41 59);
       background: rgb(15 23 42);
     }
@@ -736,6 +1055,7 @@ interface TransferRow {
     }
 
     :host-context(.dark) .banking-header h1,
+    :host-context(.dark) .form-heading h2,
     :host-context(.dark) .panel-header h2,
     :host-context(.dark) .report-card h2,
     :host-context(.dark) td strong,
@@ -772,6 +1092,7 @@ interface TransferRow {
     }
 
     .header-actions button,
+    .primary-action,
     .small-action,
     .icon-button {
       display: inline-flex;
@@ -789,10 +1110,17 @@ interface TransferRow {
       cursor: pointer;
     }
 
-    .header-actions .primary-action {
+    .primary-action {
       border-color: rgb(37 99 235);
       background: rgb(37 99 235);
       color: white;
+    }
+
+    .primary-action:disabled {
+      border-color: rgb(148 163 184);
+      background: rgb(148 163 184);
+      cursor: not-allowed;
+      opacity: 0.75;
     }
 
     .icon-button {
@@ -827,6 +1155,96 @@ interface TransferRow {
       color: rgb(51 65 85);
       font-size: 13px;
       line-height: 1.4;
+    }
+
+    .data-form-panel {
+      display: grid;
+      gap: 14px;
+      padding: 16px;
+    }
+
+    .form-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .form-heading span {
+      margin: 0 0 4px;
+      color: rgb(37 99 235);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .form-heading h2 {
+      margin: 0;
+      color: rgb(15 23 42);
+      font-size: 18px;
+      font-weight: 850;
+    }
+
+    .form-heading p {
+      margin: 6px 0 0;
+      color: rgb(100 116 139);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .data-form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+      color: rgb(51 65 85);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .field.wide {
+      grid-column: span 2;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid rgb(203 213 225);
+      border-radius: 8px;
+      background: white;
+      color: rgb(15 23 42);
+      padding: 0 11px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 650;
+      outline: none;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: rgb(37 99 235);
+      box-shadow: 0 0 0 3px rgb(191 219 254);
+    }
+
+    .form-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding-top: 2px;
     }
 
     .banking-layout {
@@ -1158,6 +1576,29 @@ interface TransferRow {
       color: rgb(226 232 240);
     }
 
+    :host-context(.dark) .primary-action {
+      border-color: rgb(37 99 235);
+      background: rgb(37 99 235);
+      color: white;
+    }
+
+    :host-context(.dark) .primary-action:disabled {
+      border-color: rgb(71 85 105);
+      background: rgb(71 85 105);
+      color: rgb(203 213 225);
+    }
+
+    :host-context(.dark) .field {
+      color: rgb(203 213 225);
+    }
+
+    :host-context(.dark) .field input,
+    :host-context(.dark) .field select {
+      border-color: rgb(51 65 85);
+      background: rgb(2 6 23);
+      color: rgb(226 232 240);
+    }
+
     :host-context(.dark) .banking-menu button.active,
     :host-context(.dark) .action-banner {
       border-color: rgb(30 64 175);
@@ -1185,7 +1626,8 @@ interface TransferRow {
       .report-grid,
       .settings-grid,
       .automation-grid,
-      .denomination-grid {
+      .denomination-grid,
+      .form-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
@@ -1228,8 +1670,13 @@ interface TransferRow {
       .report-grid,
       .settings-grid,
       .automation-grid,
-      .denomination-grid {
+      .denomination-grid,
+      .form-grid {
         grid-template-columns: 1fr;
+      }
+
+      .field.wide {
+        grid-column: span 1;
       }
 
       .trend-chart {
@@ -1247,6 +1694,7 @@ export class BankingPaymentsComponent {
   clientId = input<string>('');
 
   activeView = signal<BankingView>('dashboard');
+  activeForm = signal<BankingForm | null>(null);
   actionTitle = signal('');
   actionMessage = signal('');
   actionIcon = signal('check_circle');
@@ -1255,8 +1703,83 @@ export class BankingPaymentsComponent {
   private bankSequence = 4;
   private transactionSequence = 1012;
   private chequeSequence = 300112;
+  private upiSequence = 993;
+  private gatewaySequence = 118;
+  private cashSequence = 503;
   private transferSequence = 8811;
   private reminderSequence = 71;
+
+  bankAccountForm = {
+    bank: 'Axis Bank',
+    accountName: 'Payment Operations',
+    accountType: 'Current',
+    group: 'Business',
+    branch: 'Surat Ring Road',
+    ifsc: 'UTIB0000911',
+    openingBalance: 0,
+    balance: 0,
+    status: 'Active' as BankStatus,
+  };
+
+  statementForm = {
+    date: this.today(),
+    bank: 'ICICI Bank',
+    narration: 'Imported statement entry',
+    mode: 'CSV',
+    amount: 64000,
+    direction: 'Inflow' as 'Inflow' | 'Outflow',
+  };
+
+  ledgerEntryForm = {
+    bankEntry: 'Bank charge',
+    ledgerEntry: 'Bank charges journal',
+    amount: 1180,
+  };
+
+  chequeForm = {
+    party: 'New Vendor Payment',
+    bank: 'HDFC Bank',
+    date: this.today(),
+    amount: 50000,
+    status: 'Pending' as ChequeStatus,
+  };
+
+  upiForm = {
+    payer: 'New Customer',
+    app: 'Google Pay',
+    amount: 25000,
+  };
+
+  gatewayForm = {
+    gateway: 'Razorpay',
+    invoice: 'INV-DRAFT',
+    customer: 'New Customer',
+    amount: 25000,
+    settlement: 'Pending',
+  };
+
+  cashForm = {
+    type: 'Cash receipt',
+    branch: 'Ahmedabad',
+    amount: 12500,
+    status: 'Open closing',
+  };
+
+  transferForm = {
+    mode: 'NEFT',
+    beneficiary: 'New Beneficiary',
+    utr: '',
+    amount: 45000,
+    status: 'Pending' as TransferStatus,
+  };
+
+  reminderForm = {
+    party: 'New Customer',
+    channel: 'WhatsApp',
+    dueType: 'Invoice due reminder',
+    nextRun: 'Now',
+    status: 'Scheduled',
+  };
 
   menuItems: MenuItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -1395,7 +1918,18 @@ export class BankingPaymentsComponent {
 
   openView(view: BankingView): void {
     this.activeView.set(view);
+    this.activeForm.set(null);
     this.announce('Section opened', `${this.labelForView(view)} is ready.`);
+  }
+
+  openForm(form: BankingForm): void {
+    this.activeForm.set(form);
+    this.activeView.set(this.viewForForm(form));
+    this.announce('Data entry opened', `${this.formTitle()} form is ready.`, 'edit_note');
+  }
+
+  closeForm(): void {
+    this.activeForm.set(null);
   }
 
   clearAction(): void {
@@ -1404,41 +1938,163 @@ export class BankingPaymentsComponent {
     this.actionIcon.set('check_circle');
   }
 
+  submitActiveForm(): void {
+    switch (this.activeForm()) {
+      case 'account':
+        this.submitBankAccount();
+        break;
+      case 'statement':
+        this.submitStatementImport();
+        break;
+      case 'ledger':
+        this.submitLedgerEntry();
+        break;
+      case 'cheque':
+        this.submitCheque();
+        break;
+      case 'upi':
+        this.submitUpiCollection();
+        break;
+      case 'gateway':
+        this.submitPaymentLink();
+        break;
+      case 'cash':
+        this.submitCashEntry();
+        break;
+      case 'transfer':
+        this.submitTransfer();
+        break;
+      case 'reminder':
+        this.submitReminder();
+        break;
+      default:
+        break;
+    }
+  }
+
+  formTitle(): string {
+    switch (this.activeForm()) {
+      case 'account':
+        return 'Bank account entry';
+      case 'statement':
+        return 'Bank statement import';
+      case 'ledger':
+        return 'ERP ledger entry';
+      case 'cheque':
+        return 'Cheque entry';
+      case 'upi':
+        return 'UPI collection request';
+      case 'gateway':
+        return 'Payment gateway link';
+      case 'cash':
+        return 'Cash book entry';
+      case 'transfer':
+        return 'Fund transfer entry';
+      case 'reminder':
+        return 'Payment reminder entry';
+      default:
+        return 'Banking data entry';
+    }
+  }
+
+  formSubtitle(): string {
+    switch (this.activeForm()) {
+      case 'account':
+        return 'Create current, savings, cash, wallet, or UPI accounts for this client workspace.';
+      case 'statement':
+        return 'Enter imported statement details and send them into the reconciliation queue.';
+      case 'ledger':
+        return 'Create a ledger suggestion for unmatched bank statement entries.';
+      case 'cheque':
+        return 'Capture cheque details with status tracking for issue, deposit, bounce, or cancellation.';
+      case 'upi':
+        return 'Generate a dynamic UPI collection reference for a customer payment.';
+      case 'gateway':
+        return 'Create a payment link entry for Razorpay, PayU, Cashfree, or Stripe.';
+      case 'cash':
+        return 'Record cash receipt, expense, transfer, or daily closing movement.';
+      case 'transfer':
+        return 'Track NEFT, RTGS, or IMPS transfers with UTR and maker-checker status.';
+      case 'reminder':
+        return 'Schedule or log collection and vendor payment reminders.';
+      default:
+        return 'Enter details and save them to the selected banking module.';
+    }
+  }
+
+  formSubmitLabel(): string {
+    switch (this.activeForm()) {
+      case 'account':
+        return 'Save account';
+      case 'statement':
+        return 'Import statement';
+      case 'ledger':
+        return 'Create entry';
+      case 'cheque':
+        return 'Issue cheque';
+      case 'upi':
+        return 'Generate QR';
+      case 'gateway':
+        return 'Create link';
+      case 'cash':
+        return 'Record cash';
+      case 'transfer':
+        return 'Create transfer';
+      case 'reminder':
+        return 'Save reminder';
+      default:
+        return 'Save';
+    }
+  }
+
   addBankAccount(): void {
+    this.openForm('account');
+  }
+
+  submitBankAccount(): void {
     this.bankSequence += 1;
     const id = `BA-${String(this.bankSequence).padStart(3, '0')}`;
+    const bank = this.text(this.bankAccountForm.bank, 'New Bank');
+    const accountName = this.text(this.bankAccountForm.accountName, `Payment Operations ${this.bankSequence}`);
     this.bankAccounts = [
       {
         id,
-        bank: 'Axis Bank',
-        accountName: `Payment Operations ${this.bankSequence}`,
-        accountType: 'Current',
-        group: 'Business',
-        branch: 'Surat Ring Road',
-        ifsc: 'UTIB0000911',
-        openingBalance: 0,
-        balance: 0,
-        status: 'Active',
+        bank,
+        accountName,
+        accountType: this.text(this.bankAccountForm.accountType, 'Current'),
+        group: this.text(this.bankAccountForm.group, 'Business'),
+        branch: this.text(this.bankAccountForm.branch, 'Head Office'),
+        ifsc: this.text(this.bankAccountForm.ifsc, '-').toUpperCase(),
+        openingBalance: this.amountValue(this.bankAccountForm.openingBalance),
+        balance: this.amountValue(this.bankAccountForm.balance),
+        status: this.bankAccountForm.status,
         health: 'New',
         lastSync: 'Not synced',
       },
       ...this.bankAccounts,
     ];
     this.activeView.set('accounts');
-    this.announce('Bank account added', `${id} was added as an active current account.`, 'account_balance');
+    this.closeForm();
+    this.announce('Bank account saved', `${id} ${bank} was added for ${accountName}.`, 'account_balance');
   }
 
   importStatement(): void {
+    this.openForm('statement');
+  }
+
+  submitStatementImport(): void {
     this.transactionSequence += 1;
+    const narration = this.text(this.statementForm.narration, 'Imported statement entry');
+    const amount = this.amountValue(this.statementForm.amount);
     this.bankTransactions = [
       {
         id: `BT-${this.transactionSequence}`,
-        date: this.today(),
-        bank: 'ICICI Bank',
-        narration: 'Imported statement entry',
-        mode: 'CSV',
-        amount: 64000,
-        direction: 'Inflow',
+        date: this.text(this.statementForm.date, this.today()),
+        bank: this.text(this.statementForm.bank, 'Bank statement'),
+        narration,
+        mode: this.text(this.statementForm.mode, 'CSV'),
+        amount,
+        direction: this.statementForm.direction,
         status: 'Unreconciled',
       },
       ...this.bankTransactions,
@@ -1446,15 +2102,17 @@ export class BankingPaymentsComponent {
     this.reconciliationRows = [
       {
         id: `REC-${this.transactionSequence}`,
-        bankEntry: 'Imported statement entry',
+        bankEntry: narration,
         ledgerEntry: 'No ledger entry',
-        amount: 64000,
+        amount,
         confidence: '0%',
         status: 'Unmatched',
       },
       ...this.reconciliationRows,
     ];
-    this.announce('Statement imported', 'CSV statement rows were imported with duplicate checks and reconciliation alerts.', 'upload_file');
+    this.activeView.set('reconciliation');
+    this.closeForm();
+    this.announce('Statement imported', `${narration} was imported and queued for reconciliation.`, 'upload_file');
   }
 
   runAutoSync(): void {
@@ -1475,24 +2133,64 @@ export class BankingPaymentsComponent {
   }
 
   createLedgerEntry(): void {
-    this.reconciliationRows = this.reconciliationRows.map((row) => row.status === 'Unmatched' ? { ...row, ledgerEntry: 'Bank charges journal', status: 'Suggested', confidence: '88%' } : row);
-    this.announce('Ledger entry created', 'A journal suggestion was created for the unmatched bank transaction.', 'post_add');
+    this.openForm('ledger');
+  }
+
+  submitLedgerEntry(): void {
+    const bankEntry = this.text(this.ledgerEntryForm.bankEntry, 'Bank statement entry');
+    const ledgerEntry = this.text(this.ledgerEntryForm.ledgerEntry, 'ERP ledger entry');
+    const amount = this.amountValue(this.ledgerEntryForm.amount);
+    let updated = false;
+
+    this.reconciliationRows = this.reconciliationRows.map((row) => {
+      if (!updated && row.status === 'Unmatched') {
+        updated = true;
+        return { ...row, bankEntry, ledgerEntry, amount, status: 'Suggested', confidence: '88%' };
+      }
+      return row;
+    });
+
+    if (!updated) {
+      this.transactionSequence += 1;
+      this.reconciliationRows = [
+        {
+          id: `REC-${this.transactionSequence}`,
+          bankEntry,
+          ledgerEntry,
+          amount,
+          confidence: '88%',
+          status: 'Suggested',
+        },
+        ...this.reconciliationRows,
+      ];
+    }
+
+    this.activeView.set('reconciliation');
+    this.closeForm();
+    this.announce('Ledger entry created', `${ledgerEntry} is ready for approval matching.`, 'post_add');
   }
 
   issueCheque(): void {
+    this.openForm('cheque');
+  }
+
+  submitCheque(): void {
     this.chequeSequence += 1;
+    const chequeNumber = `CHQ-${this.chequeSequence}`;
     this.cheques = [
       {
-        number: `CHQ-${this.chequeSequence}`,
-        party: 'New Vendor Payment',
-        bank: 'HDFC Bank',
-        date: this.today(),
-        amount: 50000,
-        status: 'Pending',
+        number: chequeNumber,
+        party: this.text(this.chequeForm.party, 'New Vendor Payment'),
+        bank: this.text(this.chequeForm.bank, 'HDFC Bank'),
+        date: this.text(this.chequeForm.date, this.today()),
+        amount: this.amountValue(this.chequeForm.amount),
+        status: this.chequeForm.status,
       },
       ...this.cheques,
     ];
-    this.announce('Cheque issued', `CHQ-${this.chequeSequence} was added with pending status.`, 'add_card');
+    this.activeView.set('cheques');
+    this.closeForm();
+    this.announce('Cheque saved', `${chequeNumber} was added with ${this.chequeForm.status.toLowerCase()} status.`, 'add_card');
   }
 
   printCheque(): void {
@@ -1503,49 +2201,118 @@ export class BankingPaymentsComponent {
   }
 
   generateUpiQr(): void {
-    const next = this.upiCollections.length + 994;
-    this.activeUpiRef = `UPI-QR-${next}`;
+    this.openForm('upi');
+  }
+
+  submitUpiCollection(): void {
+    this.upiSequence += 1;
+    this.activeUpiRef = `UPI-QR-${this.upiSequence}`;
     this.upiCollections = [
-      { ref: `UPI-${next}`, payer: 'New Customer', app: 'Google Pay', amount: 25000, status: 'QR generated' },
+      {
+        ref: `UPI-${this.upiSequence}`,
+        payer: this.text(this.upiForm.payer, 'New Customer'),
+        app: this.text(this.upiForm.app, 'Google Pay'),
+        amount: this.amountValue(this.upiForm.amount),
+        status: 'QR generated',
+      },
       ...this.upiCollections,
     ];
+    this.activeView.set('upi');
+    this.closeForm();
     this.announce('UPI QR generated', `${this.activeUpiRef} is ready for dynamic collection.`, 'qr_code_2');
   }
 
   createPaymentLink(): void {
-    const next = this.gatewayTransactions.length + 119;
+    this.openForm('gateway');
+  }
+
+  submitPaymentLink(): void {
+    this.gatewaySequence += 1;
+    const gateway = this.text(this.gatewayForm.gateway, 'Razorpay');
+    const ref = `${this.gatewayPrefix(gateway)}-${this.gatewaySequence}`;
     this.gatewayTransactions = [
-      { ref: `RZP-${next}`, gateway: 'Razorpay', invoice: 'INV-DRAFT', customer: 'New Customer', amount: 25000, status: 'Link sent', settlement: 'Pending' },
+      {
+        ref,
+        gateway,
+        invoice: this.text(this.gatewayForm.invoice, 'INV-DRAFT'),
+        customer: this.text(this.gatewayForm.customer, 'New Customer'),
+        amount: this.amountValue(this.gatewayForm.amount),
+        status: 'Link sent',
+        settlement: this.text(this.gatewayForm.settlement, 'Pending'),
+      },
       ...this.gatewayTransactions,
     ];
-    this.announce('Payment link created', `RZP-${next} was created for invoice payment collection.`, 'link');
+    this.activeView.set('gateways');
+    this.closeForm();
+    this.announce('Payment link created', `${ref} was created for invoice payment collection.`, 'link');
   }
 
   recordCashEntry(): void {
-    const next = this.cashEntries.length + 504;
+    this.openForm('cash');
+  }
+
+  submitCashEntry(): void {
+    this.cashSequence += 1;
+    const ref = `CASH-${this.cashSequence}`;
     this.cashEntries = [
-      { ref: `CASH-${next}`, type: 'Cash receipt', branch: 'Ahmedabad', amount: 12500, status: 'Open closing' },
+      {
+        ref,
+        type: this.text(this.cashForm.type, 'Cash receipt'),
+        branch: this.text(this.cashForm.branch, 'Head Office'),
+        amount: this.amountValue(this.cashForm.amount),
+        status: this.text(this.cashForm.status, 'Open closing'),
+      },
       ...this.cashEntries,
     ];
-    this.announce('Cash entry recorded', `CASH-${next} was added to the cash book.`, 'payments');
+    this.activeView.set('cash');
+    this.closeForm();
+    this.announce('Cash entry recorded', `${ref} was added to the cash book.`, 'payments');
   }
 
   createTransfer(): void {
+    this.openForm('transfer');
+  }
+
+  submitTransfer(): void {
     this.transferSequence += 1;
+    const ref = `TRF-${this.transferSequence}`;
     this.transfers = [
-      { ref: `TRF-${this.transferSequence}`, mode: 'NEFT', beneficiary: 'New Beneficiary', utr: '-', amount: 45000, status: 'Pending' },
+      {
+        ref,
+        mode: this.text(this.transferForm.mode, 'NEFT'),
+        beneficiary: this.text(this.transferForm.beneficiary, 'New Beneficiary'),
+        utr: this.text(this.transferForm.utr, '-'),
+        amount: this.amountValue(this.transferForm.amount),
+        status: this.transferForm.status,
+      },
       ...this.transfers,
     ];
-    this.announce('Transfer created', `TRF-${this.transferSequence} entered maker-checker approval.`, 'send');
+    this.activeView.set('transfers');
+    this.closeForm();
+    this.announce('Transfer created', `${ref} entered maker-checker approval.`, 'send');
   }
 
   sendReminder(): void {
+    this.openForm('reminder');
+  }
+
+  submitReminder(): void {
     this.reminderSequence += 1;
+    const ref = `REM-${this.reminderSequence}`;
     this.reminders = [
-      { ref: `REM-${this.reminderSequence}`, party: 'New Customer', channel: 'WhatsApp', dueType: 'Invoice due reminder', nextRun: 'Now', status: 'Sent' },
+      {
+        ref,
+        party: this.text(this.reminderForm.party, 'New Customer'),
+        channel: this.text(this.reminderForm.channel, 'WhatsApp'),
+        dueType: this.text(this.reminderForm.dueType, 'Invoice due reminder'),
+        nextRun: this.text(this.reminderForm.nextRun, 'Now'),
+        status: this.text(this.reminderForm.status, 'Scheduled'),
+      },
       ...this.reminders,
     ];
-    this.announce('Reminder sent', `REM-${this.reminderSequence} was sent and logged.`, 'notifications_active');
+    this.activeView.set('reminders');
+    this.closeForm();
+    this.announce('Reminder saved', `${ref} was saved and logged.`, 'notifications_active');
   }
 
   saveSettings(): void {
@@ -1555,6 +2322,54 @@ export class BankingPaymentsComponent {
   exportCurrentView(view: BankingView = this.activeView()): void {
     this.downloadCsv(`banking-${view}-${this.today()}.csv`, this.exportRowsFor(view));
     this.announce('Export ready', `${this.labelForView(view)} was downloaded as CSV.`, 'file_download');
+  }
+
+  private viewForForm(form: BankingForm): BankingView {
+    switch (form) {
+      case 'account':
+        return 'accounts';
+      case 'statement':
+        return 'sync';
+      case 'ledger':
+        return 'reconciliation';
+      case 'cheque':
+        return 'cheques';
+      case 'upi':
+        return 'upi';
+      case 'gateway':
+        return 'gateways';
+      case 'cash':
+        return 'cash';
+      case 'transfer':
+        return 'transfers';
+      case 'reminder':
+        return 'reminders';
+      default:
+        return 'dashboard';
+    }
+  }
+
+  private gatewayPrefix(gateway: string): string {
+    switch (gateway) {
+      case 'Cashfree':
+        return 'CSF';
+      case 'PayU':
+        return 'PAYU';
+      case 'Stripe':
+        return 'STR';
+      default:
+        return 'RZP';
+    }
+  }
+
+  private text(value: string, fallback: string): string {
+    const trimmed = String(value ?? '').trim();
+    return trimmed || fallback;
+  }
+
+  private amountValue(value: number | string): number {
+    const amount = Number(value);
+    return Number.isFinite(amount) ? amount : 0;
   }
 
   private announce(title: string, message: string, icon: string = 'check_circle'): void {

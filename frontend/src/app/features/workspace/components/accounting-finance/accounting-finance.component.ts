@@ -27,6 +27,8 @@ type AccountingView =
   | 'permissions'
   | 'settings';
 
+type AccountingForm = 'account' | 'bankImport';
+
 type VoucherStatus = 'Draft' | 'Pending Approval' | 'Approved' | 'Posted' | 'Locked';
 type AccountNature = 'Asset' | 'Liability' | 'Income' | 'Expense' | 'Equity';
 
@@ -146,6 +148,111 @@ interface TrialRow {
           <button type="button" class="icon-button" (click)="clearAction()" aria-label="Dismiss message">
             <mat-icon>close</mat-icon>
           </button>
+        </section>
+      }
+
+      @if (activeForm(); as form) {
+        <section class="data-form-panel" [attr.aria-label]="accountingFormTitle()">
+          <div class="form-heading">
+            <div>
+              <span>Data entry</span>
+              <h2>{{ accountingFormTitle() }}</h2>
+              <p>{{ accountingFormSubtitle() }}</p>
+            </div>
+            <button type="button" class="icon-button" (click)="closeDataForm()" aria-label="Close data entry form">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <form class="data-entry-form" (ngSubmit)="submitAccountingForm()" #accountingDataForm="ngForm">
+            @if (form === 'account') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Account code</span>
+                  <input name="accountCode" [(ngModel)]="accountForm.code" required />
+                </label>
+                <label class="field">
+                  <span>Account name</span>
+                  <input name="accountName" [(ngModel)]="accountForm.account" required />
+                </label>
+                <label class="field">
+                  <span>Parent group</span>
+                  <input name="accountParent" [(ngModel)]="accountForm.parent" required />
+                </label>
+                <label class="field">
+                  <span>Nature</span>
+                  <select name="accountNature" [(ngModel)]="accountForm.nature" required>
+                    <option value="Asset">Asset</option>
+                    <option value="Liability">Liability</option>
+                    <option value="Income">Income</option>
+                    <option value="Expense">Expense</option>
+                    <option value="Equity">Equity</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Normal balance</span>
+                  <select name="accountNormal" [(ngModel)]="accountForm.normal" required>
+                    <option value="Dr">Dr</option>
+                    <option value="Cr">Cr</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Opening balance</span>
+                  <input type="number" min="0" name="accountOpening" [(ngModel)]="accountForm.opening" required />
+                </label>
+                <label class="field">
+                  <span>Current balance</span>
+                  <input type="number" min="0" name="accountBalance" [(ngModel)]="accountForm.balance" required />
+                </label>
+              </div>
+            } @else if (form === 'bankImport') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Bank account</span>
+                  <select name="bankImportAccount" [(ngModel)]="bankImportForm.account" required>
+                    @for (bank of bankingRows; track bank.account) {
+                      <option [value]="bank.account">{{ bank.account }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Statement ref</span>
+                  <input name="bankImportRef" [(ngModel)]="bankImportForm.ref" required />
+                </label>
+                <label class="field wide">
+                  <span>Import title</span>
+                  <input name="bankImportTitle" [(ngModel)]="bankImportForm.title" required />
+                </label>
+                <label class="field">
+                  <span>Amount</span>
+                  <input type="number" min="0" name="bankImportAmount" [(ngModel)]="bankImportForm.amount" required />
+                </label>
+                <label class="field">
+                  <span>Matched rows</span>
+                  <input type="number" min="0" name="bankImportMatched" [(ngModel)]="bankImportForm.matched" required />
+                </label>
+                <label class="field">
+                  <span>Needs review</span>
+                  <input type="number" min="0" name="bankImportUnmatched" [(ngModel)]="bankImportForm.unmatchedReview" required />
+                </label>
+                <label class="field wide">
+                  <span>Status note</span>
+                  <input name="bankImportStatus" [(ngModel)]="bankImportForm.status" required />
+                </label>
+              </div>
+            }
+
+            <div class="form-actions">
+              <button type="submit" class="primary-action" [disabled]="accountingDataForm.invalid">
+                <mat-icon>save</mat-icon>
+                {{ accountingFormSubmitLabel() }}
+              </button>
+              <button type="button" class="small-action" (click)="closeDataForm()">
+                <mat-icon>close</mat-icon>
+                Cancel
+              </button>
+            </div>
+          </form>
         </section>
       }
 
@@ -400,21 +507,79 @@ interface TrialRow {
 
               @if (voucherComposerOpen()) {
                 <section class="composer-panel">
-                  <div>
-                    <span>Draft mode</span>
-                    <h3>{{ selectedVoucherType }}</h3>
-                    <p>Auto numbering, debit/credit validation, attachments, approval, and recurring setup are ready for this voucher.</p>
-                  </div>
-                  <div class="composer-actions">
-                    <button type="button" class="small-action" (click)="saveDraftVoucher()">
-                      <mat-icon>save</mat-icon>
-                      Save Draft
-                    </button>
-                    <button type="button" class="small-action" (click)="postVoucher()">
-                      <mat-icon>check_circle</mat-icon>
-                      Post
-                    </button>
-                  </div>
+                  <form class="voucher-form" (ngSubmit)="saveDraftVoucher()" #voucherDataForm="ngForm">
+                    <div class="form-heading compact">
+                      <div>
+                        <span>Voucher data entry</span>
+                        <h3>{{ selectedVoucherType }}</h3>
+                        <p>Enter the voucher lines, linked module, attachment flag, and recurring setup before saving or posting.</p>
+                      </div>
+                      <button type="button" class="icon-button" (click)="voucherComposerOpen.set(false)" aria-label="Close voucher form">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </div>
+
+                    <div class="form-grid">
+                      <label class="field">
+                        <span>Date</span>
+                        <input type="date" name="voucherDate" [(ngModel)]="voucherForm.date" required />
+                      </label>
+                      <label class="field wide">
+                        <span>Narration</span>
+                        <input name="voucherNarration" [(ngModel)]="voucherForm.narration" required />
+                      </label>
+                      <label class="field">
+                        <span>Debit account</span>
+                        <input name="voucherDebit" [(ngModel)]="voucherForm.debit" required />
+                      </label>
+                      <label class="field">
+                        <span>Credit account</span>
+                        <input name="voucherCredit" [(ngModel)]="voucherForm.credit" required />
+                      </label>
+                      <label class="field">
+                        <span>Amount</span>
+                        <input type="number" min="0" name="voucherAmount" [(ngModel)]="voucherForm.amount" required />
+                      </label>
+                      <label class="field">
+                        <span>Linked module</span>
+                        <select name="voucherLinkedModule" [(ngModel)]="voucherForm.linkedModule" required>
+                          <option value="Accounting">Accounting</option>
+                          <option value="Invoice">Invoice</option>
+                          <option value="Purchase">Purchase</option>
+                          <option value="GST">GST</option>
+                          <option value="Payroll">Payroll</option>
+                          <option value="Banking">Banking</option>
+                        </select>
+                      </label>
+                      <label class="field">
+                        <span>Attachment</span>
+                        <select name="voucherAttachment" [(ngModel)]="voucherForm.attachment" required>
+                          <option value="No">No</option>
+                          <option value="Yes">Yes</option>
+                        </select>
+                      </label>
+                      <label class="field">
+                        <span>Recurring</span>
+                        <select name="voucherRecurring" [(ngModel)]="voucherForm.recurring" required>
+                          <option value="No">No</option>
+                          <option value="Monthly">Monthly</option>
+                          <option value="Quarterly">Quarterly</option>
+                          <option value="Yearly">Yearly</option>
+                        </select>
+                      </label>
+                    </div>
+
+                    <div class="composer-actions">
+                      <button type="submit" class="small-action" [disabled]="voucherDataForm.invalid">
+                        <mat-icon>save</mat-icon>
+                        Save Draft
+                      </button>
+                      <button type="button" class="primary-action" [disabled]="voucherDataForm.invalid" (click)="postVoucher()">
+                        <mat-icon>check_circle</mat-icon>
+                        Post
+                      </button>
+                    </div>
+                  </form>
                 </section>
               }
 
@@ -1056,7 +1221,8 @@ interface TrialRow {
     .panel,
     .metric-card,
     .mini-card,
-    .report-card {
+    .report-card,
+    .data-form-panel {
       border: 1px solid rgb(226 232 240);
       border-radius: 8px;
       background: white;
@@ -1071,7 +1237,8 @@ interface TrialRow {
     :host-context(.dark) .panel,
     :host-context(.dark) .metric-card,
     :host-context(.dark) .mini-card,
-    :host-context(.dark) .report-card {
+    :host-context(.dark) .report-card,
+    :host-context(.dark) .data-form-panel {
       border-color: rgb(30 41 59);
       background: rgb(15 23 42);
     }
@@ -1121,6 +1288,118 @@ interface TrialRow {
 
     :host-context(.dark) .action-banner span {
       color: rgb(203 213 225);
+    }
+
+    .data-form-panel {
+      display: grid;
+      gap: 14px;
+      padding: 16px;
+    }
+
+    .form-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .form-heading.compact {
+      margin-bottom: 12px;
+    }
+
+    .form-heading span {
+      margin: 0 0 4px;
+      color: rgb(37 99 235);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .form-heading h2,
+    .form-heading h3 {
+      margin: 0;
+      color: rgb(15 23 42);
+      font-size: 18px;
+      font-weight: 850;
+    }
+
+    :host-context(.dark) .form-heading h2,
+    :host-context(.dark) .form-heading h3 {
+      color: white;
+    }
+
+    .form-heading p {
+      margin: 6px 0 0;
+      color: rgb(100 116 139);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .data-entry-form,
+    .voucher-form {
+      display: grid;
+      gap: 14px;
+      width: 100%;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+      color: rgb(51 65 85);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .field.wide {
+      grid-column: span 2;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid rgb(203 213 225);
+      border-radius: 8px;
+      background: white;
+      color: rgb(15 23 42);
+      padding: 0 11px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 650;
+      outline: none;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: rgb(37 99 235);
+      box-shadow: 0 0 0 3px rgb(191 219 254);
+    }
+
+    .form-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    :host-context(.dark) .field {
+      color: rgb(203 213 225);
+    }
+
+    :host-context(.dark) .field input,
+    :host-context(.dark) .field select {
+      border-color: rgb(51 65 85);
+      background: rgb(2 6 23);
+      color: rgb(226 232 240);
     }
 
     .eyebrow,
@@ -1183,6 +1462,7 @@ interface TrialRow {
     }
 
     .header-actions button,
+    .primary-action,
     .small-action,
     .icon-button {
       display: inline-flex;
@@ -1211,10 +1491,25 @@ interface TrialRow {
       color: rgb(226 232 240);
     }
 
-    .header-actions .primary-action {
+    :host-context(.dark) .primary-action {
       border-color: rgb(37 99 235);
       background: rgb(37 99 235);
       color: white;
+    }
+
+    .primary-action {
+      border-color: rgb(37 99 235);
+      background: rgb(37 99 235);
+      color: white;
+    }
+
+    .primary-action:disabled,
+    .small-action:disabled {
+      border-color: rgb(148 163 184);
+      background: rgb(148 163 184);
+      color: white;
+      cursor: not-allowed;
+      opacity: 0.75;
     }
 
     .icon-button {
@@ -1733,7 +2028,8 @@ interface TrialRow {
       .group-grid,
       .report-grid,
       .settings-grid,
-      .branch-grid {
+      .branch-grid,
+      .form-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
@@ -1795,10 +2091,15 @@ interface TrialRow {
       .report-grid,
       .settings-grid,
       .branch-grid,
+      .form-grid,
       .voucher-types,
       .control-grid,
       .aging-grid {
         grid-template-columns: 1fr;
+      }
+
+      .field.wide {
+        grid-column: span 1;
       }
 
       .cashflow-chart {
@@ -1820,6 +2121,7 @@ export class AccountingFinanceComponent {
   clientId = input<string>('');
 
   activeView = signal<AccountingView>('dashboard');
+  activeForm = signal<AccountingForm | null>(null);
   actionTitle = signal('');
   actionMessage = signal('');
   actionIcon = signal('check_circle');
@@ -1828,6 +2130,37 @@ export class AccountingFinanceComponent {
   reportPeriod = 'Monthly';
   selectedVoucherType = 'Journal Voucher';
   private generatedVoucherCount = 9;
+
+  accountForm = {
+    code: '6090',
+    account: 'New Expense Account',
+    parent: 'Operating Expenses',
+    nature: 'Expense' as AccountNature,
+    normal: 'Dr' as 'Dr' | 'Cr',
+    opening: 0,
+    balance: 0,
+  };
+
+  voucherForm = {
+    date: this.today(),
+    narration: 'Journal Voucher entry for accounting adjustment',
+    debit: 'Rent Expense',
+    credit: 'Bank Accounts',
+    amount: 55000,
+    linkedModule: 'Accounting',
+    attachment: 'No',
+    recurring: 'No',
+  };
+
+  bankImportForm = {
+    account: 'HDFC Current Account',
+    ref: 'BANK-8900',
+    title: 'Imported statement batch',
+    amount: 64000,
+    matched: 8,
+    unmatchedReview: 2,
+    status: '8 matched, 2 need review',
+  };
 
   menuGroups: MenuGroup[] = [
     {
@@ -2135,6 +2468,7 @@ export class AccountingFinanceComponent {
 
   openView(view: AccountingView): void {
     this.activeView.set(view);
+    this.activeForm.set(null);
     this.voucherComposerOpen.set(false);
     this.announce('Section opened', `${this.labelForView(view)} is ready.`);
   }
@@ -2145,10 +2479,62 @@ export class AccountingFinanceComponent {
     this.actionIcon.set('check_circle');
   }
 
+  closeDataForm(): void {
+    this.activeForm.set(null);
+  }
+
+  submitAccountingForm(): void {
+    switch (this.activeForm()) {
+      case 'account':
+        this.submitAccount();
+        break;
+      case 'bankImport':
+        this.submitBankStatementImport();
+        break;
+      default:
+        break;
+    }
+  }
+
+  accountingFormTitle(): string {
+    switch (this.activeForm()) {
+      case 'account':
+        return 'Chart of accounts entry';
+      case 'bankImport':
+        return 'Bank statement import';
+      default:
+        return 'Accounting data entry';
+    }
+  }
+
+  accountingFormSubtitle(): string {
+    switch (this.activeForm()) {
+      case 'account':
+        return 'Create a ledger account with parent group, normal balance, and opening balance.';
+      case 'bankImport':
+        return 'Record statement import results and push unmatched entries into the reconciliation queue.';
+      default:
+        return 'Enter details and save them into the accounting workspace.';
+    }
+  }
+
+  accountingFormSubmitLabel(): string {
+    switch (this.activeForm()) {
+      case 'account':
+        return 'Save account';
+      case 'bankImport':
+        return 'Import statement';
+      default:
+        return 'Save';
+    }
+  }
+
   selectVoucherType(type: string): void {
     this.selectedVoucherType = type;
     this.voucherStatusFilter = '';
+    this.resetVoucherForm(type);
     this.voucherComposerOpen.set(true);
+    this.activeForm.set(null);
     this.announce('Voucher type selected', `${type} composer is open in draft mode.`, 'post_add');
   }
 
@@ -2156,7 +2542,9 @@ export class AccountingFinanceComponent {
     this.activeView.set('vouchers');
     this.selectedVoucherType = type;
     this.voucherStatusFilter = '';
+    this.resetVoucherForm(type);
     this.voucherComposerOpen.set(true);
+    this.activeForm.set(null);
     this.announce('New voucher started', `${type} is ready with auto numbering and debit/credit validation.`, 'add_circle');
   }
 
@@ -2166,15 +2554,15 @@ export class AccountingFinanceComponent {
       {
         number,
         type: this.selectedVoucherType,
-        date: this.today(),
-        narration: `${this.selectedVoucherType} draft created from Accounting workspace`,
-        debit: this.defaultDebitAccount(this.selectedVoucherType),
-        credit: this.defaultCreditAccount(this.selectedVoucherType),
-        amount: 0,
+        date: this.text(this.voucherForm.date, this.today()),
+        narration: this.text(this.voucherForm.narration, `${this.selectedVoucherType} draft created from Accounting workspace`),
+        debit: this.text(this.voucherForm.debit, this.defaultDebitAccount(this.selectedVoucherType)),
+        credit: this.text(this.voucherForm.credit, this.defaultCreditAccount(this.selectedVoucherType)),
+        amount: this.amountValue(this.voucherForm.amount),
         status: 'Draft',
-        linkedModule: 'Accounting',
-        attachment: 'No',
-        recurring: 'No',
+        linkedModule: this.text(this.voucherForm.linkedModule, 'Accounting'),
+        attachment: this.text(this.voucherForm.attachment, 'No'),
+        recurring: this.text(this.voucherForm.recurring, 'No'),
       },
       ...this.vouchers,
     ];
@@ -2188,15 +2576,15 @@ export class AccountingFinanceComponent {
       {
         number,
         type: this.selectedVoucherType,
-        date: this.today(),
-        narration: `${this.selectedVoucherType} posted with balanced debit and credit lines`,
-        debit: this.defaultDebitAccount(this.selectedVoucherType),
-        credit: this.defaultCreditAccount(this.selectedVoucherType),
-        amount: 55000,
+        date: this.text(this.voucherForm.date, this.today()),
+        narration: this.text(this.voucherForm.narration, `${this.selectedVoucherType} posted with balanced debit and credit lines`),
+        debit: this.text(this.voucherForm.debit, this.defaultDebitAccount(this.selectedVoucherType)),
+        credit: this.text(this.voucherForm.credit, this.defaultCreditAccount(this.selectedVoucherType)),
+        amount: this.amountValue(this.voucherForm.amount),
         status: 'Posted',
-        linkedModule: 'Accounting',
-        attachment: 'No',
-        recurring: this.selectedVoucherType === 'Journal Voucher' ? 'Monthly' : 'No',
+        linkedModule: this.text(this.voucherForm.linkedModule, 'Accounting'),
+        attachment: this.text(this.voucherForm.attachment, 'No'),
+        recurring: this.text(this.voucherForm.recurring, this.selectedVoucherType === 'Journal Voucher' ? 'Monthly' : 'No'),
       },
       ...this.vouchers,
     ];
@@ -2206,40 +2594,61 @@ export class AccountingFinanceComponent {
   }
 
   addAccount(): void {
-    const code = String(6000 + this.accounts.length * 10);
+    this.activeView.set('chart');
+    this.activeForm.set('account');
+    this.voucherComposerOpen.set(false);
+    this.announce('Account form opened', 'Enter ledger account details and save them to the chart of accounts.', 'account_tree');
+  }
+
+  submitAccount(): void {
+    const code = this.text(this.accountForm.code, String(6000 + this.accounts.length * 10));
     this.accounts = [
       {
         code,
-        account: `New Expense Account ${this.accounts.length + 1}`,
-        parent: 'Operating Expenses',
-        nature: 'Expense',
-        normal: 'Dr',
-        opening: 0,
-        balance: 0,
+        account: this.text(this.accountForm.account, `New Expense Account ${this.accounts.length + 1}`),
+        parent: this.text(this.accountForm.parent, 'Operating Expenses'),
+        nature: this.accountForm.nature,
+        normal: this.accountForm.normal,
+        opening: this.amountValue(this.accountForm.opening),
+        balance: this.amountValue(this.accountForm.balance),
       },
       ...this.accounts,
     ];
-    this.announce('Account added', `Account code ${code} was added under Operating Expenses.`, 'account_tree');
+    this.activeView.set('chart');
+    this.closeDataForm();
+    this.announce('Account saved', `Account code ${code} was added under ${this.accountForm.parent}.`, 'account_tree');
   }
 
   importBankStatement(): void {
+    this.activeView.set('banking');
+    this.activeForm.set('bankImport');
+    this.voucherComposerOpen.set(false);
+    this.announce('Statement import form opened', 'Enter matched and review counts before updating reconciliation.', 'upload_file');
+  }
+
+  submitBankStatementImport(): void {
+    const selectedAccount = this.text(this.bankImportForm.account, this.bankingRows[0]?.account ?? 'Bank account');
+    const matchedRows = this.amountValue(this.bankImportForm.matched);
+    const reviewRows = this.amountValue(this.bankImportForm.unmatchedReview);
     this.bankingRows = this.bankingRows.map((bank, index) => {
-      if (index !== 0) return bank;
+      if (bank.account !== selectedAccount && index !== 0) return bank;
       return {
         ...bank,
-        matched: bank.matched + 8,
-        unmatched: Math.max(bank.unmatched - 2, 0),
+        matched: bank.matched + matchedRows,
+        unmatched: Math.max(bank.unmatched + reviewRows - matchedRows, 0),
       };
     });
     this.reconciliationAlerts = [
       {
-        ref: `BANK-${8900 + this.reconciliationAlerts.length}`,
-        title: 'Imported statement batch',
-        amount: 0,
-        status: '8 matched, 2 need review',
+        ref: this.text(this.bankImportForm.ref, `BANK-${8900 + this.reconciliationAlerts.length}`),
+        title: this.text(this.bankImportForm.title, 'Imported statement batch'),
+        amount: this.amountValue(this.bankImportForm.amount),
+        status: this.text(this.bankImportForm.status, `${matchedRows} matched, ${reviewRows} need review`),
       },
       ...this.reconciliationAlerts,
     ];
+    this.activeView.set('banking');
+    this.closeDataForm();
     this.announce('Bank statement imported', 'Transactions were matched and the reconciliation queue was updated.', 'upload_file');
   }
 
@@ -2262,6 +2671,30 @@ export class AccountingFinanceComponent {
     if (typeof window !== 'undefined') {
       window.setTimeout(() => window.print(), 120);
     }
+  }
+
+  private resetVoucherForm(type: string): void {
+    this.voucherForm = {
+      ...this.voucherForm,
+      date: this.today(),
+      narration: `${type} entry for accounting workspace`,
+      debit: this.defaultDebitAccount(type),
+      credit: this.defaultCreditAccount(type),
+      amount: this.voucherForm.amount || 55000,
+      linkedModule: 'Accounting',
+      attachment: 'No',
+      recurring: type === 'Journal Voucher' ? 'Monthly' : 'No',
+    };
+  }
+
+  private text(value: string, fallback: string): string {
+    const trimmed = String(value ?? '').trim();
+    return trimmed || fallback;
+  }
+
+  private amountValue(value: number | string): number {
+    const amount = Number(value);
+    return Number.isFinite(amount) ? amount : 0;
   }
 
   private announce(title: string, message: string, icon: string = 'check_circle'): void {
