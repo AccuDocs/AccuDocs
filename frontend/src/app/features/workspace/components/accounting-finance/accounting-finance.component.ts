@@ -125,16 +125,29 @@ interface TrialRow {
           <p>Books, vouchers, statutory reports, banking, budgets, and audit control for this client.</p>
         </div>
         <div class="header-actions">
-          <button type="button" class="primary-action" (click)="activeView.set('vouchers')">
+          <button type="button" class="primary-action" (click)="startVoucher('Journal Voucher')">
             <mat-icon>add</mat-icon>
             Voucher
           </button>
-          <button type="button" (click)="activeView.set('reports')">
+          <button type="button" (click)="exportCurrentView()">
             <mat-icon>file_download</mat-icon>
             Export
           </button>
         </div>
       </header>
+
+      @if (actionMessage()) {
+        <section class="action-banner" role="status" aria-live="polite">
+          <mat-icon>{{ actionIcon() }}</mat-icon>
+          <div>
+            <strong>{{ actionTitle() }}</strong>
+            <span>{{ actionMessage() }}</span>
+          </div>
+          <button type="button" class="icon-button" (click)="clearAction()" aria-label="Dismiss message">
+            <mat-icon>close</mat-icon>
+          </button>
+        </section>
+      }
 
       <div class="accounting-layout">
         <aside class="accounting-menu" aria-label="Accounting menu">
@@ -145,7 +158,7 @@ interface TrialRow {
                 <button
                   type="button"
                   [class.active]="activeView() === item.id"
-                  (click)="activeView.set(item.id)"
+                  (click)="openView(item.id)"
                 >
                   <mat-icon>{{ item.icon }}</mat-icon>
                   <span>{{ item.label }}</span>
@@ -174,7 +187,7 @@ interface TrialRow {
                     <span>Monthly cash flow</span>
                     <h2>Inflow and outflow</h2>
                   </div>
-                  <button type="button" class="icon-button" (click)="activeView.set('cashflow')" aria-label="Open cash flow">
+                  <button type="button" class="icon-button" (click)="openView('cashflow')" aria-label="Open cash flow">
                     <mat-icon>open_in_new</mat-icon>
                   </button>
                 </div>
@@ -217,7 +230,7 @@ interface TrialRow {
                   <span>Recent transactions</span>
                   <h2>Latest ledger activity</h2>
                 </div>
-                <button type="button" class="small-action" (click)="activeView.set('ledger')">
+                <button type="button" class="small-action" (click)="openView('ledger')">
                   <mat-icon>menu_book</mat-icon>
                   Ledger
                 </button>
@@ -315,7 +328,7 @@ interface TrialRow {
                   <span>Chart of accounts</span>
                   <h2>Customizable account hierarchy</h2>
                 </div>
-                <button type="button" class="small-action">
+                <button type="button" class="small-action" (click)="addAccount()">
                   <mat-icon>add</mat-icon>
                   Account
                 </button>
@@ -365,7 +378,7 @@ interface TrialRow {
                     <option value="Posted">Posted</option>
                     <option value="Locked">Locked</option>
                   </select>
-                  <button type="button" class="small-action">
+                  <button type="button" class="small-action" (click)="startVoucher(selectedVoucherType)">
                     <mat-icon>add</mat-icon>
                     New
                   </button>
@@ -374,12 +387,36 @@ interface TrialRow {
 
               <div class="voucher-types">
                 @for (type of voucherTypes; track type.name) {
-                  <button type="button">
+                  <button
+                    type="button"
+                    [class.active]="selectedVoucherType === type.name"
+                    (click)="selectVoucherType(type.name)"
+                  >
                     <mat-icon>{{ type.icon }}</mat-icon>
                     <span>{{ type.name }}</span>
                   </button>
                 }
               </div>
+
+              @if (voucherComposerOpen()) {
+                <section class="composer-panel">
+                  <div>
+                    <span>Draft mode</span>
+                    <h3>{{ selectedVoucherType }}</h3>
+                    <p>Auto numbering, debit/credit validation, attachments, approval, and recurring setup are ready for this voucher.</p>
+                  </div>
+                  <div class="composer-actions">
+                    <button type="button" class="small-action" (click)="saveDraftVoucher()">
+                      <mat-icon>save</mat-icon>
+                      Save Draft
+                    </button>
+                    <button type="button" class="small-action" (click)="postVoucher()">
+                      <mat-icon>check_circle</mat-icon>
+                      Post
+                    </button>
+                  </div>
+                </section>
+              }
 
               <div class="table-wrap">
                 <table>
@@ -598,7 +635,7 @@ interface TrialRow {
                     <span>Bank reconciliation</span>
                     <h2>Statement matching</h2>
                   </div>
-                  <button type="button" class="small-action">
+                  <button type="button" class="small-action" (click)="importBankStatement()">
                     <mat-icon>upload_file</mat-icon>
                     Import
                   </button>
@@ -690,7 +727,7 @@ interface TrialRow {
                     <p>{{ report.description }}</p>
                     <strong>{{ report.metric }}</strong>
                   </div>
-                  <button type="button" class="icon-button" (click)="activeView.set(report.view)" [attr.aria-label]="'Open ' + report.title">
+                  <button type="button" class="icon-button" (click)="openView(report.view)" [attr.aria-label]="'Open ' + report.title">
                     <mat-icon>arrow_forward</mat-icon>
                   </button>
                 </article>
@@ -710,7 +747,7 @@ interface TrialRow {
                     <option>Financial Year</option>
                     <option>Branch-wise</option>
                   </select>
-                  <button type="button" class="small-action">
+                  <button type="button" class="small-action" (click)="downloadPdf('pnl')">
                     <mat-icon>download</mat-icon>
                     PDF
                   </button>
@@ -790,7 +827,7 @@ interface TrialRow {
                     <span>Day book</span>
                     <h2>Daily transaction listing</h2>
                   </div>
-                  <button type="button" class="small-action">
+                  <button type="button" class="small-action" (click)="printCurrentView()">
                     <mat-icon>print</mat-icon>
                     Print
                   </button>
@@ -1045,6 +1082,45 @@ interface TrialRow {
       justify-content: space-between;
       gap: 16px;
       padding: 20px;
+    }
+
+    .action-banner {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid rgb(191 219 254);
+      border-radius: 8px;
+      background: rgb(239 246 255);
+      color: rgb(29 78 216);
+      padding: 12px;
+    }
+
+    :host-context(.dark) .action-banner {
+      border-color: rgb(30 64 175);
+      background: rgb(30 41 59);
+      color: rgb(147 197 253);
+    }
+
+    .action-banner div {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .action-banner strong {
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .action-banner span {
+      color: rgb(51 65 85);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    :host-context(.dark) .action-banner span {
+      color: rgb(203 213 225);
     }
 
     .eyebrow,
@@ -1574,6 +1650,61 @@ interface TrialRow {
       cursor: pointer;
     }
 
+    .voucher-types button.active {
+      border-color: rgb(37 99 235);
+      background: rgb(239 246 255);
+      color: rgb(29 78 216);
+    }
+
+    .composer-panel {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      border: 1px solid rgb(191 219 254);
+      border-radius: 8px;
+      background: rgb(248 250 252);
+      margin-bottom: 14px;
+      padding: 14px;
+    }
+
+    :host-context(.dark) .composer-panel {
+      border-color: rgb(30 64 175);
+      background: rgb(15 23 42);
+    }
+
+    .composer-panel span {
+      color: rgb(100 116 139);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .composer-panel h3 {
+      margin: 2px 0 4px;
+      color: rgb(15 23 42);
+      font-size: 18px;
+      font-weight: 850;
+    }
+
+    :host-context(.dark) .composer-panel h3 {
+      color: white;
+    }
+
+    .composer-panel p {
+      margin: 0;
+      color: rgb(100 116 139);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .composer-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
     .report-card {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
@@ -1654,7 +1785,8 @@ interface TrialRow {
 
     @media (max-width: 720px) {
       .accounting-header,
-      .panel-header {
+      .panel-header,
+      .composer-panel {
         flex-direction: column;
       }
 
@@ -1688,8 +1820,14 @@ export class AccountingFinanceComponent {
   clientId = input<string>('');
 
   activeView = signal<AccountingView>('dashboard');
+  actionTitle = signal('');
+  actionMessage = signal('');
+  actionIcon = signal('check_circle');
+  voucherComposerOpen = signal(false);
   voucherStatusFilter = '';
   reportPeriod = 'Monthly';
+  selectedVoucherType = 'Journal Voucher';
+  private generatedVoucherCount = 9;
 
   menuGroups: MenuGroup[] = [
     {
@@ -1993,5 +2131,272 @@ export class AccountingFinanceComponent {
   filteredVouchers(): VoucherRow[] {
     if (!this.voucherStatusFilter) return this.vouchers;
     return this.vouchers.filter((voucher) => voucher.status === this.voucherStatusFilter);
+  }
+
+  openView(view: AccountingView): void {
+    this.activeView.set(view);
+    this.voucherComposerOpen.set(false);
+    this.announce('Section opened', `${this.labelForView(view)} is ready.`);
+  }
+
+  clearAction(): void {
+    this.actionTitle.set('');
+    this.actionMessage.set('');
+    this.actionIcon.set('check_circle');
+  }
+
+  selectVoucherType(type: string): void {
+    this.selectedVoucherType = type;
+    this.voucherStatusFilter = '';
+    this.voucherComposerOpen.set(true);
+    this.announce('Voucher type selected', `${type} composer is open in draft mode.`, 'post_add');
+  }
+
+  startVoucher(type: string = 'Journal Voucher'): void {
+    this.activeView.set('vouchers');
+    this.selectedVoucherType = type;
+    this.voucherStatusFilter = '';
+    this.voucherComposerOpen.set(true);
+    this.announce('New voucher started', `${type} is ready with auto numbering and debit/credit validation.`, 'add_circle');
+  }
+
+  saveDraftVoucher(): void {
+    const number = this.nextVoucherNumber(this.selectedVoucherType);
+    this.vouchers = [
+      {
+        number,
+        type: this.selectedVoucherType,
+        date: this.today(),
+        narration: `${this.selectedVoucherType} draft created from Accounting workspace`,
+        debit: this.defaultDebitAccount(this.selectedVoucherType),
+        credit: this.defaultCreditAccount(this.selectedVoucherType),
+        amount: 0,
+        status: 'Draft',
+        linkedModule: 'Accounting',
+        attachment: 'No',
+        recurring: 'No',
+      },
+      ...this.vouchers,
+    ];
+    this.voucherStatusFilter = '';
+    this.announce('Draft saved', `${number} was added to the voucher register.`, 'save');
+  }
+
+  postVoucher(): void {
+    const number = this.nextVoucherNumber(this.selectedVoucherType);
+    this.vouchers = [
+      {
+        number,
+        type: this.selectedVoucherType,
+        date: this.today(),
+        narration: `${this.selectedVoucherType} posted with balanced debit and credit lines`,
+        debit: this.defaultDebitAccount(this.selectedVoucherType),
+        credit: this.defaultCreditAccount(this.selectedVoucherType),
+        amount: 55000,
+        status: 'Posted',
+        linkedModule: 'Accounting',
+        attachment: 'No',
+        recurring: this.selectedVoucherType === 'Journal Voucher' ? 'Monthly' : 'No',
+      },
+      ...this.vouchers,
+    ];
+    this.voucherStatusFilter = '';
+    this.voucherComposerOpen.set(false);
+    this.announce('Voucher posted', `${number} was posted and the ledger summary was refreshed.`, 'check_circle');
+  }
+
+  addAccount(): void {
+    const code = String(6000 + this.accounts.length * 10);
+    this.accounts = [
+      {
+        code,
+        account: `New Expense Account ${this.accounts.length + 1}`,
+        parent: 'Operating Expenses',
+        nature: 'Expense',
+        normal: 'Dr',
+        opening: 0,
+        balance: 0,
+      },
+      ...this.accounts,
+    ];
+    this.announce('Account added', `Account code ${code} was added under Operating Expenses.`, 'account_tree');
+  }
+
+  importBankStatement(): void {
+    this.bankingRows = this.bankingRows.map((bank, index) => {
+      if (index !== 0) return bank;
+      return {
+        ...bank,
+        matched: bank.matched + 8,
+        unmatched: Math.max(bank.unmatched - 2, 0),
+      };
+    });
+    this.reconciliationAlerts = [
+      {
+        ref: `BANK-${8900 + this.reconciliationAlerts.length}`,
+        title: 'Imported statement batch',
+        amount: 0,
+        status: '8 matched, 2 need review',
+      },
+      ...this.reconciliationAlerts,
+    ];
+    this.announce('Bank statement imported', 'Transactions were matched and the reconciliation queue was updated.', 'upload_file');
+  }
+
+  exportCurrentView(view: AccountingView = this.activeView()): void {
+    const rows = this.exportRowsFor(view);
+    this.downloadCsv(`accudocs-${view}-${this.today()}.csv`, rows);
+    this.announce('Export ready', `${this.labelForView(view)} data was downloaded as CSV.`, 'file_download');
+  }
+
+  downloadPdf(view: AccountingView): void {
+    this.activeView.set(view);
+    this.announce('PDF action ready', 'The print dialog will open. Choose Save as PDF to download this report.', 'picture_as_pdf');
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => window.print(), 120);
+    }
+  }
+
+  printCurrentView(): void {
+    this.announce('Print action ready', `${this.labelForView(this.activeView())} is being sent to the browser print dialog.`, 'print');
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => window.print(), 120);
+    }
+  }
+
+  private announce(title: string, message: string, icon: string = 'check_circle'): void {
+    this.actionTitle.set(title);
+    this.actionMessage.set(message);
+    this.actionIcon.set(icon);
+  }
+
+  private nextVoucherNumber(type: string): string {
+    this.generatedVoucherCount += 1;
+    const prefixMap: Record<string, string> = {
+      'Payment Voucher': 'PY',
+      'Receipt Voucher': 'RC',
+      'Contra Voucher': 'CV',
+      'Journal Voucher': 'JV',
+      'Sales Voucher': 'SV',
+      'Purchase Voucher': 'PV',
+      'Debit Note': 'DN',
+      'Credit Note': 'CN',
+    };
+    const prefix = prefixMap[type] || 'JV';
+    return `${prefix}-${String(this.generatedVoucherCount).padStart(4, '0')}`;
+  }
+
+  private defaultDebitAccount(type: string): string {
+    const debitMap: Record<string, string> = {
+      'Payment Voucher': 'Accounts Payable',
+      'Receipt Voucher': 'Bank Accounts',
+      'Contra Voucher': 'Cash in Hand',
+      'Journal Voucher': 'Rent Expense',
+      'Sales Voucher': 'Accounts Receivable',
+      'Purchase Voucher': 'Purchase Expense',
+      'Debit Note': 'Accounts Payable',
+      'Credit Note': 'Sales Revenue',
+    };
+    return debitMap[type] || 'Rent Expense';
+  }
+
+  private defaultCreditAccount(type: string): string {
+    const creditMap: Record<string, string> = {
+      'Payment Voucher': 'Bank Accounts',
+      'Receipt Voucher': 'Accounts Receivable',
+      'Contra Voucher': 'Bank Accounts',
+      'Journal Voucher': 'Bank Accounts',
+      'Sales Voucher': 'Sales Revenue',
+      'Purchase Voucher': 'Accounts Payable',
+      'Debit Note': 'Purchase Returns',
+      'Credit Note': 'Accounts Receivable',
+    };
+    return creditMap[type] || 'Bank Accounts';
+  }
+
+  private exportRowsFor(view: AccountingView): Array<Array<string | number>> {
+    switch (view) {
+      case 'dashboard':
+        return [['Metric', 'Value', 'Helper'], ...this.dashboardMetrics.map((row) => [row.label, row.value, row.helper])];
+      case 'chart':
+        return [
+          ['Code', 'Account', 'Parent', 'Group', 'Normal', 'Opening', 'Balance'],
+          ...this.accounts.map((row) => [row.code, row.account, row.parent, row.nature, row.normal, row.opening, row.balance]),
+        ];
+      case 'journals':
+      case 'vouchers':
+        return [
+          ['Voucher', 'Date', 'Type', 'Narration', 'Debit', 'Credit', 'Linked Module', 'Status', 'Amount'],
+          ...this.filteredVouchers().map((row) => [row.number, row.date, row.type, row.narration, row.debit, row.credit, row.linkedModule, row.status, row.amount]),
+        ];
+      case 'receivables':
+        return [
+          ['Customer', 'Invoice', 'Due Date', 'Age', 'Owner', 'Status', 'Paid', 'Outstanding'],
+          ...this.receivableRows.map((row) => [row.party, row.ref, row.dueDate, row.age, row.owner, row.status, row.paid, row.amount]),
+        ];
+      case 'payables':
+        return [
+          ['Vendor', 'Bill', 'Due Date', 'Age', 'Owner', 'Status', 'Paid', 'Outstanding'],
+          ...this.payableRows.map((row) => [row.party, row.ref, row.dueDate, row.age, row.owner, row.status, row.paid, row.amount]),
+        ];
+      case 'banking':
+        return [
+          ['Account', 'Balance', 'Matched', 'Unmatched'],
+          ...this.bankingRows.map((row) => [row.account, row.balance, row.matched, row.unmatched]),
+        ];
+      case 'gst':
+        return [
+          ['Report', 'Period', 'HSN/SAC Rows', 'Input Credit', 'Status', 'Tax Payable'],
+          ...this.gstRows.map((row) => [row.report, row.period, row.hsn, row.credit, row.status, row.payable]),
+        ];
+      case 'pnl':
+        return [['Line', 'Amount'], ...this.pnlRows.map((row) => [row.label, row.amount])];
+      case 'trial':
+        return [['Ledger', 'Status', 'Debit', 'Credit'], ...this.trialRows.map((row) => [row.ledger, row.status, row.debit, row.credit])];
+      case 'ledger':
+        return [['Ref', 'Title', 'Date', 'Amount'], ...this.dayBookRows.map((row) => [row.ref, row.title, row.date, row.amount])];
+      case 'cashflow':
+        return [['Line', 'Amount'], ...this.cashFlowRows.map((row) => [row.label, row.amount])];
+      case 'budgeting':
+        return [['Department', 'Limit', 'Actual', 'Variance', 'Status'], ...this.budgetRows.map((row) => [row.department, row.limit, row.actual, row.variance, row.status])];
+      case 'branches':
+        return [['Branch', 'Balance', 'Transactions', 'Status'], ...this.branchRows.map((row) => [row.name, row.balance, row.transactions, row.status])];
+      case 'audit':
+        return [['Time', 'Action', 'User', 'Detail'], ...this.auditRows.map((row) => [row.time, row.action, row.user, row.detail])];
+      case 'permissions':
+        return [['Role', 'Books', 'Vouchers', 'Reports', 'Audit'], ...this.roleRows.map((row) => [row.role, row.books, row.vouchers, row.reports, row.audit])];
+      default:
+        return [['Section', 'Status'], [this.labelForView(view), 'Available in Accounting & Finance workspace']];
+    }
+  }
+
+  private downloadCsv(filename: string, rows: Array<Array<string | number>>): void {
+    if (typeof document === 'undefined') return;
+    const csv = rows.map((row) => row.map((cell) => this.csvCell(cell)).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  private csvCell(value: string | number): string {
+    return `"${String(value).replace(/"/g, '""')}"`;
+  }
+
+  private today(): string {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  private labelForView(view: AccountingView): string {
+    for (const group of this.menuGroups) {
+      const item = group.items.find((menuItem) => menuItem.id === view);
+      if (item) return item.label;
+    }
+    return 'Accounting';
   }
 }
