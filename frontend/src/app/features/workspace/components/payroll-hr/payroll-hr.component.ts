@@ -15,7 +15,17 @@ type PayrollView =
   | 'loans'
   | 'settings';
 
-type PayrollForm = 'employee' | 'bonus' | 'loan';
+type PayrollForm =
+  | 'employee'
+  | 'salary'
+  | 'statutory'
+  | 'tds'
+  | 'payslip'
+  | 'attendance'
+  | 'leave'
+  | 'bonus'
+  | 'loan'
+  | 'settings';
 type PayrollStatus = 'Draft' | 'Calculated' | 'Approved' | 'Paid';
 type PayslipStatus = 'Pending' | 'Generated' | 'Delivered';
 type LeaveStatus = 'Pending' | 'Approved' | 'Rejected';
@@ -216,6 +226,202 @@ interface TimelineItem {
                   <input type="number" min="0" name="monthlyTds" [(ngModel)]="employeeForm.tdsMonthly" required />
                 </label>
               </div>
+            } @else if (form === 'salary') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Employee</span>
+                  <select name="salaryEmployee" [(ngModel)]="salaryForm.employeeCode" required>
+                    @for (employee of employees; track employee.id) {
+                      <option [value]="employee.code">{{ employee.name }} - {{ employee.code }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Payable days</span>
+                  <input type="number" min="0" max="30" name="payableDays" [(ngModel)]="salaryForm.daysPayable" required />
+                </label>
+                <label class="field">
+                  <span>Bonus</span>
+                  <input type="number" min="0" name="salaryBonus" [(ngModel)]="salaryForm.bonus" required />
+                </label>
+                <label class="field">
+                  <span>Incentive</span>
+                  <input type="number" min="0" name="salaryIncentive" [(ngModel)]="salaryForm.incentive" required />
+                </label>
+                <label class="field">
+                  <span>Loan EMI</span>
+                  <input type="number" min="0" name="salaryLoanEmi" [(ngModel)]="salaryForm.loanEmi" required />
+                </label>
+                <label class="field">
+                  <span>Monthly TDS</span>
+                  <input type="number" min="0" name="salaryTds" [(ngModel)]="salaryForm.tdsMonthly" required />
+                </label>
+                <label class="field">
+                  <span>Status</span>
+                  <select name="salaryStatus" [(ngModel)]="salaryForm.status" required>
+                    <option value="Draft">Draft</option>
+                    <option value="Calculated">Calculated</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Paid">Paid</option>
+                  </select>
+                </label>
+              </div>
+            } @else if (form === 'statutory') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Employee</span>
+                  <select name="statutoryEmployee" [(ngModel)]="statutoryForm.employeeCode" required>
+                    @for (employee of employees; track employee.id) {
+                      <option [value]="employee.code">{{ employee.name }} - {{ employee.code }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Work state</span>
+                  <select name="statutoryState" [(ngModel)]="statutoryForm.state" required>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Gujarat">Gujarat</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>UAN</span>
+                  <input name="statutoryUan" [(ngModel)]="statutoryForm.uan" />
+                </label>
+                <label class="field">
+                  <span>ESIC IP</span>
+                  <input name="statutoryEsic" [(ngModel)]="statutoryForm.esic" />
+                </label>
+              </div>
+            } @else if (form === 'tds') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Employee</span>
+                  <select name="tdsEmployee" [(ngModel)]="tdsForm.employeeCode" required>
+                    @for (employee of employees; track employee.id) {
+                      <option [value]="employee.code">{{ employee.name }} - {{ employee.code }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Monthly TDS</span>
+                  <input type="number" min="0" name="tdsAmount" [(ngModel)]="tdsForm.tdsMonthly" required />
+                </label>
+                <label class="field">
+                  <span>Form 16 status</span>
+                  <select name="form16Status" [(ngModel)]="tdsForm.form16Status" required>
+                    <option value="Pending review">Pending review</option>
+                    <option value="Draft ready">Draft ready</option>
+                    <option value="Generated">Generated</option>
+                    <option value="Not applicable">Not applicable</option>
+                  </select>
+                </label>
+              </div>
+            } @else if (form === 'payslip') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Employee</span>
+                  <select name="payslipEmployee" [(ngModel)]="payslipForm.employeeCode" required>
+                    @for (employee of employees; track employee.id) {
+                      <option [value]="employee.code">{{ employee.name }} - {{ employee.code }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Payslip status</span>
+                  <select name="payslipStatus" [(ngModel)]="payslipForm.status" required>
+                    <option value="Pending">Pending</option>
+                    <option value="Generated">Generated</option>
+                    <option value="Delivered">Delivered</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Delivery channel</span>
+                  <select name="payslipChannel" [(ngModel)]="payslipForm.channel" required>
+                    <option value="Email">Email</option>
+                    <option value="WhatsApp">WhatsApp</option>
+                    <option value="Client portal">Client portal</option>
+                    <option value="Email + WhatsApp">Email + WhatsApp</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Bank label</span>
+                  <input name="payslipBank" [(ngModel)]="payslipForm.bank" required />
+                </label>
+              </div>
+            } @else if (form === 'attendance') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Date</span>
+                  <input type="date" name="attendanceDate" [(ngModel)]="attendanceForm.date" required />
+                </label>
+                <label class="field">
+                  <span>Present</span>
+                  <input type="number" min="0" name="attendancePresent" [(ngModel)]="attendanceForm.present" required />
+                </label>
+                <label class="field">
+                  <span>On leave</span>
+                  <input type="number" min="0" name="attendanceLeave" [(ngModel)]="attendanceForm.onLeave" required />
+                </label>
+                <label class="field">
+                  <span>Absent</span>
+                  <input type="number" min="0" name="attendanceAbsent" [(ngModel)]="attendanceForm.absent" required />
+                </label>
+                <label class="field">
+                  <span>OT hours</span>
+                  <input type="number" min="0" name="attendanceOt" [(ngModel)]="attendanceForm.overtimeHours" required />
+                </label>
+                <label class="field">
+                  <span>Status</span>
+                  <select name="attendanceStatus" [(ngModel)]="attendanceForm.status" required>
+                    <option value="Draft">Draft</option>
+                    <option value="Needs review">Needs review</option>
+                    <option value="Synced">Synced</option>
+                    <option value="Live">Live</option>
+                  </select>
+                </label>
+              </div>
+            } @else if (form === 'leave') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>Employee</span>
+                  <select name="leaveEmployee" [(ngModel)]="leaveForm.employeeCode" required>
+                    @for (employee of employees; track employee.id) {
+                      <option [value]="employee.code">{{ employee.name }} - {{ employee.code }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Leave type</span>
+                  <select name="leaveType" [(ngModel)]="leaveForm.type" required>
+                    <option value="Casual Leave">Casual Leave</option>
+                    <option value="Sick Leave">Sick Leave</option>
+                    <option value="Earned Leave">Earned Leave</option>
+                    <option value="Unpaid Leave">Unpaid Leave</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>From</span>
+                  <input type="date" name="leaveFrom" [(ngModel)]="leaveForm.from" required />
+                </label>
+                <label class="field">
+                  <span>To</span>
+                  <input type="date" name="leaveTo" [(ngModel)]="leaveForm.to" required />
+                </label>
+                <label class="field">
+                  <span>Days</span>
+                  <input type="number" min="0" name="leaveDays" [(ngModel)]="leaveForm.days" required />
+                </label>
+                <label class="field">
+                  <span>Status</span>
+                  <select name="leaveStatus" [(ngModel)]="leaveForm.status" required>
+                    <option value="Pending">Pending</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                  </select>
+                </label>
+              </div>
             } @else if (form === 'bonus') {
               <div class="form-grid">
                 <label class="field">
@@ -269,6 +475,61 @@ interface TimelineItem {
                 <label class="field">
                   <span>Monthly EMI</span>
                   <input type="number" min="0" name="loanEmi" [(ngModel)]="loanForm.emi" required />
+                </label>
+              </div>
+            } @else if (form === 'settings') {
+              <div class="form-grid">
+                <label class="field">
+                  <span>PF rule</span>
+                  <input name="settingsPfRule" [(ngModel)]="settingsForm.pfRule" required />
+                </label>
+                <label class="field">
+                  <span>ESI rule</span>
+                  <input name="settingsEsiRule" [(ngModel)]="settingsForm.esiRule" required />
+                </label>
+                <label class="field">
+                  <span>PT rule</span>
+                  <input name="settingsPtRule" [(ngModel)]="settingsForm.ptRule" required />
+                </label>
+                <label class="field">
+                  <span>TDS cycle</span>
+                  <select name="settingsTdsCycle" [(ngModel)]="settingsForm.tdsCycle" required>
+                    <option value="Monthly">Monthly</option>
+                    <option value="Quarterly review">Quarterly review</option>
+                    <option value="Annual only">Annual only</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Approval</span>
+                  <select name="settingsApproval" [(ngModel)]="settingsForm.approval" required>
+                    <option value="Maker-checker enabled">Maker-checker enabled</option>
+                    <option value="Single approver">Single approver</option>
+                    <option value="Auto approve calculated runs">Auto approve calculated runs</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Payslip channel</span>
+                  <select name="settingsChannel" [(ngModel)]="settingsForm.channel" required>
+                    <option value="Email and WhatsApp">Email and WhatsApp</option>
+                    <option value="Email only">Email only</option>
+                    <option value="Client portal">Client portal</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Bank advice</span>
+                  <select name="settingsBankAdvice" [(ngModel)]="settingsForm.bankAdvice" required>
+                    <option value="CSV export enabled">CSV export enabled</option>
+                    <option value="Manual upload">Manual upload</option>
+                    <option value="API payout ready">API payout ready</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Audit log</span>
+                  <select name="settingsAuditLog" [(ngModel)]="settingsForm.auditLog" required>
+                    <option value="Every run is recorded">Every run is recorded</option>
+                    <option value="Approvals only">Approvals only</option>
+                    <option value="Detailed payroll audit">Detailed payroll audit</option>
+                  </select>
                 </label>
               </div>
             }
@@ -474,6 +735,10 @@ interface TimelineItem {
                       <option [value]="period">{{ period }}</option>
                     }
                   </select>
+                  <button type="button" class="small-action" (click)="openSalaryAdjustment()">
+                    <mat-icon>edit_note</mat-icon>
+                    Adjustment
+                  </button>
                   <button type="button" class="small-action" (click)="processPayroll()">
                     <mat-icon>calculate</mat-icon>
                     Calculate
@@ -534,10 +799,16 @@ interface TimelineItem {
                   <span>PF, ESI, PT auto-calculation</span>
                   <h2>Employee-wise statutory split</h2>
                 </div>
-                <button type="button" class="small-action" (click)="processPayroll()">
-                  <mat-icon>sync</mat-icon>
-                  Recalculate
-                </button>
+                <div class="header-actions">
+                  <button type="button" class="small-action" (click)="openStatutoryProfile()">
+                    <mat-icon>badge</mat-icon>
+                    Statutory IDs
+                  </button>
+                  <button type="button" class="small-action" (click)="processPayroll()">
+                    <mat-icon>sync</mat-icon>
+                    Recalculate
+                  </button>
+                </div>
               </div>
               <div class="table-wrap">
                 <table>
@@ -575,10 +846,16 @@ interface TimelineItem {
                   <span>TDS on salary</span>
                   <h2>Form 16 preparation</h2>
                 </div>
-                <button type="button" class="small-action" (click)="prepareAllForm16()">
-                  <mat-icon>description</mat-icon>
-                  Prepare Form 16
-                </button>
+                <div class="header-actions">
+                  <button type="button" class="small-action" (click)="openTdsEntry()">
+                    <mat-icon>edit_document</mat-icon>
+                    TDS Entry
+                  </button>
+                  <button type="button" class="small-action" (click)="prepareAllForm16()">
+                    <mat-icon>description</mat-icon>
+                    Prepare Form 16
+                  </button>
+                </div>
               </div>
               <div class="table-wrap">
                 <table>
@@ -622,6 +899,10 @@ interface TimelineItem {
                   <button type="button" class="small-action" (click)="generatePayslips()">
                     <mat-icon>receipt_long</mat-icon>
                     Generate
+                  </button>
+                  <button type="button" class="small-action" (click)="openPayslipDelivery()">
+                    <mat-icon>edit_note</mat-icon>
+                    Delivery Entry
                   </button>
                   <button type="button" class="small-action" (click)="deliverPayslips()">
                     <mat-icon>send</mat-icon>
@@ -667,10 +948,16 @@ interface TimelineItem {
                     <span>Attendance management</span>
                     <h2>Daily attendance summary</h2>
                   </div>
-                  <button type="button" class="small-action" (click)="syncAttendance()">
-                    <mat-icon>sync</mat-icon>
-                    Sync
-                  </button>
+                  <div class="header-actions">
+                    <button type="button" class="small-action" (click)="addAttendanceEntry()">
+                      <mat-icon>add</mat-icon>
+                      Attendance
+                    </button>
+                    <button type="button" class="small-action" (click)="syncAttendance()">
+                      <mat-icon>sync</mat-icon>
+                      Sync
+                    </button>
+                  </div>
                 </div>
                 <div class="table-wrap compact-table">
                   <table>
@@ -704,7 +991,10 @@ interface TimelineItem {
                     <span>Leave management</span>
                     <h2>Approvals and balances</h2>
                   </div>
-                  <mat-icon>event_available</mat-icon>
+                  <button type="button" class="small-action" (click)="addLeaveRequest()">
+                    <mat-icon>event_available</mat-icon>
+                    Leave
+                  </button>
                 </div>
                 <div class="leave-list">
                   @for (leave of leaveRequests; track leave.ref) {
@@ -826,9 +1116,9 @@ interface TimelineItem {
                   <span>Payroll controls</span>
                   <h2>Maker-checker, delivery, and compliance settings</h2>
                 </div>
-                <button type="button" class="small-action" (click)="saveSettings()">
-                  <mat-icon>save</mat-icon>
-                  Save
+                <button type="button" class="small-action" (click)="editSettings()">
+                  <mat-icon>edit_note</mat-icon>
+                  Edit Settings
                 </button>
               </div>
               <div class="check-grid">
@@ -1682,9 +1972,69 @@ export class PayrollHrComponent {
     emi: 2500,
   };
 
+  salaryForm = {
+    employeeCode: 'EMP-001',
+    daysPayable: 30,
+    bonus: 0,
+    incentive: 0,
+    loanEmi: 0,
+    tdsMonthly: 0,
+    status: 'Calculated' as PayrollStatus,
+  };
+
+  statutoryForm = {
+    employeeCode: 'EMP-001',
+    state: 'Maharashtra',
+    uan: '100458762389',
+    esic: '',
+  };
+
+  tdsForm = {
+    employeeCode: 'EMP-001',
+    tdsMonthly: 7200,
+    form16Status: 'Draft ready',
+  };
+
+  payslipForm = {
+    employeeCode: 'EMP-001',
+    status: 'Generated' as PayslipStatus,
+    channel: 'Email',
+    bank: 'HDFC Bank',
+  };
+
+  attendanceForm: AttendanceRow = {
+    date: this.today(),
+    present: 34,
+    absent: 0,
+    onLeave: 0,
+    overtimeHours: 0,
+    status: 'Draft',
+  };
+
+  leaveForm = {
+    employeeCode: 'EMP-001',
+    type: 'Casual Leave',
+    from: this.today(),
+    to: this.today(),
+    days: 1,
+    status: 'Pending' as LeaveStatus,
+  };
+
+  settingsForm = {
+    pfRule: '12% with cap',
+    esiRule: 'Gross <= INR 21,000',
+    ptRule: 'State-wise slabs',
+    tdsCycle: 'Monthly',
+    approval: 'Maker-checker enabled',
+    channel: 'Email and WhatsApp',
+    bankAdvice: 'CSV export enabled',
+    auditLog: 'Every run is recorded',
+  };
+
   private employeeSequence = 5;
   private bonusSequence = 9003;
   private loanSequence = 7103;
+  private leaveSequence = 2103;
 
   dashboardMetrics(): MetricCard[] {
     return [
@@ -1735,11 +2085,32 @@ export class PayrollHrComponent {
       case 'employee':
         this.submitEmployee();
         break;
+      case 'salary':
+        this.submitSalaryAdjustment();
+        break;
+      case 'statutory':
+        this.submitStatutoryProfile();
+        break;
+      case 'tds':
+        this.submitTdsEntry();
+        break;
+      case 'payslip':
+        this.submitPayslipDelivery();
+        break;
+      case 'attendance':
+        this.submitAttendanceEntry();
+        break;
+      case 'leave':
+        this.submitLeaveRequest();
+        break;
       case 'bonus':
         this.submitBonus();
         break;
       case 'loan':
         this.submitLoan();
+        break;
+      case 'settings':
+        this.submitSettings();
         break;
       default:
         break;
@@ -1750,12 +2121,78 @@ export class PayrollHrComponent {
     this.openForm('employee');
   }
 
+  openSalaryAdjustment(): void {
+    const employee = this.employeeByCode(this.salaryForm.employeeCode) ?? this.employees[0];
+    if (employee) {
+      this.salaryForm = {
+        employeeCode: employee.code,
+        daysPayable: employee.daysPayable,
+        bonus: employee.bonus,
+        incentive: employee.incentive,
+        loanEmi: employee.loanEmi,
+        tdsMonthly: employee.tdsMonthly,
+        status: employee.status,
+      };
+    }
+    this.openForm('salary');
+  }
+
+  openStatutoryProfile(): void {
+    const employee = this.employeeByCode(this.statutoryForm.employeeCode) ?? this.employees[0];
+    if (employee) {
+      this.statutoryForm = {
+        employeeCode: employee.code,
+        state: employee.state,
+        uan: employee.uan,
+        esic: employee.esic,
+      };
+    }
+    this.openForm('statutory');
+  }
+
+  openTdsEntry(): void {
+    const employee = this.employeeByCode(this.tdsForm.employeeCode) ?? this.employees[0];
+    if (employee) {
+      this.tdsForm = {
+        employeeCode: employee.code,
+        tdsMonthly: employee.tdsMonthly,
+        form16Status: employee.form16Status,
+      };
+    }
+    this.openForm('tds');
+  }
+
+  openPayslipDelivery(): void {
+    const employee = this.employeeByCode(this.payslipForm.employeeCode) ?? this.employees[0];
+    if (employee) {
+      this.payslipForm = {
+        employeeCode: employee.code,
+        status: employee.payslipStatus,
+        channel: this.payslipForm.channel,
+        bank: employee.bank,
+      };
+    }
+    this.openForm('payslip');
+  }
+
+  addAttendanceEntry(): void {
+    this.openForm('attendance');
+  }
+
+  addLeaveRequest(): void {
+    this.openForm('leave');
+  }
+
   addBonus(): void {
     this.openForm('bonus');
   }
 
   addLoan(): void {
     this.openForm('loan');
+  }
+
+  editSettings(): void {
+    this.openForm('settings');
   }
 
   submitEmployee(): void {
@@ -1780,6 +2217,115 @@ export class PayrollHrComponent {
     this.activeView.set('employees');
     this.closeForm();
     this.announce('Employee saved', `${employee.code} was added to the payroll master.`, 'person_add');
+  }
+
+  submitSalaryAdjustment(): void {
+    const employee = this.employeeByCode(this.salaryForm.employeeCode);
+    this.employees = this.employees.map((item) => item.code === this.salaryForm.employeeCode ? {
+      ...item,
+      daysPayable: Math.min(Math.max(this.amountValue(this.salaryForm.daysPayable), 0), 30),
+      bonus: this.amountValue(this.salaryForm.bonus),
+      incentive: this.amountValue(this.salaryForm.incentive),
+      loanEmi: this.amountValue(this.salaryForm.loanEmi),
+      tdsMonthly: this.amountValue(this.salaryForm.tdsMonthly),
+      status: this.salaryForm.status,
+      form16Status: this.amountValue(this.salaryForm.tdsMonthly) > 0 ? item.form16Status : 'Not applicable',
+    } : item);
+
+    this.activeView.set('salary');
+    this.closeForm();
+    this.announce('Salary entry saved', `${employee?.name ?? 'Employee'} salary inputs were saved and net pay was refreshed.`, 'edit_note');
+  }
+
+  submitStatutoryProfile(): void {
+    const employee = this.employeeByCode(this.statutoryForm.employeeCode);
+    this.employees = this.employees.map((item) => item.code === this.statutoryForm.employeeCode ? {
+      ...item,
+      state: this.text(this.statutoryForm.state, item.state),
+      uan: this.text(this.statutoryForm.uan, ''),
+      esic: this.text(this.statutoryForm.esic, ''),
+    } : item);
+
+    this.activeView.set('statutory');
+    this.closeForm();
+    this.announce('Statutory profile saved', `${employee?.name ?? 'Employee'} PF, ESI, and PT inputs were updated.`, 'badge');
+  }
+
+  submitTdsEntry(): void {
+    const employee = this.employeeByCode(this.tdsForm.employeeCode);
+    const tdsMonthly = this.amountValue(this.tdsForm.tdsMonthly);
+    this.employees = this.employees.map((item) => item.code === this.tdsForm.employeeCode ? {
+      ...item,
+      tdsMonthly,
+      form16Status: tdsMonthly > 0 ? this.text(this.tdsForm.form16Status, 'Pending review') : 'Not applicable',
+    } : item);
+
+    this.activeView.set('tds');
+    this.closeForm();
+    this.announce('TDS entry saved', `${employee?.name ?? 'Employee'} salary TDS and Form 16 status were updated.`, 'edit_document');
+  }
+
+  submitPayslipDelivery(): void {
+    const employee = this.employeeByCode(this.payslipForm.employeeCode);
+    this.employees = this.employees.map((item) => item.code === this.payslipForm.employeeCode ? {
+      ...item,
+      bank: this.text(this.payslipForm.bank, item.bank),
+      payslipStatus: this.payslipForm.status,
+    } : item);
+
+    this.activeView.set('payslips');
+    this.closeForm();
+    this.announce('Payslip entry saved', `${employee?.name ?? 'Employee'} payslip was marked ${this.payslipForm.status.toLowerCase()} via ${this.payslipForm.channel}.`, 'receipt_long');
+  }
+
+  submitAttendanceEntry(): void {
+    const row: AttendanceRow = {
+      date: this.text(this.attendanceForm.date, this.today()),
+      present: this.amountValue(this.attendanceForm.present),
+      absent: this.amountValue(this.attendanceForm.absent),
+      onLeave: this.amountValue(this.attendanceForm.onLeave),
+      overtimeHours: this.amountValue(this.attendanceForm.overtimeHours),
+      status: this.text(this.attendanceForm.status, 'Draft'),
+    };
+
+    const existingIndex = this.attendanceRows.findIndex((item) => item.date === row.date);
+    if (existingIndex >= 0) {
+      this.attendanceRows = this.attendanceRows.map((item, index) => index === existingIndex ? row : item);
+    } else {
+      this.attendanceRows = [row, ...this.attendanceRows];
+    }
+
+    this.activeView.set('attendance');
+    this.closeForm();
+    this.announce('Attendance saved', `${row.date} attendance was saved for payroll payable-day calculations.`, 'calendar_month');
+  }
+
+  submitLeaveRequest(): void {
+    const employee = this.employeeByCode(this.leaveForm.employeeCode);
+    this.leaveSequence += 1;
+    const days = this.amountValue(this.leaveForm.days);
+    const leave: LeaveRequest = {
+      ref: `LV-${this.leaveSequence}`,
+      employee: employee?.name ?? 'Employee',
+      type: this.text(this.leaveForm.type, 'Casual Leave'),
+      from: this.text(this.leaveForm.from, this.today()),
+      to: this.text(this.leaveForm.to, this.today()),
+      days,
+      status: this.leaveForm.status,
+    };
+
+    this.leaveRequests = [leave, ...this.leaveRequests];
+    if (employee && leave.status === 'Approved') {
+      this.employees = this.employees.map((item) => item.code === employee.code ? {
+        ...item,
+        leaveDays: item.leaveDays + days,
+        daysPayable: Math.max(item.daysPayable - days, 0),
+      } : item);
+    }
+
+    this.activeView.set('attendance');
+    this.closeForm();
+    this.announce('Leave request saved', `${leave.ref} was added for ${leave.employee}.`, 'event_available');
   }
 
   submitBonus(): void {
@@ -1837,6 +2383,26 @@ export class PayrollHrComponent {
     this.activeView.set('loans');
     this.closeForm();
     this.announce('Advance saved', `${ref} was linked to payroll recovery.`, 'add_card');
+  }
+
+  submitSettings(): void {
+    this.payrollSettings = [
+      { label: 'PF rule', value: this.text(this.settingsForm.pfRule, '12% with cap'), helper: 'Employee and employer split', icon: 'account_balance' },
+      { label: 'ESI rule', value: this.text(this.settingsForm.esiRule, 'Gross <= INR 21,000'), helper: 'Employee 0.75%, employer 3.25%', icon: 'health_and_safety' },
+      { label: 'Professional tax', value: this.text(this.settingsForm.ptRule, 'State-wise slabs'), helper: 'Maharashtra, Karnataka, Gujarat, Delhi', icon: 'location_city' },
+      { label: 'TDS cycle', value: this.text(this.settingsForm.tdsCycle, 'Monthly'), helper: 'Annual Form 16 ready from payroll data', icon: 'description' },
+    ];
+
+    this.controlItems = [
+      { label: 'Payroll approval', value: this.text(this.settingsForm.approval, 'Maker-checker enabled'), icon: 'rule' },
+      { label: 'Payslip channel', value: this.text(this.settingsForm.channel, 'Email and WhatsApp'), icon: 'send' },
+      { label: 'Bank advice', value: this.text(this.settingsForm.bankAdvice, 'CSV export enabled'), icon: 'account_balance' },
+      { label: 'Audit log', value: this.text(this.settingsForm.auditLog, 'Every run is recorded'), icon: 'history' },
+    ];
+
+    this.activeView.set('settings');
+    this.closeForm();
+    this.announce('Settings saved', 'Payroll rules and delivery controls were saved from the settings form.', 'save');
   }
 
   processPayroll(): void {
@@ -1919,10 +2485,24 @@ export class PayrollHrComponent {
     switch (this.activeForm()) {
       case 'employee':
         return 'Employee payroll profile';
+      case 'salary':
+        return 'Salary processing entry';
+      case 'statutory':
+        return 'PF, ESI, PT profile';
+      case 'tds':
+        return 'TDS and Form 16 entry';
+      case 'payslip':
+        return 'Payslip delivery entry';
+      case 'attendance':
+        return 'Attendance entry';
+      case 'leave':
+        return 'Leave request entry';
       case 'bonus':
         return 'Bonus or incentive entry';
       case 'loan':
         return 'Loan or advance entry';
+      case 'settings':
+        return 'Payroll settings entry';
       default:
         return 'Payroll data entry';
     }
@@ -1932,10 +2512,24 @@ export class PayrollHrComponent {
     switch (this.activeForm()) {
       case 'employee':
         return 'Create the employee salary structure with PAN, UAN, ESIC, state, and TDS details.';
+      case 'salary':
+        return 'Update payable days, variable pay, loan EMI, TDS, and payroll status for one employee.';
+      case 'statutory':
+        return 'Update the employee work state, UAN, and ESIC details used for statutory auto-calculation.';
+      case 'tds':
+        return 'Capture monthly salary TDS and Form 16 readiness for the selected employee.';
+      case 'payslip':
+        return 'Set payslip status, delivery channel, and bank label for salary payout communication.';
+      case 'attendance':
+        return 'Add or update daily attendance totals that feed payroll payable days.';
+      case 'leave':
+        return 'Create a leave request and optionally apply approved leave to payroll payable days.';
       case 'bonus':
         return 'Add variable pay that flows into the selected payroll period.';
       case 'loan':
         return 'Create an employee advance and attach monthly EMI recovery to salary processing.';
+      case 'settings':
+        return 'Edit payroll rules, approval controls, delivery channel, bank advice, and audit behavior.';
       default:
         return 'Enter details and save them to Payroll & HR.';
     }
@@ -1945,10 +2539,24 @@ export class PayrollHrComponent {
     switch (this.activeForm()) {
       case 'employee':
         return 'Save employee';
+      case 'salary':
+        return 'Save salary';
+      case 'statutory':
+        return 'Save statutory';
+      case 'tds':
+        return 'Save TDS';
+      case 'payslip':
+        return 'Save payslip';
+      case 'attendance':
+        return 'Save attendance';
+      case 'leave':
+        return 'Save leave';
       case 'bonus':
         return 'Save bonus';
       case 'loan':
         return 'Save advance';
+      case 'settings':
+        return 'Save settings';
       default:
         return 'Save';
     }
@@ -2068,10 +2676,23 @@ export class PayrollHrComponent {
     switch (form) {
       case 'employee':
         return 'employees';
+      case 'salary':
+        return 'salary';
+      case 'statutory':
+        return 'statutory';
+      case 'tds':
+        return 'tds';
+      case 'payslip':
+        return 'payslips';
+      case 'attendance':
+      case 'leave':
+        return 'attendance';
       case 'bonus':
         return 'bonus';
       case 'loan':
         return 'loans';
+      case 'settings':
+        return 'settings';
       default:
         return 'dashboard';
     }

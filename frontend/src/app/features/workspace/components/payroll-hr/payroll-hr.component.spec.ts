@@ -101,6 +101,91 @@ describe('PayrollHrComponent', () => {
     expect(component.netPay(highEarner!)).toBeLessThan(component.grossSalary(highEarner!));
   });
 
+  it('saves data-entry forms across salary, statutory, TDS, payslip, attendance, leave, and settings', () => {
+    component.openSalaryAdjustment();
+    component.salaryForm.employeeCode = 'EMP-003';
+    component.salaryForm.daysPayable = 28;
+    component.salaryForm.bonus = 1000;
+    component.salaryForm.incentive = 500;
+    component.salaryForm.loanEmi = 700;
+    component.salaryForm.tdsMonthly = 50;
+    component.salaryForm.status = 'Approved';
+    component.submitSalaryAdjustment();
+
+    let employee = component.employees.find((item) => item.code === 'EMP-003');
+    expect(employee?.daysPayable).toBe(28);
+    expect(employee?.bonus).toBe(1000);
+    expect(employee?.status).toBe('Approved');
+
+    component.openStatutoryProfile();
+    component.statutoryForm.employeeCode = 'EMP-003';
+    component.statutoryForm.state = 'Maharashtra';
+    component.statutoryForm.uan = 'UAN-TEST-003';
+    component.statutoryForm.esic = 'ESI-TEST-003';
+    component.submitStatutoryProfile();
+
+    employee = component.employees.find((item) => item.code === 'EMP-003');
+    expect(employee?.state).toBe('Maharashtra');
+    expect(employee?.uan).toBe('UAN-TEST-003');
+    expect(employee?.esic).toBe('ESI-TEST-003');
+
+    component.openTdsEntry();
+    component.tdsForm.employeeCode = 'EMP-003';
+    component.tdsForm.tdsMonthly = 900;
+    component.tdsForm.form16Status = 'Draft ready';
+    component.submitTdsEntry();
+
+    employee = component.employees.find((item) => item.code === 'EMP-003');
+    expect(employee?.tdsMonthly).toBe(900);
+    expect(employee?.form16Status).toBe('Draft ready');
+
+    component.openPayslipDelivery();
+    component.payslipForm.employeeCode = 'EMP-003';
+    component.payslipForm.status = 'Delivered';
+    component.payslipForm.channel = 'WhatsApp';
+    component.payslipForm.bank = 'Axis Payroll Test';
+    component.submitPayslipDelivery();
+
+    employee = component.employees.find((item) => item.code === 'EMP-003');
+    expect(employee?.payslipStatus).toBe('Delivered');
+    expect(employee?.bank).toBe('Axis Payroll Test');
+
+    const attendanceCount = component.attendanceRows.length;
+    component.addAttendanceEntry();
+    component.attendanceForm = { date: '2026-05-21', present: 32, absent: 1, onLeave: 1, overtimeHours: 4, status: 'Synced' };
+    component.submitAttendanceEntry();
+
+    expect(component.attendanceRows.length).toBe(attendanceCount + 1);
+    expect(component.attendanceRows[0].date).toBe('2026-05-21');
+    expect(component.attendanceRows[0].present).toBe(32);
+
+    const leaveCount = component.leaveRequests.length;
+    component.addLeaveRequest();
+    component.leaveForm.employeeCode = 'EMP-003';
+    component.leaveForm.type = 'Sick Leave';
+    component.leaveForm.from = '2026-05-22';
+    component.leaveForm.to = '2026-05-23';
+    component.leaveForm.days = 2;
+    component.leaveForm.status = 'Approved';
+    component.submitLeaveRequest();
+
+    employee = component.employees.find((item) => item.code === 'EMP-003');
+    expect(component.leaveRequests.length).toBe(leaveCount + 1);
+    expect(component.leaveRequests[0].employee).toBe('Kabir Rao');
+    expect(employee?.daysPayable).toBe(26);
+
+    component.editSettings();
+    component.settingsForm.pfRule = '12% actual basic';
+    component.settingsForm.channel = 'Client portal';
+    component.settingsForm.bankAdvice = 'API payout ready';
+    component.submitSettings();
+
+    expect(component.payrollSettings[0].value).toBe('12% actual basic');
+    expect(component.controlItems[1].value).toBe('Client portal');
+    expect(component.controlItems[2].value).toBe('API payout ready');
+    expect(component.activeForm()).toBeNull();
+  });
+
   it('generates and delivers payslips', () => {
     component.generatePayslips();
     fixture.detectChanges();
