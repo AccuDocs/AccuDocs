@@ -54,6 +54,11 @@ export class FolderInitializerService {
 
     try {
       await sequelize.query(
+        "SET LOCAL lock_timeout = '5s'",
+        { transaction: activeTransaction }
+      );
+
+      await sequelize.query(
         'SELECT pg_advisory_xact_lock(hashtext(:lockKey))',
         {
           replacements: {

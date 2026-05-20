@@ -3,7 +3,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil, finalize, catchError, of } from 'rxjs';
+import { Subject, takeUntil, finalize, timeout } from 'rxjs';
 import { HttpEventType } from '@angular/common/http';
 import { WorkspaceService, WorkspaceTree, FolderNode, FileNode, Breadcrumb } from '@core/services/workspace.service';
 import { ToastService } from '@core/services/toast.service';
@@ -141,6 +141,21 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
       @if (isLoading()) {
         <app-loading-state label="Loading workspace..."></app-loading-state>
       } @else if (workspace()) {
+      @if (workspaceLoadError()) {
+        <section class="mb-3 shrink-0 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span>{{ workspaceLoadError() }}</span>
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 rounded-md border border-amber-300 bg-white px-3 py-1.5 font-semibold text-amber-900 transition hover:bg-amber-100"
+              (click)="refresh()"
+            >
+              <ng-icon name="heroArrowPathSolid" size="14"></ng-icon>
+              Retry
+            </button>
+          </div>
+        </section>
+      }
       <!-- Workspace Path Breadcrumbs -->
       <section class="mb-2 shrink-0">
         <nav class="flex items-center gap-1 text-sm">
@@ -469,6 +484,26 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
         </div>
       </section>
       }
+      } @else {
+        <section class="flex flex-1 items-center justify-center p-6">
+          <div class="w-full max-w-lg rounded-lg border border-border-color bg-surface p-6 text-center shadow-sm">
+            <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-600">
+              <ng-icon name="heroFolderOpenSolid" size="24"></ng-icon>
+            </div>
+            <h2 class="text-lg font-bold text-text-primary">Workspace unavailable</h2>
+            <p class="mt-2 text-sm text-text-secondary">
+              {{ workspaceLoadError() || 'The client workspace could not be loaded.' }}
+            </p>
+            <button
+              type="button"
+              class="mt-5 inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-700"
+              (click)="refresh()"
+            >
+              <ng-icon name="heroArrowPathSolid" size="16"></ng-icon>
+              Retry
+            </button>
+          </div>
+        </section>
       }
 
       <!-- Rename Modal -->
@@ -1199,6 +1234,7 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   currentFolder = signal<FolderNode | null>(null);
   breadcrumbs = signal<Breadcrumb[]>([]);
   isLoading = signal(true);
+  workspaceLoadError = signal<string | null>(null);
   uploadProgress = signal(0);
   thumbnails = signal<Record<string, SafeResourceUrl>>({}); // Store thumbnails using SafeResourceUrl
 
@@ -1294,17 +1330,29 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   }
 
   loadWorkspace(clientId: string, force = false) {
-    if (!force && this.loadedClientId === clientId && this.workspace()) {
+    const normalizedClientId = clientId.trim();
+    if (!normalizedClientId) {
+      this.workspace.set(null);
+      this.currentFolder.set(null);
+      this.loadedClientId = null;
+      this.workspaceLoadError.set('Missing client workspace id.');
+      this.isLoading.set(false);
+      return;
+    }
+
+    if (!force && this.loadedClientId === normalizedClientId && this.workspace()) {
       return;
     }
 
     const requestId = ++this.activeWorkspaceRequest;
-    if (!this.workspace() || this.loadedClientId !== clientId) {
+    this.workspaceLoadError.set(null);
+    if (!this.workspace() || this.loadedClientId !== normalizedClientId) {
       this.isLoading.set(true);
     }
 
-    this.workspaceService.getClientWorkspace(clientId)
+    this.workspaceService.getClientWorkspace(normalizedClientId)
       .pipe(
+        timeout({ first: 15000 }),
         takeUntil(this.destroy$),
         finalize(() => {
           if (requestId === this.activeWorkspaceRequest) {
@@ -1318,8 +1366,8 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
             return;
           }
 
-          this.workspaceContext.rememberClient(clientId);
-          this.loadedClientId = clientId;
+          this.workspaceContext.rememberClient(normalizedClientId);
+          this.loadedClientId = normalizedClientId;
           this.workspace.set(response.data);
           this.currentFolder.set(response.data.rootFolder);
           this.breadcrumbs.set([]);
@@ -1332,9 +1380,59 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
             return;
           }
 
-          this.toast.error('Failed to load workspace', error.message);
+          const message = this.workspaceErrorMessage(error);
+          this.workspaceLoadError.set(message);
+
+          if (error?.status === 401) {
+            this.workspace.set(null);
+            this.currentFolder.set(null);
+            this.loadedClientId = null;
+            return;
+          }
+
+          if (!this.workspace() || this.loadedClientId !== normalizedClientId) {
+            const fallbackWorkspace = this.createFallbackWorkspace(normalizedClientId);
+            this.workspaceContext.rememberClient(normalizedClientId);
+            this.loadedClientId = normalizedClientId;
+            this.workspace.set(fallbackWorkspace);
+            this.currentFolder.set(fallbackWorkspace.rootFolder);
+            this.breadcrumbs.set([]);
+          }
+
+          this.toast.warning('Workspace folders unavailable', message);
         }
       });
+  }
+
+  private workspaceErrorMessage(error: any): string {
+    if (error?.name === 'TimeoutError') {
+      return 'Workspace folders took too long to load. Modules are available while files retry.';
+    }
+
+    return error?.userMessage || error?.message || 'Workspace folders could not be loaded.';
+  }
+
+  private createFallbackWorkspace(clientId: string): WorkspaceTree {
+    const clientCode = clientId.slice(0, 8).toUpperCase();
+    const folderName = `${clientCode} Workspace`;
+
+    return {
+      clientId,
+      clientCode,
+      clientName: 'Client workspace',
+      rootFolder: {
+        id: `fallback-root-${clientId}`,
+        name: folderName,
+        slug: `${clientCode.toLowerCase()}-workspace`,
+        type: 'root',
+        s3Prefix: `/${clientCode}`,
+        fileCount: 0,
+        folderCount: 0,
+        totalSize: 0,
+        children: [],
+        files: [],
+      },
+    };
   }
 
   setActiveTab(tab: WorkspaceTab, syncUrl: boolean = true) {

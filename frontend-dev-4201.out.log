@@ -1,0 +1,84 @@
+
+> accudocs-frontend@1.0.0 start
+> ng serve --host 127.0.0.1 --port 4201
+
+[33m>[39m Building...
+[32m√[39m Building...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m                        [2m | [22m [1mRaw size[22m
+[32mstyles.css[39m         [2m | [22m[2mstyles[22m                       [2m | [22m[36m241.15 kB[39m[2m | [22m
+[32mpolyfills.js[39m       [2m | [22m[2mpolyfills[22m                    [2m | [22m [36m89.73 kB[39m[2m | [22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m                         [2m | [22m [36m13.02 kB[39m[2m | [22m
+[32mchunk-OQSCYTGB.js[39m  [2m | [22m[2m-[22m                            [2m | [22m  [36m5.32 kB[39m[2m | [22m
+[32mchunk-REPPGMWZ.js[39m  [2m | [22m[2m-[22m                            [2m | [22m  [36m4.56 kB[39m[2m | [22m
+[32mchunk-FGLLP6CQ.js[39m  [2m | [22m[2m-[22m                            [2m | [22m  [36m3.11 kB[39m[2m | [22m
+[32mchunk-HNL2JPII.js[39m  [2m | [22m[2m-[22m                            [2m | [22m  [36m2.87 kB[39m[2m | [22m
+[32mchunk-HETKI2QZ.js[39m  [2m | [22m[2m-[22m                            [2m | [22m  [36m1.59 kB[39m[2m | [22m
+[32mchunk-GFAOF4II.js[39m  [2m | [22m[2m-[22m                            [2m | [22m[36m686 bytes[39m[2m | [22m
+[32mchunk-WXA2B6SR.js[39m  [2m | [22m[2m-[22m                            [2m | [22m[36m320 bytes[39m[2m | [22m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m                [2m | [22m[1m362.34 kB[22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m                        [2m | [22m [1mRaw size[22m
+[32mchunk-ARXIVVOA.js[39m  [2m | [22m[2mclient-workspace-component[22m   [2m | [22m  [36m1.94 MB[39m[2m | [22m
+[32mchunk-P2R56XO2.js[39m  [2m | [22m[2mstaff-list-component[22m         [2m | [22m[36m222.59 kB[39m[2m | [22m
+[32mchunk-6G5WWO5B.js[39m  [2m | [22m[2m-[22m                            [2m | [22m[36m184.11 kB[39m[2m | [22m
+[32mchunk-ZOMOECE2.js[39m  [2m | [22m[2m-[22m                            [2m | [22m[36m184.01 kB[39m[2m | [22m
+[32mchunk-RIZRNG52.js[39m  [2m | [22m[2mbilling-dashboard-component[22m  [2m | [22m[36m182.70 kB[39m[2m | [22m
+[32mchunk-KIPG7C4C.js[39m  [2m | [22m[2mchecklists-overview-component[22m[2m | [22m[36m174.64 kB[39m[2m | [22m
+[32mchunk-FLXZJKHN.js[39m  [2m | [22m[2mcompliance-calendar-component[22m[2m | [22m[36m170.18 kB[39m[2m | [22m
+[32mchunk-LWJTFHCB.js[39m  [2m | [22m[2m-[22m                            [2m | [22m[36m161.32 kB[39m[2m | [22m
+[32mchunk-Z5UCYL45.js[39m  [2m | [22m[2minvoice-detail-component[22m     [2m | [22m[36m157.40 kB[39m[2m | [22m
+[32mchunk-U5NFC2YK.js[39m  [2m | [22m[2mapp-shell-component[22m          [2m | [22m[36m137.75 kB[39m[2m | [22m
+[32mchunk-B5CR6LN2.js[39m  [2m | [22m[2m-[22m                            [2m | [22m[36m116.64 kB[39m[2m | [22m
+[32mchunk-Q32EMZW2.js[39m  [2m | [22m[2m-[22m                            [2m | [22m[36m114.78 kB[39m[2m | [22m
+[32mchunk-HPNRZMJF.js[39m  [2m | [22m[2minvoice-list-component[22m       [2m | [22m[36m112.94 kB[39m[2m | [22m
+[32mchunk-YOIRNHIC.js[39m  [2m | [22m[2mdocuments-list-component[22m     [2m | [22m[36m103.84 kB[39m[2m | [22m
+[32mchunk-H6PIVUDQ.js[39m  [2m | [22m[2m-[22m                            [2m | [22m[36m103.14 kB[39m[2m | [22m
+[2m...and 104 more lazy chunks files. Use "--verbose" to show all the files.[22m
+
+Application bundle generation complete. [40.620 seconds]
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m4201[22m/[39m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [195.484 seconds]
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m                        [2m | [22m [1mRaw size[22m
+[32mstyles.css[39m         [2m | [22m[2mstyles[22m                       [2m | [22m[36m241.26 kB[39m[2m | [22m
+[32mpolyfills.js[39m       [2m | [22m[2mpolyfills[22m                    [2m | [22m [36m89.73 kB[39m[2m | [22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m                         [2m | [22m [36m13.02 kB[39m[2m | [22m
+[32mchunk-OQSCYTGB.js[39m  [2m | [22m[2m-[22m                            [2m | [22m  [36m5.32 kB[39m[2m | [22m
+[32mchunk-REPPGMWZ.js[39m  [2m | [22m[2m-[22m                            [2m | [22m  [36m4.56 kB[39m[2m | [22m
+[32mchunk-FGLLP6CQ.js[39m  [2m | [22m[2m-[22m                            [2m | [22m  [36m3.11 kB[39m[2m | [22m
+[32mchunk-HNL2JPII.js[39m  [2m | [22m[2m-[22m                            [2m | [22m  [36m2.87 kB[39m[2m | [22m
+[32mchunk-HETKI2QZ.js[39m  [2m | [22m[2m-[22m                            [2m | [22m  [36m1.59 kB[39m[2m | [22m
+[32mchunk-GFAOF4II.js[39m  [2m | [22m[2m-[22m                            [2m | [22m[36m686 bytes[39m[2m | [22m
+[32mchunk-WXA2B6SR.js[39m  [2m | [22m[2m-[22m                            [2m | [22m[36m320 bytes[39m[2m | [22m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m                [2m | [22m[1m362.45 kB[22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m                        [2m | [22m [1mRaw size[22m
+[32mchunk-K6UR5XR3.js[39m  [2m | [22m[2mclient-workspace-component[22m   [2m | [22m  [36m1.95 MB[39m[2m | [22m
+[32mchunk-P2R56XO2.js[39m  [2m | [22m[2mstaff-list-component[22m         [2m | [22m[36m222.59 kB[39m[2m | [22m
+[32mchunk-6G5WWO5B.js[39m  [2m | [22m[2m-[22m                            [2m | [22m[36m184.11 kB[39m[2m | [22m
+[32mchunk-ZOMOECE2.js[39m  [2m | [22m[2m-[22m                            [2m | [22m[36m184.01 kB[39m[2m | [22m
+[32mchunk-RIZRNG52.js[39m  [2m | [22m[2mbilling-dashboard-component[22m  [2m | [22m[36m182.70 kB[39m[2m | [22m
+[32mchunk-KIPG7C4C.js[39m  [2m | [22m[2mchecklists-overview-component[22m[2m | [22m[36m174.64 kB[39m[2m | [22m
+[32mchunk-FLXZJKHN.js[39m  [2m | [22m[2mcompliance-calendar-component[22m[2m | [22m[36m170.18 kB[39m[2m | [22m
+[32mchunk-LWJTFHCB.js[39m  [2m | [22m[2m-[22m                            [2m | [22m[36m161.32 kB[39m[2m | [22m
+[32mchunk-Z5UCYL45.js[39m  [2m | [22m[2minvoice-detail-component[22m     [2m | [22m[36m157.40 kB[39m[2m | [22m
+[32mchunk-U5NFC2YK.js[39m  [2m | [22m[2mapp-shell-component[22m          [2m | [22m[36m137.75 kB[39m[2m | [22m
+[32mchunk-B5CR6LN2.js[39m  [2m | [22m[2m-[22m                            [2m | [22m[36m116.64 kB[39m[2m | [22m
+[32mchunk-Q32EMZW2.js[39m  [2m | [22m[2m-[22m                            [2m | [22m[36m114.78 kB[39m[2m | [22m
+[32mchunk-HPNRZMJF.js[39m  [2m | [22m[2minvoice-list-component[22m       [2m | [22m[36m112.94 kB[39m[2m | [22m
+[32mchunk-YOIRNHIC.js[39m  [2m | [22m[2mdocuments-list-component[22m     [2m | [22m[36m103.84 kB[39m[2m | [22m
+[32mchunk-H6PIVUDQ.js[39m  [2m | [22m[2m-[22m                            [2m | [22m[36m103.14 kB[39m[2m | [22m
+[2m...and 104 more lazy chunks files. Use "--verbose" to show all the files.[22m
+
+Application bundle generation complete. [93.580 seconds]
+
+Page reload sent to client(s).

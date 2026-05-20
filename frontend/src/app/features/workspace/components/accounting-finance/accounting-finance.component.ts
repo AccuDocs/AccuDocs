@@ -1,7 +1,26 @@
 import { CommonModule } from '@angular/common';
-import { Component, input, signal } from '@angular/core';
+import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { Observable, catchError, forkJoin, of } from 'rxjs';
+import {
+  AccountType,
+  AccountingAccount,
+  AccountingAccountsPayload,
+  AccountingApiService,
+  AccountingDashboard,
+  AccountingGroup,
+  AccountingVoucher,
+  BalanceSheetPayload,
+  CashFlowPayload,
+  CreateAccountPayload,
+  CreateVoucherPayload,
+  OutstandingPayload,
+  ProfitLossPayload,
+  StatementLine,
+  TrialBalancePayload,
+  VoucherType,
+} from '@features/accounting/data-access/accounting.service';
 
 type AccountingView =
   | 'dashboard'
@@ -49,6 +68,7 @@ interface MetricCard {
 }
 
 interface AccountRow {
+  id?: string;
   code: string;
   account: string;
   parent: string;
@@ -56,6 +76,7 @@ interface AccountRow {
   opening: number;
   balance: number;
   normal: 'Dr' | 'Cr';
+  controlType?: string | null;
 }
 
 interface VoucherRow {
@@ -2117,7 +2138,9 @@ interface TrialRow {
     }
   `],
 })
-export class AccountingFinanceComponent {
+export class AccountingFinanceComponent implements OnInit {
+  private readonly accountingApi = inject(AccountingApiService);
+
   clientId = input<string>('');
 
   activeView = signal<AccountingView>('dashboard');
@@ -2125,6 +2148,7 @@ export class AccountingFinanceComponent {
   actionTitle = signal('');
   actionMessage = signal('');
   actionIcon = signal('check_circle');
+  loading = signal(false);
   voucherComposerOpen = signal(false);
   voucherStatusFilter = '';
   reportPeriod = 'Monthly';
@@ -2461,6 +2485,246 @@ export class AccountingFinanceComponent {
     { label: 'Branch consolidation', value: 'Enabled', icon: 'corporate_fare' },
   ];
 
+  private accountGroupOptions: AccountingGroup[] = [];
+
+  ngOnInit(): void {
+    this.loadAccountingData();
+  }
+
+  loadAccountingData(showBanner = false): void {
+    const query = this.accountingQuery();
+    this.loading.set(true);
+
+    forkJoin({
+      dashboard: this.safe(this.accountingApi.dashboard(query)),
+      accounts: this.safe(this.accountingApi.accounts(query)),
+      vouchers: this.safe(this.accountingApi.vouchers({ ...query, limit: 100 })),
+      trial: this.safe(this.accountingApi.trialBalance(query)),
+      pnl: this.safe(this.accountingApi.profitLoss(query)),
+      balance: this.safe(this.accountingApi.balanceSheet(query)),
+      cashflow: this.safe(this.accountingApi.cashFlow(query)),
+      receivables: this.safe(this.accountingApi.receivables(query)),
+      payables: this.safe(this.accountingApi.payables(query)),
+    }).subscribe((result) => {
+      this.loading.set(false);
+
+      if (result.dashboard?.data) this.applyDashboard(result.dashboard.data);
+      if (result.accounts?.data) this.applyAccounts(result.accounts.data);
+      if (result.vouchers?.data) this.applyVouchers(result.vouchers.data);
+      if (result.trial?.data) this.applyTrialBalance(result.trial.data);
+      if (result.pnl?.data) this.applyProfitLoss(result.pnl.data);
+      if (result.balance?.data) this.applyBalanceSheet(result.balance.data);
+      if (result.cashflow?.data) this.applyCashFlow(result.cashflow.data);
+      if (result.receivables?.data) this.applyOutstanding(result.receivables.data);
+      if (result.payables?.data) this.applyOutstanding(result.payables.data);
+      this.refreshReportTiles();
+
+      if (showBanner) {
+        this.announce('Accounting data refreshed', 'Live ledger data was loaded from posted journal entries.', 'published_with_changes');
+      }
+    });
+  }
+
+  private safe<T>(request: Observable<{ data: T }>): Observable<{ data: T } | null> {
+    return request.pipe(catchError(() => of(null)));
+  }
+
+  private accountingQuery(): { clientId?: string; limit: number } {
+    const clientId = this.clientId().trim();
+    return {
+      ...(clientId ? { clientId } : {}),
+      limit: 100,
+    };
+  }
+
+  private applyDashboard(dashboard: AccountingDashboard): void {
+    const summary = dashboard.summary;
+    this.dashboardMetrics = [
+      { label: 'Total Revenue', value: this.formatInr(summary.revenue), helper: 'Posted income journals', tone: 'green' },
+      { label: 'Total Expenses', value: this.formatInr(summary.expenses), helper: 'Posted expense journals', tone: 'rose' },
+      { label: 'Net Profit', value: this.formatInr(summary.netProfit), helper: summary.netProfit >= 0 ? 'Profit for selected period' : 'Loss for selected period', tone: summary.netProfit >= 0 ? 'blue' : 'rose' },
+      { label: 'Bank Balance', value: this.formatInr(summary.bankBalance), helper: 'Bank control ledgers', tone: 'slate' },
+      { label: 'Cash in Hand', value: this.formatInr(summary.cashBalance), helper: 'Cash control ledgers', tone: 'amber' },
+      { label: 'Receivables', value: this.formatInr(summary.receivables), helper: 'Customer outstanding', tone: 'blue' },
+      { label: 'Payables', value: this.formatInr(summary.payables), helper: 'Vendor outstanding', tone: 'amber' },
+      { label: 'GST Net', value: this.formatInr(summary.gstNet), helper: 'Output less input ledger position', tone: summary.gstNet >= 0 ? 'rose' : 'green' },
+    ];
+
+    this.gstSummary = [
+      { label: 'GST ledger position', value: this.formatInr(summary.gstNet) },
+      { label: 'Posted vouchers', value: String(summary.voucherCount) },
+      { label: 'Posted journals', value: String(summary.postedJournalCount) },
+      { label: 'Trial status', value: summary.isBalanced ? 'Balanced' : 'Review' },
+    ];
+
+    if (dashboard.recentTransactions?.length) {
+      this.recentTransactions = dashboard.recentTransactions.slice(0, 8).map((voucher) => this.toTransactionRow(voucher));
+    }
+  }
+
+  private applyAccounts(payload: AccountingAccountsPayload): void {
+    this.accountGroupOptions = payload.groups ?? [];
+    this.accounts = (payload.accounts ?? []).map((account) => this.toAccountRow(account));
+
+    const groupsByType = new Map<AccountType, { balance: number; accounts: number }>();
+    for (const group of payload.groups ?? []) {
+      const current = groupsByType.get(group.groupType) ?? { balance: 0, accounts: 0 };
+      groupsByType.set(group.groupType, {
+        balance: current.balance + this.amountValue(group.balance),
+        accounts: current.accounts + this.amountValue(group.accountCount),
+      });
+    }
+
+    this.accountGroups = [
+      this.toAccountGroupCard('asset', 'Assets', 'account_balance_wallet', groupsByType),
+      this.toAccountGroupCard('liability', 'Liabilities', 'payments', groupsByType),
+      this.toAccountGroupCard('income', 'Income', 'trending_up', groupsByType),
+      this.toAccountGroupCard('expense', 'Expenses', 'trending_down', groupsByType),
+      this.toAccountGroupCard('equity', 'Equity', 'assured_workload', groupsByType),
+    ];
+
+    const moneyAccounts = this.accounts.filter((account) => account.controlType === 'bank' || account.controlType === 'cash');
+    if (moneyAccounts.length) {
+      this.bankingRows = moneyAccounts.map((account) => ({
+        account: account.account,
+        balance: this.formatInr(account.balance),
+        matched: 0,
+        unmatched: 0,
+      }));
+    }
+  }
+
+  private applyVouchers(vouchers: AccountingVoucher[]): void {
+    if (!vouchers.length) return;
+    this.vouchers = vouchers.map((voucher) => this.toVoucherRow(voucher));
+    this.dayBookRows = vouchers.slice(0, 10).map((voucher) => ({
+      ref: voucher.voucherNo,
+      title: voucher.narration || this.voucherLabel(voucher.voucherType),
+      date: voucher.voucherDate,
+      amount: this.amountValue(voucher.totalDebit),
+    }));
+    this.recentTransactions = vouchers.slice(0, 8).map((voucher) => this.toTransactionRow(voucher));
+  }
+
+  private applyTrialBalance(payload: TrialBalancePayload): void {
+    this.trialRows = payload.rows
+      .filter((row) => this.amountValue(row.closingDebit) || this.amountValue(row.closingCredit))
+      .map((row) => ({
+        ledger: `${row.accountCode} - ${row.name}`,
+        debit: this.amountValue(row.closingDebit),
+        credit: this.amountValue(row.closingCredit),
+        status: payload.totals.isBalanced ? 'Balanced' : 'Review',
+      }));
+
+    const topLedgers = payload.rows
+      .map((row) => ({
+        account: row.name,
+        balance: Math.max(this.amountValue(row.closingDebit), this.amountValue(row.closingCredit)),
+        opening: this.formatInr(0),
+        closing: this.formatInr(Math.max(this.amountValue(row.closingDebit), this.amountValue(row.closingCredit))),
+      }))
+      .filter((row) => row.balance > 0)
+      .slice(0, 6);
+    if (topLedgers.length) this.ledgerRows = topLedgers;
+  }
+
+  private applyProfitLoss(payload: ProfitLossPayload): void {
+    this.pnlRows = [
+      { label: 'Revenue', amount: this.amountValue(payload.totals.revenue) },
+      { label: 'Expenses', amount: -Math.abs(this.amountValue(payload.totals.expenses)) },
+      { label: 'Net profit', amount: this.amountValue(payload.totals.netProfit), total: true },
+      ...payload.lines.slice(0, 8).map((line) => ({
+        label: line.accountName || line.groupName || 'Ledger',
+        amount: line.accountType === 'expense' ? -Math.abs(this.amountValue(line.amount)) : this.amountValue(line.amount),
+      })),
+    ];
+  }
+
+  private applyBalanceSheet(payload: BalanceSheetPayload): void {
+    const assets = payload.lines.filter((line) => line.accountType === 'asset');
+    const liabilities = payload.lines.filter((line) => line.accountType === 'liability');
+    const equity = payload.lines.filter((line) => line.accountType === 'equity');
+    this.balanceSections = [
+      {
+        title: 'Assets',
+        subtitle: payload.totals.isBalanced ? 'Balanced as of report date' : 'Review required',
+        total: this.amountValue(payload.totals.assets),
+        rows: this.statementRows(assets),
+      },
+      {
+        title: 'Liabilities and Capital',
+        subtitle: 'Includes current-period profit',
+        total: this.amountValue(payload.totals.liabilitiesAndEquity),
+        rows: [
+          ...this.statementRows(liabilities),
+          ...this.statementRows(equity),
+          { label: 'Current-period profit', amount: this.amountValue(payload.currentPeriodProfit) },
+        ],
+      },
+    ];
+  }
+
+  private applyCashFlow(payload: CashFlowPayload): void {
+    const inflow = this.amountValue(payload.totals.operatingInflow);
+    const outflow = this.amountValue(payload.totals.operatingOutflow);
+    this.cashFlowRows = [
+      { label: 'Operating cash inflow', amount: inflow },
+      { label: 'Operating cash outflow', amount: -Math.abs(outflow) },
+      { label: 'Net cash movement', amount: this.amountValue(payload.totals.netCashMovement), total: true },
+    ];
+
+    const grouped = new Map<string, { inflow: number; outflow: number }>();
+    for (const row of payload.rows ?? []) {
+      const date = new Date(row.date);
+      const key = Number.isNaN(date.getTime()) ? 'Open' : date.toLocaleString('en-US', { month: 'short' });
+      const current = grouped.get(key) ?? { inflow: 0, outflow: 0 };
+      grouped.set(key, {
+        inflow: current.inflow + this.amountValue(row.inflow),
+        outflow: current.outflow + this.amountValue(row.outflow),
+      });
+    }
+    const max = Math.max(...Array.from(grouped.values()).map((value) => Math.max(value.inflow, value.outflow)), 1);
+    const months = Array.from(grouped.entries()).slice(-6).map(([month, value]) => ({
+      month,
+      inflow: value.inflow,
+      outflow: value.outflow,
+      net: value.inflow - value.outflow,
+      inHeight: Math.max(Math.round((value.inflow / max) * 100), 8),
+      outHeight: Math.max(Math.round((value.outflow / max) * 100), 8),
+    }));
+    if (months.length) this.monthlyCashFlow = months;
+  }
+
+  private applyOutstanding(payload: OutstandingPayload): void {
+    const rows = payload.rows.map((row, index) => ({
+      party: row.partyName,
+      ref: `${payload.partyType === 'customer' ? 'AR' : 'AP'}-${String(index + 1).padStart(4, '0')}`,
+      dueDate: row.lastTransactionDate || payload.asOfDate,
+      age: row.lastTransactionDate ? this.ageLabel(row.lastTransactionDate, payload.asOfDate) : 'Open',
+      amount: this.amountValue(row.balance),
+      paid: 0,
+      owner: 'Accounting',
+      status: row.balance > 0 ? 'Open' : 'Settled',
+    }));
+
+    if (payload.partyType === 'customer') {
+      this.receivableRows = rows;
+    } else {
+      this.payableRows = rows;
+    }
+
+    const receivable = payload.partyType === 'customer'
+      ? rows.reduce((sum, row) => sum + row.amount, 0)
+      : this.agingBuckets[0]?.receivable ?? 0;
+    const payable = payload.partyType === 'vendor'
+      ? rows.reduce((sum, row) => sum + row.amount, 0)
+      : this.agingBuckets[0]?.payable ?? 0;
+    this.agingBuckets = [
+      { bucket: 'Open', receivable, payable, items: rows.length },
+      ...this.agingBuckets.slice(1),
+    ];
+  }
+
   filteredVouchers(): VoucherRow[] {
     if (!this.voucherStatusFilter) return this.vouchers;
     return this.vouchers.filter((voucher) => voucher.status === this.voucherStatusFilter);
@@ -2549,6 +2813,23 @@ export class AccountingFinanceComponent {
   }
 
   saveDraftVoucher(): void {
+    if (this.hasLiveAccountIds()) {
+      const payload = this.buildVoucherPayload('draft');
+      if (!payload) return;
+      this.accountingApi.createVoucher(payload).pipe(
+        catchError(() => {
+          this.announce('Draft save failed', 'The voucher could not be saved to accounting. Check account mapping and try again.', 'error');
+          return of(null);
+        }),
+      ).subscribe((response) => {
+        if (!response?.data) return;
+        this.voucherStatusFilter = '';
+        this.announce('Draft saved', `${response.data.voucherNo} was added to the voucher register.`, 'save');
+        this.loadAccountingData();
+      });
+      return;
+    }
+
     const number = this.nextVoucherNumber(this.selectedVoucherType);
     this.vouchers = [
       {
@@ -2571,6 +2852,24 @@ export class AccountingFinanceComponent {
   }
 
   postVoucher(): void {
+    if (this.hasLiveAccountIds()) {
+      const payload = this.buildVoucherPayload('posted');
+      if (!payload) return;
+      this.accountingApi.createVoucher(payload).pipe(
+        catchError(() => {
+          this.announce('Voucher posting failed', 'Debit and credit lines were not posted. Check account mapping and period locks.', 'error');
+          return of(null);
+        }),
+      ).subscribe((response) => {
+        if (!response?.data) return;
+        this.voucherStatusFilter = '';
+        this.voucherComposerOpen.set(false);
+        this.announce('Voucher posted', `${response.data.voucherNo} was posted and reports were refreshed.`, 'check_circle');
+        this.loadAccountingData();
+      });
+      return;
+    }
+
     const number = this.nextVoucherNumber(this.selectedVoucherType);
     this.vouchers = [
       {
@@ -2601,6 +2900,23 @@ export class AccountingFinanceComponent {
   }
 
   submitAccount(): void {
+    const payload = this.buildAccountPayload();
+    if (payload && this.accountGroupOptions.length) {
+      this.accountingApi.createAccount(payload).pipe(
+        catchError(() => {
+          this.announce('Account save failed', 'The account could not be saved to the live chart of accounts.', 'error');
+          return of(null);
+        }),
+      ).subscribe((response) => {
+        if (!response?.data) return;
+        this.activeView.set('chart');
+        this.closeDataForm();
+        this.announce('Account saved', `Account code ${response.data.accountCode} was added to the chart of accounts.`, 'account_tree');
+        this.loadAccountingData();
+      });
+      return;
+    }
+
     const code = this.text(this.accountForm.code, String(6000 + this.accounts.length * 10));
     this.accounts = [
       {
@@ -2671,6 +2987,254 @@ export class AccountingFinanceComponent {
     if (typeof window !== 'undefined') {
       window.setTimeout(() => window.print(), 120);
     }
+  }
+
+  private buildVoucherPayload(status: 'draft' | 'posted'): CreateVoucherPayload | null {
+    const debitAccount = this.findAccount(this.voucherForm.debit);
+    const creditAccount = this.findAccount(this.voucherForm.credit);
+    const amount = this.amountValue(this.voucherForm.amount);
+
+    if (!debitAccount || !creditAccount) {
+      this.announce('Account mapping needed', 'Choose debit and credit accounts that exist in the live chart of accounts.', 'account_tree');
+      return null;
+    }
+    if (amount <= 0) {
+      this.announce('Amount required', 'Voucher amount must be greater than zero.', 'error');
+      return null;
+    }
+
+    return {
+      voucherType: this.backendVoucherType(this.selectedVoucherType),
+      voucherDate: this.text(this.voucherForm.date, this.today()),
+      status,
+      narration: this.text(this.voucherForm.narration, `${this.selectedVoucherType} entry`),
+      sourceModule: this.text(this.voucherForm.linkedModule, 'accounting').toLowerCase(),
+      sourceType: 'manual_voucher',
+      partyType: 'none',
+      partyId: null,
+      lines: [
+        {
+          accountId: debitAccount.id!,
+          debit: amount,
+          description: this.text(this.voucherForm.narration, 'Debit line'),
+          partyType: 'none',
+        },
+        {
+          accountId: creditAccount.id!,
+          credit: amount,
+          description: this.text(this.voucherForm.narration, 'Credit line'),
+          partyType: 'none',
+        },
+      ],
+    };
+  }
+
+  private buildAccountPayload(): CreateAccountPayload | null {
+    const accountType = this.backendAccountType(this.accountForm.nature);
+    const group = this.accountGroupOptions.find((item) =>
+      item.groupType === accountType
+      && (
+        item.name.toLowerCase() === this.accountForm.parent.trim().toLowerCase()
+        || item.code.toLowerCase() === this.accountForm.parent.trim().toLowerCase()
+      )
+    ) ?? this.accountGroupOptions.find((item) => item.groupType === accountType);
+
+    if (!group) return null;
+
+    return {
+      accountCode: this.text(this.accountForm.code, String(6000 + this.accounts.length * 10)),
+      name: this.text(this.accountForm.account, `New ${this.accountForm.nature} Account`),
+      accountType,
+      accountGroupId: group.id,
+      normalBalance: this.accountForm.normal === 'Dr' ? 'debit' : 'credit',
+      openingBalance: this.amountValue(this.accountForm.opening),
+      openingBalanceType: this.accountForm.normal === 'Dr' ? 'debit' : 'credit',
+      openingBalanceDate: this.today(),
+    };
+  }
+
+  private hasLiveAccountIds(): boolean {
+    return this.accounts.some((account) => Boolean(account.id));
+  }
+
+  private findAccount(label: string): AccountRow | null {
+    const needle = label.trim().toLowerCase();
+    if (!needle) return null;
+
+    const exact = this.accounts.find((account) =>
+      account.id
+      && (account.account.toLowerCase() === needle || account.code.toLowerCase() === needle)
+    );
+    if (exact) return exact;
+
+    const byControlType = this.accounts.find((account) =>
+      account.id
+      && (
+        (needle.includes('bank') && account.controlType === 'bank')
+        || (needle.includes('cash') && account.controlType === 'cash')
+        || (needle.includes('receivable') && account.controlType === 'receivable')
+        || (needle.includes('payable') && account.controlType === 'payable')
+        || (needle.includes('sales') && account.controlType === 'revenue')
+        || (needle.includes('purchase') && account.controlType === 'expense')
+        || (needle.includes('rent') && account.nature === 'Expense')
+      )
+    );
+    if (byControlType) return byControlType;
+
+    return this.accounts.find((account) => account.id && account.account.toLowerCase().includes(needle)) ?? null;
+  }
+
+  private toAccountRow(account: AccountingAccount): AccountRow {
+    return {
+      id: account.id,
+      code: account.accountCode,
+      account: account.name,
+      parent: account.parentAccountName || account.groupName,
+      nature: this.accountNature(account.accountType),
+      opening: this.amountValue(account.openingBalance),
+      balance: this.amountValue(account.currentBalance),
+      normal: account.normalBalance === 'debit' ? 'Dr' : 'Cr',
+      controlType: account.controlType ?? null,
+    };
+  }
+
+  private toAccountGroupCard(
+    type: AccountType,
+    label: string,
+    icon: string,
+    groupsByType: Map<AccountType, { balance: number; accounts: number }>,
+  ) {
+    const group = groupsByType.get(type) ?? { balance: 0, accounts: 0 };
+    return {
+      name: label,
+      value: this.formatInr(group.balance),
+      accounts: group.accounts,
+      icon,
+    };
+  }
+
+  private toVoucherRow(voucher: AccountingVoucher): VoucherRow {
+    return {
+      number: voucher.voucherNo,
+      type: this.voucherLabel(voucher.voucherType),
+      date: voucher.voucherDate,
+      narration: voucher.narration || this.voucherLabel(voucher.voucherType),
+      debit: voucher.sourceModule || 'Journal',
+      credit: voucher.sourceType || 'Ledger',
+      amount: this.amountValue(voucher.totalDebit),
+      status: this.voucherStatusLabel(voucher.status),
+      linkedModule: voucher.sourceModule || 'Accounting',
+      attachment: 'No',
+      recurring: 'No',
+    };
+  }
+
+  private toTransactionRow(voucher: AccountingVoucher): TransactionRow {
+    return {
+      date: voucher.voucherDate,
+      ref: voucher.voucherNo,
+      party: voucher.partyType && voucher.partyType !== 'none' ? voucher.partyType : 'Ledger',
+      type: this.voucherLabel(voucher.voucherType),
+      amount: this.amountValue(voucher.totalDebit),
+      status: this.voucherStatusLabel(voucher.status),
+    };
+  }
+
+  private statementRows(lines: StatementLine[]) {
+    const grouped = new Map<string, number>();
+    for (const line of lines) {
+      const label = line.groupName || line.accountName || 'Ledger';
+      grouped.set(label, (grouped.get(label) ?? 0) + this.amountValue(line.amount));
+    }
+    return Array.from(grouped.entries()).map(([label, amount]) => ({ label, amount }));
+  }
+
+  private refreshReportTiles(): void {
+    const netProfit = this.pnlRows.find((row) => row.label === 'Net profit')?.amount ?? 0;
+    const assets = this.balanceSections.find((section) => section.title === 'Assets')?.total ?? 0;
+    const cashMovement = this.cashFlowRows.find((row) => row.total)?.amount ?? 0;
+    const trialBalanced = this.trialRows.every((row) => row.status === 'Balanced');
+    this.reportTiles = this.reportTiles.map((tile) => {
+      if (tile.view === 'pnl') return { ...tile, metric: `Net profit ${this.formatInr(netProfit)}` };
+      if (tile.view === 'balance') return { ...tile, metric: `Assets ${this.formatInr(assets)}` };
+      if (tile.view === 'cashflow') return { ...tile, metric: `Net movement ${this.formatInr(cashMovement)}` };
+      if (tile.view === 'trial') return { ...tile, metric: trialBalanced ? 'Balanced' : 'Review needed' };
+      if (tile.view === 'ledger') return { ...tile, metric: `${this.dayBookRows.length} recent entries` };
+      return tile;
+    });
+  }
+
+  private backendVoucherType(label: string): VoucherType {
+    const map: Record<string, VoucherType> = {
+      'Payment Voucher': 'payment',
+      'Receipt Voucher': 'receipt',
+      'Contra Voucher': 'contra',
+      'Journal Voucher': 'journal',
+      'Sales Voucher': 'sales_invoice',
+      'Purchase Voucher': 'purchase_invoice',
+      'Debit Note': 'debit_note',
+      'Credit Note': 'credit_note',
+    };
+    return map[label] ?? 'journal';
+  }
+
+  private voucherLabel(type: VoucherType): string {
+    const map: Record<VoucherType, string> = {
+      sales_invoice: 'Sales Voucher',
+      purchase_invoice: 'Purchase Voucher',
+      receipt: 'Receipt Voucher',
+      payment: 'Payment Voucher',
+      credit_note: 'Credit Note',
+      debit_note: 'Debit Note',
+      journal: 'Journal Voucher',
+      contra: 'Contra Voucher',
+      expense: 'Expense Voucher',
+      stock_transfer: 'Stock Transfer',
+      opening: 'Opening Voucher',
+      closing: 'Closing Voucher',
+      gst_settlement: 'GST Settlement',
+      bank_reconciliation: 'Bank Reconciliation',
+    };
+    return map[type] ?? 'Journal Voucher';
+  }
+
+  private voucherStatusLabel(status: string): VoucherStatus {
+    const map: Record<string, VoucherStatus> = {
+      draft: 'Draft',
+      pending_approval: 'Pending Approval',
+      approved: 'Approved',
+      posted: 'Posted',
+      reversed: 'Locked',
+      cancelled: 'Locked',
+    };
+    return map[status] ?? 'Draft';
+  }
+
+  private backendAccountType(nature: AccountNature): AccountType {
+    return nature.toLowerCase() as AccountType;
+  }
+
+  private accountNature(type: AccountType): AccountNature {
+    const map: Record<AccountType, AccountNature> = {
+      asset: 'Asset',
+      liability: 'Liability',
+      income: 'Income',
+      expense: 'Expense',
+      equity: 'Equity',
+    };
+    return map[type];
+  }
+
+  private formatInr(value: number): string {
+    return `INR ${this.amountValue(value).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+  }
+
+  private ageLabel(fromDate: string, toDate: string): string {
+    const from = new Date(fromDate);
+    const to = new Date(toDate);
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return 'Open';
+    const days = Math.max(Math.round((to.getTime() - from.getTime()) / 86400000), 0);
+    return days === 0 ? 'Current' : `${days} days`;
   }
 
   private resetVoucherForm(type: string): void {

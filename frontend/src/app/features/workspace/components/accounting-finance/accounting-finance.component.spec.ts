@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 
+import { AccountingApiService } from '@features/accounting/data-access/accounting.service';
 import { AccountingFinanceComponent } from './accounting-finance.component';
 
 describe('AccountingFinanceComponent', () => {
@@ -7,8 +9,25 @@ describe('AccountingFinanceComponent', () => {
   let component: AccountingFinanceComponent;
 
   beforeEach(async () => {
+    const accountingApiStub = {
+      dashboard: () => of({ success: true, message: 'ok', data: null }),
+      accounts: () => of({ success: true, message: 'ok', data: null }),
+      vouchers: () => of({ success: true, message: 'ok', data: null }),
+      trialBalance: () => of({ success: true, message: 'ok', data: null }),
+      profitLoss: () => of({ success: true, message: 'ok', data: null }),
+      balanceSheet: () => of({ success: true, message: 'ok', data: null }),
+      cashFlow: () => of({ success: true, message: 'ok', data: null }),
+      receivables: () => of({ success: true, message: 'ok', data: null }),
+      payables: () => of({ success: true, message: 'ok', data: null }),
+      createAccount: () => of({ success: true, message: 'ok', data: null }),
+      createVoucher: () => of({ success: true, message: 'ok', data: null }),
+    };
+
     await TestBed.configureTestingModule({
       imports: [AccountingFinanceComponent],
+      providers: [
+        { provide: AccountingApiService, useValue: accountingApiStub },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AccountingFinanceComponent);
