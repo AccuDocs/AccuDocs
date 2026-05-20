@@ -12,6 +12,7 @@ export type ClientWorkspaceShortcutTab =
   | 'billing'
   | 'accounting'
   | 'banking'
+  | 'payroll'
   | 'vendors'
   | 'inventory'
   | 'dashboard';
@@ -43,6 +44,7 @@ export class ClientWorkspaceContextService {
     { iconName: 'heroDocumentTextSolid', label: 'Billing & Invoices', tab: 'billing' },
     { iconName: 'heroBanknotesSolid', label: 'Accounting & Finance', tab: 'accounting' },
     { iconName: 'heroCreditCardSolid', label: 'Banking & Payments', tab: 'banking' },
+    { iconName: 'heroIdentificationSolid', label: 'Payroll & HR', tab: 'payroll' },
     { iconName: 'heroTruckSolid', label: 'Vendors', tab: 'vendors' },
     { iconName: 'heroArchiveBoxSolid', label: 'Inventory & Stock', tab: 'inventory' },
     { iconName: 'heroPresentationChartBarSolid', label: 'Dashboard', tab: 'dashboard' },
@@ -149,6 +151,7 @@ export class ClientWorkspaceContextService {
       case 'billing':
       case 'accounting':
       case 'banking':
+      case 'payroll':
       case 'vendors':
       case 'inventory':
       case 'dashboard':

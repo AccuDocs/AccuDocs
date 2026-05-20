@@ -60,9 +60,10 @@ import { ClientBillingComponent } from '../components/client-billing/client-bill
 import { ClientInventoryComponent } from '../components/client-inventory/client-inventory.component';
 import { AccountingFinanceComponent } from '../components/accounting-finance/accounting-finance.component';
 import { BankingPaymentsComponent } from '../components/banking-payments/banking-payments.component';
+import { PayrollHrComponent } from '../components/payroll-hr/payroll-hr.component';
 import { VendorManagementComponent } from '../../vendors/vendor-management/vendor-management.component';
 
-export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst' | 'billing' | 'accounting' | 'banking' | 'vendors' | 'dashboard' | 'inventory';
+export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst' | 'billing' | 'accounting' | 'banking' | 'payroll' | 'vendors' | 'dashboard' | 'inventory';
 
 @Component({
   selector: 'app-client-workspace',
@@ -91,6 +92,7 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
     ClientInventoryComponent,
     AccountingFinanceComponent,
     BankingPaymentsComponent,
+    PayrollHrComponent,
     VendorManagementComponent
   ],
   providers: [
@@ -199,6 +201,10 @@ export type WorkspaceTab = 'files' | 'checklists' | 'deadlines' | 'data' | 'gst'
       } @else if (activeTab() === 'banking') {
         <div class="no-scrollbar min-h-0 flex-1 overflow-auto">
           <app-banking-payments [clientId]="workspace()?.clientId || ''"></app-banking-payments>
+        </div>
+      } @else if (activeTab() === 'payroll') {
+        <div class="no-scrollbar min-h-0 flex-1 overflow-auto">
+          <app-payroll-hr [clientId]="workspace()?.clientId || ''"></app-payroll-hr>
         </div>
       } @else if (activeTab() === 'vendors') {
         <div class="no-scrollbar min-h-0 flex-1 overflow-auto">
@@ -1238,6 +1244,7 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
     'billing',
     'accounting',
     'banking',
+    'payroll',
     'vendors',
     'dashboard',
     'inventory',
