@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "start:prod": "pm2 start ecosystem.config.js",
     "seed:inventory-demo": "node src/scripts/seed-inventory-demo-data.js",
+    "seed:accounting": "node scripts/seed-accounting-foundation.cjs",
     "migrate:accounting": "node scripts/apply-accounting-migration.cjs",
     "repair:billing-schema": "node src/scripts/repair-billing-schema.js",
     "lint": "eslint src --ext .ts",

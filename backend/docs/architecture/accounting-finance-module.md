@@ -4,6 +4,33 @@ This document designs the enterprise Accounting & Finance module for AccuDocs. I
 
 The concrete SQL schema proposal is implemented in `database/migrations/016_accounting_finance_schema.sql`.
 
+## Implemented API Surface
+
+The first application layer is mounted at `/api/v1/accounting` and is protected for `admin` and `accountant` roles.
+
+Core endpoints:
+
+- `GET /dashboard` - accounting KPIs from posted journals.
+- `GET /accounts` / `POST /accounts` - chart of accounts listing and creation.
+- `GET /vouchers` / `POST /vouchers` / `GET /vouchers/:id` - voucher register and balanced manual voucher posting.
+- `GET /journal-entries` - journal day book.
+- `GET /ledger` - account ledger with running balance.
+- `GET /reports/trial-balance` - debit/credit validation from posted journals.
+- `GET /reports/profit-loss` - income and expense report from posted journals.
+- `GET /reports/balance-sheet` - assets, liabilities, equity, and current-period profit.
+- `GET /reports/cash-flow` - bank and cash movement.
+- `GET /receivables` / `GET /payables` - party outstanding from journal party lines.
+- `GET /settings` - accounting control account settings.
+
+Posting adapters:
+
+- `POST /post/invoices/:invoiceId` - posts a sales invoice to receivables, revenue, output GST, and rounding.
+- `POST /post/payments/:paymentId` - posts customer receipt to bank/cash and receivables.
+- `POST /post/vendor-bills/:billId` - posts vendor bill to purchases, input GST, and payables.
+- `POST /post/vendor-payments/:paymentId` - posts vendor payment to payables and bank/cash.
+
+The API validates balanced journals before posting, resolves fiscal years and hard period locks, uses idempotency keys for source documents, updates source posting references where available, and refreshes account current balances from posted journals.
+
 ## 1. High-Level Architecture
 
 Core principles:
