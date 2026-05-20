@@ -1,1 +1,0 @@
-import{a}from"./chunk-RCG6ICMO.js";import"./chunk-XP2K374L.js";import"./chunk-PSUDMPLG.js";import"./chunk-FZLSN722.js";import"./chunk-GTFJAU55.js";import"./chunk-BHKY3KCU.js";import"./chunk-MCK5BOGN.js";import"./chunk-AZYA7TKM.js";import"./chunk-EMGRVEO7.js";import"./chunk-E77FZVUD.js";import"./chunk-WXGTBSRN.js";import"./chunk-PHUH23IY.js";export{a as TransferFormComponent};
