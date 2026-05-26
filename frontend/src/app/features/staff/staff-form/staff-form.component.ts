@@ -702,6 +702,106 @@ type SubmitIntent = 'save' | 'assign' | 'another';
       min-height: 320px;
     }
 
+    :host-context(.dark) .staff-form-shell {
+      background: #0d1a2d;
+      border-color: #263b59;
+      color: #eaf2fc;
+    }
+
+    :host-context(.dark) .staff-form-header,
+    :host-context(.dark) .form-section,
+    :host-context(.dark) .form-actions {
+      background: #10213a;
+      border-color: #263b59;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, .26);
+    }
+
+    :host-context(.dark) .staff-form-body {
+      background: #0d1a2d;
+      scrollbar-color: #3b5578 #0d1a2d;
+    }
+
+    :host-context(.dark) .staff-form-icon,
+    :host-context(.dark) .secondary-button {
+      background: rgba(96, 165, 250, .16);
+      color: #93c5fd;
+    }
+
+    :host-context(.dark) .staff-form-title p,
+    :host-context(.dark) .section-head,
+    :host-context(.dark) .section-head mat-icon {
+      color: #93c5fd;
+    }
+
+    :host-context(.dark) .staff-form-title h1,
+    :host-context(.dark) .section-head h2 {
+      color: #eaf2fc;
+    }
+
+    :host-context(.dark) .staff-form-title span,
+    :host-context(.dark) .section-head p,
+    :host-context(.dark) label > span,
+    :host-context(.dark) small,
+    :host-context(.dark) .loading-state {
+      color: #8ea2ba;
+    }
+
+    :host-context(.dark) .section-head {
+      border-color: #263b59;
+    }
+
+    :host-context(.dark) input,
+    :host-context(.dark) select,
+    :host-context(.dark) textarea,
+    :host-context(.dark) .permission-grid label,
+    :host-context(.dark) .toggle-row {
+      background: #14243c;
+      border-color: #2d405e;
+      color: #eaf2fc;
+    }
+
+    :host-context(.dark) input::placeholder,
+    :host-context(.dark) textarea::placeholder {
+      color: #637a96;
+    }
+
+    :host-context(.dark) input:focus,
+    :host-context(.dark) select:focus,
+    :host-context(.dark) textarea:focus {
+      background: #172b48;
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 4px rgba(96, 165, 250, .16);
+    }
+
+    :host-context(.dark) input[readonly] {
+      background: #14243c;
+      color: #b8c7d9;
+    }
+
+    :host-context(.dark) input[type="file"]::file-selector-button {
+      background: #263b59;
+      border: 0;
+      border-radius: 8px;
+      color: #eaf2fc;
+      font-weight: 850;
+      margin-right: 10px;
+      min-height: 28px;
+      padding: 0 10px;
+    }
+
+    :host-context(.dark) input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1) brightness(1.35);
+    }
+
+    :host-context(.dark) .icon-button {
+      color: #8ea2ba;
+    }
+
+    :host-context(.dark) .icon-button:hover {
+      background: rgba(244, 63, 94, .14);
+      color: #fda4af;
+    }
+
     @media (max-width: 1100px) {
       .form-grid,
       .permission-grid,

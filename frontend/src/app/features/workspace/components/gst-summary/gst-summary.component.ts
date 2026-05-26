@@ -47,39 +47,39 @@ import {
   template: `
     <div class="space-y-6 animate-in fade-in duration-500">
       <!-- Sub-Navigation Tabs -->
-      <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-xl w-fit overflow-x-auto max-w-full no-scrollbar">
+      <div class="flex items-center gap-1 p-1 bg-slate-100 dark:bg-[#13243c] border border-transparent dark:border-[#263a55] rounded-xl w-fit overflow-x-auto max-w-full no-scrollbar">
         <button (click)="activeView.set('summary')" 
-                [class]="activeView() === 'summary' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'"
+                [class]="activeView() === 'summary' ? 'bg-white dark:bg-[#1e3658] shadow-sm text-indigo-600 dark:text-sky-300' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-[#172b47]'"
                 class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-2.5 whitespace-nowrap">
           <ng-icon name="heroChartBarSolid"></ng-icon> Summary
         </button>
         <button (click)="activeView.set('itc')" 
-                [class]="activeView() === 'itc' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'"
+                [class]="activeView() === 'itc' ? 'bg-white dark:bg-[#1e3658] shadow-sm text-indigo-600 dark:text-sky-300' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-[#172b47]'"
                 class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-2.5 whitespace-nowrap">
           <ng-icon name="heroArrowTrendingDownSolid"></ng-icon> ITC Tracker
         </button>
         <button (click)="activeView.set('gstr2a')" 
-                [class]="activeView() === 'gstr2a' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'"
+                [class]="activeView() === 'gstr2a' ? 'bg-white dark:bg-[#1e3658] shadow-sm text-indigo-600 dark:text-sky-300' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-[#172b47]'"
                 class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-2.5 whitespace-nowrap">
           <ng-icon name="heroDocumentCheckSolid"></ng-icon> GSTR-2A
         </button>
         <button (click)="activeView.set('eway')" 
-                [class]="activeView() === 'eway' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'"
+                [class]="activeView() === 'eway' ? 'bg-white dark:bg-[#1e3658] shadow-sm text-indigo-600 dark:text-sky-300' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-[#172b47]'"
                 class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-2.5 whitespace-nowrap">
           <ng-icon name="heroTruckSolid"></ng-icon> E-Way Bill
         </button>
         <button (click)="activeView.set('einvoice')" 
-                [class]="activeView() === 'einvoice' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'"
+                [class]="activeView() === 'einvoice' ? 'bg-white dark:bg-[#1e3658] shadow-sm text-indigo-600 dark:text-sky-300' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-[#172b47]'"
                 class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-2.5 whitespace-nowrap">
           <ng-icon name="heroSparklesSolid"></ng-icon> E-Invoice
         </button>
         <button (click)="activeView.set('tdstcs')" 
-                [class]="activeView() === 'tdstcs' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'"
+                [class]="activeView() === 'tdstcs' ? 'bg-white dark:bg-[#1e3658] shadow-sm text-indigo-600 dark:text-sky-300' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-[#172b47]'"
                 class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-2.5 whitespace-nowrap">
           <ng-icon name="heroVariableSolid"></ng-icon> TDS/TCS
         </button>
         <button (click)="activeView.set('gstr9')" 
-                [class]="activeView() === 'gstr9' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'"
+                [class]="activeView() === 'gstr9' ? 'bg-white dark:bg-[#1e3658] shadow-sm text-indigo-600 dark:text-sky-300' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-[#172b47]'"
                 class="px-4 py-2 rounded-lg text-[12px] font-bold transition-all flex items-center gap-2.5 whitespace-nowrap">
           <ng-icon name="heroCalendarSolid"></ng-icon> GSTR-9
         </button>

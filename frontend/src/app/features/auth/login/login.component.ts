@@ -28,7 +28,7 @@ import {
     })
   ],
   template: `
-    <div class="flex min-h-screen bg-white">
+    <div class="flex min-h-screen bg-white dark:bg-[#081321]">
       <!-- Left Column: Decorative Panel (Hidden on mobile) -->
       <div class="hidden lg:flex w-1/2 bg-[#0F1E35] relative overflow-hidden flex-col justify-center px-12 xl:px-20">
         <!-- Abstract Grid Pattern -->
@@ -96,16 +96,16 @@ import {
       </div>
 
       <!-- Right Column: Login Form -->
-      <div class="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 lg:px-24 xl:px-32 bg-slate-50">
+      <div class="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 lg:px-24 xl:px-32 bg-slate-50 dark:bg-[#081321]">
         <div class="max-w-md w-full mx-auto">
           <div class="mb-10 text-center lg:text-left">
-            <h3 class="text-3xl font-bold text-slate-900 mb-2">Welcome back</h3>
-            <p class="text-slate-500 font-medium">Sign in to your AccuDocs account</p>
+            <h3 class="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">Welcome back</h3>
+            <p class="text-slate-500 dark:text-slate-400 font-medium">Sign in to your AccuDocs account</p>
           </div>
 
           <form class="space-y-6" (ngSubmit)="facade.login()">
             <div>
-              <label class="block text-sm font-bold text-slate-700 mb-2">Email or Phone</label>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">Email or Phone</label>
               <div class="relative group">
                 <ng-icon name="heroEnvelopeSolid" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-600 transition-colors"></ng-icon>
                 <input 
@@ -115,7 +115,7 @@ import {
                   autocomplete="username"
                   [(ngModel)]="facade.form.value().identifier"
                   placeholder="name@company.com or phone"
-                  class="w-full h-12 pl-12 pr-4 bg-white border border-[#D0D7DE] rounded-md outline-none focus:border-primary-600 focus:ring-4 focus:ring-[rgba(29,78,216,0.12)] transition-all font-medium text-slate-900"
+                  class="w-full h-12 pl-12 pr-4 bg-white dark:bg-[#14243C] border border-[#D0D7DE] dark:border-[#2D405E] rounded-md outline-none focus:border-primary-600 focus:ring-4 focus:ring-[rgba(29,78,216,0.12)] transition-all font-medium text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   [class.border-red-500]="facade.form.errors().identifier"
                 />
               </div>
@@ -128,7 +128,7 @@ import {
 
             <div>
               <div class="flex items-center justify-between mb-2">
-                <label class="block text-sm font-bold text-slate-700">Password</label>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-200">Password</label>
                 <a href="#" class="text-xs font-bold text-primary-600 hover:text-primary-700 transition-colors">Forgot password?</a>
               </div>
               <div class="relative group">
@@ -139,7 +139,7 @@ import {
                   [type]="facade.hidePassword() ? 'password' : 'text'" 
                   [(ngModel)]="facade.form.value().password"
                   placeholder="••••••••"
-                  class="w-full h-12 pl-12 pr-12 bg-white border border-[#D0D7DE] rounded-md outline-none focus:border-primary-600 focus:ring-4 focus:ring-[rgba(29,78,216,0.12)] transition-all font-medium text-slate-900"
+                  class="w-full h-12 pl-12 pr-12 bg-white dark:bg-[#14243C] border border-[#D0D7DE] dark:border-[#2D405E] rounded-md outline-none focus:border-primary-600 focus:ring-4 focus:ring-[rgba(29,78,216,0.12)] transition-all font-medium text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   [class.border-red-500]="facade.form.errors().password"
                 />
                 <button 
@@ -162,9 +162,9 @@ import {
                 id="remember" 
                 name="remember"
                 type="checkbox" 
-                class="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-600/20 cursor-pointer"
+                class="w-4 h-4 rounded border-slate-300 dark:border-[#2D405E] dark:bg-[#14243C] text-primary-600 focus:ring-primary-600/20 cursor-pointer"
               />
-              <label for="remember" class="text-sm font-medium text-slate-600 cursor-pointer select-none">Remember me</label>
+              <label for="remember" class="text-sm font-medium text-slate-600 dark:text-slate-300 cursor-pointer select-none">Remember me</label>
             </div>
 
             <button 
@@ -181,7 +181,7 @@ import {
           </form>
 
           <div class="mt-12 text-center">
-            <p class="text-sm text-slate-400 font-medium flex items-center justify-center gap-2">
+            <p class="text-sm text-slate-400 dark:text-slate-500 font-medium flex items-center justify-center gap-2">
               <ng-icon name="heroShieldCheckSolid" size="16"></ng-icon>
               Secure 256-bit SSL encrypted access
             </p>

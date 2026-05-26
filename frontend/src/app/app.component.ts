@@ -1,6 +1,7 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { ThemeService } from './core/services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -9,5 +10,11 @@ import { CommonModule } from '@angular/common';
   template: `<router-outlet></router-outlet>`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppComponent { }
+export class AppComponent implements OnInit {
+  private readonly themeService = inject(ThemeService);
+
+  ngOnInit(): void {
+    this.themeService.initTheme();
+  }
+}
 

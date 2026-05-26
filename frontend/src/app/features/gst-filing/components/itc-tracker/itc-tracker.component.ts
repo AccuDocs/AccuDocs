@@ -77,6 +77,7 @@ function currentPeriod(): string {
 
       <!-- Summary Card (latest record) -->
       @if (latestRecord()) {
+        <div class="itc-results-grid">
         <div class="itc-summary-card">
           <div class="itc-summary-header">
             <div>
@@ -135,6 +136,43 @@ function currentPeriod(): string {
             </div>
           </div>
         </div>
+        <aside class="itc-detail-card">
+          <div class="itc-detail-head">
+            <span>Selected Period</span>
+            <strong>{{ latestRecord()!.period }}</strong>
+          </div>
+          <dl class="itc-detail-list">
+            <div>
+              <dt>Status</dt>
+              <dd>{{ latestRecord()!.status | titlecase }}</dd>
+            </div>
+            <div>
+              <dt>Source</dt>
+              <dd>{{ latestRecord()!.source }}</dd>
+            </div>
+            <div>
+              <dt>Total Claimed</dt>
+              <dd>INR {{ latestRecord()!.igstClaimed + latestRecord()!.cgstClaimed + latestRecord()!.sgstClaimed | number:'1.2-2' }}</dd>
+            </div>
+            <div>
+              <dt>Net Eligible</dt>
+              <dd class="itc-detail-positive">INR {{ latestRecord()!.eligibleItc - latestRecord()!.reversedItc | number:'1.2-2' }}</dd>
+            </div>
+            <div>
+              <dt>Blocked</dt>
+              <dd class="itc-detail-danger">INR {{ latestRecord()!.ineligibleItc | number:'1.2-2' }}</dd>
+            </div>
+            <div>
+              <dt>Updated</dt>
+              <dd>{{ latestRecord()!.updatedAt | date:'dd MMM yyyy, h:mm a' }}</dd>
+            </div>
+          </dl>
+          <div class="itc-detail-actions">
+            <button type="button" class="itc-action-btn itc-action-btn--download" (click)="downloadRecord(latestRecord()!)">Download CSV</button>
+            <button type="button" class="itc-action-btn" (click)="calculate()">Recalculate</button>
+          </div>
+        </aside>
+        </div>
       }
 
       <!-- History Table -->
@@ -151,11 +189,12 @@ function currentPeriod(): string {
                 <th class="itc-th itc-th--right">Eligible ITC</th>
                 <th class="itc-th itc-th--right">Blocked</th>
                 <th class="itc-th">Source</th>
+                <th class="itc-th itc-th--right">Actions</th>
               </tr>
             </thead>
             <tbody>
               @for (rec of records(); track rec.id) {
-                <tr class="itc-tr">
+                <tr class="itc-tr" [class.itc-tr--active]="latestRecord().id === rec.id">
                   <td class="itc-td"><span class="itc-period-tag">{{ rec.period }}</span></td>
                   <td class="itc-td itc-td--right itc-td--num">₹{{ rec.igstClaimed | number:'1.2-2' }}</td>
                   <td class="itc-td itc-td--right itc-td--num">₹{{ rec.cgstClaimed | number:'1.2-2' }}</td>
@@ -163,6 +202,14 @@ function currentPeriod(): string {
                   <td class="itc-td itc-td--right"><span class="itc-eligible-badge">₹{{ rec.eligibleItc | number:'1.2-2' }}</span></td>
                   <td class="itc-td itc-td--right"><span class="itc-blocked-badge">₹{{ rec.ineligibleItc | number:'1.2-2' }}</span></td>
                   <td class="itc-td"><span class="itc-source-tag" [class.itc-source-tag--auto]="rec.source === 'GSTR2A'">{{ rec.source }}</span></td>
+                  <td class="itc-td itc-td--right">
+                    <div class="itc-row-actions">
+                      <button type="button" class="itc-action-btn" [class.itc-action-btn--active]="latestRecord().id === rec.id" (click)="selectRecord(rec)">
+                        {{ latestRecord().id === rec.id ? 'Viewing' : 'View' }}
+                      </button>
+                      <button type="button" class="itc-action-btn itc-action-btn--download" (click)="downloadRecord(rec)">Download</button>
+                    </div>
+                  </td>
                 </tr>
               }
             </tbody>
@@ -182,7 +229,8 @@ function currentPeriod(): string {
     </div>
   `,
   styles: [`
-    .itc-root { display: flex; flex-direction: column; gap: 20px; padding: 24px; max-width: 960px; }
+    :host { display: block; width: 100%; }
+    .itc-root { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: none; padding: 24px 0 0; }
 
     .itc-header { }
     .itc-title { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 4px; }
@@ -213,6 +261,7 @@ function currentPeriod(): string {
     .itc-load-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
     /* Summary card */
+    .itc-results-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.8fr); gap: 16px; align-items: stretch; }
     .itc-summary-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
     .itc-summary-header { display: flex; justify-content: space-between; align-items: flex-start; }
     .itc-summary-period { font-size: 18px; font-weight: 800; color: #0f172a; }
@@ -228,6 +277,18 @@ function currentPeriod(): string {
     .itc-breakdown-value--indigo { color: #4f46e5; }
     .itc-breakdown-value--violet { color: #7c3aed; }
 
+    .itc-detail-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+    .itc-detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .itc-detail-head span { color: #64748b; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+    .itc-detail-head strong { color: #0f172a; font-size: 20px; line-height: 1; }
+    .itc-detail-list { display: grid; gap: 8px; margin: 0; }
+    .itc-detail-list div { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; }
+    .itc-detail-list dt { color: #64748b; font-size: 12px; font-weight: 700; }
+    .itc-detail-list dd { color: #1e293b; font-size: 12px; font-weight: 800; margin: 0; text-align: right; }
+    .itc-detail-positive { color: #059669 !important; }
+    .itc-detail-danger { color: #dc2626 !important; }
+    .itc-detail-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+
     .itc-bar-section { display: flex; flex-direction: column; gap: 8px; }
     .itc-bar-labels { display: flex; gap: 20px; flex-wrap: wrap; }
     .itc-bar-label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #374151; }
@@ -241,13 +302,14 @@ function currentPeriod(): string {
     .itc-bar-fill--red { background: #ef4444; }
 
     /* History table */
-    .itc-history { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; }
+    .itc-history { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; overflow-x: auto; }
     .itc-history-title { font-size: 14px; font-weight: 700; color: #0f172a; padding: 14px 16px; margin: 0; border-bottom: 1px solid #e2e8f0; }
-    .itc-table { width: 100%; border-collapse: collapse; }
+    .itc-table { width: 100%; min-width: 920px; border-collapse: collapse; }
     .itc-th { padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: #64748b;
       background: #f8fafc; border-bottom: 1px solid #e2e8f0; text-align: left; }
     .itc-th--right { text-align: right; }
     .itc-tr:hover { background: #f8fafc; }
+    .itc-tr--active { background: #eff6ff; }
     .itc-td { padding: 11px 14px; font-size: 13px; color: #1e293b; border-bottom: 1px solid #f1f5f9; }
     .itc-td--right { text-align: right; }
     .itc-td--num { font-family: monospace; }
@@ -256,12 +318,173 @@ function currentPeriod(): string {
     .itc-blocked-badge { color: #dc2626; font-weight: 700; font-family: monospace; }
     .itc-source-tag { font-size: 11px; background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 6px; font-weight: 600; }
     .itc-source-tag--auto { background: #dcfce7; color: #15803d; }
+    .itc-row-actions { display: inline-flex; justify-content: flex-end; gap: 8px; }
+    .itc-action-btn { min-height: 30px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #1e293b;
+      padding: 0 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .itc-action-btn:hover { background: #f8fafc; border-color: #94a3b8; }
+    .itc-action-btn--active { border-color: #10b981; background: #ecfdf5; color: #047857; }
+    .itc-action-btn--download { border-color: #93c5fd; background: #eff6ff; color: #2563eb; }
+    .itc-action-btn--download:hover { background: #dbeafe; border-color: #60a5fa; }
 
     /* Empty */
     .itc-empty { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 48px 24px;
       display: flex; flex-direction: column; align-items: center; gap: 12px; }
     .itc-empty-icon { width: 40px; height: 40px; color: #cbd5e1; }
     .itc-empty p { font-size: 14px; color: #64748b; margin: 0; text-align: center; }
+
+    :host-context(.dark) .itc-title,
+    :host-context(.dark-theme) .itc-title,
+    :host-context(.dark) .itc-summary-period,
+    :host-context(.dark-theme) .itc-summary-period,
+    :host-context(.dark) .itc-history-title,
+    :host-context(.dark-theme) .itc-history-title,
+    :host-context(.dark) .itc-detail-head strong,
+    :host-context(.dark-theme) .itc-detail-head strong {
+      color: #f8fafc;
+    }
+
+    :host-context(.dark) .itc-sub,
+    :host-context(.dark-theme) .itc-sub,
+    :host-context(.dark) .itc-label,
+    :host-context(.dark-theme) .itc-label,
+    :host-context(.dark) .itc-summary-source,
+    :host-context(.dark-theme) .itc-summary-source,
+    :host-context(.dark) .itc-total-label,
+    :host-context(.dark-theme) .itc-total-label,
+    :host-context(.dark) .itc-breakdown-label,
+    :host-context(.dark-theme) .itc-breakdown-label,
+    :host-context(.dark) .itc-detail-head span,
+    :host-context(.dark-theme) .itc-detail-head span,
+    :host-context(.dark) .itc-detail-list dt,
+    :host-context(.dark-theme) .itc-detail-list dt,
+    :host-context(.dark) .itc-empty p,
+    :host-context(.dark-theme) .itc-empty p {
+      color: #94a3b8;
+    }
+
+    :host-context(.dark) .itc-controls,
+    :host-context(.dark-theme) .itc-controls,
+    :host-context(.dark) .itc-summary-card,
+    :host-context(.dark-theme) .itc-summary-card,
+    :host-context(.dark) .itc-detail-card,
+    :host-context(.dark-theme) .itc-detail-card,
+    :host-context(.dark) .itc-history,
+    :host-context(.dark-theme) .itc-history,
+    :host-context(.dark) .itc-empty,
+    :host-context(.dark-theme) .itc-empty {
+      background: #0f1f33;
+      border-color: #263a55;
+    }
+
+    :host-context(.dark) .itc-input,
+    :host-context(.dark-theme) .itc-input,
+    :host-context(.dark) .itc-load-btn,
+    :host-context(.dark-theme) .itc-load-btn,
+    :host-context(.dark) .itc-action-btn,
+    :host-context(.dark-theme) .itc-action-btn {
+      background: #13243a;
+      border-color: #2d405e;
+      color: #e2e8f0;
+    }
+
+    :host-context(.dark) .itc-input:focus,
+    :host-context(.dark-theme) .itc-input:focus {
+      background: #142943;
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, .16);
+    }
+
+    :host-context(.dark) .itc-breakdown-item,
+    :host-context(.dark-theme) .itc-breakdown-item,
+    :host-context(.dark) .itc-th,
+    :host-context(.dark-theme) .itc-th {
+      background: #14243c;
+      border-color: #263a55;
+    }
+
+    :host-context(.dark) .itc-td,
+    :host-context(.dark-theme) .itc-td,
+    :host-context(.dark) .itc-detail-list dd,
+    :host-context(.dark-theme) .itc-detail-list dd {
+      color: #e2e8f0;
+      border-color: #263a55;
+    }
+
+    :host-context(.dark) .itc-detail-list div,
+    :host-context(.dark-theme) .itc-detail-list div,
+    :host-context(.dark) .itc-history-title,
+    :host-context(.dark-theme) .itc-history-title,
+    :host-context(.dark) .itc-th,
+    :host-context(.dark-theme) .itc-th {
+      border-color: #263a55;
+    }
+
+    :host-context(.dark) .itc-tr:hover,
+    :host-context(.dark-theme) .itc-tr:hover,
+    :host-context(.dark) .itc-tr--active,
+    :host-context(.dark-theme) .itc-tr--active {
+      background: #172b47;
+    }
+
+    :host-context(.dark) .itc-period-tag,
+    :host-context(.dark-theme) .itc-period-tag {
+      background: rgba(96, 165, 250, .16);
+      color: #93c5fd;
+    }
+
+    :host-context(.dark) .itc-source-tag,
+    :host-context(.dark-theme) .itc-source-tag {
+      background: #263a55;
+      color: #cbd5e1;
+    }
+
+    :host-context(.dark) .itc-source-tag--auto,
+    :host-context(.dark-theme) .itc-source-tag--auto,
+    :host-context(.dark) .itc-action-btn--active,
+    :host-context(.dark-theme) .itc-action-btn--active {
+      background: rgba(16, 185, 129, .16);
+      border-color: rgba(16, 185, 129, .45);
+      color: #6ee7b7;
+    }
+
+    :host-context(.dark) .itc-action-btn--download,
+    :host-context(.dark-theme) .itc-action-btn--download {
+      background: rgba(96, 165, 250, .16);
+      border-color: rgba(96, 165, 250, .45);
+      color: #93c5fd;
+    }
+
+    :host-context(.dark) .itc-bar-label,
+    :host-context(.dark-theme) .itc-bar-label {
+      color: #cbd5e1;
+    }
+
+    :host-context(.dark) .itc-bar-track,
+    :host-context(.dark-theme) .itc-bar-track {
+      background: #263a55;
+    }
+
+    @media (max-width: 1100px) {
+      .itc-results-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      .itc-root { padding-top: 16px; }
+      .itc-controls,
+      .itc-summary-header,
+      .itc-control-group--btn {
+        align-items: stretch;
+        flex-direction: column;
+      }
+      .itc-control-group--btn { width: 100%; margin-left: 0; }
+      .itc-calc-btn,
+      .itc-load-btn,
+      .itc-input { width: 100%; }
+      .itc-breakdown-grid { grid-template-columns: 1fr; }
+      .itc-summary-total,
+      .itc-total-label,
+      .itc-total-amount { text-align: left; }
+    }
   `],
 })
 export class ItcTrackerComponent implements OnChanges {
@@ -273,6 +496,7 @@ export class ItcTrackerComponent implements OnChanges {
   period = currentPeriod();
 
   readonly records = signal<ItcLedgerRecord[]>([]);
+  readonly selectedRecord = signal<ItcLedgerRecord | null>(null);
   readonly isLoading = signal(false);
   readonly isCalculating = signal(false);
 
@@ -282,7 +506,7 @@ export class ItcTrackerComponent implements OnChanges {
     }
   }
 
-  readonly latestRecord = computed(() => this.records()[0] ?? null);
+  readonly latestRecord = computed(() => this.selectedRecord() ?? this.records()[0] ?? null);
 
   readonly eligiblePct = computed(() => {
     const rec = this.latestRecord();
@@ -302,7 +526,10 @@ export class ItcTrackerComponent implements OnChanges {
     this.gstService.calculateITC(this.clientId.trim(), this.period).subscribe({
       next: (res) => {
         const record = res.data;
-        if (record) this.records.set([record, ...this.records().filter(r => r.period !== record.period)]);
+        if (record) {
+          this.records.set([record, ...this.records().filter(r => r.period !== record.period)]);
+          this.selectedRecord.set(record);
+        }
         this.isCalculating.set(false);
         this.toast.success('ITC calculated successfully');
       },
@@ -318,7 +545,9 @@ export class ItcTrackerComponent implements OnChanges {
     this.isLoading.set(true);
     this.gstService.getITCLedger(this.clientId.trim()).subscribe({
       next: (res) => {
-        this.records.set(res.data ?? []);
+        const records = res.data ?? [];
+        this.records.set(records);
+        this.selectedRecord.set(records[0] ?? null);
         this.isLoading.set(false);
       },
       error: () => {
@@ -326,5 +555,42 @@ export class ItcTrackerComponent implements OnChanges {
         this.toast.error('Failed to load ITC ledger');
       },
     });
+  }
+
+  selectRecord(record: ItcLedgerRecord): void {
+    this.selectedRecord.set(record);
+    this.period = record.period;
+    this.toast.success(`Showing ITC period ${record.period}`);
+  }
+
+  downloadRecord(record: ItcLedgerRecord): void {
+    this.downloadCsv(`itc-${record.period}.csv`, [
+      ['Field', 'Value'],
+      ['Period', record.period],
+      ['Source', record.source],
+      ['Status', record.status],
+      ['IGST Claimed', record.igstClaimed],
+      ['CGST Claimed', record.cgstClaimed],
+      ['SGST Claimed', record.sgstClaimed],
+      ['Eligible ITC', record.eligibleItc],
+      ['Blocked ITC', record.ineligibleItc],
+      ['Reversed ITC', record.reversedItc],
+      ['Net Eligible ITC', record.eligibleItc - record.reversedItc],
+    ]);
+    this.toast.success(`Downloaded ITC ${record.period}`);
+  }
+
+  private downloadCsv(filename: string, rows: Array<Array<string | number>>): void {
+    if (typeof document === 'undefined') return;
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   }
 }

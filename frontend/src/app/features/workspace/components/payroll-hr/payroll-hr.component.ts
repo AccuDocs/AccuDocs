@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import jsPDF from 'jspdf';
 
 type PayrollView =
   | 'dashboard'
@@ -847,6 +848,10 @@ interface TimelineItem {
                   <h2>Form 16 preparation</h2>
                 </div>
                 <div class="header-actions">
+                  <button type="button" class="small-action" (click)="downloadTdsSummary()">
+                    <mat-icon>file_download</mat-icon>
+                    Download TDS
+                  </button>
                   <button type="button" class="small-action" (click)="openTdsEntry()">
                     <mat-icon>edit_document</mat-icon>
                     TDS Entry
@@ -866,7 +871,7 @@ interface TimelineItem {
                       <th class="right">Annual Gross</th>
                       <th class="right">Annual TDS</th>
                       <th>Form 16</th>
-                      <th></th>
+                      <th class="right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -878,9 +883,16 @@ interface TimelineItem {
                         <td class="right">{{ employee.tdsMonthly * 12 | currency:'INR':'symbol-narrow':'1.0-0' }}</td>
                         <td><span class="status-pill">{{ employee.form16Status }}</span></td>
                         <td class="right">
-                          <button type="button" class="icon-button" (click)="prepareForm16(employee)" aria-label="Prepare Form 16">
-                            <mat-icon>description</mat-icon>
-                          </button>
+                          <div class="row-actions">
+                            <button type="button" class="row-action tds-download" (click)="downloadEmployeeTds(employee)" [attr.aria-label]="'Download TDS for ' + employee.name">
+                              <mat-icon>file_download</mat-icon>
+                              <span>TDS Download</span>
+                            </button>
+                            <button type="button" class="row-action" (click)="downloadForm16(employee)" [attr.aria-label]="'Download Form 16 for ' + employee.name">
+                              <mat-icon>picture_as_pdf</mat-icon>
+                              <span>Form 16 Download</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     }
@@ -1286,12 +1298,61 @@ interface TimelineItem {
       padding: 0;
     }
 
+    .row-actions {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .row-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 34px;
+      border: 1px solid rgb(203 213 225);
+      border-radius: 8px;
+      background: white;
+      color: rgb(37 99 235);
+      padding: 0 10px;
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .row-action.tds-download {
+      border-color: rgb(147 197 253);
+      background: rgb(239 246 255);
+      color: rgb(29 78 216);
+    }
+
+    .row-action mat-icon {
+      width: 17px;
+      height: 17px;
+      font-size: 17px;
+    }
+
     :host-context(.dark) .header-actions button,
     :host-context(.dark) .small-action,
     :host-context(.dark) .icon-button {
       border-color: rgb(51 65 85);
       background: rgb(15 23 42);
       color: rgb(226 232 240);
+    }
+
+    :host-context(.dark) .row-action {
+      border-color: rgb(51 65 85);
+      background: rgb(15 23 42);
+      color: rgb(191 219 254);
+    }
+
+    :host-context(.dark) .row-action.tds-download {
+      border-color: rgb(59 130 246 / 0.45);
+      background: rgb(30 64 175 / 0.2);
+      color: rgb(147 197 253);
     }
 
     .action-banner {
@@ -2447,6 +2508,44 @@ export class PayrollHrComponent {
     this.announce('Form 16 prepared', `${employee.name}'s salary TDS statement is ready.`, 'description');
   }
 
+  downloadForm16(employee: PayrollEmployee): void {
+    const form16Status = employee.tdsMonthly > 0 ? 'Generated' : 'Not applicable';
+    const preparedEmployee = { ...employee, form16Status };
+    this.employees = this.employees.map((item) => item.id === employee.id ? preparedEmployee : item);
+    this.downloadForm16Pdf(preparedEmployee);
+    this.announce('Form 16 downloaded', `${employee.name}'s Form 16 PDF was downloaded.`, 'picture_as_pdf');
+  }
+
+  downloadTdsSummary(): void {
+    this.downloadCsv(`salary-tds-summary-${this.today()}.csv`, [
+      ['Employee Code', 'Employee', 'PAN', 'Annual Gross', 'Monthly TDS', 'Annual TDS', 'Form 16'],
+      ...this.employees.map((employee) => [
+        employee.code,
+        employee.name,
+        employee.pan,
+        this.annualGross(employee),
+        employee.tdsMonthly,
+        employee.tdsMonthly * 12,
+        employee.form16Status,
+      ]),
+    ]);
+    this.announce('TDS download ready', 'Salary TDS summary was downloaded as CSV.', 'file_download');
+  }
+
+  downloadEmployeeTds(employee: PayrollEmployee): void {
+    this.downloadCsv(`tds-${employee.code}-${this.today()}.csv`, [
+      ['Field', 'Value'],
+      ['Employee Code', employee.code],
+      ['Employee', employee.name],
+      ['PAN', employee.pan],
+      ['Annual Gross', this.annualGross(employee)],
+      ['Monthly TDS', employee.tdsMonthly],
+      ['Annual TDS', employee.tdsMonthly * 12],
+      ['Form 16 Status', employee.form16Status],
+    ]);
+    this.announce('TDS downloaded', `${employee.name}'s TDS statement was downloaded as CSV.`, 'file_download');
+  }
+
   approveLeave(ref: string): void {
     this.leaveRequests = this.leaveRequests.map((leave) => leave.ref === ref && leave.status === 'Pending' ? { ...leave, status: 'Approved' } : leave);
     this.announce('Leave reviewed', `${ref} was updated in the leave register.`, 'event_available');
@@ -2802,6 +2901,86 @@ export class PayrollHrComponent {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+  }
+
+  private downloadForm16Pdf(employee: PayrollEmployee): void {
+    if (typeof document === 'undefined') return;
+
+    const annualGross = this.annualGross(employee);
+    const annualTds = employee.tdsMonthly * 12;
+    const pageWidth = 210;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+    doc.setProperties({
+      title: `Form 16 - ${employee.name}`,
+      subject: 'Salary TDS statement',
+    });
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(15, 23, 42);
+    doc.text('FORM 16', 14, 20);
+
+    doc.setFontSize(10);
+    doc.setTextColor(71, 85, 105);
+    doc.text('Salary TDS Statement', 14, 27);
+    doc.text(`Generated: ${this.today()}`, pageWidth - 14, 20, { align: 'right' });
+    doc.text(`Period: ${this.selectedPeriod}`, pageWidth - 14, 27, { align: 'right' });
+
+    doc.setDrawColor(37, 99, 235);
+    doc.setLineWidth(0.7);
+    doc.line(14, 34, pageWidth - 14, 34);
+
+    let y = this.writePdfRows(doc, 'Employee Details', [
+      ['Employee Code', employee.code],
+      ['Employee Name', employee.name],
+      ['Department', employee.department],
+      ['Designation', employee.designation],
+      ['PAN', employee.pan],
+      ['State', employee.state],
+    ], 46);
+
+    y = this.writePdfRows(doc, 'TDS Summary', [
+      ['Annual Gross Salary', this.money(annualGross)],
+      ['Monthly TDS', this.money(employee.tdsMonthly)],
+      ['Annual TDS Deducted', this.money(annualTds)],
+      ['Form 16 Status', employee.form16Status],
+    ], y + 8);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    doc.text('This document is generated from payroll records maintained in AccuDocs.', 14, y + 10);
+    doc.text('Authorized Signatory', pageWidth - 14, y + 28, { align: 'right' });
+    doc.line(pageWidth - 60, y + 23, pageWidth - 14, y + 23);
+
+    doc.save(`form-16-${employee.code}-${this.today()}.pdf`);
+  }
+
+  private writePdfRows(doc: jsPDF, title: string, rows: Array<[string, string]>, startY: number): number {
+    const pageWidth = 210;
+    let y = startY;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(15, 23, 42);
+    doc.text(title, 14, y);
+    y += 8;
+
+    rows.forEach(([label, value], index) => {
+      doc.setFillColor(index % 2 === 0 ? 248 : 255, index % 2 === 0 ? 250 : 255, index % 2 === 0 ? 252 : 255);
+      doc.rect(14, y - 5, pageWidth - 28, 8, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(71, 85, 105);
+      doc.text(label, 18, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(15, 23, 42);
+      doc.text(value, 78, y);
+      y += 8;
+    });
+
+    return y;
   }
 
   private today(): string {

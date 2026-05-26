@@ -1,6 +1,21 @@
+import { QueryTypes } from 'sequelize';
 import { sequelize } from '../../../../config/database.config';
 import { ItcLedger } from '../../../../models/itc-ledger.model';
 import { AppError } from '../../../../utils/errors';
+
+interface PurchaseItcRow {
+  id: string;
+  hsn_sac_code: string | null;
+  description: string | null;
+  purchase_type: string | null;
+  igst_amount: string | number | null;
+  cgst_amount: string | number | null;
+  sgst_amount: string | number | null;
+  gst_amount: string | number | null;
+  total_amount: string | number | null;
+  itc_eligible: boolean | null;
+  rcm_applicable: boolean | null;
+}
 
 /**
  * HSN codes blocked under GST Section 17(5) — ineligible for ITC
@@ -61,24 +76,26 @@ export class ITCService {
     }
 
     // Fetch purchases for this client and period
-    const [purchases] = await sequelize.query<any>(
+    const purchases = await sequelize.query<PurchaseItcRow>(
       `SELECT
          id,
-         hsn_code,
+         hsn_sac_code,
          description,
-         igst_amount,
-         cgst_amount,
-         sgst_amount,
+         purchase_type,
+         COALESCE(igst_amount, 0) as igst_amount,
+         COALESCE(cgst_amount, 0) as cgst_amount,
+         COALESCE(sgst_amount, 0) as sgst_amount,
+         COALESCE(gst_amount, 0) as gst_amount,
          total_amount,
-         is_rcm
+         itc_eligible,
+         rcm_applicable
        FROM client_purchases
        WHERE client_id = :clientId
          AND organization_id = :orgId
-         AND to_char(invoice_date, 'YYYY-MM') = :period
-         AND deleted_at IS NULL`,
+         AND to_char(bill_date, 'YYYY-MM') = :period`,
       {
         replacements: { clientId, orgId, period },
-        type: 'SELECT' as any,
+        type: QueryTypes.SELECT,
       }
     );
 
@@ -89,16 +106,14 @@ export class ITCService {
     let ineligibleItc = 0;
 
     for (const p of purchases) {
-      const igst = Number(p.igst_amount) || 0;
-      const cgst = Number(p.cgst_amount) || 0;
-      const sgst = Number(p.sgst_amount) || 0;
+      const { igst, cgst, sgst } = this.taxBreakup(p);
       const totalTax = igst + cgst + sgst;
 
       igstClaimed += igst;
       cgstClaimed += cgst;
       sgstClaimed += sgst;
 
-      if (isBlocked(p.hsn_code, p.description)) {
+      if (p.itc_eligible === false || isBlocked(p.hsn_sac_code, p.description)) {
         ineligibleItc += totalTax;
       } else {
         eligibleItc += totalTax;
@@ -131,5 +146,25 @@ export class ITCService {
       ...payload,
       purchasesCount: purchases.length,
     };
+  }
+
+  private taxBreakup(purchase: PurchaseItcRow): { igst: number; cgst: number; sgst: number } {
+    const explicitIgst = Number(purchase.igst_amount) || 0;
+    const explicitCgst = Number(purchase.cgst_amount) || 0;
+    const explicitSgst = Number(purchase.sgst_amount) || 0;
+
+    if (explicitIgst || explicitCgst || explicitSgst) {
+      return { igst: explicitIgst, cgst: explicitCgst, sgst: explicitSgst };
+    }
+
+    const gstAmount = Number(purchase.gst_amount) || 0;
+    if (!gstAmount) return { igst: 0, cgst: 0, sgst: 0 };
+
+    if ((purchase.purchase_type ?? '').toLowerCase() === 'interstate') {
+      return { igst: gstAmount, cgst: 0, sgst: 0 };
+    }
+
+    const half = Math.round((gstAmount / 2) * 100) / 100;
+    return { igst: 0, cgst: half, sgst: Math.round((gstAmount - half) * 100) / 100 };
   }
 }

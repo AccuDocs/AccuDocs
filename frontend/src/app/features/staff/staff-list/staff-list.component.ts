@@ -1560,6 +1560,173 @@ function normalizeStaffSection(value: string | null): StaffSection {
       text-align: center;
     }
 
+    :host-context(.dark) .staff-shell {
+      color: #eaf2fc;
+    }
+
+    :host-context(.dark) .staff-header,
+    :host-context(.dark) .metric-card,
+    :host-context(.dark) .staff-panel {
+      background: #10213a;
+      border-color: #263b59;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, .28);
+    }
+
+    :host-context(.dark) .panel-head,
+    :host-context(.dark) .role-switch,
+    :host-context(.dark) .search-box,
+    :host-context(.dark) .staff-table-filters select,
+    :host-context(.dark) .role-summary-grid div,
+    :host-context(.dark) .module-permission-card,
+    :host-context(.dark) .approval-flow div,
+    :host-context(.dark) .restriction-list div,
+    :host-context(.dark) .assignment-card,
+    :host-context(.dark) .performance-card,
+    :host-context(.dark) .document-card,
+    :host-context(.dark) .work-row,
+    :host-context(.dark) .role-create-form input,
+    :host-context(.dark) .role-create-form select,
+    :host-context(.dark) .role-create-form textarea,
+    :host-context(.dark) .secondary-action,
+    :host-context(.dark) th {
+      background: #14243c;
+      border-color: #263b59;
+      color: #eaf2fc;
+    }
+
+    :host-context(.dark) .staff-header h1,
+    :host-context(.dark) .panel-head h2,
+    :host-context(.dark) .metric-card strong,
+    :host-context(.dark) .bar-row strong,
+    :host-context(.dark) .work-row strong,
+    :host-context(.dark) .score-ring strong,
+    :host-context(.dark) .role-permission-hero h2,
+    :host-context(.dark) .role-head h2,
+    :host-context(.dark) .role-meta dd,
+    :host-context(.dark) .module-permission-card strong,
+    :host-context(.dark) .approval-flow strong,
+    :host-context(.dark) .restriction-list strong,
+    :host-context(.dark) .assignment-card strong,
+    :host-context(.dark) .document-card strong,
+    :host-context(.dark) .performance-card strong,
+    :host-context(.dark) td,
+    :host-context(.dark) td strong {
+      color: #eaf2fc;
+    }
+
+    :host-context(.dark) .staff-header p,
+    :host-context(.dark) .metric-card span,
+    :host-context(.dark) .panel-head span,
+    :host-context(.dark) .bar-row span,
+    :host-context(.dark) .work-row span,
+    :host-context(.dark) .trend-col span,
+    :host-context(.dark) .completion-meta span,
+    :host-context(.dark) .completion-meta strong,
+    :host-context(.dark) .score-ring span,
+    :host-context(.dark) .role-permission-hero span,
+    :host-context(.dark) .role-card p,
+    :host-context(.dark) .role-meta dt,
+    :host-context(.dark) .role-summary-grid span,
+    :host-context(.dark) .module-permission-card span,
+    :host-context(.dark) .restriction-list span,
+    :host-context(.dark) .approval-flow span,
+    :host-context(.dark) .assignment-card span,
+    :host-context(.dark) .document-card span,
+    :host-context(.dark) .performance-card span,
+    :host-context(.dark) .performance-card small,
+    :host-context(.dark) td small,
+    :host-context(.dark) th,
+    :host-context(.dark) .empty-state,
+    :host-context(.dark) .empty-cell {
+      color: #8ea2ba;
+    }
+
+    :host-context(.dark) .staff-eyebrow,
+    :host-context(.dark) .role-head,
+    :host-context(.dark) .role-summary-grid strong,
+    :host-context(.dark) .role-switch button.active,
+    :host-context(.dark) .permission-list span,
+    :host-context(.dark) .status-pill,
+    :host-context(.dark) .security-grid span,
+    :host-context(.dark) .assignment-card button {
+      color: #93c5fd;
+    }
+
+    :host-context(.dark) .metric-card.green strong,
+    :host-context(.dark) .work-row em {
+      color: #86efac;
+    }
+
+    :host-context(.dark) .metric-card.amber strong {
+      color: #fcd34d;
+    }
+
+    :host-context(.dark) .metric-card.blue strong {
+      color: #93c5fd;
+    }
+
+    :host-context(.dark) .bar-track {
+      background: #203451;
+    }
+
+    :host-context(.dark) .score-ring > div {
+      border-color: #203451;
+      border-top-color: #60a5fa;
+      border-right-color: #34d399;
+    }
+
+    :host-context(.dark) .role-switch button {
+      color: #b8c7d9;
+    }
+
+    :host-context(.dark) .role-switch button.active,
+    :host-context(.dark) .permission-list span,
+    :host-context(.dark) .security-grid span,
+    :host-context(.dark) .assignment-card button {
+      background: rgba(96, 165, 250, .16);
+      border-color: rgba(147, 197, 253, .32);
+    }
+
+    :host-context(.dark) .status-pill {
+      background: rgba(96, 165, 250, .16);
+    }
+
+    :host-context(.dark) .status-pill.inactive {
+      background: rgba(148, 163, 184, .12);
+      color: #94a3b8;
+    }
+
+    :host-context(.dark) .search-box input,
+    :host-context(.dark) .staff-table-filters select,
+    :host-context(.dark) .role-create-form input,
+    :host-context(.dark) .role-create-form select,
+    :host-context(.dark) .role-create-form textarea {
+      color: #eaf2fc;
+    }
+
+    :host-context(.dark) .search-box input::placeholder,
+    :host-context(.dark) .role-create-form input::placeholder,
+    :host-context(.dark) .role-create-form textarea::placeholder {
+      color: #637a96;
+    }
+
+    :host-context(.dark) .role-meta,
+    :host-context(.dark) td {
+      border-color: #263b59;
+    }
+
+    :host-context(.dark) .matrix-toggle {
+      background: #263b59;
+    }
+
+    :host-context(.dark) .matrix-toggle::after {
+      background: #dbeafe;
+    }
+
+    :host-context(.dark) .matrix-toggle.enabled {
+      background: #2563eb;
+    }
+
     @media (max-width: 1180px) {
       .metric-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
