@@ -187,6 +187,61 @@ export class AuthService {
     };
   }
 
+  async clientLogin(mobileInput: string, passwordInput: string, ipAddress: string) {
+    const candidates = this.getMobileCandidates(mobileInput);
+    let user = null as Awaited<ReturnType<IUserRepository['findByIdentifier']>>[number] | null;
+
+    for (const candidate of candidates) {
+      const users = await this.userRepository.findByIdentifier(candidate);
+      user = users.find((item) => item.role === 'client') || null;
+      if (user) break;
+    }
+
+    if (!user) {
+      throw new AppError('Invalid mobile number or password', 401, 'UNAUTHORIZED');
+    }
+
+    if (!user.isActive) {
+      throw new AppError('User account is deactivated', 403, 'FORBIDDEN');
+    }
+
+    if (!user.password) {
+      throw new AppError('Password not set for this account', 401, 'UNAUTHORIZED');
+    }
+
+    const isValid = await bcrypt.compare(passwordInput, user.password);
+    if (!isValid) {
+      throw new AppError('Invalid mobile number or password', 401, 'UNAUTHORIZED');
+    }
+
+    await this.userRepository.updateLastLogin(user.id, new Date());
+
+    const payload = {
+      userId: user.id,
+      organizationId: user.organizationId,
+      role: user.role,
+      mobile: user.mobile
+    };
+
+    const accessToken = jwt.sign(payload, config.jwt.secret, { expiresIn: config.jwt.expiresIn as any });
+    const refreshToken = jwt.sign({ userId: user.id }, config.jwt.refreshSecret, { expiresIn: config.jwt.refreshExpiresIn as any });
+
+    const refreshExpirySeconds = 30 * 24 * 60 * 60;
+    await redisHelpers.setRefreshToken(user.id, refreshToken, refreshExpirySeconds);
+
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        mobile: user.mobile,
+        role: user.role,
+        organizationId: user.organizationId
+      }
+    };
+  }
+
   async refresh(refreshToken: string) {
     if (!refreshToken) throw new AppError('Refresh token required', 401, 'UNAUTHORIZED');
 
@@ -241,5 +296,19 @@ export class AuthService {
 
   async cleanupExpiredOtps() {
     return await this.otpRepository.deleteExpired();
+  }
+
+  private getMobileCandidates(input: string): string[] {
+    const trimmed = input.trim();
+    const digits = trimmed.replace(/\D/g, '');
+    const candidates = [trimmed];
+
+    if (digits.length === 10) {
+      candidates.push(`+91${digits}`, digits);
+    } else if (digits.length === 12 && digits.startsWith('91')) {
+      candidates.push(`+${digits}`, digits.slice(2));
+    }
+
+    return [...new Set(candidates.filter(Boolean))];
   }
 }

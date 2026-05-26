@@ -12,7 +12,13 @@ export const VerifyOtpSchema = z.object({
 export const RefreshTokenSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token is required')
 });
+
 export const AdminLoginSchema = z.object({
   identifier: z.string().min(1, 'Email or Phone is required'),
+  password: z.string().min(1, 'Password is required')
+});
+
+export const ClientLoginSchema = z.object({
+  mobile: z.string().min(1, 'Mobile number is required'),
   password: z.string().min(1, 'Password is required')
 });

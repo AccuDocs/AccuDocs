@@ -69,6 +69,29 @@ export class AuthController {
     }
   }
 
+  static async clientLogin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const authService = container.resolve(AuthService);
+      const { mobile, password } = req.body;
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+
+      const result = await authService.clientLogin(mobile, password, ip);
+
+      await AuditLog.create({
+        organizationId: result.user.organizationId,
+        entityType: 'AUTH',
+        action: 'auth.client_login',
+        description: `Client ${result.user.mobile} logged in with password`,
+        userId: result.user.id,
+        ipAddress: ip
+      });
+
+      res.json(successResponse(result));
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async refresh(req: Request, res: Response, next: NextFunction) {
     try {
       const authService = container.resolve(AuthService);

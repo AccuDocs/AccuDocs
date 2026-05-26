@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
 import { validate } from '../../../../middlewares/validate.middleware';
-import { SendOtpSchema, VerifyOtpSchema, RefreshTokenSchema, AdminLoginSchema } from '../validators/auth.validators';
-import { sendOtpLimiter, verifyOtpLimiter } from '../../../../middlewares/rateLimit.middleware';
+import { SendOtpSchema, VerifyOtpSchema, RefreshTokenSchema, AdminLoginSchema, ClientLoginSchema } from '../validators/auth.validators';
+import { sendOtpLimiter, verifyOtpLimiter, passwordLoginLimiter } from '../../../../middlewares/rateLimit.middleware';
 import { authenticate } from '../../../../middlewares/auth.middleware';
 
 const router = Router();
@@ -115,6 +115,35 @@ router.post(
   '/admin-login',
   validate(AdminLoginSchema),
   AuthController.adminLogin
+);
+
+/**
+ * @openapi
+ * /auth/client-login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Client login with mobile number and password
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [mobile, password]
+ *             properties:
+ *               mobile:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ */
+router.post(
+  '/client-login',
+  passwordLoginLimiter,
+  validate(ClientLoginSchema),
+  AuthController.clientLogin
 );
 
 /**

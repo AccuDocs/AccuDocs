@@ -61,7 +61,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 };
 
 function isAuthenticationEndpoint(url: string): boolean {
-  return /\/auth\/(admin-login|login|logout|refresh|refresh-token|send-otp|verify-otp)/.test(url);
+  return /\/auth\/(admin-login|client-login|login|logout|refresh|refresh-token|send-otp|verify-otp)/.test(url);
 }
 
 function withBackendMessage(error: HttpErrorResponse, message: string): HttpErrorResponse {

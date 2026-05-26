@@ -72,6 +72,15 @@ export class AuthService {
       );
   }
 
+  clientLogin(mobile: string, password: string): Observable<AuthResponse> {
+    return this.http
+      .post<AuthResponse>(`${environment.apiUrl}/auth/client-login`, { mobile, password })
+      .pipe(
+        tap((response) => this.handleAuthResponse(response)),
+        catchError((error) => throwError(() => error))
+      );
+  }
+
   adminLogin(identifier: string, password: string): Observable<AuthResponse> {
     return this.http
       .post<AuthResponse>(`${environment.apiUrl}/auth/admin-login`, { identifier, password })

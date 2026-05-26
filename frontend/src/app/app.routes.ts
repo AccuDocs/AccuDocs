@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
+import { clientPortalGuard } from './core/guards/client-portal.guard';
 
 export const routes: Routes = [
   {
@@ -14,6 +15,16 @@ export const routes: Routes = [
   {
     path: 'upload/:token',
     loadComponent: () => import('./features/public-upload/public-upload.component').then(m => m.PublicUploadComponent),
+  },
+  {
+    path: 'client-portal/login',
+    loadComponent: () => import('./features/client-portal/client-portal-login.component').then((m) => m.ClientPortalLoginComponent),
+  },
+  {
+    path: 'client-portal',
+    canActivate: [clientPortalGuard, roleGuard],
+    data: { roles: ['client'] },
+    loadChildren: () => import('./features/client-portal/client-portal.routes').then((m) => m.CLIENT_PORTAL_ROUTES),
   },
   {
     path: '',

@@ -1,4 +1,5 @@
 import { injectable, inject } from "tsyringe";
+import bcrypt from 'bcryptjs';
 import { IClientRepository } from "../../domain/repositories/IClientRepository";
 import { CreateClientDTO, UpdateClientDTO, ClientResponseDTO } from "../dtos/ClientDtos";
 import { Client, ClientProps } from "../../domain/entities/Client";
@@ -27,6 +28,8 @@ export class ClientService {
     const t = await sequelize.transaction();
 
     try {
+      const passwordHash = dto.password ? await bcrypt.hash(dto.password, 10) : undefined;
+
       // 1. Resolve User for Client Login
       let user: User;
       const existingUser = await this.userRepository.findByMobileAndOrg(dto.mobile || '', organizationId);
@@ -40,7 +43,7 @@ export class ClientService {
           role: 'client',
           isActive: true,
           lastLoginAt: existingUser.lastLoginAt,
-          password: existingUser.password,
+          password: passwordHash ?? existingUser.password,
           email: dto.email || existingUser.email,
           avatarS3Key: existingUser.avatarS3Key,
           preferences: existingUser.preferences
@@ -57,6 +60,7 @@ export class ClientService {
           role: 'client',
           isActive: true,
           lastLoginAt: null,
+          password: passwordHash ?? null,
           email: dto.email
         });
         
@@ -212,9 +216,10 @@ export class ClientService {
 
     // Handle File Uploads
     const docUrls = await this.uploadKYCDocuments(organizationId, client.code, files);
+    const passwordHash = dto.password ? await bcrypt.hash(dto.password, 10) : undefined;
 
     // Update User
-    if (dto.name || dto.mobile || dto.email || (dto.isActive !== undefined)) {
+    if (dto.name || dto.mobile || dto.email || passwordHash || (dto.isActive !== undefined)) {
       const updateUserOrError = User.create({
         organizationId: user.organizationId,
         name: dto.name || user.name,
@@ -222,7 +227,7 @@ export class ClientService {
         role: user.role as any,
         isActive: dto.isActive !== undefined ? dto.isActive : user.isActive,
         lastLoginAt: user.lastLoginAt,
-        password: user.password,
+        password: passwordHash ?? user.password,
         email: dto.email || user.email,
         avatarS3Key: user.avatarS3Key,
         preferences: user.preferences
