@@ -19,9 +19,15 @@ export class EInvoiceService {
     const org = await Organization.findByPk(organizationId);
     if (!org) throw new AppError('Organization not found', 404);
 
-    // Threshold check: only for orgs with turnover > 5Cr
+    // Threshold check: strict in production; local/dev uses the simulated IRP flow.
+    if (!org.turnoverAbove5Cr && process.env.NODE_ENV === 'production') {
+      throw new AppError('E-invoice is applicable only for organizations with turnover above INR 5 Crore', 400);
+    }
+
     if (!org.turnoverAbove5Cr) {
-      throw new AppError('E-invoice is applicable only for organizations with turnover above ₹5 Crore', 400);
+      logger.warn(
+        `E-invoice simulation continued for org ${organizationId} even though turnover_above_5cr is disabled`
+      );
     }
 
     const invoice = await Invoice.findOne({
