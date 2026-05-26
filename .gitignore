@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Build output and caches
+dist/
+.angular/
+coverage/
+.nyc_output/
+
+# Environment and local runtime state
+.env
+.env.*
+!.env.example
+*.sqlite
+database.sqlite
+.wwebjs_auth/
+.wwebjs_cache/
+
+# Logs
+*.log
+logs/
+
+# Generated database dumps and local backups
+full_database_dump.sql
+schema_dump.sql
+db_dump.txt
+schema_audit.txt
+database/backups/
+database/*backup*.sql
+database/*backup*.json
+database/*backup*.json.gz
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
