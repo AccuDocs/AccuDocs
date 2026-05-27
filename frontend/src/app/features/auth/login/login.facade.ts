@@ -2,19 +2,20 @@ import { inject, Injectable, signal } from '@angular/core';
 import { AuthService } from '@core/services/auth.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { NotificationService } from '@core/services/notification.service';
-import { z } from 'zod';
+import { object, string } from 'zod/v4';
+import type { infer as zInfer } from 'zod/v4';
 import { createFormState } from '@shared/utils/validation.util';
 
-const LoginSchema = z.object({
-  identifier: z.string().min(1, 'Email or Phone is required').refine(val => {
+const LoginSchema = object({
+  identifier: string().min(1, 'Email or Phone is required').refine(val => {
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
     const isPhone = /^\+?[1-9]\d{7,14}$/.test(val);
     return isEmail || isPhone;
   }, 'Invalid email or phone number'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: string().min(8, 'Password must be at least 8 characters'),
 });
 
-type LoginData = z.infer<typeof LoginSchema>;
+type LoginData = zInfer<typeof LoginSchema>;
 
 @Injectable()
 export class LoginFacade {

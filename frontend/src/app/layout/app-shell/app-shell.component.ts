@@ -55,7 +55,9 @@ import { CommandPaletteComponent } from '../command-palette/command-palette.comp
 
       <!-- Command Palette (overlay) -->
       @if (nav.cmdOpen()) {
-        <app-command-palette />
+        @defer (when nav.cmdOpen()) {
+          <app-command-palette />
+        }
       }
 
     </div>

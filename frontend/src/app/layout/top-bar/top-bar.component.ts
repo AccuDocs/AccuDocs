@@ -1,6 +1,8 @@
-import { Component, inject, ChangeDetectionStrategy, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, DestroyRef, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { catchError, of, switchMap, timer } from 'rxjs';
 import { NavigationService } from '../../core/navigation.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
@@ -236,7 +238,7 @@ import { IconButtonComponent } from '@ui/atoms/icon-button.component';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TopBarComponent implements OnInit, OnDestroy {
+export class TopBarComponent implements OnInit {
   nav = inject(NavigationService);
   authService = inject(AuthService);
   themeService = inject(ThemeService);
@@ -244,15 +246,28 @@ export class TopBarComponent implements OnInit, OnDestroy {
   userMenuOpen = signal(false);
   waStatus = signal<WhatsAppStatus['status']>('DISCONNECTED');
   waStatusMessage = signal('WhatsApp status not checked yet');
-  private waTimer: ReturnType<typeof setInterval> | null = null;
+  private destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
-    this.refreshWhatsAppStatus();
-    this.waTimer = setInterval(() => this.refreshWhatsAppStatus(), 30000);
-  }
-
-  ngOnDestroy(): void {
-    if (this.waTimer) clearInterval(this.waTimer);
+    timer(1500, 30000)
+      .pipe(
+        switchMap(() =>
+          this.whatsappService.getStatus().pipe(
+            catchError(() =>
+              of<WhatsAppStatus>({
+                status: 'DISCONNECTED',
+                qrCode: null,
+                message: 'Unable to read WhatsApp status',
+              })
+            )
+          )
+        ),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((status) => {
+        this.waStatus.set(status.status);
+        this.waStatusMessage.set(status.message || this.waLabel());
+      });
   }
 
   waLabel(): string {
@@ -290,19 +305,6 @@ export class TopBarComponent implements OnInit, OnDestroy {
       text: '#64748b',
       dot: '#94a3b8',
     };
-  }
-
-  private refreshWhatsAppStatus(): void {
-    this.whatsappService.getStatus().subscribe({
-      next: (status) => {
-        this.waStatus.set(status.status);
-        this.waStatusMessage.set(status.message || this.waLabel());
-      },
-      error: () => {
-        this.waStatus.set('DISCONNECTED');
-        this.waStatusMessage.set('Unable to read WhatsApp status');
-      },
-    });
   }
 
   logout() {

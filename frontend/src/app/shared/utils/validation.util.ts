@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
-import { z } from 'zod';
+import type { ZodSchema } from 'zod/v4';
 
-export function validateSchema<T>(schema: z.ZodSchema<T>, data: unknown) {
+export function validateSchema<T>(schema: ZodSchema<T>, data: unknown) {
   const result = schema.safeParse(data);
   if (result.success) {
     return { success: true as const, data: result.data, errors: null };
@@ -14,7 +14,7 @@ export function validateSchema<T>(schema: z.ZodSchema<T>, data: unknown) {
 /**
  * Senior Signal-based form state helper
  */
-export function createFormState<T>(initialValue: T, schema: z.ZodSchema<T>) {
+export function createFormState<T>(initialValue: T, schema: ZodSchema<T>) {
   const value = signal<T>(initialValue);
   const errors = signal<Partial<Record<keyof T, string[]>>>({});
   const isSubmitting = signal(false);
