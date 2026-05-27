@@ -1,1 +1,0 @@
-import{a}from"./chunk-PWIHCLJS.js";import"./chunk-MYMDDNBH.js";import"./chunk-TIDAK4Q6.js";import"./chunk-EMGRVEO7.js";import"./chunk-IE23WHRR.js";import"./chunk-CUEZPWEU.js";import"./chunk-PHUH23IY.js";export{a as TdsTcsComponent};

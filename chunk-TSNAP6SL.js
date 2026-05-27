@@ -1,1 +1,0 @@
-import{a as u}from"./chunk-EE43OYGI.js";import{d as n}from"./chunk-2XZBJO4E.js";import{fa as e}from"./chunk-CUEZPWEU.js";var d=(a,s)=>{let i=e(u),t=e(n),r=a.data.roles;if(!r||r.length===0)return!0;let o=i.currentUser();return o?r.includes(o.role)?!0:(t.navigate(["/dashboard"]),!1):(t.navigate(["/auth/login"]),!1)};export{d as a};
