@@ -8,6 +8,8 @@ import { RecurringInvoiceService } from '../modules/billing/application/services
 import { CurrencyService } from '../modules/billing/application/services/CurrencyService';
 import { IntelligenceService } from '../modules/intelligence/application/services/IntelligenceService';
 import { AuthService } from '../modules/auth/application/services/AuthService';
+import { DatabaseBackupService } from '../modules/backups/application/services/DatabaseBackupService';
+import { config } from './env.config';
 
 const runRecurringBilling = async () => {
   try {
@@ -66,6 +68,15 @@ const runOtpCleanup = async () => {
   }
 };
 
+const runDatabaseBackups = async () => {
+  try {
+    const backupService = container.resolve(DatabaseBackupService);
+    await backupService.runScheduledBackups();
+  } catch (err: any) {
+    logger.error(`Daily database backup cron failed: ${err.message}`);
+  }
+};
+
 let jobs: cron.ScheduledTask[] = [];
 
 export const scheduler = {
@@ -92,6 +103,10 @@ export const scheduler = {
 
     // 6. Every hour — cleanup expired OTPs
     jobs.push(cron.schedule('0 * * * *', runOtpCleanup, { timezone: 'Asia/Kolkata' }));
+
+    if (config.backup.enabled) {
+      jobs.push(cron.schedule(config.backup.cron, runDatabaseBackups, { timezone: config.backup.timezone }));
+    }
 
     logger.info('⏰ Scheduler started successfully.');
   },

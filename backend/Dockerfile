@@ -28,6 +28,7 @@ RUN apk add --no-cache \
       freetype \
       harfbuzz \
       ca-certificates \
+      postgresql-client \
       ttf-freefont
 
 # Tell Puppeteer to skip installing Chrome. We'll be using the installed package.

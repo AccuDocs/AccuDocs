@@ -20,6 +20,7 @@ import inventoryRoutes from '../modules/inventory/presentation/routes/inventory.
 import vendorRoutes from '../modules/vendors/presentation/routes/vendor.routes';
 import subLedgerRoutes from '../modules/sub-ledger/presentation/routes/sub-ledger.routes';
 import accountingRoutes from '../modules/accounting/presentation/routes/accounting.routes';
+import backupRoutes from '../modules/backups/presentation/routes/backup.routes';
 import publicRoutes from './public.routes';
 
 const router = Router();
@@ -58,6 +59,7 @@ router.use('/inventory', inventoryRoutes);
 router.use('/vendors', vendorRoutes);
 router.use('/sub-ledger', subLedgerRoutes);
 router.use('/accounting', accountingRoutes);
+router.use('/backups', backupRoutes);
 
 // Public endpoints (no authentication required)
 router.use('/public', publicRoutes);

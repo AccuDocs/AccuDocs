@@ -26,6 +26,7 @@ schema_dump.sql
 db_dump.txt
 schema_audit.txt
 database/backups/
+backend/storage/backups/
 database/*backup*.sql
 database/*backup*.json
 database/*backup*.json.gz

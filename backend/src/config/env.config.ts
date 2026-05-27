@@ -45,6 +45,19 @@ const envSchema = z.object({
 
   WHATSAPP_ENABLED: z.string().transform((val) => val !== 'false').default('true'),
 
+  DB_BACKUP_ENABLED: z.string().transform((val) => val.trim() !== 'false').default('true'),
+  DB_BACKUP_CRON: z.string().trim().default('15 2 * * *'),
+  DB_BACKUP_TIMEZONE: z.string().trim().default('Asia/Kolkata'),
+  DB_BACKUP_LOCAL_DIR: z.string().trim().default('storage/backups'),
+  DB_BACKUP_RETENTION_DAYS: z.string().trim().transform(Number).default('14'),
+  DB_BACKUP_DESTINATION: z.enum(['drive', 'local']).default('local'),
+  DB_BACKUP_AUTH_REQUIRED: z.string().transform((val) => val.trim() === 'true').default('false'),
+  PG_DUMP_PATH: z.string().trim().default('pg_dump'),
+  GOOGLE_DRIVE_BACKUP_FOLDER_ID: z.string().trim().default(''),
+  GOOGLE_SERVICE_ACCOUNT_EMAIL: z.string().trim().default(''),
+  GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: z.string().default(''),
+  GOOGLE_SERVICE_ACCOUNT_KEY_JSON: z.string().default(''),
+
   TELEGRAM_BOT_TOKEN: z.string().default(''),
   TELEGRAM_WEBHOOK_SECRET: z.string().default('default-secret'),
 
@@ -125,6 +138,21 @@ export const config = {
 
   whatsapp: {
     enabled: env.WHATSAPP_ENABLED,
+  },
+
+  backup: {
+    enabled: env.DB_BACKUP_ENABLED,
+    cron: env.DB_BACKUP_CRON,
+    timezone: env.DB_BACKUP_TIMEZONE,
+    localDir: env.DB_BACKUP_LOCAL_DIR,
+    retentionDays: env.DB_BACKUP_RETENTION_DAYS,
+    destination: env.DB_BACKUP_DESTINATION,
+    authRequired: env.DB_BACKUP_AUTH_REQUIRED,
+    pgDumpPath: env.PG_DUMP_PATH,
+    googleDriveFolderId: env.GOOGLE_DRIVE_BACKUP_FOLDER_ID,
+    googleServiceAccountEmail: env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    googleServiceAccountPrivateKey: env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY,
+    googleServiceAccountKeyJson: env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON,
   },
 
   telegram: {
