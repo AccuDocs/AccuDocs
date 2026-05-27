@@ -279,6 +279,176 @@ import { HotToastService } from '@ngneat/hot-toast';
     .tds-action-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; transition: 0.15s; }
     .tds-action-btn:hover { background: #f1f5f9; }
     .tds-action-btn--del:hover { background: #fef2f2; border-color: #fecaca; }
+
+    :host-context(.dark) .tds-root,
+    :host-context(.dark-theme) .tds-root {
+      color: #dbeafe;
+    }
+
+    :host-context(.dark) .tds-title,
+    :host-context(.dark-theme) .tds-title,
+    :host-context(.dark) .tds-card-title,
+    :host-context(.dark-theme) .tds-card-title,
+    :host-context(.dark) .tds-td strong,
+    :host-context(.dark-theme) .tds-td strong {
+      color: #f8fafc;
+    }
+
+    :host-context(.dark) .tds-sub,
+    :host-context(.dark-theme) .tds-sub,
+    :host-context(.dark) .tds-label,
+    :host-context(.dark-theme) .tds-label {
+      color: #9fb2ca;
+    }
+
+    :host-context(.dark) .tds-tabs,
+    :host-context(.dark-theme) .tds-tabs,
+    :host-context(.dark) .tds-card,
+    :host-context(.dark-theme) .tds-card,
+    :host-context(.dark) .tds-table-card,
+    :host-context(.dark-theme) .tds-table-card {
+      background: #0f1f34;
+      border-color: rgba(148, 163, 184, .24);
+    }
+
+    :host-context(.dark) .tds-tabs,
+    :host-context(.dark-theme) .tds-tabs {
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .18);
+    }
+
+    :host-context(.dark) .tds-tab,
+    :host-context(.dark-theme) .tds-tab {
+      color: #9fb2ca;
+    }
+
+    :host-context(.dark) .tds-tab:hover,
+    :host-context(.dark-theme) .tds-tab:hover {
+      background: rgba(96, 165, 250, .12);
+      color: #dbeafe;
+    }
+
+    :host-context(.dark) .tds-tab--active,
+    :host-context(.dark-theme) .tds-tab--active {
+      background: #172b48;
+      color: #f8fafc;
+      box-shadow: none;
+    }
+
+    :host-context(.dark) .tds-input,
+    :host-context(.dark-theme) .tds-input,
+    :host-context(.dark) .tds-select,
+    :host-context(.dark-theme) .tds-select {
+      background: #13243b;
+      border-color: rgba(148, 163, 184, .28);
+      color: #eef6ff;
+    }
+
+    :host-context(.dark) .tds-input::placeholder,
+    :host-context(.dark-theme) .tds-input::placeholder {
+      color: #8da2bd;
+    }
+
+    :host-context(.dark) .tds-input:focus,
+    :host-context(.dark-theme) .tds-input:focus,
+    :host-context(.dark) .tds-select:focus,
+    :host-context(.dark-theme) .tds-select:focus {
+      background: #162a45;
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, .16);
+    }
+
+    :host-context(.dark) .tds-input[readonly],
+    :host-context(.dark-theme) .tds-input[readonly] {
+      background: #0d1b2e;
+      color: #b9cbe1;
+    }
+
+    :host-context(.dark) .tds-filter-btn,
+    :host-context(.dark-theme) .tds-filter-btn,
+    :host-context(.dark) .tds-cancel-btn,
+    :host-context(.dark-theme) .tds-cancel-btn,
+    :host-context(.dark) .tds-action-btn,
+    :host-context(.dark-theme) .tds-action-btn {
+      background: #13243b;
+      border-color: rgba(148, 163, 184, .28);
+      color: #eef6ff;
+    }
+
+    :host-context(.dark) .tds-filter-btn:hover,
+    :host-context(.dark-theme) .tds-filter-btn:hover,
+    :host-context(.dark) .tds-cancel-btn:hover,
+    :host-context(.dark-theme) .tds-cancel-btn:hover,
+    :host-context(.dark) .tds-action-btn:hover,
+    :host-context(.dark-theme) .tds-action-btn:hover {
+      background: #172b48;
+    }
+
+    :host-context(.dark) .tds-export-btn,
+    :host-context(.dark-theme) .tds-export-btn {
+      background: rgba(37, 99, 235, .16);
+      border-color: rgba(96, 165, 250, .35);
+      color: #bfdbfe;
+    }
+
+    :host-context(.dark) .tds-export-btn:hover,
+    :host-context(.dark-theme) .tds-export-btn:hover {
+      background: rgba(37, 99, 235, .24);
+    }
+
+    :host-context(.dark) .tds-th,
+    :host-context(.dark-theme) .tds-th {
+      background: #172b48;
+      border-bottom-color: rgba(148, 163, 184, .22);
+      color: #9fc2ef;
+    }
+
+    :host-context(.dark) .tds-tr,
+    :host-context(.dark-theme) .tds-tr {
+      background: #0f1f34;
+    }
+
+    :host-context(.dark) .tds-tr:hover,
+    :host-context(.dark-theme) .tds-tr:hover {
+      background: #142844;
+    }
+
+    :host-context(.dark) .tds-td,
+    :host-context(.dark-theme) .tds-td {
+      border-bottom-color: rgba(148, 163, 184, .16);
+      color: #dbeafe;
+    }
+
+    :host-context(.dark) .tds-section-badge,
+    :host-context(.dark-theme) .tds-section-badge,
+    :host-context(.dark) .tds-period-tag,
+    :host-context(.dark-theme) .tds-period-tag {
+      background: rgba(96, 165, 250, .14);
+      color: #bfdbfe;
+    }
+
+    :host-context(.dark) .tds-status--pending,
+    :host-context(.dark-theme) .tds-status--pending {
+      background: rgba(245, 158, 11, .18);
+      color: #fcd34d;
+    }
+
+    :host-context(.dark) .tds-status--deducted,
+    :host-context(.dark-theme) .tds-status--deducted {
+      background: rgba(59, 130, 246, .18);
+      color: #bfdbfe;
+    }
+
+    :host-context(.dark) .tds-status--deposited,
+    :host-context(.dark-theme) .tds-status--deposited {
+      background: rgba(34, 197, 94, .18);
+      color: #86efac;
+    }
+
+    :host-context(.dark) .tds-status--filed,
+    :host-context(.dark-theme) .tds-status--filed {
+      background: rgba(129, 140, 248, .18);
+      color: #c7d2fe;
+    }
   `],
 })
 export class TdsTcsComponent implements OnInit {

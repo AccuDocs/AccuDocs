@@ -755,6 +755,193 @@ import {
       text-align: center;
     }
 
+    :host-context(.dark) .ledger-shell,
+    :host-context(.dark-theme) .ledger-shell {
+      color: #dbeafe;
+    }
+
+    :host-context(.dark) .ledger-shell:not(.client-ledger-shell),
+    :host-context(.dark-theme) .ledger-shell:not(.client-ledger-shell) {
+      background: #071321;
+    }
+
+    :host-context(.dark) .ledger-header,
+    :host-context(.dark-theme) .ledger-header,
+    :host-context(.dark) .ledger-feature-switch,
+    :host-context(.dark-theme) .ledger-feature-switch,
+    :host-context(.dark) .metric-card,
+    :host-context(.dark-theme) .metric-card,
+    :host-context(.dark) .panel,
+    :host-context(.dark-theme) .panel {
+      background: #0f1f34;
+      border-color: rgba(148, 163, 184, .24);
+      box-shadow: none;
+    }
+
+    :host-context(.dark) .ledger-header h1,
+    :host-context(.dark-theme) .ledger-header h1,
+    :host-context(.dark) .metric-card strong,
+    :host-context(.dark-theme) .metric-card strong,
+    :host-context(.dark) .panel-head h2,
+    :host-context(.dark-theme) .panel-head h2,
+    :host-context(.dark) td strong,
+    :host-context(.dark-theme) td strong {
+      color: #f8fafc;
+    }
+
+    :host-context(.dark) .ledger-header p,
+    :host-context(.dark-theme) .ledger-header p,
+    :host-context(.dark) .metric-card span,
+    :host-context(.dark-theme) .metric-card span,
+    :host-context(.dark) .panel-head span,
+    :host-context(.dark-theme) .panel-head span,
+    :host-context(.dark) .chart-column span,
+    :host-context(.dark-theme) .chart-column span,
+    :host-context(.dark) td small,
+    :host-context(.dark-theme) td small,
+    :host-context(.dark) .empty-cell,
+    :host-context(.dark-theme) .empty-cell,
+    :host-context(.dark) .empty-block,
+    :host-context(.dark-theme) .empty-block {
+      color: #9fb2ca;
+    }
+
+    :host-context(.dark) .ledger-eyebrow,
+    :host-context(.dark-theme) .ledger-eyebrow {
+      color: #6ea8ff;
+    }
+
+    :host-context(.dark) .ledger-input,
+    :host-context(.dark-theme) .ledger-input {
+      background: #13243b;
+      border-color: rgba(148, 163, 184, .28);
+      color: #eef6ff;
+    }
+
+    :host-context(.dark) .ledger-input::placeholder,
+    :host-context(.dark-theme) .ledger-input::placeholder {
+      color: #8da2bd;
+    }
+
+    :host-context(.dark) .ledger-input:focus,
+    :host-context(.dark-theme) .ledger-input:focus {
+      background: #162a45;
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, .16);
+    }
+
+    :host-context(.dark) .ledger-input[type="date"]::-webkit-calendar-picker-indicator,
+    :host-context(.dark-theme) .ledger-input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1) opacity(.75);
+    }
+
+    :host-context(.dark) .ledger-feature-switch button,
+    :host-context(.dark-theme) .ledger-feature-switch button {
+      color: #9fb2ca;
+    }
+
+    :host-context(.dark) .ledger-feature-switch button:hover,
+    :host-context(.dark-theme) .ledger-feature-switch button:hover {
+      background: rgba(96, 165, 250, .12);
+      color: #dbeafe;
+    }
+
+    :host-context(.dark) .ledger-feature-switch button.active,
+    :host-context(.dark-theme) .ledger-feature-switch button.active {
+      background: #172b48;
+      border-color: rgba(96, 165, 250, .28);
+      box-shadow: none;
+      color: #6ea8ff;
+    }
+
+    :host-context(.dark) .panel-head,
+    :host-context(.dark-theme) .panel-head {
+      background: #13243b;
+      border-bottom-color: rgba(148, 163, 184, .22);
+    }
+
+    :host-context(.dark) th,
+    :host-context(.dark-theme) th {
+      background: #172b48;
+      color: #9fc2ef;
+    }
+
+    :host-context(.dark) td,
+    :host-context(.dark-theme) td {
+      border-top-color: rgba(148, 163, 184, .2);
+      color: #dbeafe;
+    }
+
+    :host-context(.dark) tbody tr,
+    :host-context(.dark-theme) tbody tr {
+      background: #0f1f34;
+    }
+
+    :host-context(.dark) tbody tr:hover,
+    :host-context(.dark-theme) tbody tr:hover {
+      background: #142844;
+    }
+
+    :host-context(.dark) .chart-row,
+    :host-context(.dark-theme) .chart-row,
+    :host-context(.dark) .table-wrap,
+    :host-context(.dark-theme) .table-wrap {
+      background: #0f1f34;
+    }
+
+    :host-context(.dark) .ledger-content :where(.bg-white, .bg-slate-50, .bg-slate-100),
+    :host-context(.dark-theme) .ledger-content :where(.bg-white, .bg-slate-50, .bg-slate-100) {
+      background-color: #13243b;
+    }
+
+    :host-context(.dark) .ledger-content :where(.border-slate-100, .border-slate-200),
+    :host-context(.dark-theme) .ledger-content :where(.border-slate-100, .border-slate-200) {
+      border-color: rgba(148, 163, 184, .22);
+    }
+
+    :host-context(.dark) .ledger-content :where(.divide-slate-100) > :not([hidden]) ~ :not([hidden]),
+    :host-context(.dark-theme) .ledger-content :where(.divide-slate-100) > :not([hidden]) ~ :not([hidden]) {
+      border-color: rgba(148, 163, 184, .18);
+    }
+
+    :host-context(.dark) .ledger-content :where(.text-slate-950, .text-slate-900, .text-slate-800),
+    :host-context(.dark-theme) .ledger-content :where(.text-slate-950, .text-slate-900, .text-slate-800) {
+      color: #f8fafc;
+    }
+
+    :host-context(.dark) .ledger-content :where(.text-slate-700, .text-slate-600, .text-slate-500, .text-slate-400),
+    :host-context(.dark-theme) .ledger-content :where(.text-slate-700, .text-slate-600, .text-slate-500, .text-slate-400) {
+      color: #9fb2ca;
+    }
+
+    :host-context(.dark) .ledger-content :where(.text-emerald-600, .text-emerald-700),
+    :host-context(.dark-theme) .ledger-content :where(.text-emerald-600, .text-emerald-700) {
+      color: #6ee7b7;
+    }
+
+    :host-context(.dark) .ledger-content :where(.text-rose-600, .text-rose-700),
+    :host-context(.dark-theme) .ledger-content :where(.text-rose-600, .text-rose-700) {
+      color: #fda4af;
+    }
+
+    :host-context(.dark) .rating-good,
+    :host-context(.dark-theme) .rating-good {
+      background: rgba(34, 197, 94, .18);
+      color: #86efac;
+    }
+
+    :host-context(.dark) .rating-watch,
+    :host-context(.dark-theme) .rating-watch {
+      background: rgba(245, 158, 11, .18);
+      color: #fcd34d;
+    }
+
+    :host-context(.dark) .rating-risk,
+    :host-context(.dark-theme) .rating-risk {
+      background: rgba(248, 113, 113, .18);
+      color: #fca5a5;
+    }
+
     @media (max-width: 1080px) {
       .ledger-header {
         align-items: stretch;

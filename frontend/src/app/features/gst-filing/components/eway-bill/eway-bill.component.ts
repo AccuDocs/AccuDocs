@@ -210,6 +210,157 @@ import { HotToastService } from '@ngneat/hot-toast';
     .ewb-tr:hover { background: #f8fafc; }
     .ewb-td { padding: 11px 14px; font-size: 13px; color: #1e293b; border-bottom: 1px solid #f1f5f9; }
     .ewb-mono { font-family: monospace; font-weight: 600; }
+
+    :host-context(.dark) .ewb-root,
+    :host-context(.dark-theme) .ewb-root {
+      color: #dbeafe;
+    }
+
+    :host-context(.dark) .ewb-card,
+    :host-context(.dark-theme) .ewb-card,
+    :host-context(.dark) .ewb-result-card,
+    :host-context(.dark-theme) .ewb-result-card,
+    :host-context(.dark) .ewb-history-card,
+    :host-context(.dark-theme) .ewb-history-card {
+      background: #0f1f34;
+      border-color: rgba(148, 163, 184, .24);
+    }
+
+    :host-context(.dark) .ewb-title,
+    :host-context(.dark-theme) .ewb-title,
+    :host-context(.dark) .ewb-card-title,
+    :host-context(.dark-theme) .ewb-card-title,
+    :host-context(.dark) .ewb-bill-no,
+    :host-context(.dark-theme) .ewb-bill-no,
+    :host-context(.dark) .ewb-detail-value,
+    :host-context(.dark-theme) .ewb-detail-value,
+    :host-context(.dark) .ewb-td,
+    :host-context(.dark-theme) .ewb-td {
+      color: #f8fafc;
+    }
+
+    :host-context(.dark) .ewb-sub,
+    :host-context(.dark-theme) .ewb-sub,
+    :host-context(.dark) .ewb-label,
+    :host-context(.dark-theme) .ewb-label,
+    :host-context(.dark) .ewb-bill-date,
+    :host-context(.dark-theme) .ewb-bill-date,
+    :host-context(.dark) .ewb-detail-label,
+    :host-context(.dark-theme) .ewb-detail-label,
+    :host-context(.dark) .ewb-th,
+    :host-context(.dark-theme) .ewb-th {
+      color: #9fb2ca;
+    }
+
+    :host-context(.dark) .ewb-input,
+    :host-context(.dark-theme) .ewb-input,
+    :host-context(.dark) .ewb-select,
+    :host-context(.dark-theme) .ewb-select {
+      background: #13243b;
+      border-color: rgba(148, 163, 184, .28);
+      color: #eef6ff;
+    }
+
+    :host-context(.dark) .ewb-input::placeholder,
+    :host-context(.dark-theme) .ewb-input::placeholder {
+      color: #8da2bd;
+    }
+
+    :host-context(.dark) .ewb-input:focus,
+    :host-context(.dark-theme) .ewb-input:focus,
+    :host-context(.dark) .ewb-select:focus,
+    :host-context(.dark-theme) .ewb-select:focus {
+      background: #162a45;
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, .16);
+    }
+
+    :host-context(.dark) .ewb-check-btn,
+    :host-context(.dark-theme) .ewb-check-btn,
+    :host-context(.dark) .ewb-action-btn,
+    :host-context(.dark-theme) .ewb-action-btn {
+      background: #13243b;
+      border-color: rgba(148, 163, 184, .28);
+      color: #eef6ff;
+    }
+
+    :host-context(.dark) .ewb-check-btn:hover:not(:disabled),
+    :host-context(.dark-theme) .ewb-check-btn:hover:not(:disabled),
+    :host-context(.dark) .ewb-action-btn:hover,
+    :host-context(.dark-theme) .ewb-action-btn:hover {
+      background: #172b48;
+    }
+
+    :host-context(.dark) .ewb-check-result,
+    :host-context(.dark-theme) .ewb-check-result {
+      background: rgba(34, 197, 94, .18);
+      color: #86efac;
+    }
+
+    :host-context(.dark) .ewb-check-result--yes,
+    :host-context(.dark-theme) .ewb-check-result--yes {
+      background: rgba(245, 158, 11, .18);
+      color: #fcd34d;
+    }
+
+    :host-context(.dark) .ewb-detail,
+    :host-context(.dark-theme) .ewb-detail,
+    :host-context(.dark) .ewb-th,
+    :host-context(.dark-theme) .ewb-th {
+      background: #172b48;
+    }
+
+    :host-context(.dark) .ewb-td,
+    :host-context(.dark-theme) .ewb-td,
+    :host-context(.dark) .ewb-th,
+    :host-context(.dark-theme) .ewb-th {
+      border-color: rgba(148, 163, 184, .2);
+    }
+
+    :host-context(.dark) .ewb-tr,
+    :host-context(.dark-theme) .ewb-tr {
+      background: #0f1f34;
+    }
+
+    :host-context(.dark) .ewb-tr:hover,
+    :host-context(.dark-theme) .ewb-tr:hover {
+      background: #142844;
+    }
+
+    :host-context(.dark) .ewb-bill-status--generated,
+    :host-context(.dark-theme) .ewb-bill-status--generated {
+      background: rgba(34, 197, 94, .18);
+      color: #86efac;
+    }
+
+    :host-context(.dark) .ewb-bill-status--cancelled,
+    :host-context(.dark-theme) .ewb-bill-status--cancelled {
+      background: rgba(248, 113, 113, .18);
+      color: #fca5a5;
+    }
+
+    :host-context(.dark) .ewb-bill-status--expired,
+    :host-context(.dark-theme) .ewb-bill-status--expired {
+      background: rgba(245, 158, 11, .18);
+      color: #fcd34d;
+    }
+
+    :host-context(.dark) .ewb-countdown,
+    :host-context(.dark-theme) .ewb-countdown {
+      background: linear-gradient(135deg, rgba(245, 158, 11, .18), rgba(217, 119, 6, .14));
+    }
+
+    :host-context(.dark) .ewb-countdown-label,
+    :host-context(.dark-theme) .ewb-countdown-label,
+    :host-context(.dark) .ewb-countdown-remaining,
+    :host-context(.dark-theme) .ewb-countdown-remaining {
+      color: #fcd34d;
+    }
+
+    :host-context(.dark) .ewb-countdown-value,
+    :host-context(.dark-theme) .ewb-countdown-value {
+      color: #fef3c7;
+    }
   `],
 })
 export class EwayBillComponent implements OnInit {

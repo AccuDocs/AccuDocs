@@ -291,6 +291,179 @@ function currentPeriod(): string {
 
     .gr-empty-cell { text-align: center; padding: 32px; }
     .gr-empty-inner { font-size: 14px; color: #16a34a; font-weight: 600; }
+
+    :host-context(.dark) .gr-root,
+    :host-context(.dark-theme) .gr-root {
+      color: #dbeafe;
+    }
+
+    :host-context(.dark) .gr-panel,
+    :host-context(.dark-theme) .gr-panel,
+    :host-context(.dark) .gr-summary-card,
+    :host-context(.dark-theme) .gr-summary-card,
+    :host-context(.dark) .gr-tabs,
+    :host-context(.dark-theme) .gr-tabs,
+    :host-context(.dark) .gr-table-wrap,
+    :host-context(.dark-theme) .gr-table-wrap {
+      background: #0f1f34;
+      border-color: rgba(148, 163, 184, .24);
+    }
+
+    :host-context(.dark) .gr-title,
+    :host-context(.dark-theme) .gr-title,
+    :host-context(.dark) .gr-file-name,
+    :host-context(.dark-theme) .gr-file-name,
+    :host-context(.dark) .gr-summary-count,
+    :host-context(.dark-theme) .gr-summary-count,
+    :host-context(.dark) .gr-tab--active,
+    :host-context(.dark-theme) .gr-tab--active,
+    :host-context(.dark) .gr-td,
+    :host-context(.dark-theme) .gr-td {
+      color: #f8fafc;
+    }
+
+    :host-context(.dark) .gr-sub,
+    :host-context(.dark-theme) .gr-sub,
+    :host-context(.dark) .gr-label,
+    :host-context(.dark-theme) .gr-label,
+    :host-context(.dark) .gr-upload-icon,
+    :host-context(.dark-theme) .gr-upload-icon,
+    :host-context(.dark) .gr-upload-text,
+    :host-context(.dark-theme) .gr-upload-text,
+    :host-context(.dark) .gr-upload-hint,
+    :host-context(.dark-theme) .gr-upload-hint,
+    :host-context(.dark) .gr-summary-label,
+    :host-context(.dark-theme) .gr-summary-label,
+    :host-context(.dark) .gr-tab,
+    :host-context(.dark-theme) .gr-tab,
+    :host-context(.dark) .gr-th,
+    :host-context(.dark-theme) .gr-th,
+    :host-context(.dark) .gr-td--date,
+    :host-context(.dark-theme) .gr-td--date {
+      color: #9fb2ca;
+    }
+
+    :host-context(.dark) .gr-input,
+    :host-context(.dark-theme) .gr-input {
+      background: #13243b;
+      border-color: rgba(148, 163, 184, .28);
+      color: #eef6ff;
+    }
+
+    :host-context(.dark) .gr-input:focus,
+    :host-context(.dark-theme) .gr-input:focus {
+      background: #162a45;
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, .16);
+    }
+
+    :host-context(.dark) .gr-input[type="month"]::-webkit-calendar-picker-indicator,
+    :host-context(.dark-theme) .gr-input[type="month"]::-webkit-calendar-picker-indicator {
+      filter: invert(1) opacity(.75);
+    }
+
+    :host-context(.dark) .gr-upload-zone,
+    :host-context(.dark-theme) .gr-upload-zone {
+      background: #0f1f34;
+      border-color: rgba(148, 163, 184, .28);
+    }
+
+    :host-context(.dark) .gr-upload-zone:hover,
+    :host-context(.dark-theme) .gr-upload-zone:hover,
+    :host-context(.dark) .gr-upload-zone--drag,
+    :host-context(.dark-theme) .gr-upload-zone--drag {
+      background: #142844;
+      border-color: #60a5fa;
+    }
+
+    :host-context(.dark) .gr-file-clear,
+    :host-context(.dark-theme) .gr-file-clear {
+      color: #9fb2ca;
+    }
+
+    :host-context(.dark) .gr-error-msg,
+    :host-context(.dark-theme) .gr-error-msg {
+      background: rgba(248, 113, 113, .15);
+      border-color: rgba(248, 113, 113, .35);
+      color: #fca5a5;
+    }
+
+    :host-context(.dark) .gr-tab:hover,
+    :host-context(.dark-theme) .gr-tab:hover,
+    :host-context(.dark) .gr-tab--active,
+    :host-context(.dark-theme) .gr-tab--active {
+      background: #172b48;
+      box-shadow: none;
+    }
+
+    :host-context(.dark) .gr-thead,
+    :host-context(.dark-theme) .gr-thead,
+    :host-context(.dark) .gr-th,
+    :host-context(.dark-theme) .gr-th {
+      background: #172b48;
+    }
+
+    :host-context(.dark) .gr-th,
+    :host-context(.dark-theme) .gr-th,
+    :host-context(.dark) .gr-td,
+    :host-context(.dark-theme) .gr-td {
+      border-color: rgba(148, 163, 184, .2);
+    }
+
+    :host-context(.dark) .gr-row,
+    :host-context(.dark-theme) .gr-row {
+      background: #0f1f34;
+    }
+
+    :host-context(.dark) .gr-row:hover,
+    :host-context(.dark-theme) .gr-row:hover {
+      background: #142844;
+    }
+
+    :host-context(.dark) .gr-row--mismatched td,
+    :host-context(.dark-theme) .gr-row--mismatched td {
+      background: rgba(245, 158, 11, .12);
+    }
+
+    :host-context(.dark) .gr-row--missing_in_books td,
+    :host-context(.dark-theme) .gr-row--missing_in_books td {
+      background: rgba(248, 113, 113, .12);
+    }
+
+    :host-context(.dark) .gr-row--missing_in_2a td,
+    :host-context(.dark-theme) .gr-row--missing_in_2a td {
+      background: rgba(59, 130, 246, .12);
+    }
+
+    :host-context(.dark) .gr-mismatch-tag,
+    :host-context(.dark-theme) .gr-mismatch-tag {
+      background: rgba(245, 158, 11, .18);
+      color: #fcd34d;
+    }
+
+    :host-context(.dark) .gr-tab-count--green,
+    :host-context(.dark-theme) .gr-tab-count--green {
+      background: rgba(34, 197, 94, .18);
+      color: #86efac;
+    }
+
+    :host-context(.dark) .gr-tab-count--amber,
+    :host-context(.dark-theme) .gr-tab-count--amber {
+      background: rgba(245, 158, 11, .18);
+      color: #fcd34d;
+    }
+
+    :host-context(.dark) .gr-tab-count--red,
+    :host-context(.dark-theme) .gr-tab-count--red {
+      background: rgba(248, 113, 113, .18);
+      color: #fca5a5;
+    }
+
+    :host-context(.dark) .gr-tab-count--blue,
+    :host-context(.dark-theme) .gr-tab-count--blue {
+      background: rgba(59, 130, 246, .18);
+      color: #bfdbfe;
+    }
   `],
 })
 export class Gstr2aReconcileComponent {
