@@ -90,14 +90,18 @@ export class AuthService {
       );
   }
 
-  refreshToken(): Observable<{ accessToken: string; refreshToken: string }> {
+  refreshToken(): Observable<any> {
     const refreshToken = this.getRefreshToken();
     return this.http
-      .post<any>(`${environment.apiUrl}/auth/refresh-token`, { refreshToken })
+      .post<any>(`${environment.apiUrl}/auth/refresh`, { refreshToken })
       .pipe(
         tap((response) => {
-          localStorage.setItem('accessToken', response.data.accessToken);
-          localStorage.setItem('refreshToken', response.data.refreshToken);
+          if (response?.data?.accessToken) {
+            localStorage.setItem('accessToken', response.data.accessToken);
+          }
+          if (response?.data?.refreshToken) {
+            localStorage.setItem('refreshToken', response.data.refreshToken);
+          }
         }),
         catchError((error) => {
           this.logout();

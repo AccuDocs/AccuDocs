@@ -46,13 +46,17 @@ export class ApiService {
           originalRequest._retry = true;
           try {
             const refreshToken = localStorage.getItem('refreshToken');
-            const res = await axios.post(`${environment.apiUrl}/auth/refresh-token`, { refreshToken });
+            const res = await axios.post(`${environment.apiUrl}/auth/refresh`, { refreshToken });
             const { accessToken, refreshToken: newRefreshToken } = res.data.data;
 
-            localStorage.setItem('accessToken', accessToken);
-            localStorage.setItem('refreshToken', newRefreshToken);
+            if (accessToken) {
+              localStorage.setItem('accessToken', accessToken);
+              originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+            }
+            if (newRefreshToken) {
+              localStorage.setItem('refreshToken', newRefreshToken);
+            }
 
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
             return this.instance(originalRequest);
           } catch (refreshError) {
             // Logout user on refresh failure

@@ -1,6 +1,6 @@
 import { HttpContextToken, HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, throwError } from 'rxjs';
+import { catchError, throwError, switchMap } from 'rxjs';
 import { ToastService } from '../services/toast.service';
 import { AuthService } from '../services/auth.service';
 import { extractBackendErrorMessage } from '../utils/api-message.util';
@@ -48,7 +48,32 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       if (error.status === 401 && !isAuthEndpoint && !isSuperAdminRequest) {
-        authService.logout();
+        // Attempt silent token refresh
+        return authService.refreshToken().pipe(
+          switchMap((response) => {
+            const newAccessToken = response?.data?.accessToken;
+            if (newAccessToken) {
+              const retryReq = req.clone({
+                setHeaders: {
+                  Authorization: `Bearer ${newAccessToken}`,
+                },
+              });
+              return next(retryReq);
+            }
+            authService.logout();
+            if (!req.context.get(SKIP_ERROR_TOAST)) {
+              toast.error(errorMessage);
+            }
+            return throwError(() => withBackendMessage(error, errorMessage));
+          }),
+          catchError((refreshError) => {
+            authService.logout();
+            if (!req.context.get(SKIP_ERROR_TOAST)) {
+              toast.error(errorMessage);
+            }
+            return throwError(() => withBackendMessage(refreshError, errorMessage));
+          })
+        );
       }
 
       if (!req.context.get(SKIP_ERROR_TOAST)) {
@@ -63,7 +88,6 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 function isAuthenticationEndpoint(url: string): boolean {
   return /\/auth\/(admin-login|client-login|login|logout|refresh|refresh-token|send-otp|verify-otp)/.test(url);
 }
-
 function withBackendMessage(error: HttpErrorResponse, message: string): HttpErrorResponse {
   const enrichedError = error as HttpErrorResponse & { userMessage?: string };
   enrichedError.userMessage = message;
